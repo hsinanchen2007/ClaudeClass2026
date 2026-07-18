@@ -1,0 +1,175 @@
+// =============================================================================
+//  10_lc_201_range_bitwise_and.cpp  —  LeetCode 201. Bitwise AND of Numbers Range
+// =============================================================================
+//  參考：
+//    - https://en.cppreference.com/w/cpp/language/operator_arithmetic (& 與 >> 位元運算)
+//    - https://en.cppreference.com/w/cpp/numeric/countl_zero          (C++20 countl_zero)
+//    - https://leetcode.com/problems/bitwise-and-of-numbers-range/
+//
+//  ┌────────────────────────────────────────────────────────────┐
+//  │ 題意                                                       │
+//  └────────────────────────────────────────────────────────────┘
+//
+//  輸入：兩個非負整數 left ≤ right
+//  輸出：left & (left+1) & (left+2) & ... & right 的結果
+//
+//  範例：
+//      [5, 7]   → 5 & 6 & 7 = 0b101 & 0b110 & 0b111 = 0b100 = 4
+//      [0, 1]   → 0
+//      [1, 2147483647] → 0
+//
+//  暴力解 O(right - left) 最壞 2^31，會 TLE。
+//
+//  ┌────────────────────────────────────────────────────────────┐
+//  │ 關鍵觀察：結果就是 left, right 的「公共前綴」               │
+//  └────────────────────────────────────────────────────────────┘
+//
+//  把這段範圍想像成從 left 一路 +1 到 right 的二進位字串。每跨過一個 +1，
+//  最低變動的那幾位都會「翻過 0」 → AND 起來這幾位一定變 0。最後保留下
+//  來的，只有從最高位往下，「left 跟 right 完全相同」的那段位元。
+//
+//  所以結論：
+//
+//      result = (left 與 right 的公共最高位前綴) << shift
+//
+//  也就是不斷把 left、right 同時右移、直到兩者相等，再左移回去。
+//
+//  ┌────────────────────────────────────────────────────────────┐
+//  │ 解法 1：右移找公共前綴                                     │
+//  └────────────────────────────────────────────────────────────┘
+//
+//      while (left != right) {
+//          left  >>= 1;
+//          right >>= 1;
+//          ++shift;
+//      }
+//      return left << shift;
+//
+//  時間 O(log right)。
+//
+//  ┌────────────────────────────────────────────────────────────┐
+//  │ 解法 2：Brian Kernighan 風                                  │
+//  └────────────────────────────────────────────────────────────┘
+//
+//  對 right 一直把最低位 1 拔掉，直到 right ≤ left。最終 right 就是公共前
+//  綴 — 為什麼？因為 [left, right] 跨越的「會變 0 的位元」剛好是要清掉的。
+//
+//      while (left < right) right &= (right - 1);
+//      return right;
+//
+//  寫起來更短，效能也好。
+//
+// =============================================================================
+
+/*
+補充筆記：range_bitwise_and
+  - range_bitwise_and 屬於位元操作；位元運算適合旗標、遮罩、集合狀態、低階資料格式和某些整數技巧。
+  - 位移前要確認位數合法；位移負數或位移量大於等於型別寬度會造成未定義行為。
+  - signed integer 的位元表示和右移行為有細節；做遮罩和位元技巧時通常使用 unsigned 型別較清楚。
+  - x & (x - 1) 可清掉最低位的 1，常用於計算 set bits 或判斷 power of two；但 x=0 要另外處理。
+  - C++20 <bit> 提供 popcount、has_single_bit、rotl、bit_width 等標準工具，能取代許多手寫技巧。
+  - bit_cast 是按位元重新解讀且要求大小相同與 trivially copyable；它不是任意型別轉換。
+  - 當 left 和 right 不斷右移直到相等時，移掉的低位代表範圍內會同時出現 0 和 1，AND 後必為 0。
+  - left == right 時答案就是 left，這是所有迴圈解法的最小邊界。
+*/
+#include <cstdint>
+#include <iostream>
+
+// 前置宣告：附加範例
+static void demo_lc_190_reverse_bits();
+static void demo_common_prefix_mask();
+
+static int rangeAnd_shift(int left, int right) {
+    int shift = 0;
+    while (left != right) {
+        left  >>= 1;
+        right >>= 1;
+        ++shift;
+    }
+    return left << shift;
+}
+
+static int rangeAnd_kernighan(int left, int right) {
+    while (left < right) {
+        right &= (right - 1);
+    }
+    return right;
+}
+
+int main() {
+    int cases[][2] = {
+        {5, 7}, {0, 1}, {1, 2147483647}, {12, 15}, {7, 7},
+    };
+    for (auto& c : cases) {
+        std::cout << "[" << c[0] << "," << c[1] << "] "
+                  << "shift=" << rangeAnd_shift(c[0], c[1]) << ", "
+                  << "kernighan=" << rangeAnd_kernighan(c[0], c[1]) << '\n';
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // 課堂知識補充
+    // ─────────────────────────────────────────────────────────
+    //  Q1：為什麼「跨範圍 +1」一定會把低位翻成 0？
+    //    A：[a, a+1] 跨過 +1 至少會把最低位翻一次（若沒進位）；只要範圍夠
+    //       大，每個低位至少會出現一次「0 與 1 同時出現」 → AND 該位變 0。
+    //       公共前綴是「沒被 0/1 都出現過的高位」。
+    //
+    //  Q2：Brian Kernighan 解法為什麼正確？
+    //    A：right & (right-1) 拔掉 right 的最低位 1。如果拔掉後仍 ≥ left，
+    //       表示這位於 [left, right] 內也曾被翻 0 過 → 在最終 AND 結果中
+    //       也是 0 → 從 right 移除合理。停下時 right ≤ left ≤ 公共前綴 ≤
+    //       right 拔位前的值，剩的剛好是公共前綴。
+    //
+    //  Q3：對 unsigned 寫法不一樣嗎？
+    //    A：unsigned 寫法完全一樣；題目是 0 ≤ n ≤ 2^31-1，用 int 即可。
+    //
+    demo_lc_190_reverse_bits();
+    demo_common_prefix_mask();
+    return 0;
+}
+
+// =============================================================================
+//  附加 1：LeetCode 190. Reverse Bits（另一個位元搬移題）
+// =============================================================================
+//  題意：把 32-bit unsigned 的位元前後顛倒回傳。
+//  思路：分而治之 — 先換 16/16 兩半，再換 8/8、4/4、2/2、1/1。
+//        和本檔「找公共前綴」一樣，重點是熟練「位元層次操作」。
+// =============================================================================
+static std::uint32_t reverseBits(std::uint32_t n) {
+    n = (n >> 16) | (n << 16);
+    n = ((n & 0xFF00FF00u) >> 8) | ((n & 0x00FF00FFu) << 8);
+    n = ((n & 0xF0F0F0F0u) >> 4) | ((n & 0x0F0F0F0Fu) << 4);
+    n = ((n & 0xCCCCCCCCu) >> 2) | ((n & 0x33333333u) << 2);
+    n = ((n & 0xAAAAAAAAu) >> 1) | ((n & 0x55555555u) << 1);
+    return n;
+}
+static void demo_lc_190_reverse_bits() {
+    std::uint32_t n = 43261596u;
+    std::cout << "[LC190] reverse(43261596) = " << reverseBits(n)
+              << " (= 964176192)\n";
+}
+
+// =============================================================================
+//  附加 2：實用範例 — IP / CIDR 共同前綴（subnet 計算）
+// =============================================================================
+//  網路工作上常需算：兩個 IPv4 位址的「最長共同前綴」是幾 bit。
+//  和 LC 201 本質相同：先 XOR 找到「第一個不一樣的 bit」，再用其上方位元組成 mask。
+//  例：192.168.1.5 和 192.168.1.7 -> 前 30 bits 相同 -> /30 子網路遮罩。
+// =============================================================================
+static int commonPrefixLength(std::uint32_t a, std::uint32_t b) {
+    std::uint32_t diff = a ^ b;
+    if (diff == 0) return 32;          // 完全相同
+    // 找最高位 1 的位置（從低位數起的位置 + 1 = 共同前綴需保留的 bit 數）
+    int leadingZeros = 0;
+    for (int i = 31; i >= 0; --i) {
+        if (diff & (1u << i)) break;
+        ++leadingZeros;
+    }
+    return leadingZeros;
+}
+static void demo_common_prefix_mask() {
+    // 192.168.1.5 = 0xC0A80105, 192.168.1.7 = 0xC0A80107
+    std::uint32_t a = 0xC0A80105, b = 0xC0A80107;
+    std::cout << "[common_prefix] /" << commonPrefixLength(a, b)
+              << " (192.168.1.5 vs .7)\n";
+}

@@ -1,0 +1,174 @@
+// =============================================================================
+//  03_exists_and_status.cpp  —  查詢檔案存在與屬性
+// =============================================================================
+//  參考：
+//    - https://en.cppreference.com/w/cpp/filesystem/exists
+//    - https://en.cppreference.com/w/cpp/filesystem/status
+//    - https://en.cppreference.com/w/cpp/filesystem/file_size
+//    - https://en.cppreference.com/w/cpp/filesystem/last_write_time
+//
+//  ┌────────────────────────────────────────────────────────────┐
+//  │ 常用查詢函式                                               │
+//  └────────────────────────────────────────────────────────────┘
+//
+//      fs::exists(p)             路徑指向的東西存在嗎
+//      fs::is_regular_file(p)    是普通檔案？
+//      fs::is_directory(p)       是資料夾？
+//      fs::is_symlink(p)         是 symbolic link？
+//      fs::is_empty(p)           檔案 size==0 或目錄無內容
+//      fs::file_size(p)          檔案 byte 數（對非 regular file 會 throw）
+//      fs::status(p)             整包查 — 回傳 file_status，含 type + perms
+//      fs::last_write_time(p)    最後修改時間（C++20 可直接 << ）
+//
+//  注意：每個函式都有兩個 overload：
+//      f(const path&)            失敗會 throw filesystem_error
+//      f(const path&, error_code& ec)   不 throw，把錯誤寫進 ec
+//
+//  在「不確定路徑是否存在 / 是否有權限」的脈絡用 ec 版本更乾淨。
+//
+//  ┌────────────────────────────────────────────────────────────┐
+//  │ 本檔示範                                                   │
+//  └────────────────────────────────────────────────────────────┘
+//
+//   * Demo 1：先建一個臨時檔，查屬性
+//   * Demo 2：對不存在路徑用 ec 版避免 throw
+//   * Demo 3：file_status 一次查到位
+// =============================================================================
+
+/*
+補充筆記：std::exists_and_status
+  - std::exists_and_status 使用 std::filesystem；path 只代表路徑文字與平台規則，不保證檔案真的存在。
+  - exists/status/is_regular_file/is_directory 會查檔案系統狀態，可能因權限、競態或路徑不存在失敗。
+  - 檔案系統操作有 TOCTOU 問題：先檢查 exists 再操作之間，檔案可能已被別的程式改掉。
+  - remove/remove_all/create_directory/rename/copy 都可能丟 filesystem_error；工作程式要決定使用例外版或 error_code 版。
+  - directory_iterator 不保證順序；若輸出需要穩定順序，收集後自行排序。
+  - path 的字元編碼和平台有關；跨平台程式要避免假設 Windows 與 Unix 路徑分隔和編碼完全相同。
+  - exists(p) 可能因權限或競態得到不完整資訊，工作程式應考慮 error_code overload。
+  - status 和 symlink_status 對符號連結處理不同，掃描工具要先決定是否跟隨連結。
+*/
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <string>
+#include <system_error>
+#include <vector>
+
+namespace fs = std::filesystem;
+
+// ─────────────────────────────────────────────────────────
+// 額外實用工具：安全大小查詢 (safe_file_size)
+//   工作中常見：批次處理檔案前要查大小。要對「不存在 / 不是檔案 / 沒權限」
+//   都優雅處理 — 用 ec 版避免 throw。回傳 -1 表示無法取得。
+// ─────────────────────────────────────────────────────────
+static long long safe_file_size(const fs::path& p) {
+    std::error_code ec;
+    if (!fs::is_regular_file(p, ec) || ec) return -1;
+    auto sz = fs::file_size(p, ec);
+    if (ec) return -1;
+    return static_cast<long long>(sz);
+}
+
+static void demo_practical_safe_size() {
+    std::cout << "[Practical] safe_file_size\n";
+    // 先建一個臨時檔案做測試
+    fs::path tmp{"tmp_safe_size.bin"};
+    {
+        std::ofstream out{tmp};
+        out << "1234567890";                          // 10 bytes
+    }
+    std::vector<fs::path> targets{
+        tmp, "not_existing.bin", "/tmp"  // 第 3 個是目錄，不是 regular file
+    };
+    for (auto& t : targets) {
+        long long sz = safe_file_size(t);
+        std::cout << "  " << t << " size = " << sz
+                  << (sz < 0 ? " (失敗)" : " bytes") << '\n';
+    }
+    fs::remove(tmp);
+}
+
+int main() {
+    fs::path file{"tmp_fs_query.txt"};
+
+    // 先寫一個 35 byte 的小檔
+    {
+        std::ofstream out{file};
+        out << "filesystem query test - 35 bytes!!";   // 35 chars
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // Demo 1：基本查詢
+    // ─────────────────────────────────────────────────────────
+    std::cout << std::boolalpha;
+    std::cout << "[Demo1] exists           = " << fs::exists(file) << '\n';
+    std::cout << "[Demo1] is_regular_file  = " << fs::is_regular_file(file) << '\n';
+    std::cout << "[Demo1] is_directory     = " << fs::is_directory(file) << '\n';
+    std::cout << "[Demo1] file_size        = " << fs::file_size(file) << '\n';
+
+    // ─────────────────────────────────────────────────────────
+    // Demo 2：用 error_code 處理「不存在」
+    // ─────────────────────────────────────────────────────────
+    fs::path nope{"this/does/not/exist"};
+    std::error_code ec;
+    auto sz = fs::file_size(nope, ec);
+    if (ec) {
+        std::cout << "[Demo2] file_size failed: " << ec.message()
+                  << " (got " << sz << ")\n";
+    } else {
+        std::cout << "[Demo2] file_size = " << sz << '\n';
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // Demo 3：status 一次取多項
+    //   status 回傳 file_status，可以 query type() 與 permissions()
+    // ─────────────────────────────────────────────────────────
+    fs::file_status st = fs::status(file);
+    using ft = fs::file_type;
+    const char* typeStr = "?";
+    switch (st.type()) {
+        case ft::regular:   typeStr = "regular";   break;
+        case ft::directory: typeStr = "directory"; break;
+        case ft::symlink:   typeStr = "symlink";   break;
+        case ft::not_found: typeStr = "not_found"; break;
+        default:            typeStr = "other";     break;
+    }
+    std::cout << "[Demo3] type = " << typeStr << '\n';
+
+    // 印 perms（POSIX 三元組 owner / group / other）
+    auto perms = st.permissions();
+    auto bit = [&](fs::perms b, char yes, char no) {
+        return ((perms & b) != fs::perms::none) ? yes : no;
+    };
+    std::cout << "[Demo3] perms = "
+              << bit(fs::perms::owner_read,  'r', '-')
+              << bit(fs::perms::owner_write, 'w', '-')
+              << bit(fs::perms::owner_exec,  'x', '-')
+              << bit(fs::perms::group_read,  'r', '-')
+              << bit(fs::perms::group_write, 'w', '-')
+              << bit(fs::perms::group_exec,  'x', '-')
+              << bit(fs::perms::others_read, 'r', '-')
+              << bit(fs::perms::others_write,'w', '-')
+              << bit(fs::perms::others_exec, 'x', '-')
+              << '\n';
+
+    // 清掉
+    fs::remove(file);
+
+    // ─────────────────────────────────────────────────────────
+    // 課堂知識補充
+    // ─────────────────────────────────────────────────────────
+    //  Q1：throw 版 vs ec 版？
+    //    A：「不存在」是預期可能發生的情況時，用 ec 版比較乾淨。
+    //       「我已經知道一定要存在，否則就是 bug」用 throw 版讓錯誤直接傳出。
+    //
+    //  Q2：file_size 對目錄會怎樣？
+    //    A：throw filesystem_error（或 ec 版設錯誤）。要算「目錄總大小」要
+    //       自己用 recursive_directory_iterator 累加 (見 06)。
+    //
+    //  Q3：last_write_time 怎麼印？
+    //    A：C++20 起 std::format 直接支援 file_time_type；C++17 要自己用
+    //       chrono 換成 system_clock::time_point 再 to_time_t。
+    //
+    demo_practical_safe_size();
+    return 0;
+}

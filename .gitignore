@@ -1,0 +1,58 @@
+# ── macOS / 系統 ──
+**/.DS_Store
+.DS_Store
+Thumbs.db
+
+# ── C/C++ 編譯產物（MSVC）──
+*.exe
+*.obj
+*.ilk
+*.pdb
+*.idb
+*.res
+*.tlog
+*.lib
+*.exp
+*.dll
+vc*.pdb
+
+# ── C/C++ 編譯產物（GCC/Clang/Linux）──
+*.o
+*.out
+*.a
+*.so
+a.out
+
+# ── CUDA ──
+*.ptx
+*.cubin
+*.fatbin
+
+# ── profiling 產出（可能很大）──
+*.ncu-rep
+*.nsys-rep
+*.qdrep
+*.sqlite
+
+# ── 建置目錄 ──
+build/
+bin/
+Debug/
+Release/
+x64/
+
+# ── Python ──
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# ── 編輯器 ──
+*.swp
+.idea/
+
+# ── 大型權重／資料集（絕不進 git）──
+*.safetensors
+*.gguf
+*.pt
+*.pth

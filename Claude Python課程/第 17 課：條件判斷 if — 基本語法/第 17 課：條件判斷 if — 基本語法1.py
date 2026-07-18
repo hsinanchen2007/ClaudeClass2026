@@ -1,0 +1,124 @@
+# if 條件判斷
+# if 是 Python 中的條件判斷語句，用於根據條件的真假來執行不同的程式碼區塊。
+# 基本語法如下：
+age = 20
+
+if age >= 18:
+    print("你已經成年了！")
+# 在這個例子中，我們定義了一個變數 age，然後使用 if 語句來判斷 age 是否大於或等於 18。
+# 如果條件為真（即 age 大於或等於 18），則會執行 print("你已經成年了！") 這行程式碼，輸出 "你已經成年了！"。
+
+age = 15
+
+if age >= 18:
+    print("你已經成年了！")
+
+print("程式繼續執行...")
+# 在這個例子中，當 age 為 15 時，條件 age >= 18 為假，因此 if 區塊內的程式碼不會被執行，輸出將是 "程式繼續執行..."。
+
+
+if True:
+    print("第一行，屬於 if")    # ✅ 縮排 4 格
+    print("第二行，也屬於 if")  # ✅ 縮排 4 格
+print("第三行，不屬於 if")      # 沒有縮排，獨立執行
+# 在這個例子中，第一行和第二行都屬於 if 區塊，因為它們有相同的縮排（4 格）。
+# 第三行沒有縮排，因此不屬於 if 區塊，無論條件是否為真都會執行。
+
+#if age >= 18:
+#print("成年了")  # ❌ IndentationError: expected an indented block
+# 在這個例子中，if 語句後面缺少縮排，導致 Python 無法識別哪一行程式碼屬於 if 區塊，因此會引發 IndentationError。
+
+#if age >= 18:
+#    print("成年了")
+#      print("可以投票")  # ❌ IndentationError: unexpected indent
+# 在這個例子中，第二行 print("可以投票") 的縮排不一致，導致 Python 無法識別程式碼結構，因此會引發 IndentationError。
+
+#if age >= 18     # ❌ SyntaxError: expected ':'
+#    print("成年了")
+# 在這個例子中，if 語句缺少冒號（:），導致 Python 無法識別條件語句的結尾，因此會引發 SyntaxError。
+
+
+score = 85
+
+if score >= 60:
+    print("恭喜及格！")
+
+temperature = 35
+
+if temperature > 30:
+    print("今天很熱，記得多喝水！")
+# 在這兩個例子中，第一個 if 語句判斷 score 是否大於或等於 60，如果條件為真，則輸出 "恭喜及格！"。
+# 第二個 if 語句判斷 temperature 是否大於 30，如果條件為真，則輸出 "今天很熱，記得多喝水！"。
+
+age = 25
+has_id = True
+
+if age >= 18 and has_id:
+    print("可以進入酒吧")
+
+day = "Saturday"
+
+if day == "Saturday" or day == "Sunday":
+    print("今天是週末！")
+# 在這兩個例子中，第一個 if 語句使用 and 運算符來判斷 age 是否大於或等於 18 且 has_id 是否為 True，如果兩個條件都為真，則輸出 "可以進入酒吧"。
+# 第二個 if 語句使用 or 運算符來判斷 day 是否等於 "Saturday" 或 "Sunday"，如果其中一個條件為真，則輸出 "今天是週末！"。
+
+
+password = input("請輸入密碼：")
+
+if password == "python123":
+    print("密碼正確，歡迎進入！")
+# 在這個例子中，我們使用 input() 函數來提示用戶輸入密碼，然後使用 if 語句來判斷輸入的密碼是否等於 "python123"。
+# 如果條件為真，則輸出 "密碼正確，歡迎進入！"。
+
+
+age = int(input("請輸入你的年齡："))
+
+if age >= 18:
+    print(f"你 {age} 歲了，已經成年！")  # 還記得 f-string 嗎？
+# 在這個例子中，我們使用 input() 函數來提示用戶輸入年齡，並使用 int() 函數將輸入的字串轉換為整數。
+# 然後使用 if 語句來判斷 age 是否大於或等於 18，如果條件為真，則使用 f-string 輸出 "你 {age} 歲了，已經成年！"，其中 {age} 會被替換為用戶輸入的年齡值。
+
+
+wallet = int(input("你的錢包有多少錢？"))
+
+if wallet >= 500:
+    print("太棒了！錢夠吃大餐")
+    print(f"你有 {wallet} 元")
+    remaining = wallet - 500
+    print(f"吃完大餐還剩 {remaining} 元")
+# 在這個例子中，我們使用 input() 函數來提示用戶輸入錢包裡的金額，並使用 int() 函數將輸入的字串轉換為整數。
+# 然後使用 if 語句來判斷 wallet 是否大於或等於 500，如果條件為真，則執行多行程式碼：
+# 1. 輸出 "太棒了！錢夠吃大餐"
+# 2. 使用 f-string 輸出 "你有 {wallet} 元"，其中 {wallet} 會被替換為用戶輸入的金額值。
+# 3. 計算剩餘金額 remaining，並使用 f-string 輸出 "吃完大餐還剩 {remaining} 元"，其中 {remaining} 會被替換為計算出的剩餘金額值。
+
+
+name = "信安"
+
+if name:         # 非空字串 → True
+    print(f"你好，{name}！")
+
+money = 0
+
+if money:        # 0 → False，不會執行
+    print("你有錢！")
+
+items = []
+
+if items:        # 空串列 → False，不會執行
+    print("清單有東西")
+# 在這三個例子中，我們使用 if 語句來判斷變數的真值：
+# 1. 在第一個例子中，name 是一個非空字串，因此條件為真，會輸出 "你好，信安！"。
+# 2. 在第二個例子中，money 的值為 0，這被視為 False，因此條件不成立，不會執行 print("你有錢！")。
+# 3. 在第三個例子中，items 是一個空串列，這也被視為 False，因此條件不成立，不會執行 print("清單有東西")。   
+
+
+x = 0
+if x:
+    print("A")
+print("B")
+# 在這個例子中，x 的值為 0，這被視為 False，因此條件不成立，不會執行 print("A")。
+# 無論條件是否為真，print("B") 都會被執行，輸出將是 "B"。   
+
+

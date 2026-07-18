@@ -1,0 +1,148 @@
+// =============================================================================
+//  06_lc_136_single_number.cpp  —  LeetCode 136. Single Number
+// =============================================================================
+//  參考：
+//    - https://en.cppreference.com/w/cpp/language/operator_arithmetic  (XOR 運算)
+//    - https://en.cppreference.com/w/cpp/utility/functional/bit_xor    (std::bit_xor)
+//    - https://leetcode.com/problems/single-number/
+//
+//  ┌────────────────────────────────────────────────────────────┐
+//  │ 題意                                                       │
+//  └────────────────────────────────────────────────────────────┘
+//
+//  輸入：一個整數陣列，每個元素出現「兩次」，恰好有一個元素出現一次。
+//  輸出：那個只出現一次的元素。
+//  限制：要 O(n) 時間、O(1) 空間。
+//
+//  範例：
+//      [2,2,1]         → 1
+//      [4,1,2,1,2]     → 4
+//
+//  ┌────────────────────────────────────────────────────────────┐
+//  │ 思路：XOR 配對消除                                          │
+//  └────────────────────────────────────────────────────────────┘
+//
+//  XOR 的性質：
+//      a ^ a = 0
+//      a ^ 0 = a
+//      ^ 滿足交換律、結合律
+//
+//  把整個陣列 XOR 起來，順序怎麼換都可以。「成對」的元素互相消除為 0，
+//  最後剩下「孤獨」那個 — 即答案。
+//
+//  ┌────────────────────────────────────────────────────────────┐
+//  │ 為什麼這題「精準展示了 XOR 的力量」？                      │
+//  └────────────────────────────────────────────────────────────┘
+//
+//  替代方案：
+//   * unordered_set 統計次數     → O(n) 空間
+//   * 排序後相鄰兩兩比較          → O(n log n) 時間
+//   * 加總計算（題目元素為非負）  → 限制較多
+//
+//  XOR 解法是「O(n) 時間 + O(1) 空間 + 一行程式」的最佳化解。
+//
+// =============================================================================
+
+/*
+補充筆記：single_number
+  - single_number 屬於位元操作；位元運算適合旗標、遮罩、集合狀態、低階資料格式和某些整數技巧。
+  - 位移前要確認位數合法；位移負數或位移量大於等於型別寬度會造成未定義行為。
+  - signed integer 的位元表示和右移行為有細節；做遮罩和位元技巧時通常使用 unsigned 型別較清楚。
+  - x & (x - 1) 可清掉最低位的 1，常用於計算 set bits 或判斷 power of two；但 x=0 要另外處理。
+  - C++20 <bit> 提供 popcount、has_single_bit、rotl、bit_width 等標準工具，能取代許多手寫技巧。
+  - bit_cast 是按位元重新解讀且要求大小相同與 trivially copyable；它不是任意型別轉換。
+  - 這題不需要排序，排序會把 O(n) 題目變成 O(n log n)，也破壞 XOR 解法的重點。
+  - 若題目改成有兩個數只出現一次，單純全體 XOR 只能得到兩者 XOR，還需要用分組 bit 再拆開。
+*/
+#include <cstdint>
+#include <iostream>
+#include <vector>
+
+// 前置宣告：附加範例
+static void demo_lc_89_gray_code();
+static void demo_xor_stream_cipher();
+
+static int singleNumber(const std::vector<int>& nums) {
+    int x = 0;
+    for (int v : nums) x ^= v;
+    return x;
+}
+
+int main() {
+    std::vector<std::vector<int>> cases = {
+        {2, 2, 1},
+        {4, 1, 2, 1, 2},
+        {1},                        // 只有一個元素也對
+        {7, 3, 5, 4, 5, 3, 4},      // 7 是孤獨的
+    };
+    for (auto& c : cases) {
+        std::cout << "single = " << singleNumber(c) << '\n';
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // 課堂知識補充
+    // ─────────────────────────────────────────────────────────
+    //  Q1：如果改成「每個元素出現 3 次，1 個出現 1 次」呢？
+    //    A：那是 LC137。XOR 不夠用了 — 因為 a^a^a = a 不會歸零。要改用
+    //       「位元計數 mod 3」：對每個 bit 統計總共出現幾次，最後 mod 3
+    //       剩下的就是孤獨那個的該位。或用 ones/twos 兩個位元 mask 模擬
+    //       三進位狀態機。
+    //
+    //  Q2：如果有「兩個」元素只出現一次（其它兩兩成對）— LC260？
+    //    A：先把整個陣列 XOR 起來 → 拿到 a^b（兩個答案的 XOR）。從這個結
+    //       果取一個 1 的位置（用 n & -n），按那個位是 1/0 把陣列分成兩
+    //       群、各群分別 XOR — 兩個答案就分開出現了。
+    //
+    //  Q3：std::accumulate 也行：
+    //    A：可以。`std::accumulate(nums.begin(), nums.end(), 0, std::bit_xor<>{});`
+    //       一行解。但手寫迴圈通常更直觀、更好讀。
+    //
+    demo_lc_89_gray_code();
+    demo_xor_stream_cipher();
+    return 0;
+}
+
+// =============================================================================
+//  附加 1：LeetCode 89. Gray Code  // 難度: medium
+// =============================================================================
+//  題意：產生 n 位元的 Gray code 序列，相鄰兩個只差一個 bit，第一個是 0。
+//  經典公式：第 i 個 gray code = i ^ (i >> 1)。
+//  證明：i 和 i+1 在二進位上「進位」會翻幾個 bit，但 i 與 i+1 進位後各自跟自
+//        己右移 1 比較剛好差一個 bit，這就是 gray code 的性質。
+//  XOR 在這裡的角色：把「兩個鄰近的二進位數」對應到「只差一 bit 的序列」。
+// =============================================================================
+static std::vector<int> grayCode(int n) {
+    std::vector<int> ans;
+    int total = 1 << n;
+    ans.reserve(total);
+    for (int i = 0; i < total; ++i) ans.push_back(i ^ (i >> 1));
+    return ans;
+}
+static void demo_lc_89_gray_code() {
+    auto g = grayCode(3);
+    std::cout << "[LC89] gray(3) =";
+    for (int x : g) std::cout << ' ' << x;
+    std::cout << "  (相鄰差一 bit)\n";
+}
+
+// =============================================================================
+//  附加 2：實用範例 — XOR stream cipher（最簡單的加解密）
+// =============================================================================
+//  XOR 還有一個重要性質：(plain ^ key) ^ key = plain，所以同一個 key 既加密
+//  又解密。雖然簡單流密碼用於現代資安不夠，但這展示了 XOR 在工程上的對稱性。
+//  例：把一段 byte buffer 用 key 做 XOR → 同樣呼叫一次再 XOR 回原文。
+// =============================================================================
+static void xorCipher(std::vector<std::uint8_t>& data, std::uint8_t key) {
+    for (auto& b : data) b ^= key;
+}
+static void demo_xor_stream_cipher() {
+    std::vector<std::uint8_t> data{'h','e','l','l','o'};
+    std::uint8_t key = 0x5A;
+    xorCipher(data, key);       // 加密
+    std::cout << "[xor_cipher] encrypted bytes:";
+    for (auto b : data) std::cout << ' ' << static_cast<int>(b);
+    xorCipher(data, key);       // 用同樣 key 解回
+    std::cout << " -> decrypted: ";
+    for (auto b : data) std::cout << static_cast<char>(b);
+    std::cout << '\n';
+}
