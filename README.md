@@ -1,4 +1,4 @@
-# ClaudeClass
+# ClaudeClass2026
 
 Claude 授課的學習筆記與範例程式碼合集。
 

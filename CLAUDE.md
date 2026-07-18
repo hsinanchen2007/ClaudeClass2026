@@ -1,6 +1,9 @@
-﻿# ClaudeClass — C++ / Python / CUDA 學習倉庫
+﻿# ClaudeClass2026 — C++ / Python / CUDA 學習倉庫
 
-> **本倉庫為 2026-07-18 重建的乾淨版**（前身 `ClaudeClass` 因歷史中混入 2838 個編譯產物、`.git` 膨脹到 1.9 GB）。
+> **倉庫**：https://github.com/hsinanchen2007/ClaudeClass2026（public，預設分支 `main`）
+> **本機路徑**：`~/AI/github/ClaudeClass2026`
+> **本倉庫為 2026-07-18 重建的乾淨版**（前身 `ClaudeClass` 因歷史中混入 2838 個編譯產物、`.git` 膨脹到 1.9 GB；舊倉庫暫留 `~/AI/github/ClaudeClass` 當安全網，驗證後才會刪）。
+> ⚠️ 舊 repo 刪除後，本 repo **可能改名回 `ClaudeClass`**——屆時所有路徑引用（含 `~/AI/AI_Course/AI_CUDA/CLAUDE.md`）都要一起更新。
 > 本版**只收原始碼與文件**（`.cpp`/`.py`/`.md`/`.pdf`）；`.exe`/`.obj`/`.pdb`/`.ilk` 等建置產物一律由 `.gitignore` 擋下，**不要提交**。
 
 ## 倉庫結構
