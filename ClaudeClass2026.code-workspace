@@ -1,0 +1,27 @@
+{
+    "folders": [
+        {
+            "name": "ClaudeClass2026",
+            "path": "."
+        }
+    ],
+    "settings": {
+        "files.exclude": {
+            "**/.git*": true
+        },
+        "search.exclude": {
+            "**/.git*": true
+        },
+        "files.watcherExclude": {
+            "**/.git*/**": true
+        },
+        "explorer.excludeGitIgnore": false,
+        "search.useIgnoreFiles": false,
+        "search.useGlobalIgnoreFiles": false,
+        "search.useParentIgnoreFiles": false,
+        "files.associations": {
+            "*.cu": "cuda-cpp",
+            "*.cuh": "cuda-cpp"
+        }
+    }
+}
