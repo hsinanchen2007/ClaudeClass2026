@@ -19,7 +19,7 @@
 | `tools/check_build.sh` | 掃描全部課程或指定一課，稽核 C++/CUDA/Python 並執行每課 `verify.sh` | 否；使用 `/tmp` 後自動清理 |
 | `tools/build.sh` | 安全編譯單一 `.cu/.cpp/.cc/.cxx`，供本機實驗或建立多架構 binary | 是；預設放在該課 `build/`；發布到 GitHub |
 | `tools/sync_lesson.sh` | 比較或發布兩份 Codex 課程內容 | 不負責編譯 |
-| `tools/finish_lesson.sh` | 單課編譯、發布、雙 repo commit 與 GitHub push | 依流程執行 |
+| `tools/finish_lesson.sh` | 驗共用 README、單課編譯、發布、雙 repo commit 與 GitHub push | 依流程執行 |
 
 `build/`、object、fatbin 等可重建產物已由根層 `.gitignore` 排除，不應提交。
 
@@ -210,7 +210,8 @@ chmod 755 verify.sh
 
 ## 7. 正式完成一課
 
-先確認根層 `PROGRESS.md` 已更新，再執行：
+先確認根層 `PROGRESS.md` 與
+`~/AI/github/ClaudeClass2026/README.md` 的 Codex 進度區都已更新，再執行：
 
 ~~~bash
 cd ~/AI/AI_Course/AI_CUDA_Codex
@@ -221,15 +222,22 @@ tools/finish_lesson.sh \
 
 這支工具會：
 
-1. 驗證課名、`NOTE.md`、編譯指定課的來源，並執行專屬 `verify.sh`。
-2. 只把該課發布到
+1. 對照 `PROGRESS.md` 驗證共用 README 的完成數、下一課與該課表格列，並確認
+   Claude 區及 Codex 區外的內容沒有未提交變更。
+2. 驗證課名、`NOTE.md`、編譯指定課的來源，並執行專屬 `verify.sh`。
+3. 只把該課發布到
    `~/AI/github/ClaudeClass2026/Codex AI CUDA課程/`。
-3. 驗證兩份完整 Codex 課程內容一致。
-4. 在本機 repo 提交該課與根層 `PROGRESS.md`；兩個 commit 都以 pathspec 限定。
-5. 在 GitHub repo 只提交該課的 Codex 路徑，並以 Git CLI push/驗證遠端。
+4. 驗證兩份完整 Codex 課程內容一致。
+5. 在本機 repo 提交該課與根層 `PROGRESS.md`；在 GitHub repo 只提交該課的
+   Codex 路徑與根層 `README.md`。兩邊都以 pathspec 和 commit 後 allowlist 限定。
+6. 以 Git CLI push，並驗證遠端 branch 與本地 HEAD 相同。
 
 整個流程不依賴任何編輯器。若只想預演，可加 `--dry-run`；若只想 commit 而
 暫不 push，可加 `--no-push`。
+
+共用 README 不由 `sync_lesson.sh` 鏡像，也不複製進 Codex 課程目錄；它是
+`ClaudeClass2026` 的共同入口。Codex 只能改自己的進度區。交付工具在編譯前與
+stage 後都會檢查區塊邊界，避免夾帶 Claude 或其他共用內容。
 
 更新本指南時只編輯工作區根層主檔，再精確發布，不必手動維護另外兩份，也
 不必鏡像整個課程：
