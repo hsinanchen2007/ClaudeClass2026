@@ -174,7 +174,7 @@ nvcc -std=c++20 -O3 -arch=sm_120 src/gpu_vs_cpu_profile.cu -o profile_5090   # �
 完整程式：[`src/amdahl_gustafson.cpp`](src/amdahl_gustafson.cpp)（純 CPU，不需 GPU）
 
 ```bash
-g++ -std=c++20 -O2 src/amdahl_gustafson.cpp -o amdahl && ./amdahl
+g++ -std=c++20 -O2 src/amdahl_gustafson.cpp -o /tmp/amdahl && /tmp/amdahl
 ```
 
 實際輸出（節錄）：

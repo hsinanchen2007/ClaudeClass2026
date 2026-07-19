@@ -26,7 +26,22 @@ tools/build.sh <檔案.cu>
 
 # 指定輸出檔名
 tools/build.sh <檔案.cu> --native -o /tmp/myprog
+
+# 純 host 程式也可以直接餵給它（會自動改用 g++）
+tools/build.sh <檔案.cpp>
 ```
+
+**輸出跑到哪裡？** 預設是 **`/tmp/cuda_build/<檔名去副檔名>`**，
+**刻意不放在原始碼旁邊**——課程目錄裡不該出現編譯產物（`finish_lesson.sh` 的
+⓿ 執行檔守衛會擋下這種污染）。要放別處就自己給 `-o`。
+
+> 🔴 **這支腳本擋掉的一個真實資料毀損 bug（2026-07-19）**
+> 舊版用 `OUT="${SRC%.cu}"` 推導輸出名，**只會剝掉 `.cu`**。
+> 餵它 `.cpp` 時字串完全沒變，於是實際執行的是
+> `nvcc … amdahl_gustafson.cpp -o amdahl_gustafson.cpp`
+> ——**編譯產物直接蓋掉原始碼**，程式碼永久消失。
+> 現在會剝掉任何副檔名，並在編譯前檢查：輸出 == 輸入 → 中止；
+> 輸出會蓋掉既有原始碼/文件 → 中止；輸出落在課程目錄內 → 大聲警告。
 
 **兩種模式的差別**：
 
@@ -38,9 +53,10 @@ tools/build.sh <檔案.cu> --native -o /tmp/myprog
 > 💡 fatbin 把多個架構的機器碼打包進同一個執行檔，runtime 自動挑對應的那份。
 > 所以**同一個執行檔**在本機（sm_75）與未來桌機（sm_120）都能直接跑，不用重編。
 
-**純 host 程式（`.cpp`）不需要 nvcc**：
+**純 host 程式（`.cpp`）不需要 nvcc**——`build.sh` 會自動偵測副檔名改用 `g++`，
+手動編也可以：
 ```bash
-g++ -std=c++20 -O2 <檔案.cpp> -o <輸出>
+g++ -std=c++20 -O2 <檔案.cpp> -o <輸出>     # ⚠️ 輸出名別跟原始檔同名！
 ```
 
 ---
@@ -197,11 +213,21 @@ cudaDeviceGetAttribute(&khz, cudaDevAttrClockRate, dev);
 
 **③ 編譯產物不要進 git**
 
-`.gitignore` 已涵蓋 `*.o`／`*.exe`／`*.ptx`／`*.cubin`／`*.ncu-rep` 等。
-測試時建議輸出到 `/tmp`：
+`.gitignore` 已涵蓋 `*.o`／`*.exe`／`*.ptx`／`*.cubin`／`*.ncu-rep` 等，
+但**擋不住沒有副檔名的執行檔**（`nvcc -o profile` 這種）——所以另有兩道防線：
+`build.sh` 預設把輸出丟到 `/tmp/cuda_build/`，`finish_lesson.sh` 的 ⓿ 守衛
+會在交付前掃描課程目錄擋下任何漏網的執行檔。
+
+手動編譯時建議明確輸出到 `/tmp`：
 ```bash
 tools/build.sh <檔案.cu> --native -o /tmp/test && /tmp/test
 ```
+
+**④ 🔴 輸出檔名絕不可跟原始檔同名**
+
+`nvcc foo.cpp -o foo.cpp` 會**直接把原始碼換成執行檔**——沒有警告、無法復原。
+舊版 `build.sh` 就因為只剝 `.cu` 而踩過這個坑（2026-07-19 已修，現在會直接拒絕執行）。
+手動下指令時要自己小心，尤其是 `.cpp`／`.c`。
 
 ---
 
