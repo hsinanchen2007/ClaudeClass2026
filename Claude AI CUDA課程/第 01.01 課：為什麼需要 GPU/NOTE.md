@@ -138,6 +138,13 @@ nvcc -std=c++20 -O3 -arch=native src/gpu_vs_cpu_profile.cu -o profile
 ./profile
 ```
 
+**確認未來桌機也能編**（本課程的硬規則：所有程式都要能編到 sm_120）：
+```bash
+nvcc -std=c++20 -O3 -arch=sm_120 src/gpu_vs_cpu_profile.cu -o profile_5090   # ✅ 已驗證通過
+# 或用課程工具一次稽核全部架構：
+../../tools/check_build.sh --lesson "第 01.01 課：為什麼需要 GPU"
+```
+
 ### 3.2 實際輸出（本機 Quadro RTX 4000 / sm_75 / CUDA 13.3）
 
 ```
@@ -211,7 +218,39 @@ g++ -std=c++20 -O2 src/amdahl_gustafson.cpp -o amdahl && ./amdahl
 2. **快取反而更小**（L2 4MB vs L3 16MB）——GPU 不靠 cache 藏延遲，靠**切換 warp**。這是 2.1 那張表最關鍵的一行。
 3. **頻寬差距（13×）比算力差距（6.4×）還大**——所以 GPU 特別適合**記憶體密集**的工作，而深度學習大量的層（LayerNorm、activation、attention 的部分階段）正是 memory-bound。
 
-### 4.1 Machine balance：18.4 FLOP/byte
+### 4.1 未來桌機（RTX 5090）預期值 —— 拿到卡時的對照基準
+
+本課程的程式**已驗證可編譯到 sm_120**（`nvcc -arch=sm_120` 通過，產出真正的 Blackwell SASS），
+所以拿到 5090 後**不用改任何一行**，直接編、直接跑即可。
+
+以官方規格推算，同一支 `gpu_vs_cpu_profile` 在 5090 上應該印出接近這些數字：
+
+| 項目 | 本機 Quadro RTX 4000（sm_75，**實測**） | RTX 5090（sm_120，**預測**） | 倍數 |
+|---|---|---|---|
+| SM 數 | 40 | 170 | 4.3× |
+| FP32 core | 2560（64/SM） | 21760（**128**/SM） | 8.5× |
+| 峰值 FP32 | 7.07 TFLOPS | **~104.9 TFLOPS** | **14.8×** |
+| 記憶體頻寬 | 384 GB/s | **1792 GB/s**（512-bit GDDR7） | 4.7× |
+| **machine balance** | **18.4 FLOP/byte** | **~58.5 FLOP/byte** | **3.2×** |
+| VRAM | 8 GB | 32 GB | 4× |
+
+⚠️ **這一欄是預測值，不是實測**（本機沒有 5090）。取得桌機後請重跑本課程式核對。
+兩個要特別留意的點：
+
+1. **每 SM 的 core 數從 64 變 128** —— 程式裡的 `fp32CoresPerSM()` 已處理這個分支，
+   但這正是「不能假設所有架構都一樣」的例子（課 1.4 會深入 compute capability）。
+2. **GDDR7 的頻寬換算可能對不上**：程式用的公式是 `bus width ÷ 8 × 記憶體時脈 × 2 (DDR)`，
+   而 GDDR7 改用 PAM3 訊號，`cudaDevAttrMemoryClockRate` 回報的語意可能不同。
+   **若算出來與官方 1792 GB/s 有出入，以官方規格為準**，並把這件事當成
+   「規格換算公式會隨世代失效」的實例——這在整個課程會反覆出現。
+
+👉 **machine balance 從 18.4 漲到 58.5，是這張表最重要的一行**：
+新卡的算力成長（14.8×）遠快於頻寬成長（4.7×），
+代表**演算法要餵飽 5090，資料重用率必須比現在高 3 倍**。
+這就是為什麼「越新的 GPU 越吃 kernel 優化功力」——硬體給你更多算力，
+但你得寫得出足夠 compute-intensive 的 kernel 才拿得到（整個 Part 8 的動機）。
+
+### 4.2 Machine balance：18.4 FLOP/byte
 
 這個數字會貫穿整個 Part 8，現在先建立直覺：
 
