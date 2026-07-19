@@ -22,6 +22,7 @@
         "files.associations": {
             "*.cu": "cuda-cpp",
             "*.cuh": "cuda-cpp"
-        }
+        },
+        "editor.fontSize": 16
     }
 }
