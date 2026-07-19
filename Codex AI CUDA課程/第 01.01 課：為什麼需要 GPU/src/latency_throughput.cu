@@ -1,6 +1,7 @@
 #include <cuda_runtime.h>
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <cmath>
 #include <cstddef>
@@ -45,6 +46,17 @@ double elapsed_ms(const std::chrono::steady_clock::time_point start,
     return std::chrono::duration<double, std::milli>(stop - start).count();
 }
 
+void make_memory_observable(const void* address) {
+    // GCC/Clang 的空 asm 不產生指令；memory clobber 只阻止編譯器刪除或跨越
+    // 這個位置搬動前面的陣列寫入，避免 benchmark 被最佳化成假快結果。
+#if defined(__GNUC__) || defined(__clang__)
+    __asm__ __volatile__("" : : "g"(address) : "memory");
+#else
+    (void)address;
+    std::atomic_signal_fence(std::memory_order_seq_cst);
+#endif
+}
+
 struct Result {
     std::size_t elements{};
     double cpu_ms{};
@@ -74,6 +86,7 @@ Result benchmark(std::size_t count) {
         cpu_y = initial_y;  // 重設不列入核心計算時間。
         const auto start = std::chrono::steady_clock::now();
         saxpy_cpu(count, scale, x.data(), cpu_y.data());
+        make_memory_observable(cpu_y.data());
         const auto stop = std::chrono::steady_clock::now();
         best_cpu_ms = std::min(best_cpu_ms, elapsed_ms(start, stop));
     }
