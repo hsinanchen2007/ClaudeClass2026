@@ -22,12 +22,17 @@ Claude 與 Codex 各自獨立授課的學習筆記與範例程式碼合集。
 所有 CUDA 範例都已驗證可編到 **sm_75（本機 Quadro RTX 4000）＋ sm_89（4090）＋ sm_120（5090）**；
 本機只有 sm_75 實體卡，其餘架構**僅保證編得過、執行結果未經驗證**。
 
+<details>
+<summary>展開全部 2 課</summary>
+
 ### Part 1 — GPU 與 CUDA 硬體基礎
 
 | 課號 | 課名 | 完成日 | 這堂課證明了什麼 |
 |---|---|---|---|
 | 1.1 | 第 01.01 課：為什麼需要 GPU | 2026-07-18 | 本機實測 GPU 峰值 **7.07 TFLOPS／384 GB/s／machine balance 18.4 FLOP/byte**；用 Amdahl(10×) vs Gustafson(36864×) 解釋 40960 條執行緒為何用得掉；踩到 CUDA 13.x 移除 `cudaDeviceProp::clockRate` 的真實 API 變更 |
 | 1.2 | 第 01.02 課：GPU 硬體架構總覽 | 2026-07-19 | 用 `%smid` 實測 160 個 block 均勻落在全部 **40 個 SM**；暫存器壓力掃描實測 occupancy 兩個轉折點（128 regs → 50%、255 regs → spill 608 B），驗證 `65536 ÷ 1024 = 64 暫存器/thread` 的資源預算公式 |
+
+</details>
 
 ## `Codex AI CUDA課程/` 進度
 
@@ -38,12 +43,17 @@ Claude 與 Codex 各自獨立授課的學習筆記與範例程式碼合集。
 可攜 CUDA 範例都會編譯驗證 **sm_75（本機 Quadro RTX 4000）＋ sm_89（4090）＋ sm_90（Hopper）＋ sm_120（5090）**；
 本機只有 sm_75 實體卡，其餘架構**僅保證編得過、執行結果未經驗證**。
 
+<details>
+<summary>展開全部 2 課</summary>
+
 ### Part 1 — GPU 與 CUDA 硬體基礎
 
 | 課號 | 課名 | 完成日 | 這堂課證明了什麼 |
 |---|---|---|---|
 | 1.1 | 第 01.01 課：為什麼需要 GPU | 2026-07-18 | 用 Amdahl/Gustafson 定量區分固定與擴張問題；本機 SAXPY 實測顯示大資料的 GPU kernel 最快約為 CPU 的 **12.74×**，但每次跨 PCIe 往返時端到端仍較 CPU 慢，證明 kernel throughput 不等於應用程式加速 |
 | 1.2 | 第 01.02 課：GPU 硬體架構總覽 | 2026-07-19 | 用 Runtime、PTX `%laneid/%smid/%nsmid` 探針驗證本機 **40 SM、32-lane warp、384.064 GB/s 理論頻寬**；160 個 sample blocks 本次觀察涵蓋 40 個 SM、validation PASS，並明確區分一次觀察與 CUDA 規格保證 |
+
+</details>
 
 ## `Claude C++面向對象/` 進度
 
