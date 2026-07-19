@@ -301,7 +301,7 @@ Kernel 會確認：
 在本課目錄：
 
 ```bash
-../../tools/build.sh src/gpu_arch_probe.cu --native \
+../tools/build.sh src/gpu_arch_probe.cu --native \
   -o /tmp/gpu_arch_probe
 
 /tmp/gpu_arch_probe
