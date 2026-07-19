@@ -1,3 +1,8 @@
 {
-    "editor.fontSize": 17
+    "window.zoomLevel": 1,
+    "C_Cpp.default.compilerPath": "/usr/bin/g++-16",
+    "workbench.colorTheme": "Visual Studio 2017 Dark - C++",
+    "git.autofetch": true,
+    "git.confirmSync": false,
+    "editor.fontSize": 18
 }
