@@ -540,12 +540,17 @@
 
 // 快速刪除單一元素（不保持順序）
 template <typename T>
-void fast_erase(std::vector<T>& v, size_t index) {
+bool fast_erase(std::vector<T>& v, size_t index) {
+    // ⚠️ 邊界檢查不可省：v 為空時 v.size() - 1 會 unsigned 環繞成天文數字，
+    //    條件失效後對空 vector 呼叫 pop_back() 是 UB；index 越界時原版也會
+    //    默默刪掉最後一個元素（刪錯東西比直接報錯更難查）。
+    if (index >= v.size()) return false;
     // 把最後一個元素移到要刪除的位置，然後 pop_back
-    if (index < v.size() - 1) {
+    if (index != v.size() - 1) {
         v[index] = std::move(v.back());
     }
     v.pop_back();
+    return true;
 }
 
 int main() {

@@ -176,14 +176,19 @@ int main() {
 //        (進階解法可用 unordered_set 降到 O(n);這裡示範 any_of 語意。)
 void leetcode_2overlap_check() {
     std::vector<int> arr{10, 2, 5, 3};
-    bool ok = std::any_of(arr.begin(), arr.end(), [&](int x){
+    // ⚠️ 踩雷（本檔曾經寫錯）：不可以用 (&x - &arr[0]) 反推索引。
+    //    lambda 的參數是【傳值】的 int x,&x 指向的是 lambda 自己那份【堆疊上的副本】,
+    //    跟 vector 的元素不在同一個 array object 裡 → 兩個不相關指標相減是 UB,
+    //    算出來的「索引」也毫無意義（ASan 的 invalid-pointer-pair 就是在抓這個）。
+    //    要索引就老老實實用索引迴圈。
+    bool ok = false;
+    for (size_t i = 0; i < arr.size() && !ok; ++i) {
+        const int x = arr[i];
         // 對每個 x,在陣列中找「值 == 2*x 且不是同一個位置」
-        size_t this_idx = static_cast<size_t>(&x - &arr[0]);
-        return std::any_of(arr.begin(), arr.end(), [&](int y){
-            size_t other_idx = static_cast<size_t>(&y - &arr[0]);
-            return other_idx != this_idx && y == 2 * x;
-        });
-    });
+        for (size_t j = 0; j < arr.size(); ++j) {
+            if (j != i && arr[j] == 2 * x) { ok = true; break; }
+        }
+    }
     std::cout << "LC1346: " << std::boolalpha << ok << '\n';
 }
 

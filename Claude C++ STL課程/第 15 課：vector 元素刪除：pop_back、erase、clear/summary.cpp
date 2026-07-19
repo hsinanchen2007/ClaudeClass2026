@@ -241,6 +241,10 @@ void demo_erase_remove() {
 void demo_cpp20_erase() {
     std::cout << "\n===== C++20 std::erase / std::erase_if =====" << std::endl;
 
+    // ⚠️ std::erase / std::erase_if 是 C++20 才有的。
+    //    本檔宣稱可用 -std=c++17 編譯，所以用 feature-test macro 分流：
+    //    C++20 以上走新 API，C++17 走等價的 erase-remove 慣用法。
+#if defined(__cpp_lib_erase_if) && __cpp_lib_erase_if >= 202002L
     // std::erase(v, val)：刪除所有等於 val 的元素
     std::vector<int> v1 = {1, 2, 3, 2, 4, 2, 5};
     auto count1 = std::erase(v1, 2);
@@ -254,18 +258,46 @@ void demo_cpp20_erase() {
     std::cout << "刪除了 " << count2 << " 個偶數: ";
     for (int x : v2) std::cout << x << " "; // 1 3 5 7 9
     std::cout << std::endl;
+#else
+    // C++17 等價寫法（這正是 C++20 那兩個函式在標準裡的定義）
+    std::vector<int> v1 = {1, 2, 3, 2, 4, 2, 5};
+    auto it1 = std::remove(v1.begin(), v1.end(), 2);
+    auto count1 = std::distance(it1, v1.end());
+    v1.erase(it1, v1.end());
+    std::cout << "刪除了 " << count1 << " 個 2: ";
+    for (int x : v1) std::cout << x << " ";
+    std::cout << "  (C++17 erase-remove 慣用法)" << std::endl;
+
+    std::vector<int> v2 = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    auto it2 = std::remove_if(v2.begin(), v2.end(), [](int x) { return x % 2 == 0; });
+    auto count2 = std::distance(it2, v2.end());
+    v2.erase(it2, v2.end());
+    std::cout << "刪除了 " << count2 << " 個偶數: ";
+    for (int x : v2) std::cout << x << " ";
+    std::cout << "  (C++17 erase-remove 慣用法)" << std::endl;
+#endif
 }
 
 // ===== 重點九：不保持順序的快速刪除（O(1)）=====
 // 如果不需要保持元素順序，可以用「swap-and-pop」技巧：
 //   把最後一個元素移到要刪除的位置，然後 pop_back
 // 時間複雜度：O(1)，比標準 erase 的 O(n) 快很多
+// ⚠️ 踩雷（原版有兩個真 bug）：
+//    ① v 為空時 v.size() - 1 是 unsigned 環繞 → 變成天文數字，
+//       條件判斷失效，接著對空 vector 呼叫 pop_back() 是 UB。
+//    ② index 越界時原版仍會 pop_back()，等於默默刪掉最後一個元素——
+//       刪錯東西比直接報錯更難查。
+//    所以先做邊界檢查再動手。
 template <typename T>
-void fast_erase(std::vector<T>& v, size_t index) {
-    if (index < v.size() - 1) {
+bool fast_erase(std::vector<T>& v, size_t index) {
+    if (index >= v.size()) {
+        return false;                   // 空 vector 或越界 → 什麼都不做
+    }
+    if (index != v.size() - 1) {        // 不是最後一個才需要搬
         v[index] = std::move(v.back()); // 把最後一個移過來
     }
     v.pop_back(); // 刪除最後一個（現在是我們要刪的位置）
+    return true;
 }
 
 void demo_fast_erase() {

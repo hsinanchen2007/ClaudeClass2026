@@ -48,6 +48,7 @@
 #include <any>
 #include <optional>
 #include <variant>
+#include <cstdint>
 #endif
 
 static void header(const char* title) { std::cout << "\n[" << title << "]\n"; }

@@ -10,7 +10,10 @@ int main() {
     });
     
     // 取得 stop_source
-    std::stop_source& source = jt.get_stop_source();
+    // ⚠️ 更正：get_stop_source() 是【回傳值】,不是回傳 reference,
+    //    寫成 std::stop_source& 會編譯失敗（non-const lvalue ref 綁不到 prvalue）。
+    //    直接用 auto 接就好——stop_source 本身就是共享狀態的把手,複製不影響語意。
+    auto source = jt.get_stop_source();
     
     // 取得 stop_token
     std::stop_token token = jt.get_stop_token();

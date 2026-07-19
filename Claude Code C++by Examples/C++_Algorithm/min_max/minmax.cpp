@@ -37,8 +37,16 @@
 //
 // 兩值版回傳 `pair<const T&, const T&>` — 與 std::min/max 同樣有 dangling 風險。
 //
-//   const auto& p = std::minmax(a, b + 1);    // 不安全!b + 1 暫存值
-//   auto p = std::minmax(a, b + 1);            // 安全
+//   const auto& p = std::minmax(a, b + 1);   // ❌ 危險：b + 1 是暫存值
+//   auto       p = std::minmax(a, b + 1);   // ❌ 一樣危險！auto 只是複製那個
+//                                           //    pair，pair 裡面【仍然是 reference】
+//
+// 正確作法（三選一）：
+//   int t = b + 1;  auto p = std::minmax(a, t);   // ① 兩邊都先變成 lvalue
+//   auto p = std::minmax({a, b + 1});             // ② initializer_list 版回傳 pair<T,T>
+//   int lo = std::min(a, b + 1), hi = std::max(a, b + 1);  // ③ 乾脆別建 pair
+//
+// 本檔下方的範例一律採用上述安全寫法；ASan 的 stack-use-after-scope 就是在抓這個。
 //
 // ┌────────────────────────────────────────────────────────────┐
 // │ 四、minmax vs minmax_element                                │
@@ -96,7 +104,9 @@
 // ============================================================
 int main() {
     // --- 範例 1: 兩值 ---
-    auto p = std::minmax(7, 3);
+    // ⚠️ 這裡【必須】用 initializer_list 版：std::minmax(7, 3) 會回傳
+    //    pair<const int&, const int&>，指向兩個在該行結束就消失的暫存值。
+    auto p = std::minmax({7, 3});   // initializer_list 版 → pair<int, int>，是值不是參考
     std::cout << "minmax(7,3) = (" << p.first << ", " << p.second << ")\n";
 
     // --- 範例 2: initializer_list ---
@@ -146,8 +156,12 @@ void leetcode_539_min_time_difference_concept() {
         auto p = std::minmax(mins[i - 1], mins[i]);
         ans = std::min(ans, p.second - p.first);
     }
-    auto p = std::minmax(mins.front() + 24 * 60, mins.back());
-    ans = std::min(ans, p.second - p.first);
+    // ⚠️ mins.front() + 24 * 60 是暫存值，不能餵給回傳 reference 的兩參數版；
+    //    先存成具名變數（lvalue）再比。
+    const int wrapped = mins.front() + 24 * 60;
+    const int last    = mins.back();
+    auto p2 = std::minmax(wrapped, last);
+    ans = std::min(ans, p2.second - p2.first);
     std::cout << "LC539: min time diff = " << ans << " min\n";
 }
 

@@ -254,7 +254,9 @@ __global__ void reportSM(unsigned int* smIdOut)
    有拿到 block 的 SM 數  ：40 / 40
    每個 SM 拿到的 block 數：min=4  max=4
    前 8 個 SM 的分佈      ：SM0=4 SM1=4 SM2=4 SM3=4 SM4=4 SM5=4 SM6=4 SM7=4
-   → block 不是排隊等一個 SM，而是被撒開；這就是 GPU 的 scale-out 單位。
+   → block 被分散到多個 SM 上執行；SM 就是 GPU 的 scale-out 單位。
+     ⚠️ 但上面的分佈只是【這一次】的觀察——CUDA 不保證 block 與 SM 的
+        對應、順序或均分方式，絕不可寫出依賴特定對應的程式。
 
 ═══ 實驗 B：暫存器用量如何壓低 occupancy（block=256 threads）═══
    每個 SM 共有 65536 個 32-bit 暫存器；每個 thread 用得越多，能常駐的 warp 越少。
@@ -278,11 +280,17 @@ __global__ void reportSM(unsigned int* smIdOut)
 
 ### 3.3 觀察與解讀（這才是本課的重點）
 
-**實驗 A：完美均分 4/4/4…**
-160 個 block 撒到 40 個 SM，每個剛好 4 個。這不是巧合——block 少、資源夠、
-排程器就 round-robin 撒開。**推論**：想吃滿 GPU，grid 的 block 數至少要 ≥ SM 數，
-最好是好幾倍（讓排程器有東西可以填空檔）。開 8 個 block 的 grid，
-就是讓 40 個 SM 裡的 32 個閒著。
+**實驗 A：這一次跑出完美均分 4/4/4…**
+160 個 block 落在 40 個 SM 上，每個剛好 4 個。
+
+> ⚠️ **這是「本次、這支 kernel、這張卡」的一次觀察，不是 CUDA 的保證。**
+> CUDA **不承諾**任何 block→SM 的對應、順序或均分方式；實際分佈受暫存器／shared memory
+> 用量、block 大小、當下 GPU 上其他工作與排程器決定，換個 kernel 或再跑一次都可能不同。
+> **絕不可以寫出依賴特定 block→SM 對應的程式。**
+
+不過可以安全地推論出一件事：**block 是被分散到多個 SM 上執行的**。
+所以想吃滿 GPU，grid 的 block 數至少要 ≥ SM 數，最好是好幾倍（讓排程器有東西填空檔）。
+開 8 個 block 的 grid，就是讓 40 個 SM 裡的 32 個沒事做。
 
 **實驗 B：兩個轉折點，一個比一個嚴重**
 
@@ -377,7 +385,13 @@ GPU：TU104 晶片
 | L2 | **4 MB**（實測） | 待實測 | Ada/Blackwell 大幅加大 |
 | 記憶體 | 8 GB GDDR6 / 256-bit / **384 GB/s**（實測） | 32 GB GDDR7 / 512-bit / ~1792 GB/s（官方規格，待實測） | ~4.7× 頻寬 |
 | Tensor Core | 第 2 代（FP16/INT8/INT4） | 第 5 代（加 FP4） | 課 8.x 會用到 |
-| thread block cluster | ❌ 不支援 | ❌ 不支援（需 sm_90+） | **消費級卡沒有**，別誤信 |
+| thread block cluster | ❌ 不支援 | ✅ **支援**（sm_90+ 皆有） | 門檻是 CC ≥ 9.0，sm_120 也在範圍內 |
+
+> ✅ **cluster 那列是本機實測的**（不是查表）：對同一支帶 `__cluster_dims__(2,1,1)` 的 kernel，
+> `nvcc` 在 **sm_75／sm_89 直接拒絕**（`error: __cluster_dims__ is not supported for this GPU architecture`），
+> 在 **sm_90／sm_100／sm_120 都編得過**。
+> 門檻是 **compute capability ≥ 9.0**——「消費級」不是排除條件，sm_120 是 12.0，當然 ≥ 9.0。
+> （實際的 cluster 大小上限仍需在目標裝置用 occupancy API 查，本機無卡不能代答。）
 
 > **⚠️ 誠實邊界**：5090 那一欄除了「編得過」（本課兩支程式已用
 > `check_build.sh` 對 sm_75/sm_89/sm_120 三架構全部編譯通過）之外，

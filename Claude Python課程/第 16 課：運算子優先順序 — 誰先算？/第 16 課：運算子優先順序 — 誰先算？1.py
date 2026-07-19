@@ -290,6 +290,12 @@ a = b = c = 10
 print(a, b, c)           # 10 10 10
 
 
+# 這一段要示範「同一條運算式的三種寫法」，先把用到的變數都準備好
+# （原版沒定義 d / e / f，直接執行會 NameError）
+d = 50
+e = False
+f = True
+
 # ❌ 需要動腦想優先順序
 result = a + b * c ** 2 > d and not e or f
 

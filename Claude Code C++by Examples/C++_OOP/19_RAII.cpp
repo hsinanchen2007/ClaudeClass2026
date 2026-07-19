@@ -66,6 +66,7 @@
   - RAII 不是只為記憶體而生，而是 C++ 管理任何有限資源的核心設計方法。
 */
 #include <iostream>
+#include <cstdint>
 #include <chrono>      // 時間相關 std::chrono
 #include <fstream>     // 檔案 std::ofstream
 #include <thread>      // std::this_thread::sleep_for
@@ -226,7 +227,10 @@ int main() {
     // LC 1480: Running Sum 解法。我們把 ScopedTimer 套在 in-place 解法外面，
     // 完全不用手動計時、不用煩惱「return 之前忘了 stop」之類的問題。
     {
-        std::vector<int> nums(100000);
+        // ⚠️ 踩雷：0..99999 的前綴和是 4,999,950,000,遠超 INT_MAX(約 21.5 億)。
+        //    用 vector<int> 會 signed overflow（UB）——而且是在跟 RAII 完全無關的
+        //    地方爆掉,最難查。改用 int64_t。
+        std::vector<std::int64_t> nums(100000);
         for (int i = 0; i < 100000; ++i) nums[i] = i;
         ScopedTimer t("LC1480 RunningSum");
         for (size_t i = 1; i < nums.size(); ++i) nums[i] += nums[i - 1];

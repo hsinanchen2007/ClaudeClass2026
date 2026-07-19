@@ -119,15 +119,28 @@ public:
     }
 };
 
+// ⚠️ 重要更正（原版寫錯的地方）：
+//    透過「非 virtual 解構子的父類別指標」delete 衍生物件，標準規定是
+//    **undefined behavior**——不是「保證只呼叫 ~BadBase()、因此洩漏」。
+//    洩漏只是其中一種【可能觀察到】的結果；實務上 ASan 會直接報
+//    new-delete-type-mismatch 並中止程式，也可能發生更糟的事。
+//
+//    所以這段 UB 預設【不執行】，避免一般 ./example 就踩進未定義行為。
+//    想親眼看它爆掉，明確打開它：
+//        g++ -std=c++17 -DDEMONSTRATE_UB -fsanitize=address 18_VirtualDestructor.cpp
 int main() {
     std::cout << "===== 反例：父類別解構子非 virtual =====" << std::endl;
+#ifdef DEMONSTRATE_UB
     {
         BadBase* p = new BadDerived;
-        // 透過父類別指標 delete → 因為解構子非 virtual，
-        // 只會呼叫 ~BadBase()，~BadDerived() 不會跑 → big_ 沒被 delete[] → 洩漏
-        delete p;
-        std::cout << "(注意上面看不到 ~BadDerived()，記憶體洩漏！)\n";
+        delete p;          // ← UB！只在 -DDEMONSTRATE_UB 時才會跑到這裡
+        std::cout << "(如果你看得到這行，代表這次「剛好」沒當掉——UB 不保證任何事)\n";
     }
+#else
+    std::cout << "  (這段是 UB，預設不執行；用 -DDEMONSTRATE_UB 重編可親眼看它被\n"
+                 "   AddressSanitizer 抓成 new-delete-type-mismatch)\n";
+    std::cout << "  重點：解構子非 virtual 時，用父類別指標 delete 衍生物件 = 未定義行為。\n";
+#endif
 
     std::cout << "===== 好範例：父類別解構子為 virtual =====" << std::endl;
     {

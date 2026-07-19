@@ -902,6 +902,10 @@ else:
 # ============================================================
 
 # 用 if-elif 反向排除
+#（這段是獨立示範，先給定條件變數，否則 NameError）
+has_ticket = True
+height = 150
+
 if not has_ticket:
     print("請購票")
 elif age < 12:

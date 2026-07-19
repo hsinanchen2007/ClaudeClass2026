@@ -169,10 +169,18 @@ C++_Algorithm/
 
 ### 一次驗證所有檔案
 ```bash
-cd /home/hsinan/C++_Algorithm
-for f in $(find . -name "*.cpp"); do
-  g++ -std=c++17 -Wall "$f" -o /tmp/_t && /tmp/_t > /dev/null \
-    && echo "OK: $f" || echo "FAIL: $f"
+# 從本檔所在位置推導根目錄，不要硬編絕對路徑（原版寫死 /home/hsinan/C++_Algorithm，
+# 那個路徑並不存在）。find -print0 + read -d '' 才能正確處理含空白/換行的檔名。
+cd "$(dirname "${BASH_SOURCE[0]:-$0}")" || exit 1
+out=$(mktemp -d)
+trap 'rm -rf "$out"' EXIT
+find . -name "*.cpp" -print0 |
+while IFS= read -r -d '' f; do
+  if g++ -std=c++17 -Wall "$f" -o "$out/_t" 2>/dev/null && "$out/_t" >/dev/null 2>&1; then
+    echo "OK:   $f"
+  else
+    echo "FAIL: $f"
+  fi
 done
 ```
 

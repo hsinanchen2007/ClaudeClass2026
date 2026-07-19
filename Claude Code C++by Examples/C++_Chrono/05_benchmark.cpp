@@ -184,7 +184,10 @@ static void demo_throughput_per_second() {
     constexpr int N = 500'000;
     auto us = measure([] {
         long long s = 0;
-        for (int i = 0; i < N; ++i) s += i * i;
+        // ⚠️ 踩雷：寫成 s += i * i 會先用 int 相乘,i = 46341 就溢位（UB）,
+        //    之後才加進 long long 已經太遲——benchmark 數字也跟著失真。
+        //    先把其中一個運算元提升成 long long。
+        for (int i = 0; i < N; ++i) s += 1LL * i * i;
         volatile long long sink = s; (void)sink;
     });
     double sec = us.count() / 1'000'000.0;

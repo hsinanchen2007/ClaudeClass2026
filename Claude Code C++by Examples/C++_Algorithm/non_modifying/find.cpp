@@ -206,10 +206,13 @@ void leetcode_1346_check_double() {
     for (size_t j = 0; j < arr.size() && !found; ++j) {
         int target = 2 * arr[j];
         // 在整個陣列中找「值等於 target 且位置不是 j」的元素
+        // ⚠️ 踩雷（本檔曾經寫錯）：不可以用 (&v - &arr[0]) 反推索引——
+        //    lambda 參數 int v 是【副本】,住在堆疊上,與 vector 的堆積緩衝區
+        //    不屬於同一個 array object,相減是 UB（ASan: invalid-pointer-pair）。
+        //    正解：對 iterator 取距離,而不是對「參數的位址」動手腳。
         auto it = std::find_if(arr.begin(), arr.end(),
-            [&](int v){
-                // 透過 (&v - &arr[0]) 取得索引,排除「同一個位置」
-                size_t idx = static_cast<size_t>(&v - &arr[0]);
+            [&](const int& v){
+                const size_t idx = static_cast<size_t>(&v - arr.data());
                 return v == target && idx != j;
             });
         if (it != arr.end()) found = true;

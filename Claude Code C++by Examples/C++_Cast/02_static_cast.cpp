@@ -77,9 +77,15 @@ int main() {
     std::cout << "[Demo1] double 3.9 -> int " << i << '\n';
 
     long long big = 5'000'000'000LL;
-    int chopped = static_cast<int>(big);             // overflow → 結果未定義（implementation-defined）
+    // 術語更正（原版把三個層級混為一談）：
+    //   超出目標型別範圍的【整數轉換】不是 undefined behavior。
+    //   ・C++20 之前：implementation-defined（實作定義，編譯器要說明自己怎麼做）
+    //   ・C++20 起  ：完全 well-defined —— 標準強制二補數，行為就是模數環繞
+    //   本機實測 5'000'000'000 → 705032704，正好是 5e9 - 2^32，就是模數環繞。
+    int chopped = static_cast<int>(big);
     std::cout << "[Demo1] truncate 5e9 -> int " << chopped
-              << " (注意：超出 int 範圍，未定義行為的高風險區)\n";
+              << " (超出 int 範圍：C++20 起是定義良好的模數環繞，不是 UB；\n"
+                 "          但『數值被無聲截斷』依然是 bug 溫床)\n";
 
     // ─────────────────────────────────────────────────────────
     // Demo 2：上轉型 vs 下轉型
@@ -92,10 +98,20 @@ int main() {
     Dog* down_ok = static_cast<Dog*>(up);
     down_ok->say();
 
+    // ⚠️ 把「實際上是 Dog」的物件強轉成 Cat*：編譯通過，但轉型本身就不滿足
+    //    下轉型的前置條件 → undefined behavior（UBSan 會報 downcast of address ...
+    //    which does not point to an object of type 'Cat'）。
+    //    預設【不執行】，免得一般 ./example 就在跑 UB；要看就明確打開：
+    //        g++ -std=c++17 -DDEMONSTRATE_UB -fsanitize=undefined 02_static_cast.cpp
+#ifdef DEMONSTRATE_UB
     Animal* mystery = &dog;
-    Cat* down_bad = static_cast<Cat*>(mystery);      // ⚠️ 編譯通過，runtime 是 UB
+    Cat* down_bad = static_cast<Cat*>(mystery);
     (void)down_bad;
     std::cout << "[Demo2] static_cast 對 mystery 強轉成 Cat — 編譯過、runtime UB\n";
+#else
+    std::cout << "[Demo2] (錯誤下轉型 Dog→Cat 是 UB，預設不執行；\n"
+                 "        用 -DDEMONSTRATE_UB -fsanitize=undefined 可看 UBSan 抓到它)\n";
+#endif
     // 真正安全要用 dynamic_cast（見 03 號檔）
 
     // ─────────────────────────────────────────────────────────

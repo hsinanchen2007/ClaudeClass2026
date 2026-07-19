@@ -23,10 +23,14 @@
 ================================================================================
 */
 
-// 註：某些 IDE/clangd 設定不會以 C++17 解析，導致 std::filesystem 被判定不可用。
-// 為了讓「靜態分析」也能正常理解，本檔採用 experimental::filesystem。
-// 在多數 C++17 工具鏈上 experimental::filesystem 仍可用；若你要強制使用 std::filesystem，
-// 可自行把下面 include/namespace 改成 <filesystem> / std::filesystem。
+// ⚠️ 本檔曾為了「讓 clangd 靜態分析看得懂」而改用 <experimental/filesystem>，
+//    結果反而製造出文件與實作不一致的問題：
+//      ・標題與編譯命令都寫 C++17 <filesystem>
+//      ・實作卻是 experimental 版
+//      ・而 experimental::filesystem 在 GCC/libstdc++ 上【需要額外連結 -lstdc++fs】，
+//        所以文件給的 g++ -std=c++17 ... 命令會 link 失敗（undefined reference）
+//    正解是直接用標準的 <filesystem>：GCC 9+ / C++17 起不需要任何額外連結旗標。
+//    （若 IDE 仍判定不可用，那是 IDE 的 C++ 標準設定要調，不該遷就它改壞程式碼。）
 #ifndef _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
 #define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
 #endif
@@ -43,8 +47,8 @@
   - C++_Filesystem/C++_Filesystem summary 的複習方式是把 API 依用途分組，再比較輸入條件、輸出語意、失敗狀態和複雜度。
   - 初學複習 summary 時，不要只背函式名稱；要能說出何時該用、何時不該用、和相近工具差在哪裡。
 */
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
+#include <filesystem>
+namespace fs = std::filesystem;
 #include <fstream>
 #include <iostream>
 #include <string>

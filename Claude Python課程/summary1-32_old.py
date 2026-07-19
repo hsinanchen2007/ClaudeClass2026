@@ -154,6 +154,7 @@ else:
 # ★ 多個獨立 if → 每個都判斷；if-elif → 命中就停
 
 # 用 in 多值匹配
+month = 4          # 補上示範用的值（原版未定義，執行到這裡會 NameError）
 if month in [3, 4, 5]:
     print("春天")
 

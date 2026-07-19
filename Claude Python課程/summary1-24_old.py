@@ -473,6 +473,8 @@ else:
 
 # ── 12.6 ★ 扁平化技巧（避免巢狀太深） ──
 # 用 if-elif 反向排除不符合的條件
+has_ticket = True  # 補上示範用的值（原版未定義，執行到這裡會 NameError）
+height = 150
 if not has_ticket:
     print("請購票")
 elif age < 12:

@@ -152,7 +152,9 @@ int main()
     std::printf("   前 8 個 SM 的分佈      ：");
     for (int i = 0; i < std::min(8, p.multiProcessorCount); ++i)
         std::printf("SM%d=%d ", i, hist[i]);
-    std::printf("\n   → block 不是排隊等一個 SM，而是被撒開；這就是 GPU 的 scale-out 單位。\n\n");
+    std::printf("\n   → block 被分散到多個 SM 上執行；SM 就是 GPU 的 scale-out 單位。\n");
+    std::printf("     ⚠️ 但上面的分佈只是【這一次】的觀察——CUDA 不保證 block 與 SM 的\n");
+    std::printf("        對應、順序或均分方式，絕不可寫出依賴特定對應的程式。\n\n");
     CUDA_CHECK(cudaFree(dSmId));
 
     // ═══ 實驗 B：暫存器壓力 → occupancy ═════════════════════
