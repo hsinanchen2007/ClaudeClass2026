@@ -31,7 +31,7 @@ tools/build.sh <檔案.cu> --native -o /tmp/myprog
 tools/build.sh <檔案.cpp>
 ```
 
-**輸出跑到哪裡？** 預設是 **`/tmp/cuda_build/<檔名去副檔名>`**，
+**輸出跑到哪裡？** 預設是 **`${TMPDIR:-/tmp}/cuda_build/<檔名去副檔名>`**（一般就是 `/tmp/cuda_build/`），
 **刻意不放在原始碼旁邊**——課程目錄裡不該出現編譯產物（`finish_lesson.sh` 的
 ⓿ 執行檔守衛會擋下這種污染）。要放別處就自己給 `-o`。
 
@@ -125,7 +125,7 @@ tools/sync_lesson.sh --publish "<課別>" -n  # 先預覽
 
 ## 四、完整交付：`tools/finish_lesson.sh`
 
-**上完一課用這支**，它把 6 個步驟串起來，任一步失敗就中止並指出位置。
+**上完一課用這支**，它把 8 個步驟串起來，任一步失敗就中止並指出位置。
 
 ```bash
 tools/finish_lesson.sh --lesson "第 01.01 課：為什麼需要 GPU" -m "<commit 訊息>"
@@ -135,13 +135,18 @@ tools/finish_lesson.sh --lesson "<課別>" --dry-run    # 先走一遍不 commit
 流程：
 
 ```
-① 編譯稽核（sm_75/89/120 全過）      ← 呼叫 check_build.sh
-② 發佈到原始基準（雙寫）             ← 呼叫 sync_lesson.sh --publish
-③ 雙寫驗證（逐位元組）
-④ 兩個 repo 各自 commit
-⑤ push 到 GitHub
-⑥ 驗證 push 真的成功（比對本地 HEAD 與 origin/main）
+⓿  執行檔守衛（課程目錄不可有編譯產物）
+⓿′ README 索引檢查（ClaudeClass2026/README.md 已列入本課、數字對得上）
+①  編譯稽核（sm_75/89/120 全過）      ← 呼叫 check_build.sh
+②  發佈到原始基準（雙寫）             ← 呼叫 sync_lesson.sh --publish
+③  雙寫驗證（逐位元組）
+④  兩個 repo 各自 commit（基準 repo 只加自己的路徑，不掃別人未提交的變更）
+⑤  push 到 GitHub
+⑥  驗證 push 真的成功（比對本地 HEAD 與 origin/main）
 ```
+
+**⓿ 與 ⓿′ 為什麼排在最前面**：② 的 rsync 一跑，課程目錄就已經被複製進基準 repo 了。
+守衛若排在 commit 之前才擋，污染其實**早就發生**——這個坑實際踩過兩次。
 
 **⑥ 是關鍵**：不是「push 指令沒報錯」就算數，而是實際確認 GitHub 上真的更新了。
 這樣**不需要開 VS Code/Cursor**，新課就會自動出現在 GitHub 上。
