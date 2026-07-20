@@ -126,6 +126,32 @@
   - 演算法若只需要 input iterator，就表示它不會多次走訪同一元素。
   - 不要假設 input iterator 可複製後各自獨立前進；stream iterator 複製後仍共享同一輸入來源。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】InputIterator
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. InputIterator 有什麼限制？為什麼說它是 single-pass？
+//     答：只保證「讀一次、往前走一次」。iterator 一旦遞增，先前取得的值與副本就不保證仍
+//         有效，所以同一個序列不能走第二遍。典型例子是 istream_iterator——資料從 stream
+//         取出後就消耗掉了，無法回頭。
+//     追問：那 std::find 對 InputIterator 可以用嗎？（可以，它只走一遍；但 std::sort 不行，
+//         排序需要 random access）
+//
+// 🔥 Q2. Input 和 Forward iterator 的關鍵差別是什麼？
+//     答：multi-pass guarantee。Forward 可以複製一份 iterator，兩份各自走訪會得到相同的
+//         序列，也能記住某個位置稍後再回來用；Input 沒有這個保證，複製出來的副本在原
+//         iterator 遞增後即失去意義。可讀寫與否是次要差別，multi-pass 才是分界線。
+//     追問：哪些演算法需要 multi-pass？（任何需要走兩遍或回頭比對的，例如
+//         std::adjacent_find、std::search、std::unique）
+//
+// ⚠️ 陷阱. InputIterator 的 it++ 回傳值可以直接拿來用嗎？
+//     答：不保證。InputIterator 的 post-increment 只要求回傳可解參考一次的東西，標準並未
+//         要求它像 forward iterator 那樣回傳一個功能完整的 iterator 副本。
+//     為什麼會錯：大家習慣了 vector 的 iterator（random access）什麼都能做，就以為
+//         *it++ 這類寫法在任何 iterator 上都同樣安全。對 input iterator 應該把它當成
+//         「一次性讀取」看待。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <iterator>
 #include <sstream>

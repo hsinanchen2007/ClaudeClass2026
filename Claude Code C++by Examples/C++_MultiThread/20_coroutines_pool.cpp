@@ -170,6 +170,34 @@
   - 教學版 coroutine type 常省略 cancellation、exception propagation、backpressure；工作程式應使用成熟框架或完整處理這些邊界。
 */
 
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】C++20 coroutine 與 thread pool 的結合
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. Coroutine 與 thread 差在哪？為什麼 IO-bound 場景特別適合 coroutine？
+//     答：C++20 coroutine 是「無堆疊（stackless）的可暫停函式」：co_await 時把需要
+//         保存的狀態存到 coroutine frame，交還控制權，不佔用作業系統執行緒。因此一個
+//         thread 可以承載成千上萬個 coroutine，遠優於 thread-per-request（每個 thread
+//         都要一整塊 stack，且 context switch 要進核心）。CPU-bound 則沒有這個優勢。
+//     追問：coroutine 本身提供並行嗎？（不提供。它只提供「暫停與恢復」，並行仍要靠
+//           thread pool 之類的執行器）
+//
+// 🔥 Q2. Coroutine 如何被排到 thread pool 上執行？
+//     答：透過自訂 awaiter：在 await_suspend(handle) 裡把 coroutine handle 丟進 pool
+//         的任務佇列，立刻返回；pool 的 worker 取出後呼叫 handle.resume()，該
+//         coroutine 就在 worker thread 上從 co_await 之後繼續執行。這讓「同一個函式」
+//         的前半段在呼叫端、後半段在 pool 上跑。
+//     追問：誰負責銷毀 coroutine frame？（由 handle 的擁有者決定，通常包在 task 型別
+//           的 RAII 裡；漏了就是記憶體洩漏，這是手寫 coroutine 最常見的錯誤）
+//
+// ⚠️ 陷阱. 在 coroutine 裡持有 lock_guard 然後 co_await，會發生什麼？
+//     答：嚴重 bug。恢復之後的程式碼可能在「不同的 thread」上執行，於是解鎖會發生在
+//         非上鎖者的執行緒——對 std::mutex 而言，由非擁有者 unlock 是 UB。而且在暫停
+//         期間鎖一直被持有，任何依賴它的人全部被卡住。規則：絕不讓鎖跨越 suspend point。
+//     為什麼會錯：程式碼「長得像同步程式碼」正是 coroutine 的賣點，於是大家沿用同步
+//         程式的直覺，忘了 co_await 之後執行緒身分可能已經換人。同理，thread_local
+//         也不能假設在 co_await 前後是同一份。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <coroutine>
 #include <iostream>
 #include <thread>

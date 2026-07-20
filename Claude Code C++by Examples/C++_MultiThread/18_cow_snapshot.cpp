@@ -176,6 +176,36 @@
   - thread 生命週期要明確 join 或 detach；std::jthread 以 RAII 方式在解構時 request_stop 並 join，較不容易漏掉。
   - 效能問題如 false sharing、contention、過度建立 thread，通常在正確性之後才調整；先寫對，再量測。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】Copy-on-Write 快照與 shared_ptr 的執行緒安全
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. CoW 快照如何做到讀端完全無鎖？代價是什麼？
+//     答：資料以不可變物件持有，讀者透過一次原子載入取得「當下快照」的 shared_ptr，
+//         之後完全不需要任何鎖，因為那份資料永不被修改。寫者則是「複製一份 → 修改
+//         副本 → 原子換掉指標」。舊快照由引用計數自動回收，最後一個讀者離開時才釋放。
+//         代價：每次寫都要整份複製，寫入昂貴、記憶體峰值為兩份，只適合讀遠多於寫。
+//     追問：與 RCU 差在哪？（RCU 用 grace period 而非引用計數回收，讀端更便宜，但
+//           回收較延遲）
+//
+// 🔥 Q2. std::shared_ptr 是 thread-safe 的嗎？
+//     答：要分三層。控制區塊的引用計數是 thread-safe 的（原子增減），所以「多個 thread
+//         各自持有指向同一物件的 shared_ptr 副本並各自複製／解構」是安全的。但
+//         shared_ptr 物件「本身」不是：多個 thread 對同一個 shared_ptr 實體並行讀寫
+//         （一個 reset、一個 read）仍是 data race。而被指向的物件完全不受保護。C++20
+//         提供 std::atomic<std::shared_ptr<T>>，取代已棄用的 atomic_load/store 自由函式。
+//     追問：引用計數為何遞增可以 relaxed，遞減卻需要 acq_rel？（遞增只需原子性；
+//           遞減到 0 的那個 thread 必須看見其他 thread 對物件的所有寫入，才能安全解構）
+//
+// ⚠️ 陷阱. 用了 std::atomic<std::shared_ptr<T>> 就是 lock-free 的無鎖讀了嗎？
+//     答：不一定。它是否 lock-free 取決於實作——實務上常見的做法是在內部用鎖把
+//         shared_ptr 的原子操作串成序列，因此高並行讀取下可能反而輸給 shared_mutex。
+//         應該用 is_lock_free() 查詢，並且實測比較，不要憑「概念上無鎖」下結論。
+//     為什麼會錯：把「介面是 atomic」等同於「實作是 lock-free」。標準只保證操作的
+//         原子性，是否用鎖實作是 implementation-defined；std::atomic_flag 才是標準
+//         保證永遠 lock-free 的唯一型別。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <thread>
 #include <vector>

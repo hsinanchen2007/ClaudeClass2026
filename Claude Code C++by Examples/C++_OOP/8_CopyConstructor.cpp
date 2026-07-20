@@ -72,6 +72,46 @@
   - 含有 std::unique_ptr 的類別預設不可複製，這是所有權語意的保護；若要複製，必須明確定義要深拷貝什麼。
   - 寫 copy constructor 時也要一起檢查 copy assignment 和 destructor，這就是 Rule of Three 的來源。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】複製建構子（Copy Constructor）
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. copy constructor 與 copy assignment 何時各自被呼叫？
+//     答：copy constructor 用在「尚未存在的物件由既有物件初始化」（`T a = b;`、
+//     `T a(b);`、傳值傳參與傳值回傳）；copy assignment 用在「兩個物件都已存在」
+//     （`a = b;`）。差別在於後者必須先處理掉自己原本持有的資源。
+//     追問：`T a = b;` 是 copy construct 還是 assign？（copy construct — 有 `=` 不代表
+//     呼叫 operator=，關鍵是物件是不是在這一行才誕生）
+//
+// 🔥 Q2. 淺拷貝與深拷貝的差別？
+//     答：編譯器產生的是 memberwise copy — 對裸指標成員只複製指標值，兩個物件於是指向
+//     同一塊記憶體：解構時 double free、改一個會影響另一個。深拷貝要自己配置新記憶體並
+//     複製內容。若成員都是 std::string / std::vector / smart pointer，預設的 memberwise
+//     copy 本身就已經是深拷貝了（Rule of Zero）。
+//     追問：std::string 是深拷貝嗎？（是；C++11 起標準已禁止 COW 實作）
+//
+// 🔥 Q3. Rule of Three / Five / Zero 是什麼？和深拷貝有什麼關係？
+//     答：只要你需要自訂 destructor、copy constructor、copy assignment 其中任一個，
+//     通常三個都要自訂 — 因為那代表你在管理裸資源，預設的淺拷貝必定是錯的（Rule of
+//     Three）。C++11 後再加上 move constructor 與 move assignment 共五個（Rule of
+//     Five）。Rule of Zero 是最佳實踐：把資源封裝進專責型別，自己一個特殊成員都不寫。
+//     追問：為什麼寫了 destructor 就「一定要」補 move？（使用者宣告 destructor 會抑制
+//     隱式 move constructor / move assignment 的產生，類別會靜默退化成 copy；
+//     copy 雖然仍會產生，但標準已把這種情況標記為 deprecated）
+//
+// Q4. 把 Derived 物件傳給吃 `Base`（by value）的函式會發生什麼？
+//     答：object slicing — 呼叫到的是 `Base::Base(const Base&)`，它只認得 base
+//     subobject，於是 derived 的成員與多型行為全被切掉，得到一個純粹的 Base 物件。
+//     避免方式：多型型別一律用 pointer 或 reference 傳遞；或把 base 的 copy 設成
+//     protected / deleted；或讓 base 成為 abstract class。
+//
+// ⚠️ 陷阱. copy constructor 的參數可以用傳值嗎？
+//     答：不行 — 標準規定「第一個參數是 X 本身、且其餘參數都有預設值」的建構子宣告是
+//     ill-formed，編譯器會直接報錯。常聽到的「會造成無窮遞迴」是幫助理解的直覺說法，
+//     實際上它在編譯期就被擋下來，根本執行不到。
+//     為什麼會錯：以為那只是一條效能建議，其實是文法層級的禁止。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <cstring>     // strlen, strcpy
 #include <vector>

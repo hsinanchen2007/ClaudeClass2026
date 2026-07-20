@@ -39,6 +39,29 @@
   - forward_list 的 iterator 是 forward iterator，因此不能往回走，也不能隨機跳。
   - 需要多次掃描但不需倒退的演算法，可把需求降到 forward iterator。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】ForwardIterator
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. ForwardIterator 比 InputIterator 多了什麼保證？
+//     答：multi-pass guarantee——可以複製 iterator，兩份各自往前走會得到相同的序列，也能
+//         先記住一個位置、之後再回來解參考。此外 forward iterator 要求 default
+//         constructible，且 *it 回傳真正的 reference（T& 或 const T&），不是暫存值。
+//     追問：這個保證讓哪些演算法成為可能？（需要走兩遍或回頭比對的，如 std::search、
+//         std::adjacent_find、std::unique）
+//
+// 🔥 Q2. 哪些標準容器的 iterator 只到 forward 這一級？為什麼？
+//     答：forward_list 和所有 unordered_* 容器。原因是底層都是 singly linked list：節點
+//         只有 next 指標，沒有 prev，天生無法反向走訪，所以沒有 operator--，也就沒有
+//         rbegin() / rend()。
+//     追問：那 std::advance(it, -1) 對 unordered_map 的 iterator 可以嗎？（不行，category
+//         不符）／std::reverse 可以用嗎？（不行，它需要 bidirectional）
+//
+// Q3. Forward iterator 一定是唯讀的嗎？
+//     答：不是。forward iterator 分 mutable 與 constant 兩種：前者 *it 回傳 T&，可以寫；
+//         後者回傳 const T&。set 的 iterator 是後者（改了 key 會破壞排序不變式）。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <forward_list>
 #include <iterator>

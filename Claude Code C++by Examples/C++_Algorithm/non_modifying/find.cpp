@@ -119,6 +119,37 @@
   - move algorithm 會把元素搬到目的地，來源仍有效但值可能改變；後續只能重新指定或安全銷毀。
   - shuffle/sample 需要亂數引擎；不要每次呼叫都用同一個固定種子，除非你刻意要可重現測試結果。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::find / std::find_if / std::find_if_not
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. std::find 和 std::binary_search 差在哪?什麼時候用哪個?
+//     答:find 是線性搜尋 O(n),對任何 input iterator 都適用,不要求排序;
+//         binary_search 是二分搜尋 O(log n) 次比較,但要求區間已依同一準則排序,
+//         而且只回傳 bool — 要位置得改用 lower_bound。
+//         資料未排序時,為了用 binary_search 而先排序 O(n log n) 通常不划算,
+//         除非同一份資料要查詢很多次。
+//     追問:lower_bound 找不到時回傳什麼?(第一個大於 v 的位置或 last;
+//           回傳值 != last 不代表找到,必須再檢查 *it == v)
+//
+// 🔥 Q2. std::find 找不到時回傳什麼?
+//     答:回傳 last(也就是 end()),不是 nullptr 也不是 -1。
+//         所以一定要先 if (it != v.end()) 才能解參考,否則是未定義行為。
+//     追問:那 std::string::find 呢?(回傳 std::string::npos,是 size_type 的最大值 —
+//           兩者是完全不同的 API,別把 npos 的習慣套到 std::find 上)
+//
+// ⚠️ 陷阱. 對 std::set 為什麼不該用 std::find?
+//     答:因為通用演算法版本會退化。std::find 是線性 O(n),
+//         而 set::find() 成員函式沿紅黑樹下降是 O(log n)。
+//         同理 std::lower_bound 雖然比較次數是 O(log n),但 set 的 iterator 只是
+//         bidirectional,每次「跳到中點」都得一步步走,iterator 前進總次數是 O(n);
+//         set::lower_bound() 成員版才是真正的 O(log n)。
+//         通則:關聯容器一律優先用同名的成員函式。
+//     為什麼會錯:多數人腦中的模型是「STL 演算法是通用的,套在哪個容器上效能都一樣」。
+//         實際上演算法只看得到 iterator category,看不到容器內部的樹或雜湊結構,
+//         因此無法利用它;只有成員函式才知道自己底層長什麼樣。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <iostream>
 #include <vector>

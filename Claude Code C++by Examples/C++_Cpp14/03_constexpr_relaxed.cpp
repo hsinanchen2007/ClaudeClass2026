@@ -60,6 +60,47 @@
   - C++14 放寬 constexpr 函式限制，允許區域變數、迴圈和多個 return。
   - 即使 constexpr 函式可寫得像一般函式，仍要避免依賴執行期才有的狀態。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】C++14 放寬的 constexpr（最能區分「背過」與「真懂」的題）
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. C++14 的 constexpr 相對 C++11 放寬了什麼？
+//     答：C++11 的 constexpr 函式本體實質只能是「單一 return 陳述式」，複雜計算
+//         只能靠三元運算子與遞迴；C++14 放寬為可宣告區域變數、可用 if/switch、
+//         可用 for/while 迴圈、可修改（生命週期起於該次常量求值內的）物件。
+//         本檔的迴圈版 factorial 正是 C++14 才合法，C++11 下 GCC 會直接報
+//         「body of constexpr function not a return-statement」。
+//     追問：後續版本再放寬什麼？（C++17 加 if constexpr 與 constexpr lambda；
+//           C++20 加動態配置、try/catch、virtual 呼叫，並引入 consteval/constinit）
+//
+// 🔥 Q2. 還有一項「不在函式本體」的改動最常被漏答，是什麼？
+//     答：非靜態成員函式標 constexpr 時，C++11 會「隱式加上 const」，C++14 起不再。
+//         同一段 struct S { int v; constexpr int get() { return v; } };
+//         在 C++11 下 get() 是 const 成員（可對 const S 物件呼叫），
+//         在 C++14 下不是——對 const 物件呼叫會因為 discards qualifiers 而編譯錯。
+//     追問：對舊碼移植的影響？（C++11 寫的 constexpr getter 升到 C++14 後可能突然
+//           不能對 const 物件呼叫，必須自己補上 const）
+//
+// Q3. C++14 的 constexpr 函式「仍然」不能做什麼？
+//     答：區域變數不可以不初始化；不可以是 static 或 thread_local（constexpr 函式
+//         內的 static 區域變數要到 C++23 才開放）；型別必須是 literal type。
+//         另外一個常被問的分界：C++11 不允許 constexpr 函式回傳 void，C++14 允許。
+//
+// Q4. constexpr 函式與 constexpr 變數的差別？
+//     答：constexpr 變數「保證」在編譯期求值；constexpr 函式只是「有資格」。
+//         同一個 factorial，寫成 constexpr long long f = factorial(10); 是編譯期算完；
+//         若把執行期才知道的變數當引數，它就退化成普通函式在執行期跑。
+//         也就是說 constexpr 函式必須「編譯期與執行期兩種模式都成立」。
+//
+// ⚠️ 陷阱. 函式標了 constexpr，是不是就代表它一定在編譯期算完？
+//     答：不是。constexpr 是「允許」而非「保證」。要強制編譯期求值，必須把結果放進
+//         真正需要 constant expression 的位置——constexpr 變數、static_assert、
+//         陣列長度、模板引數。本檔用 static_assert 驗證，就是在強制它編譯期成立。
+//     為什麼會錯：多數人把 constexpr 直接讀成「這個函式會在編譯期執行」，於是以為
+//         加上關鍵字就自動得到最佳化。真正「必須在編譯期求值」的關鍵字是 C++20 的
+//         consteval，C++14 的 constexpr 給的只是資格。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 
 // 迴圈版 factorial — C++11 的 constexpr 寫不出

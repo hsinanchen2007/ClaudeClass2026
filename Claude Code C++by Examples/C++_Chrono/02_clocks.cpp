@@ -73,6 +73,37 @@
   - high_resolution_clock 可能只是 system_clock 或 steady_clock 的別名，不能只看名字就假設最準。
   - 跨平台程式應明確寫出選哪個 clock，因為不同標準庫實作的 clock typedef 可能不同。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】三大時鐘：system_clock / steady_clock / high_resolution_clock
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 三個時鐘差在哪？
+//     答：system_clock 是牆上時間，對應日曆，可被 NTP 校正、使用者手動調整、夏令時
+//         影響，因此「可能倒退」，is_steady 為 false；它是唯一能與 time_t／日曆互轉的
+//         時鐘。steady_clock 是單調時鐘，is_steady 為 true，保證只會前進且速率固定，
+//         epoch 通常是開機時間（沒有意義），只能用來量測「經過了多久」。
+//         high_resolution_clock 只是「別名」，實作可自由選擇指向哪一個。
+//     追問：is_steady 保證什麼？（tick 之間單調不減且前進速率恆定）
+//
+// 🔥 Q2. 什麼時候用哪一個？
+//     答：量測時間間隔、逾時、retry backoff 一律用 steady_clock；顯示「現在幾點」、
+//         寫 log 時間戳、與 DB／API 交換 timestamp 用 system_clock。兩者用途互斥，
+//         不可混用——尤其不要拿 steady_clock 的 time_since_epoch() 去算日期，它的
+//         epoch 沒有定義意義。
+//     追問：wait_until 傳 system_clock 的 time_point 有什麼風險？（會受調時影響，
+//           系統時間被往前調就可能提早或延後醒來；相對逾時請用 wait_for）
+//
+// ⚠️ 陷阱. 用 high_resolution_clock 量測時間有什麼風險？
+//     答：它只是 typedef，實作可自由決定指向哪個時鐘。在某些標準函式庫上它是
+//         system_clock——也就是可被 NTP 調整、可能倒退的牆上時鐘，用它 benchmark 會
+//         偶發出現負數或荒謬結果；在另一些實作上它是 steady_clock，行為正確。
+//         同一份程式碼在不同平台語意不同，這是最惡劣的可攜性陷阱。
+//     為什麼會錯：名字裡的 "high_resolution" 讓人以為它是「最精準的那個」。實際上
+//         現代平台上 steady_clock 的解析度通常相同。結論：不要用 high_resolution_clock，
+//         量測用 steady_clock、顯示時間用 system_clock。要驗證你的平台可用
+//         static_assert(std::is_same_v<high_resolution_clock, steady_clock>)。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <chrono>
 #include <ctime>
 #include <iomanip>

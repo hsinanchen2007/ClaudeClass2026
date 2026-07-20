@@ -120,6 +120,36 @@
   - move algorithm 會把元素搬到目的地，來源仍有效但值可能改變；後續只能重新指定或安全銷毀。
   - shuffle/sample 需要亂數引擎；不要每次呼叫都用同一個固定種子，除非你刻意要可重現測試結果。
 */
+
+// ===========================================================================
+// 【面試題】std::copy / copy_if / copy_n / copy_backward
+// ---------------------------------------------------------------------------
+// 🔥 Q1. std::copy 到一個空的 vector 會發生什麼事?
+//     答:UB(buffer overrun)。copy 只會往 output iterator 寫,它不知道也碰不到容器,
+//         不可能幫你 resize。空 vector 的 begin() == end(),寫入第一個元素就已越界。
+//         正解:先 dst.resize(src.size())、或用 std::back_inserter(dst)、
+//         或直接 dst.assign(src.begin(), src.end()) / dst = src。
+//     追問:那我先 reserve() 不就有空間了嗎?
+//
+// ⚠️ 陷阱. reserve() 為什麼不夠?
+//     答:reserve() 只增加 capacity,size() 仍然是 0,begin() 到 end() 仍是空區間。
+//         std::copy 是透過 iterator 寫入既有元素,不是 push_back,所以照樣越界。
+//         要用 resize()(真的建構出元素)或改用 insert iterator。
+//     為什麼會錯:多數人把「有記憶體」等同於「有元素」。capacity 是配置好的原始空間,
+//         size 才是已建構元素的個數;iterator 區間由 size 決定,與 capacity 無關。
+//
+// 🔥 Q2. 為什麼需要 copy_backward?重疊區間的規則是什麼?
+//     答:std::copy 由前往後寫,要求 d_first 不在 [first, last) 之內,否則還沒讀到的
+//         來源元素會先被覆蓋。當來源與目的重疊「且目的在來源後方」時,必須改用
+//         copy_backward 由後往前寫(它反過來要求 d_last 不在 (first, last] 內)。
+//         口訣:往前搬用 copy,往後搬用 copy_backward。
+//
+// Q3. copy_n 和 copy 差在哪?什麼時候一定得用 copy_n?
+//     答:copy 用 [first, last) 兩個 iterator 描述範圍;copy_n 用「起點 + 個數」。
+//         當你只有起點和數量、拿不到 last(例如來源是 input iterator/串流),或是
+//         只想搬前 N 個時就用 copy_n。copy_if 則是 C++11 才加入的過濾版。
+// ===========================================================================
+
 #include <algorithm>
 #include <iostream>
 #include <iterator>   // back_inserter, ostream_iterator

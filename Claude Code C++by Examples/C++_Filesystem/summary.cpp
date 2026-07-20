@@ -47,6 +47,35 @@
   - C++_Filesystem/C++_Filesystem summary 的複習方式是把 API 依用途分組，再比較輸入條件、輸出語意、失敗狀態和複雜度。
   - 初學複習 summary 時，不要只背函式名稱；要能說出何時該用、何時不該用、和相近工具差在哪裡。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】<filesystem> 總覽（C++17）
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 關於 <filesystem>，面試官最想聽到的一句話是什麼？
+//     答：「path 不是 string（分隔符、字元型別、結構化存取都不同）；canonical 會碰磁碟
+//     而 lexically_normal 不碰；幾乎每個函式都有 error_code 多載，用了就一定要檢查 ec；
+//     exists() 之後再 open 是 TOCTOU，正解是直接操作並處理失敗。」
+//     追問：這個標頭是哪個標準進來的？（C++17；它的前身是 Boost.Filesystem 與
+//     std::experimental::filesystem）
+//
+// 🔥 Q2. 為什麼歷史上用 <filesystem> 需要加 -lstdc++fs？現在還需要嗎？
+//     答：標準化初期 libstdc++ 把實作放在獨立的靜態函式庫 libstdc++fs.a，因為 ABI 尚未
+//     穩定：GCC 5–7 只有 experimental 版且需要 -lstdc++fs；GCC 8 有 std::filesystem
+//     但仍需要；GCC 9 起併入主函式庫，不再需要（libc++ 則是 Clang 9 起併入）。典型症狀
+//     是「編譯過、連結失敗」（undefined reference to std::filesystem::...）——因為
+//     header 只有宣告，定義在函式庫裡。本機是 GCC 15，早就不需要了。
+//     追問：本檔用的是標準的 <filesystem> 還是 <experimental/filesystem>？（標準版，
+//     namespace fs = std::filesystem；experimental 版是歷史過渡，新程式不該再用）
+//
+// ⚠️ 陷阱. 用了 error_code 多載，就代表這段程式碼比拋例外版更安全嗎？
+//     答：不一定，反而更容易出事。error_code 版是 noexcept，錯誤只會靜靜地寫進 ec，
+//     若忘了檢查，函式回傳的預設值（exists 回 false、file_size 回 -1）看起來就像一個
+//     正常結果，錯誤被完全吞掉。拋例外版至少會「大聲失敗」。所以判準不是哪個比較安全，
+//     而是：失敗屬於預期情況、或不能用例外時用 error_code 版（並且務必檢查），失敗
+//     屬於致命錯誤時用拋例外版。
+//     為什麼會錯：把「不拋例外」直接等同於「更穩健」，忽略了沉默的錯誤比明顯的失敗更難查。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <filesystem>
 namespace fs = std::filesystem;
 #include <fstream>

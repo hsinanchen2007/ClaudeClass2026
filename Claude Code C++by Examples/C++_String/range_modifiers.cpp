@@ -157,6 +157,41 @@
   - 若只是傳入唯讀文字片段且不需要擁有資料，std::string_view 可避免複製；但它不能延長原字串生命週期。
   - 處理中文或 UTF-8 時，std::string 的 size() 回傳 byte 數，不是人眼看到的字元數。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】C++23 Range-based 修改器(assign_range / append_range / …)
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. ranges 是 C++20 就有了,為什麼 _range 系列的容器方法到 C++23 才加?
+//     答:C++20 只納入 ranges 的 concept、view 與 algorithm,容器介面本身
+//         沒動。要把 lazy view 寫進 string,當年只能手寫 push_back 迴圈,
+//         或先 materialize 成中間容器(多一次配置)。C++23(P1206)才替
+//         string / vector / deque / map / set 等補上 _range 系列方法。
+//     追問:那 assign_range(rg) 和 assign(rg.begin(), rg.end()) 差在哪?
+//           → 語意等價,但前者對 sized_range 可以先 reserve 正確大小。
+//
+// 🔥 Q2. 為什麼 rg 是不是 sized_range 會影響效能?
+//     答:滿足 std::ranges::sized_range 時,實作能事先問出元素個數、一次
+//         reserve 到位,只配置一次;若只是 input_range(例如 istream view),
+//         元素要走過才知道有幾個,只能邊走邊增長,可能多次 reallocation。
+//     追問:views::filter 屬於哪一種?→ 不是 sized_range,過濾後的數量在
+//           走訪前無法得知;此時手動 reserve 一個上界估計值仍能加速。
+//
+// 🔥 Q3. _range 系列和 std::ranges::to 該怎麼選?
+//     答:兩者都是 C++23。_range 系列是「就地修改既有 string」
+//         (assign_range / append_range / insert_range / replace_with_range);
+//         std::ranges::to<std::string>(view) 則是「建構一個全新物件」。
+//         要重用既有 buffer 就用前者,要函式式地產出新值就用後者。
+//     追問:那「依內容刪除字元」也在這系列裡嗎?→ 不在。那是 C++20 的
+//           std::erase / std::erase_if,不屬於 C++23 的 _range 系列。
+//
+// ⚠️ 陷阱. 這些 _range 方法會不會讓既有 iterator 失效?
+//     答:會,規則跟它們對應的非 range 版本完全相同——只要可能 reallocation,
+//         所有 iterator / pointer / reference 一律視為失效。另外要特別小心
+//         self-aliasing:rg 最好不要指向 *this 自己的元素。
+//     為什麼會錯:名字換成 _range、寫法變得像函式式風格,容易讓人誤以為
+//         它們是「產生新字串」的安全操作,但它們其實是就地修改。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <string_view>

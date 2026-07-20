@@ -79,6 +79,39 @@
   - any 提供執行期任意型別保存，但取回需要知道正確型別；過度使用會失去靜態型別檢查優勢。
   - std::move/std::forward/std::exchange/as_const 都是表達意圖的工具；它們本身不一定搬移或複製資料。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::variant（C++17）
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. std::variant 和原生 union 差在哪？
+//     答：variant 是型別安全的 tagged union：它額外保存一個 index 記錄目前持有哪個
+//     alternative，切換型別時自動呼叫正確的解構與建構，取錯型別會拋
+//     std::bad_variant_access（get）或回 nullptr（get_if）。原生 union 不記型別、不會
+//     自動管理 non-trivial 成員（要手動 placement new 與顯式解構），讀取非最後寫入的
+//     成員在 C++ 中是 UB。
+//     追問：variant 會堆配置嗎？（不會，就地儲存；這也是它和 std::any 的關鍵差異）
+//
+// 🔥 Q2. std::visit 是什麼？為什麼比一串 holds_alternative 好？
+//     答：std::visit(visitor, v) 對目前持有的 alternative 呼叫對應的重載，而且強制你
+//     處理所有 alternative——漏掉就是編譯錯誤，日後新增型別時編譯器會提醒；if-else 串接
+//     則會靜默漏掉。常配 overload 慣用法：
+//     template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
+//     追問：這段用到哪些 C++17 特性？（變參 using 展開，以及 CTAD 加推導指引；C++20 起
+//     aggregate 可 CTAD，推導指引可省）所有分支的回傳型別必須一致嗎？（必須）
+//
+// Q3. get、get_if、holds_alternative 怎麼選？
+//     答：std::get<T>(v) 取錯會拋例外；std::get_if<T>(&v) 回傳指標、不符時是 nullptr、
+//     不拋例外；std::holds_alternative<T>(v) 只查詢不取值。注意 variant<int, int> 是
+//     合法的，但因為型別有歧義，只能用索引 get<0>／get<1> 存取。
+//
+// ⚠️ 陷阱. valueless_by_exception() 什麼時候會成立？
+//     答：對 variant 賦值或 emplace 成另一個 alternative 時，會先解構舊值再建構新值；
+//     若新值的建構函式拋出例外，舊值已毀、新值未成，variant 就進入 valueless 狀態，
+//     此時 index() 回 variant_npos，get 與 visit 都會拋 bad_variant_access。降低風險的
+//     做法是讓所有 alternative 的移動建構函式是 noexcept。
+//     為什麼會錯：以為「type-safe union 保證永遠有值」，忽略了例外可能打斷型別切換。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <cmath>
 #include <iostream>
 #include <variant>

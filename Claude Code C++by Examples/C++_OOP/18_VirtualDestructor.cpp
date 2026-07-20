@@ -70,6 +70,43 @@
   - 智慧指標也不能替你修正錯誤的 base destructor；std::unique_ptr<Base> 刪除 Derived 仍需要 Base destructor virtual。
   - 學到這裡要把「繼承」和「所有權」一起想：誰負責 delete，就必須看到正確的解構介面。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】virtual destructor
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 為什麼 base class 的 destructor 要宣告成 virtual？
+//     答：透過 base pointer `delete` 一個 derived 物件時，若 base 的 destructor
+//         不是 virtual，標準規定其行為是 **undefined behavior** —— 不是「保證只呼叫
+//         ~Base()、所以洩漏 derived 部分」。洩漏只是「可能觀察到」的其中一種結果，
+//         AddressSanitizer 也可能直接報 new-delete-type-mismatch 並中止。
+//         宣告 `virtual ~Base()` 後，delete 會經 vtable 分派到 derived destructor，
+//         再依序往上呼叫 base destructor。
+//     追問：那直接以 derived 型別的物件操作呢？（沒問題 —— 編譯器靜態就知道真實型別，
+//           兩個 destructor 都會被正確呼叫；問題只出在「透過 base pointer delete」）
+//
+// 🔥 Q2. 是不是所有 class 都該加 virtual destructor？
+//     答：不是。只有「打算被當多型 base 使用」的才需要。加了會引入 vptr（物件變大、
+//         不再是 trivially copyable），而且使用者宣告 destructor 還會抑制隱式 move。
+//         C++ 的 zero-overhead 原則就是「不付你不需要的代價」。
+//     追問：不打算被多型刪除、但仍想被繼承怎麼辦？（把 destructor 設成
+//           protected 且 non-virtual —— 外部就無法透過 base pointer delete）
+//
+// Q3. pure virtual destructor 可以嗎？
+//     答：可以，而且「必須」提供定義：`virtual ~Base() = 0;` 加上
+//         `Base::~Base() {}`。因為 derived 的 destructor 執行完後一定會呼叫到它，
+//         沒有定義就會連結失敗。用途是：想讓 class 抽象，卻沒有別的函式適合設成
+//         pure virtual 時。
+//
+// ⚠️ 陷阱. 用智慧指標包起來，就不必管 base destructor 是不是 virtual 了吧？
+//     答：`std::unique_ptr<Base>` 不行 —— 它用 `default_delete<Base>`，等同
+//         `delete (Base*)`，base destructor 非 virtual 仍是 UB。`std::shared_ptr`
+//         倒是可以：deleter 在「建構時」依當時的靜態型別決定並型別擦除存進控制區塊，
+//         所以 `shared_ptr<Base> sp = make_shared<Derived>();` 會正確刪除。
+//     為什麼會錯：多數人把「智慧指標」當成萬用保險。但它只是自動呼叫 delete，
+//         「delete 誰、怎麼 delete」仍取決於型別；且不要靠 shared_ptr 這個特性
+//         設計 API —— 只要有人改用裸指標或 unique_ptr 就又是 UB。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <memory>

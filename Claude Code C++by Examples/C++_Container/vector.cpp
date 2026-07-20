@@ -65,6 +65,54 @@
   - 容器元素型別若昂貴，優先理解 emplace、move 和 reference/iterator 有效性，不要盲目複製。
   - 所有容器都要考慮空容器邊界；front/back/top 在空容器上呼叫通常是未定義行為或前置條件違反。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::vector
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. vector 的擴容機制是什麼？為什麼 push_back 是 amortized O(1)？
+//     答：當 size() == capacity() 時再 push_back 會觸發 reallocation：配置一塊更大的新記憶體 →
+//         搬移舊元素 → 解構舊元素 → 釋放舊記憶體。
+//         成長倍率是 **implementation-defined**：libstdc++（GCC）約 2 倍、MSVC 約 1.5 倍，
+//         **標準並未規定倍率**。以 2 倍為例，插入 n 個元素的總搬移次數為 1+2+4+...+n < 2n，
+//         均攤到每次插入就是 O(1)。
+//     追問：擴容之後舊的 iterator 還能用嗎？（不行，iterator / pointer / reference 全部失效；
+//         未擴容時的 insert / erase 則是插入點或刪除點之後全部失效）
+//
+// 🔥 Q2. size() 和 capacity() 差在哪？reserve() 和 resize() 呢？
+//     答：size() 是目前實際持有的元素個數，capacity() 是不觸發 reallocation 前可容納的個數，
+//         恆有 size() <= capacity()。reserve(n) 只改 capacity，不改 size、不建構任何元素，也不能縮小；
+//         resize(n) 改的是 size：變大時 value-initialize 補足新元素，變小時解構多餘元素。
+//     追問：reserve(100) 之後能存取 v[0] 嗎？（不行，size 還是 0，是 UB）／
+//         clear() 之後 capacity 會歸零嗎？（不會，要真正釋放請用 shrink_to_fit（non-binding request）
+//         或 swap trick：`std::vector<T>(v).swap(v);`）
+//
+// 🔥 Q3. emplace_back 和 push_back 的差別？一定要用 emplace_back 嗎？
+//     答：push_back 接受已建構好的物件（copy 或 move 進容器）；
+//         emplace_back 接受建構子參數並以 perfect forwarding 在容器記憶體中 in-place 建構，可省一次 copy/move。
+//         但「永遠用 emplace_back」是迷思：傳入已存在物件時兩者等價；
+//         emplace_back 用 direct-initialization，會繞過 explicit 檢查，可能讓不該過的程式碼編譯過。
+//     追問：emplace_back 的回傳值？（C++17 起回傳新元素的 reference，C++11/14 回傳 void）
+//
+// ⚠️ 陷阱 1. vector 擴容時，元素是用 move 還是 copy 搬移？
+//     答：**取決於元素的 move constructor 是否標了 noexcept**。
+//         push_back 必須提供 strong exception guarantee（失敗則容器不變）；
+//         若 move constructor 沒標 noexcept，搬到一半拋例外就無法回復（元素已被掏空），
+//         所以實作會保守地改用 copy。標準以 std::move_if_noexcept 表達此邏輯：
+//         move ctor 為 noexcept（或型別不可 copy）才 move，否則 copy。
+//         **這就是「為什麼 move constructor 一定要標 noexcept」最經典的答案。**
+//     為什麼會錯：大家以為「只要型別有 move ctor，vector 擴容就一定用 move」，
+//         實際上沒標 noexcept 時會默默退回 copy，效能差很多卻看不出來。
+//
+// ⚠️ 陷阱 2. std::vector<bool> 有什麼問題？
+//     答：它是 template specialization，為省記憶體以 bit 儲存，因此不滿足 Container 的要求：
+//         operator[] 回傳的不是 bool& 而是 proxy object（std::vector<bool>::reference），
+//         因為 C++ 無法對 bit 取 reference。連帶問題：不能寫 `bool& b = v[0];`、
+//         `&v[0]` 不是 bool*、`auto x = v[0]` 得到的是 proxy 而非 bool。
+//         替代：std::vector<char>、std::deque<bool>、std::bitset（固定大小）。
+//     為什麼會錯：大家預設「vector<T> 對任何 T 行為都一致」，
+//         但 bool 是唯一被特化、行為不同的那個。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <vector>       // std::vector
 #include <iostream>
 #include <algorithm>    // std::sort, std::find

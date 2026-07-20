@@ -77,6 +77,42 @@
   - 測試特殊成員函式時，要涵蓋複製、賦值、自我賦值、move 後狀態、容器中 reallocation 等情境。
   - 看到裸指標成員不要立刻假設它擁有資源；先判斷它是 owning pointer 還是 non-owning observer，特殊成員函式設計完全不同。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】Rule of Three / Five / Zero
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. Rule of Three / Five / Zero 各是什麼？
+//     答：**Rule of Three** —— 若你需要自訂 destructor、copy constructor、
+//         copy assignment 其中一個，通常三個都要自訂（代表你在管理裸資源）。
+//         **Rule of Five** —— C++11 後再加上 move constructor、move assignment。
+//         **Rule of Zero** —— 最佳實踐：把資源封裝進專責型別（smart pointer、
+//         container），自己的 class 一個特殊成員都不寫，全部讓編譯器產生。
+//         本檔 MyStringV5 是前者（自管 char*），Person 是後者（成員都是 RAII 型別）。
+//     追問：`= default` 與 `= delete` 的意義？（前者要求編譯器保留生成、後者禁止該操作，
+//           是現代 C++ 表達意圖最直接的工具，例如本檔 FileGuard 禁 copy 允許 move）
+//
+// 🔥 Q2. 深拷貝與淺拷貝的差別？
+//     答：編譯器產生的 copy 是「成員逐一複製」，對裸指標成員而言只複製指標值
+//         → 兩個物件指向同一塊記憶體 → double free / dangling。深拷貝要自己配置
+//         新記憶體並複製內容（本檔 MyStringV5 的 copy constructor）。這正是
+//         Rule of Three 存在的理由；現代做法是改持有 string / vector / unique_ptr。
+//     追問：`std::string` 是深拷貝嗎？（是；C++11 起標準已禁止 COW 實作）
+//
+// Q3. 多型 base class 的五個特殊成員該怎麼寫？
+//     答：多型 base 幾乎一定要 `virtual ~Base()`，而這個「使用者宣告的 destructor」
+//         會抑制隱式 move（見下方陷阱），所以慣例是把五個特殊成員「全部顯式
+//         `= default`」，至少把兩個 move 補回來。另外 base 的 copy 通常應設成
+//         `protected` 或 `= delete`，避免呼叫端不小心做出 object slicing。
+//
+// ⚠️ 陷阱. 只是寫了 `virtual ~Base() = default;`，應該什麼都沒改變吧？
+//     答：改變很大。只要「使用者宣告」了 destructor —— 即使是 `= default` ——
+//         就會抑制隱式 move constructor 與 move assignment 的產生。copy 雖然還是
+//         會生成，但標準已把「有使用者宣告 destructor 時仍隱式生成 copy」標記為
+//         deprecated。結果是：你的類別靜默退化成 copy，效能全失，而且不會有任何警告。
+//     為什麼會錯：多數人腦中「`= default` 就等於沒寫」。實際上編譯器看的是
+//         「有沒有被使用者宣告（user-declared）」，不是「有沒有寫函式本體」。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <vector>
 #include <string>

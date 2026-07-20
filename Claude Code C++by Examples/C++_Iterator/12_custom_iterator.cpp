@@ -50,6 +50,35 @@
   - iterator_category 或 iterator_concept 會影響標準演算法選擇哪些操作；標錯能力會造成錯誤假設。
   - reference 型別若不是 T&，例如 proxy reference，要特別小心和泛型演算法的相容性。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】自訂 iterator 與 iterator_traits
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 什麼是 std::iterator_traits？為什麼需要這一層？
+//     答：它是一層 traits 間接層，統一取出 iterator 的五個關聯型別：value_type、
+//         difference_type、pointer、reference、iterator_category。需要它的原因是泛型演算法
+//         既要支援 class 型 iterator（可以自己寫 nested typedef），也要支援裸指標 T*
+//         （不可能有 nested typedef）；iterator_traits 對 T* 提供 partial specialization，
+//         讓兩者在演算法眼中長得一樣。
+//     追問：iterator_category 拿來做什麼？（tag dispatch，例如 distance / advance 依等級
+//         選 O(1) 或 O(n) 實作）／C++20 的 concepts 取代它了嗎？（沒有，iterator_traits
+//         仍在，另外新增 iter_value_t 等別名）
+//
+// 🔥 Q2. 如何自己寫一個符合 STL 規範的 iterator？
+//     答：先提供五個關聯型別，再依目標 category 實作對應的 operator。以 forward iterator
+//         為例需要：operator*、operator->、pre 與 post 的 operator++、operator== / !=、
+//         default constructor、copy constructor 與 copy assignment。Bidirectional 再加
+//         operator--；random access 再加 +、-、+=、-=、[]、< 這組。
+//     追問：C++17 之後還能繼承 std::iterator 嗎？（已 deprecated，改成直接寫 typedef，或
+//         用 C++20 的 iterator concepts）／怎麼驗證自己寫對了？（static_assert
+//         (std::forward_iterator<MyIt>)，concept 會明確指出違反哪一條）
+//
+// Q3. 自訂 iterator 只寫了 operator++ 和 operator*，為什麼 std::sort 編譯不過？
+//     答：因為 sort 需要 random access——要 it + n、it1 - it2、it[n] 與 < 這一整組操作，
+//         還要 iterator_category 標成 random_access_iterator_tag。category tag 標錯（宣稱
+//         比實際能力高）不會有人幫你檢查，只會在演算法內部炸出難懂的錯誤訊息。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <iterator>
 #include <vector>

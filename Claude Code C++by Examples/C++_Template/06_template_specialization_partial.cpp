@@ -44,6 +44,30 @@
   - perfect forwarding 需要 T&& 搭配 std::forward<T>，不要把所有 && 都誤認為 move。
   - template 可提升零成本抽象，但也可能造成編譯時間上升和二進位膨脹；共通實作可用非 template helper 收斂。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】偏特化（Partial Specialization）
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 為什麼函式模板不能偏特化？要怎麼變通？
+//     答：標準只允許函式模板做全特化。函式已經有重載決議足以表達「對某類型別走
+//         另一條路」，再加上偏特化會讓選擇規則嚴重複雜化。變通：(a) 直接寫函式
+//         重載；(b) 把邏輯包進 class template 並偏特化它，函式再呼叫其 static 成員。
+//
+// 🔥 Q2. 多個偏特化都能匹配時，誰會被選中？
+//     答：編譯器做 partial ordering，挑「最特化」的那個：限制條件最多、最具體者勝。
+//         例如同時有 T* 與 const T*，傳 const int* 時 const T* 勝出。若兩個版本
+//         無法比較誰更特化，編譯器直接報 ambiguous 錯誤。
+//
+// ⚠️ 陷阱. 只寫 is_pointer<T*> 一個偏特化時，const int* 與 int* const 誰是 true？
+//     答：const int* 是 true，int* const 是 false。const int* 讀作「指向 const int
+//         的指標」，令 T = const int 就能匹配 T*；int* const 則是「本身為 const 的
+//         指標」，const 是頂層修飾、落在型別外側，T* 匹配不到，必須另外寫
+//         is_pointer<T* const>。本檔正是為此補了 T* const / T* volatile /
+//         T* const volatile 三個偏特化。
+//     為什麼會錯：把 const int* 與 int* const 都讀成「常數指標」，沒有分辨 const
+//         修飾的是被指物還是指標本身；只有後者是頂層 const，才需要額外的偏特化。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <vector>
 #include <list>

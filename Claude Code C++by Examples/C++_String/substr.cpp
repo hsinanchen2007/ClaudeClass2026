@@ -118,6 +118,38 @@
   - 若只是傳入唯讀文字片段且不需要擁有資料，std::string_view 可避免複製；但它不能延長原字串生命週期。
   - 處理中文或 UTF-8 時，std::string 的 size() 回傳 byte 數，不是人眼看到的字元數。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::string::substr
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. substr() 的成本是多少?
+//     答：它回傳一個「新的」std::string,複製 len 個字元 → O(len);
+//         長度超過 SSO 門檻時還多一次 heap 配置
+//         (SSO 門檻是 implementation-defined,標準未規定任何數字)。
+//         相對地 std::string_view::substr()(C++17)只調整指標與長度 → O(1)、零配置。
+//     追問：解析迴圈裡怎麼改?→ 切 token、切路徑改用 string_view,常有數倍加速。
+//
+// 🔥 Q2. pos 越界會怎樣?
+//     答：pos > size() 拋 std::out_of_range;pos == size() 合法,回傳空字串。
+//         count 超出剩餘長度則自動截到字串尾,不拋例外。
+//
+// ⚠️ 陷阱. std::string_view sv = s.substr(1); 有什麼問題?
+//     答：substr 回傳的是臨時 std::string,在該完整表達式結束時就解構,
+//         sv 立刻 dangling。關鍵區辨:const std::string& r = s.substr(1); 是合法的
+//         ——const 引用會延長臨時物件的生命週期,但 string_view 不會。
+//     為什麼會錯：以為「綁上去就會被延長」。生命週期延長只適用於引用綁定,
+//         string_view 只是複製了指標與長度,不參與延長規則。
+//
+// Q4. range-for 走訪臨時物件安全嗎?
+//     答：for (char c : getString()) 是安全的——最外層 range 表達式的臨時物件會被
+//         延長到迴圈結束。但若 range 表達式「引用」到某個子表達式的臨時物件
+//         (中間那層回傳 reference 或 string_view),C++23 之前不會被延長 → dangling UB。
+//         C++23 的 P2718R0 修正了這條規則,把 range-for 初始化式中的臨時物件
+//         全部延長到迴圈結束。
+//     追問：getString().substr(1) 這種呢?→ substr 是「傳值」回傳,結果本身就是獨立的
+//         新字串並被延長,所以不懸空;會出事的是回傳 reference / view 的中間層。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 

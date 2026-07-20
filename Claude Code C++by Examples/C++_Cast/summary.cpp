@@ -33,6 +33,37 @@
   - C++_Cast/C++_Cast summary 的複習方式是把 API 依用途分組，再比較輸入條件、輸出語意、失敗狀態和複雜度。
   - 初學複習 summary 時，不要只背函式名稱；要能說出何時該用、何時不該用、和相近工具差在哪裡。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】C++_Cast 總複習
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 面試官要你「用一分鐘說完四種 cast 該怎麼選」，你怎麼答？
+//     答：先問自己在做什麼：改 const/volatile → const_cast（但底層物件若真的是
+//         const，改它就是 UB）；有繼承關係的轉換 → static_cast（不檢查、你負責）
+//         或 dynamic_cast（執行期檢查、要多型 base）；一般數值/enum/void* 還原
+//         → static_cast；想看同一塊位元的另一種型別 → std::bit_cast（C++20）或
+//         memcpy，【不是】 reinterpret_cast；真的要低階硬轉指標 → reinterpret_cast，
+//         而且最好只走 char* / std::byte* 那條合法路徑。
+//     追問：那 C-style cast 呢？（一律不用 — 它會依序嘗試多種轉型並靜默選中最
+//           危險的那個）
+//
+// Q2. shared_ptr 要怎麼轉型？可以直接對它用 static_cast 嗎？
+//     答：【不可以】。<memory> 提供專用的輔助函式：static_pointer_cast、
+//         dynamic_pointer_cast、const_pointer_cast，以及 【C++17】 才加入的
+//         reinterpret_pointer_cast。它們回傳的新 shared_ptr 會【共用同一個控制
+//         區塊】（等同 aliasing），所以引用計數維持正確；dynamic_pointer_cast
+//         失敗時回傳空的 shared_ptr。
+//     追問：unique_ptr 有對應的嗎？（標準沒有 — 所有權轉移的語意太複雜，需自行
+//           release() + cast + 重新包裝，且失敗時容易漏掉所有權）
+//
+// Q3. 你在 code review 看到滿滿的 dynamic_cast，會給什麼建議？
+//     答：把它當成【設計訊號】而非單純的效能問題：需要一長串 dynamic_cast 做型別
+//         分支，通常代表這個行為本來就該是 base 上的一個 virtual 函式，由物件自己
+//         回答。若型別集合是封閉且已知的，改用 std::variant + std::visit 能讓編譯器
+//         【保證所有型別都處理到】，而且沒有 RTTI 成本。真的避不開的場合（跨模組
+//         只拿得到 base 介面、外掛系統）才保留 dynamic_cast，並讓它遠離 hot path。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <cstdint>
 #include <iomanip>
 #include <iostream>

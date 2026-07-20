@@ -57,6 +57,34 @@
   - std::distance 對 random access 可直接相減，對 input/forward 可能需要走完整段。
   - next/prev 回傳移動後的新 iterator，不修改原 iterator，適合寫更安全的邊界邏輯。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::distance / advance / next / prev
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. std::distance 和 std::advance 的複雜度是多少？
+//     答：依 iterator category 分派（tag dispatch）：random access 是 O(1)（直接
+//         last - first 或 it += n），其他 category 是 O(n)（必須逐步 ++）。這正是
+//         category 存在的意義——同一個泛型介面在不同容器上取得各自最佳的實作。
+//         std::next / std::prev（C++11）是回傳新 iterator 的非變動版本，複雜度同 advance。
+//     追問：為什麼不能對 list::iterator 寫 it + 5？（bidirectional 沒有 operator+，編譯
+//         錯誤；要用 std::advance 或 std::next）／advance 可以傳負數嗎？（bidirectional
+//         以上可以，input iterator 不行）
+//
+// 🔥 Q2. ++it 和 it++ 有什麼差別？為什麼建議用 ++it？
+//     答：++it 直接遞增並回傳自身的 reference；it++ 必須先複製一份舊值、遞增自身、再回傳
+//         那個副本。對裸指標編譯器能把差異優化掉，但對 map 的 tree iterator 這類 class
+//         型 iterator，會多出一次 copy construct 加 destruct。不需要舊值時一律用 ++it。
+//     追問：post-increment 怎麼宣告？（It operator++(int)，那個 int 是用來區分 overload
+//         的 dummy 參數）
+//
+// ⚠️ 陷阱. v.end() - 1 和 --v.end() 都合法嗎？
+//     答：對 vector（random access）v.end() - 1 合法；但 --v.end() 的可攜性依實作而定：
+//         end() 回傳的是 rvalue，若該實作的 iterator 是裸指標型別，對 rvalue 用內建 --
+//         不合法；若是 class 型別，成員 operator-- 對 rvalue 可以呼叫。應改用
+//         std::prev(v.end())。另外對空容器兩者都是 UB。
+//     為什麼會錯：在自己的編譯器上剛好能編過，就以為是標準保證的寫法。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <iterator>
 #include <vector>

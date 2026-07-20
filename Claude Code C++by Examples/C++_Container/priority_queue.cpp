@@ -59,6 +59,29 @@
   - 容器元素型別若昂貴，優先理解 emplace、move 和 reference/iterator 有效性，不要盲目複製。
   - 所有容器都要考慮空容器邊界；front/back/top 在空容器上呼叫通常是未定義行為或前置條件違反。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::priority_queue
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. priority_queue 的底層預設容器是什麼？為什麼不是 deque？
+//     答：預設底層是 std::vector，搭配 std::less<T> 以 heap 演算法
+//         （make_heap / push_heap / pop_heap）維護一個 max-heap。
+//         選 vector 是因為 heap 演算法需要 random access iterator，且 vector 連續記憶體的 cache locality 最好；
+//         stack / queue 預設用 deque 則是為了避免擴容時整塊搬移。
+//     追問：top / push / pop 的複雜度？（O(1) / O(log n) / O(log n)）
+//
+// 🔥 Q2. 如何讓 priority_queue 變成 min-heap？
+//     答：`std::priority_queue<int, std::vector<int>, std::greater<int>> pq;`——
+//         第三個 template 參數是 comparator，預設 std::less 給出 max-heap，換 std::greater 就是 min-heap。
+//         注意必須同時寫出第二個參數（底層容器），不能只寫第三個。
+//
+// ⚠️ 陷阱. comparator 的語意為什麼看起來是反的？
+//     答：comp(a, b) 為 true 表示「a 的優先度低於 b」，低優先度的沉底。
+//         所以 std::less 讓大的浮到 top（max-heap）、std::greater 讓小的浮到 top（min-heap）。
+//     為什麼會錯：大家把它套到 std::sort 的直覺——sort 用 less 得到「升序」，
+//         於是以為 priority_queue 用 less 也會是「小的先出」，實際恰好相反。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <queue>          // priority_queue 在 <queue>
 #include <vector>
 #include <deque>

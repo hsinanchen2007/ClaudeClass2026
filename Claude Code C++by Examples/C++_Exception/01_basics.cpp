@@ -58,6 +58,37 @@
   - throw 會中斷目前控制流程，沿呼叫堆疊尋找第一個相容 catch。
   - catch 順序要由具體到一般，否則 base exception 會先攔住 derived exception。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】try / throw / catch 基礎
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 什麼是 stack unwinding（棧展開）？
+//     答：throw 之後，執行時期沿著呼叫堆疊逆向尋找匹配的 catch；每退出一層函式時，
+//     該層中「已完整建構」的自動儲存期物件會以建構順序的相反順序被解構，找到匹配的
+//     handler 才把控制權交過去。三個關鍵細節：① 只有自動儲存期物件會被解構，new 出來
+//     而未被智慧指標持有的裸指標不會被 delete（這正是要 RAII 的原因）② 若找不到任何
+//     匹配的 handler，會呼叫 std::terminate()，而且標準不保證此時會做 unwinding
+//     ③ 例外逃出 noexcept 函式同樣直接 terminate，也不保證 unwinding。
+//     追問：怎麼知道目前正在 unwinding？（std::uncaught_exceptions()，C++17 起是回傳
+//     計數的複數版，取代了已移除的單數版 uncaught_exception()）
+//
+// 🔥 Q2. throw; 和 throw e; 差在哪？
+//     答：throw;（re-throw，只能在 catch 區塊或其呼叫的函式內使用）重新拋出「當前正在
+//     處理的那個例外物件本身」，完整保留動態型別；throw e; 則是拋出 e 的一份拷貝——
+//     若 e 宣告為基底類別的參考而實際是衍生類別，這裡就會發生 slicing，上層再也接不到
+//     原本的衍生型別。所以在 catch 裡記完 log 要往上傳時，一律寫 throw;。
+//     追問：在 catch 區塊外用 throw; 會怎樣？（當時若沒有正在處理的例外，直接
+//     std::terminate()）
+//
+// Q3. 例外的效能成本是多少？「zero-cost」是什麼意思？
+//     答：現代 GCC / Clang / MSVC 都使用 table-based（零成本）例外模型。未拋例外時，
+//     正常路徑上沒有額外指令——進入 try 不需要註冊任何東西，unwinding 資訊存放在獨立的
+//     唯讀區段（ELF 的 .eh_frame / .gcc_except_table），不佔用執行期熱路徑。但真的拋出
+//     時非常昂貴：要查表、解析 unwind 資訊、執行解構函式、做 RTTI 型別匹配。所以
+//     zero-cost 指的是「happy path 零成本」，不是「例外免費」；真正的成本還包括二進位
+//     體積增加與最佳化受限。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <stdexcept>
 #include <string>

@@ -64,6 +64,37 @@
   - decltype(auto) 會保留 reference 和 value category，適合完美轉送回傳值。
   - return (x); 搭配 decltype(auto) 可能回傳 reference；括號會改變結果，必須刻意使用。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】decltype(auto)（C++14）
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. decltype(auto) 是哪個標準？它解決什麼問題？
+//     答：C++14（C++11 只有 decltype，沒有 decltype(auto)）。它解決「auto 推導會
+//         丟掉 reference 與 top-level const」的問題：寫容器存取 wrapper 時，
+//         auto 版永遠回傳值、呼叫端改不到原元素；decltype(auto) 則完整保留
+//         reference、const 與值類別，等同「把 decltype(運算式) 寫上去」。
+//     追問：C++11 怎麼達成同樣效果？（trailing return type：
+//           auto get(C& c, K k) -> decltype(c[k])，冗長且要把運算式寫兩次）
+//
+// 🔥 Q2. auto 與 decltype(auto) 該怎麼選？
+//     答：要「值」就 auto，要「原樣轉發回傳型別」就 decltype(auto)。
+//         decltype(auto) 幾乎只用在泛型轉發層（wrapper、代理存取、字典查找），
+//         一般函式用它反而讓回傳型別難以一眼看出，也更容易誤回傳懸垂 reference。
+//
+// Q3. decltype(auto) 可以用在變數宣告嗎？
+//     答：可以。decltype(auto) x = expr; 等價於 decltype(expr) x = expr;。
+//         本檔 Demo 1 就是這樣對比：auto a = xr; 得到 int（獨立副本），
+//         decltype(auto) b = xr; 得到 int&（改 b 就是改 x）。
+//
+// ⚠️ 陷阱. return x; 與 return (x); 在 decltype(auto) 下有差別嗎？
+//     答：差很大。decltype 有兩條規則：運算元是「未加括號的變數名」時取其宣告
+//         型別（int）；加了括號就變成一般 lvalue 運算式，走值類別規則得到 int&。
+//         所以 return (local); 會回傳區域變數的 reference，函式一結束即懸垂 → UB。
+//     為什麼會錯：一般認知裡「括號只是分組、不影響語意」，在絕大多數情境也確實
+//         如此；但 decltype 是少數會「看括號」的地方。同一個坑對 auto 回傳型別
+//         不存在（auto 一律剝掉 reference），所以它是 decltype(auto) 專屬的陷阱。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <map>
 #include <stdexcept>

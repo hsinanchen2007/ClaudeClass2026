@@ -157,6 +157,36 @@
   - thread 生命週期要明確 join 或 detach；std::jthread 以 RAII 方式在解構時 request_stop 並 join，較不容易漏掉。
   - 效能問題如 false sharing、contention、過度建立 thread，通常在正確性之後才調整；先寫對，再量測。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】C++20 同步原語：latch / barrier / semaphore / atomic wait
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. C++20 新增了哪些同步原語？各解決什麼問題？
+//     答：std::latch 是一次性倒數門閂，N 個事件完成後放行，不可重複使用
+//         （count_down / wait）。std::barrier 是可重複使用的會合點，N 個 thread 每輪
+//         都要到齊才一起前進，並可指定每輪的 completion function，適合迭代式平行運算。
+//         std::counting_semaphore<N> / binary_semaphore 用於限流與資源池。
+//         std::atomic<T>::wait / notify_one / notify_all 提供「值改變才喚醒」的輕量
+//         等待，不需要 mutex。
+//     追問：latch 與 barrier 差在哪？（一次性 vs 可重用；barrier 還有每輪的完成回呼）
+//
+// 🔥 Q2. semaphore 與 condition_variable 差在哪？為什麼 semaphore 沒有 lost wakeup？
+//     答：CV 沒有記憶——notify 時若無人等待，通知就消失，所以必須搭配 mutex 保護的
+//         狀態變數與 predicate。semaphore 內部有「計數」，先 release 後 acquire 仍然
+//         有效，計數會被保留，因此不需要外部 mutex 也不會遺失通知。代價是它只能表達
+//         「可用資源數」，無法表達任意複雜的條件。
+//     追問：binary_semaphore 可以當 mutex 用嗎？（可以表達互斥，但沒有「擁有者」概念，
+//           可被別的 thread release，且不支援 RAII 慣例，語意上不建議混用）
+//
+// Q3. atomic<T>::wait/notify 與自己寫 spin 迴圈差在哪？
+//     答：spin 迴圈持續佔用 CPU；wait 則在確認值未變後讓 thread 進入阻塞（實作上通常
+//         走作業系統的等待機制，如 Linux futex），有等待者才需要被 notify 喚醒。它比
+//         mutex+CV 輕，因為不需要額外的 mutex 與 predicate 狀態，但只能等待「某個原子
+//         變數的值不再等於舊值」這種簡單條件。
+//     追問：notify 沒有等待者時的成本？（實作通常可用內部旗標避免不必要的系統呼叫，
+//           但這屬於實作細節，標準未規定）
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <thread>
 #include <vector>

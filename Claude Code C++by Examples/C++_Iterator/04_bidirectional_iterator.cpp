@@ -112,6 +112,30 @@
   - list、set、map 的 iterator 通常可雙向移動，但不能用 it + n。
   - reverse_iterator 依賴可向後走的能力，因此至少需要 bidirectional iterator。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】BidirectionalIterator
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. BidirectionalIterator 比 Forward 多了什麼？哪些容器提供？
+//     答：多了往回走的 --it / it--，其餘（含 multi-pass）與 forward 相同；仍然沒有
+//         it + n、it1 - it2、it[n]，那些是 random access 才有。標準容器中 list、set、map、
+//         multiset、multimap 的 iterator 屬於這一級。
+//     追問：為什麼 list 的 ++ / -- 是 O(1) 卻不是 random access？（節點只能一步一步跳
+//         指標，走第 n 個要 O(n)）／reverse_iterator 最低需要哪一級？（bidirectional）
+//
+// 🔥 Q2. 為什麼 std::sort(l.begin(), l.end()) 對 std::list 編譯不過？
+//     答：std::sort 需要 random access iterator（要做區間分割與跳躍），list 只提供
+//         bidirectional。list 自己有成員函式 l.sort()，內部用 merge sort，透過重接節點
+//         指標完成排序，不搬動元素。
+//     追問：那 std::reverse 對 list 可以嗎？（可以，它只需要 bidirectional）
+//
+// ⚠️ 陷阱. 用 --c.end() 取最後一個元素，什麼時候會出事？
+//     答：容器為空時是 UB——沒有「begin 之前」這個位置，對 begin() 再 -- 同樣是 UB。
+//         取最後一個元素前必須先確認 !c.empty()。
+//     為什麼會錯：大家記得「*end() 不能解參考」，卻忘了 -- 本身在邊界上就已經越界；
+//         空容器時 end() == begin()，退一步就掉出合法範圍了。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <list>
 #include <set>

@@ -68,6 +68,47 @@
   - 繼承層級越深，理解成本越高；實務上應保持 base class 介面小而穩定，避免把所有可重用函式都塞進父類別。
   - 若 class 打算作為 polymorphic base，通常需要 virtual destructor，否則透過 base pointer delete derived object 會出問題。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】繼承（Inheritance）
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 什麼是 object slicing（物件切片）？如何避免？
+//     答：把 derived 物件「以值」指派或傳遞給 base 型別時，只有 base 的部分被複製，
+//     derived 的成員與多型行為被切掉，得到的是一個純粹的 base 物件。
+//     避免方式：base 一律用 pointer 或 reference 傳遞；把 base 的 copy constructor /
+//     copy assignment 設為 protected 或 deleted；或讓 base 成為 abstract class。
+//     追問：`std::vector<Base>` 塞 Derived 會怎樣？（每個元素都被 slice；
+//     正解是 `std::vector<std::unique_ptr<Base>>`）
+//
+// 🔥 Q2. 什麼是 diamond problem？virtual inheritance 如何解決？
+//     答：B、C 各自繼承 A，D 又同時繼承 B 與 C → D 內含「兩份」A subobject，
+//     存取 A 的成員會 ambiguity，也浪費空間。解法是 `class B : virtual public A`、
+//     `class C : virtual public A`，讓 A 成為 virtual base，D 中只有一份共享的 A。
+//     追問：virtual base 由誰負責初始化？（由最衍生的類別 D 直接呼叫 A 的建構子，
+//     B/C 初始化列表中對 A 的初始化會被忽略）
+//     成本呢？（存取 virtual base 的成員需要多一層間接定址、物件也會變大；
+//     實際的佈局方式屬 ABI/實作定義，標準未規定）
+//
+// 🔥 Q3. 執行期多型的兩個必要條件是什麼？
+//     答：① base 的函式宣告為 virtual 且被 derived override；
+//     ② 透過 base 的 pointer 或 reference 呼叫。
+//     用物件本身（by value）呼叫是靜態綁定，不構成多型 — 這也正是 slicing 之所以
+//     致命的原因：切完之後連 vptr 都是 Base 的了。
+//
+// Q4. 建構 derived 物件時的順序？
+//     答：virtual base → 一般 base（依宣告順序）→ derived 的非靜態成員（依宣告順序）
+//     → derived 建構子本體。解構完全相反。
+//     這也解釋了為什麼在 base 的建構子裡呼叫 virtual function，看不到 derived 的 override。
+//
+// ⚠️ 陷阱. derived 定義了同名函式，base 的其他重載還叫得到嗎？
+//     答：叫不到 — 這是 name hiding。名稱查找一旦在 derived scope 找到就停止，
+//     base 中所有同名重載（即使參數型別完全不同）全部被隱藏、不參與 overload
+//     resolution。解法：在 derived 中寫 `using Base::f;` 把 base 的重載拉回來。
+//     為什麼會錯：以為 base 與 derived 的同名函式會合併成同一個 overload set；
+//     也常與 override 混淆 — override 要求簽名完全相同且 base 為 virtual，
+//     name hiding 則發生在名稱查找階段，跟 virtual 一點關係都沒有。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <vector>

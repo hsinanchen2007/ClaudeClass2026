@@ -71,6 +71,40 @@
   - std::function 可保存不同 callable，但可能有型別抹除成本和配置成本；效能敏感處可優先用 template 接 callable。
   - lambda 放進 algorithm 時應讓 predicate 無副作用或副作用明確，否則演算法意圖會變難讀。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::function 與型別擦除
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. lambda（用 auto／模板參數接）、std::function、函式指標三者怎麼選？
+//     答：函式指標不能帶狀態、通常難以 inline；lambda 以 auto 或模板參數傳遞時型別確定，
+//     可完全 inline，開銷最小；std::function 是型別擦除的統一型別，代價是間接呼叫、
+//     難以 inline，而且可能有堆配置。原則：能用 auto／模板參數就用；只有在需要把「不同
+//     型別的可呼叫物」放進同一個變數、容器或成員時，才用 std::function。
+//     追問：為什麼 std::sort 傳 lambda 通常比傳函式指標快？（lambda 的型別是模板參數，
+//     operator() 可被 inline；函式指標對 sort 只是一個不透明的值）
+//
+// 🔥 Q2. std::function 的型別擦除是怎麼做的？為什麼有開銷？
+//     答：它要把任意可呼叫物存進同一個型別，做法是內部保留一塊儲存區，加上一組操作
+//     （呼叫／複製／解構／取 type_info），透過虛擬函式或函式指標表分派。骨架大致是：
+//     struct Base { virtual R call(Args...) = 0; virtual Base* clone() const = 0; ... };
+//     template<class F> struct Impl : Base { F f; R call(Args... a) override { ... } };
+//     代價是多一層間接呼叫、難以 inline，且可呼叫物太大時要堆配置。
+//
+// Q3. std::function 什麼時候會發生堆配置？
+//     答：實作通常有 small buffer optimization：可呼叫物夠小（且一般要求 nothrow-move）
+//     就就地存放，否則配置到堆上。libstdc++ 的 buffer 約 16 bytes，但這是
+//     implementation-defined、標準未規定門檻甚至未規定一定要有 SBO。實務重點是：在熱
+//     路徑上把 lambda 塞進 std::function，可能引入看不見的 malloc。
+//
+// ⚠️ 陷阱. 呼叫一個空的 std::function 會怎樣？它能存捕獲 unique_ptr 的 lambda 嗎？
+//     答：呼叫空的 std::function 會拋 std::bad_function_call，不是 UB、不是直接崩潰
+//     （這與「呼叫空的函式指標是 UB」不同）。而 std::function 要求可呼叫物是
+//     CopyConstructible，所以捕獲了 unique_ptr 的 lambda 存不進去；C++23 的
+//     std::move_only_function 才補上這個缺口。
+//     為什麼會錯：大家把 std::function 想成「聰明的函式指標」，於是既預期空呼叫是 UB，
+//     又預期它能裝任何 lambda。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <functional>
 #include <iostream>
 #include <memory>

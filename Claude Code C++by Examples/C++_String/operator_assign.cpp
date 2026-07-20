@@ -148,6 +148,42 @@
   - 若只是傳入唯讀文字片段且不需要擁有資料，std::string_view 可避免複製；但它不能延長原字串生命週期。
   - 處理中文或 UTF-8 時，std::string 的 size() 回傳 byte 數，不是人眼看到的字元數。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::string 的 operator=(含 move assignment)
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. s2 = std::move(s1); 之後,s1 是什麼狀態?
+//     答:「valid but unspecified」——s1 仍是合法物件,可以安全解構、重新
+//         賦值、呼叫 clear() 等沒有前置條件的操作;但標準「不保證」它變成
+//         空字串。多數實作確實會清空,但那是實作行為,寫程式不可依賴。
+//     追問:那 assert(s1.empty()) 會過嗎?→ 實務上常常會過,但這正是最
+//           危險的地方:它是未指定行為,換編譯器或版本就可能不成立。
+//
+// 🔥 Q2. move assignment 一定比 copy assignment 快嗎?一定是 O(1) 嗎?
+//     答:不一定是 O(1)。長字串(heap 模式)只要接管 pointer/size/capacity
+//         → O(1);但短字串走 SSO 時資料就在物件本體內,必須真的 memcpy
+//         內嵌 buffer,是有常數上界的複製。短字串的 move 幾乎沒有優勢。
+//     追問:SSO 門檻多少?→ libstdc++ 為 15 個字元,但這是
+//           implementation-defined,標準沒規定任何數字。
+//
+// 🔥 Q3. 為什麼 std::string 的 move 是不是 noexcept 對 vector 很重要?
+//     答:vector 擴容時會用 move_if_noexcept:元素的 move constructor 是
+//         noexcept 才敢用 move 搬遷,否則只能退回 copy,才能維持 strong
+//         exception guarantee(搬到一半失敗時舊 buffer 還完好)。
+//         std::string 的 move constructor 標準要求為 noexcept,所以
+//         vector<string> 擴容能走 move 而不是逐一複製。
+//     追問:move assignment 也是無條件 noexcept 嗎?→ 不是,它是條件式
+//           noexcept(取決於 allocator 的 propagate / is_always_equal),
+//           對預設的 std::allocator 而言成立。
+//
+// ⚠️ 陷阱. std::string s = "hello"; s = 'x'; 之後 s 是什麼?
+//     答:s 變成長度 1 的字串 "x",不是「把第 0 個字元改成 'x'」。
+//         operator=(char) 是整個內容的覆蓋賦值,原本的 "hello" 全沒了。
+//         要改單一字元請用 s[0] = 'x'(需先確保 size() > 0)。
+//     為什麼會錯:看到 = 'x' 直覺聯想成「指派一個字元進去」,忽略了
+//         operator= 的語意一律是「用右邊的東西取代整個字串內容」。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <utility>

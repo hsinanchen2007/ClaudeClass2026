@@ -65,6 +65,36 @@
   - nested_exception 可保留低階例外，同時在高階加入更多上下文。
   - 使用 throw_with_nested 後，上層可遞迴印出完整原因鏈。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】nested_exception 與 exception_ptr
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. std::throw_with_nested / rethrow_if_nested 解決什麼問題？
+//     答：把「低層例外」包在「高層例外」裡，形成例外鏈（類似 Java 的 caused by），
+//     讓上層能同時看到「做什麼失敗了」與「底層的真正原因」：
+//     try { parse(file); }
+//     catch (...) { std::throw_with_nested(std::runtime_error("解析 " + file + " 失敗")); }
+//     接收端則遞迴用 std::rethrow_if_nested 展開，印出完整的因果鏈。
+//     追問：為什麼不直接把原因字串接起來就好？（那會丟失原例外的型別，上層無法針對
+//     特定型別做處理，只剩一串文字）
+//
+// 🔥 Q2. std::exception_ptr 是什麼？為什麼跨執行緒需要它？
+//     答：它是可拷貝、可跨執行緒傳遞的「例外物件控制代碼」：在 catch 中用
+//     std::current_exception() 取得，在別處用 std::rethrow_exception(p) 重新拋出。
+//     需要它是因為例外只在單一執行緒的呼叫堆疊內傳播，逃出 thread 函式頂層就是
+//     std::terminate()。std::promise::set_exception 與 std::async 正是用這個機制把子
+//     執行緒的例外送回主執行緒。
+//     追問：std::thread 的可呼叫物件拋例外會怎樣？（直接 std::terminate()；要讓例外被
+//     封裝進 future 必須用 std::async 或 std::packaged_task）
+//
+// ⚠️ 陷阱. 在 catch (...) 裡面，可以完全不知道例外型別就把它保存下來嗎？
+//     答：可以，這正是 exception_ptr 的用途——std::current_exception() 不需要知道型別。
+//     反過來說，若只是想「查看」型別資訊，catch (...) 本身拿不到任何東西，得用
+//     try { throw; } catch (const std::exception& e) 這種「rethrow 再細分」的手法。
+//     為什麼會錯：以為 catch (...) 什麼資訊都拿不到、只能放棄；實際上 current_exception()
+//     讓你可以先原封不動地保存，稍後再決定怎麼處理。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <exception>
 #include <iostream>
 #include <stdexcept>

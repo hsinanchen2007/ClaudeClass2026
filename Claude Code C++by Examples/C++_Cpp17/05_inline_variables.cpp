@@ -62,6 +62,22 @@
   - inline variable 允許變數定義放在 header 並被多個 translation unit 包含。
   - 它常用於 header-only library 的常數或 template 靜態資料成員。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】inline variables
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. inline variable 解決什麼問題？
+//     答：C++17 前，header 內的 static 資料成員必須在某一個 .cpp 另寫定義，否則
+//         連結錯誤；多個 TU 各自定義又違反 ODR。inline 變數允許直接在 header
+//         定義並初始化，連結器把它合併為單一實體（跨 TU 位址相同）。
+//     追問：static constexpr 資料成員呢？
+//           （C++17 起隱含 inline，不再需要 out-of-line 定義）
+//
+// Q2. namespace scope 的 inline 與 static 差在哪？
+//     答：static 是 internal linkage，每個 TU 一份獨立副本，位址各不相同；
+//         inline 是全程式唯一一份。當變數帶可變狀態時，這個差別會直接變成 bug。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 

@@ -94,6 +94,43 @@
   - 比較器必須和排序時使用的規則一致；用不同規則搜尋同一批資料，結果會像資料沒排序一樣不可信。
   - 在 vector 上 iterator 相減可得到索引，在 list 上不行；iterator category 會影響你能不能做 O(1) 距離計算。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::binary_search
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. std::find 和 std::binary_search 的差別?什麼時候用哪個?
+//     答:find 是線性搜尋 O(n),對任何 input iterator 都適用,且不要求排序。
+//         binary_search 是 O(log n) 次比較,但要求區間已依同一 comp 排序,
+//         而且只回 bool 不回位置 — 要位置得改用 lower_bound。
+//         資料若未排序,為了用 binary_search 而先 sort(O(n log n))通常不划算,
+//         除非同一批資料要查詢很多次。
+//     追問:關聯容器(set/map)上該用 std::find 還是成員 find()?
+//           (答:一律用成員版,自由函式版會退化)
+//
+// 🔥 Q2. binary_search 和 lower_bound / upper_bound / equal_range 的關係?
+//     答:四者同屬二分搜尋家族、共用「區間已排序」前置條件。
+//         lower_bound 回傳第一個 >= value 的位置;upper_bound 回傳第一個 > value;
+//         equal_range 一次回傳 {lower, upper},個數即 upper - lower。
+//         binary_search 只回 bool,語意上等價於「做 lower_bound 後再檢查是否等價」。
+//     追問:那要「位置 + 存在性」怎麼寫?
+//           (答:lower_bound 後檢查 it != last && *it == value,不要呼叫兩次)
+//
+// ⚠️ 陷阱1. binary_search 判斷「找到」用的是 == 嗎?
+//     答:不是。標準找的是「等價(equivalent)」的元素,定義為
+//         !comp(a, b) && !comp(b, a) — 全程只用 comp,從不呼叫 operator==。
+//     為什麼會錯:多數人腦中的模型是「逐一比對相等」。但在自訂 comp
+//         (例如只比較字串長度)之下,"xyz" 與 "ccc" 是等價卻不相等的;
+//         這也正是本檔範例 2 回傳 true 的原因。set/map 判定鍵唯一性用的
+//         同樣是「等價」而非「相等」。
+//
+// ⚠️ 陷阱2. 對沒排序的資料呼叫 binary_search 會怎樣?
+//     答:UB(未定義行為)。不會丟例外、不會回傳錯誤碼,只會給出「看起來
+//         像答案」的 bool。同理,搜尋用的 comp 必須與當初排序用的完全一致,
+//         否則等同於在未排序資料上二分。
+//     為什麼會錯:因為它「不會 crash 也不會報錯」,小資料上甚至常常剛好答對,
+//         讓人誤以為前置條件只是效能建議,而不是正確性要求。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <iostream>
 #include <string>

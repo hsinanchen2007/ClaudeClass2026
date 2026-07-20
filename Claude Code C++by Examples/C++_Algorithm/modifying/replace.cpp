@@ -103,6 +103,33 @@
   - move algorithm 會把元素搬到目的地，來源仍有效但值可能改變；後續只能重新指定或安全銷毀。
   - shuffle/sample 需要亂數引擎；不要每次呼叫都用同一個固定種子，除非你刻意要可重現測試結果。
 */
+
+// ===========================================================================
+// 【面試題】std::replace / replace_if / replace_copy / replace_copy_if
+// ---------------------------------------------------------------------------
+// 🔥 Q1. replace 會改變容器大小嗎?它和 remove、transform 怎麼分工?
+//     答:不會。replace 只改「值」,個數與位置都不變,複雜度恰好 N 次比較。
+//         分工:要把特定值換成另一個特定值用 replace;要對每個元素套函式產生新值用
+//         transform;要過濾掉元素(改變邏輯長度)用 remove + erase。
+//
+// 🔥 Q2. replace 和 replace_if 各用在什麼時候?
+//     答:replace(first, last, old, new) 以 operator== 比對舊值,適合「值相等」的簡單情形;
+//         replace_if(first, last, pred, new) 以述詞決定,適合條件式(範圍、屬性、
+//         或自訂型別沒有 operator== 的情況)。自訂型別若沒定義 operator==,
+//         replace 根本編不過,這時就得改用 replace_if。
+//
+// Q3. 為什麼有 _copy 版本?它們的回傳值是什麼?
+//     答:_copy 版不修改原範圍,而是把結果寫到另一段輸出,適合「原資料要保留、
+//         同時要一份替換後的版本」。回傳值是寫入結束位置的下一個(d_first + N)。
+//         注意目的端必須先有足夠空間,或改用 std::back_inserter——
+//         和其他寫入型演算法一樣,它不會替你擴容。
+//
+// Q4. std::string 可以直接用 std::replace 嗎?
+//     答:可以,但要分清楚層次:std::replace 把 string 當成「字元的 sequence」,
+//         做的是「單一字元換單一字元」。要換「子字串」得用成員函式 std::string::replace,
+//         兩者名字相同但完全是不同的東西。
+// ===========================================================================
+
 #include <algorithm>
 #include <iostream>
 #include <iterator>

@@ -101,6 +101,34 @@
   - move algorithm 會把元素搬到目的地，來源仍有效但值可能改變；後續只能重新指定或安全銷毀。
   - shuffle/sample 需要亂數引擎；不要每次呼叫都用同一個固定種子，除非你刻意要可重現測試結果。
 */
+
+// ===========================================================================
+// 【面試題】std::rotate / rotate_copy
+// ---------------------------------------------------------------------------
+// 🔥 Q1. std::rotate(first, middle, last) 做什麼?複雜度?
+//     答:把 [first, middle) 與 [middle, last) 兩段交換位置(左旋),使原本 middle 指向的
+//         元素成為新的起點。是 in-place 的線性演算法 O(n),不需要額外緩衝區。
+//         回傳值是「原本 first 那個元素的新位置」,等於 first + (last - middle)。
+//         注意回傳型別:C++98 是 void,C++11 起才改為回傳 iterator。
+//     追問:middle 等於 first 或 last 時會怎樣?(答:等於什麼都不做)
+//
+// 🔥 Q2. rotate 和三次 reverse 是什麼關係?
+//     答:rotate 可以用三次 reverse 實作:reverse 前段、reverse 後段、再 reverse 全體。
+//         這是筆試常考的「陣列循環移位」標準解,同樣是 O(n) 且 in-place,
+//         但實際的搬移次數比 std::rotate 的專門實作多。
+//
+// Q3. rotate 的經典用途有哪些?
+//     答:陣列循環移位、把某個元素或某段子區間搬到指定位置、實作 stable_partition
+//         的核心步驟。Sean Parent 在 "C++ Seasoning" 講「no raw loops」時,
+//         就是以 rotate 與 stable_partition 當主要範例。
+//
+// ⚠️ 陷阱. 想「向右旋轉 k 格」,middle 該傳什麼?
+//     答:std::rotate 是左旋,向右旋 k 等於向左旋 n - k,所以要傳
+//         v.begin() + (n - k % n) % n。先對 k 取模是必要的,否則 k >= n 時 iterator 越界。
+//     為什麼會錯:直覺會直接寫 v.begin() + k,那是向左旋 k;而且忘了取模在
+//         k > size() 時就直接 UB,不會有任何錯誤訊息。
+// ===========================================================================
+
 #include <algorithm>
 #include <climits>
 #include <iostream>

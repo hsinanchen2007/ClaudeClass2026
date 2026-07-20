@@ -130,6 +130,35 @@
   - 若只是傳入唯讀文字片段且不需要擁有資料，std::string_view 可避免複製；但它不能延長原字串生命週期。
   - 處理中文或 UTF-8 時，std::string 的 size() 回傳 byte 數，不是人眼看到的字元數。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】get_allocator 與 allocator-aware 容器
+// ───────────────────────────────────────────────────────────────────────────
+// Q1. get_allocator() 為什麼回傳 copy 而不是 reference?
+//     答:allocator 在 STL 中被設計成 value-like 物件,複製便宜。對 stateless
+//     allocator(如 std::allocator)複製等於什麼都沒做;對 stateful allocator
+//     (如 pmr::polymorphic_allocator)持有 copy 比持有 reference 安全——即使
+//     來源 string 已被解構,手上那份仍可用,因為它通常只包了一個
+//     memory_resource*,而該 resource 的生命週期由你自己管理。
+//     追問:那 allocator 本身的 allocate() 是 noexcept 嗎?→ get_allocator() 是
+//     noexcept,但拿到後呼叫 allocate() 仍可能丟 bad_alloc。
+//
+// Q2. stateless 與 stateful allocator 差在哪?為什麼會影響 swap?
+//     答:stateless allocator 沒有內部資料,所有實例可互換,sizeof 通常為 1,
+//     且能靠 EBO(Empty Base Optimization)壓進容器裡不增加 sizeof(string)。
+//     stateful allocator 持有狀態(例如指向某個 memory pool);兩個型別相同但
+//     allocator 指向不同 resource 的 string,除非 POCS
+//     (propagate_on_container_swap)為 true,否則不能安全互 swap。
+//     追問:std::allocator 的 POCCA/POCMA/POCS 預設是什麼?→ 都是 false,
+//     因為它無狀態,傳不傳遞沒有差別。
+//
+// Q3. 實務上什麼時候真的會用到 get_allocator()?
+//     答:最常見的是「讓自己的容器跟某個既有物件共用同一個 memory pool」:
+//     std::pmr::vector<int> v(s.get_allocator());,讓兩者從同一個 memory_resource
+//     取記憶體,在熱迴圈中大量配置小物件時能顯著減少 malloc 次數與碎片。
+//     一般應用程式幾乎用不到,但 allocator-aware 容器規格要求必須提供它。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <vector>

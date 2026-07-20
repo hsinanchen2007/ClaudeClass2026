@@ -62,6 +62,33 @@
   - Factory 函式名稱應表達建立語意，例如 createParser、makeShape；不要只命名 get，因為 get 聽起來像借用既有物件。
   - 這個模式常和 abstract class 搭配：介面穩定，具體類別可替換，呼叫者測試時也能換成 fake 實作。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】Factory 工廠模式
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. constructor 可以是 virtual 嗎？那要「依型別動態建立物件」怎麼辦？
+//     答：不行。virtual 分派需要 vptr，而 vptr 是在 constructor 執行過程中才被設定的
+//         —— 「還沒建構就要靠建構結果去分派」邏輯上不成立。要在執行期決定建立哪個
+//         型別，就用 **factory pattern**（本檔 makeShape / ShapeFactory::create），
+//         或 clone 慣用法 `virtual Base* clone() const`（即所謂 virtual constructor idiom）。
+//     追問：destructor 為什麼就可以是 virtual？（解構時物件已完整建構，vptr 有效）
+//
+// 🔥 Q2. 為什麼 factory 應該回傳 `std::unique_ptr<Base>` 而不是裸指標？
+//     答：① 明確表達「所有權轉移給呼叫端」，呼叫端不會忘記 delete 或搞不清誰負責；
+//         ② 例外安全，中途 return 也不會洩漏；③ 呼叫端只依賴抽象介面 Base，
+//         具體型別完全被封在工廠裡。前提是 Base 必須有 virtual destructor（第 18 篇）。
+//     追問：建構可能失敗時怎麼表達？（回傳 nullptr（本檔的做法）、std::optional、
+//           C++23 的 std::expected 或拋例外 —— 選哪個要和專案錯誤處理風格一致）
+//
+// Q3. 什麼是 covariant return type（協變回傳型別）？
+//     答：覆寫 virtual 函式時，回傳型別可以從 `Base*` / `Base&` 收窄成
+//         `Derived*` / `Derived&`（必須是指標或參考，且該繼承是可存取、非歧義的）。
+//         典型用途正是 clone：`virtual Derived* clone() const override;`。
+//     追問：那回傳 `std::unique_ptr<Derived>` 去覆寫 `unique_ptr<Base>` 可以嗎？
+//           （不行 —— covariance 只適用於裸指標與參考，smart pointer 是兩個
+//           不同的 class template，沒有這層語言規則）
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <memory>
 #include <string>

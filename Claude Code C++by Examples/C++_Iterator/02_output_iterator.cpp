@@ -135,6 +135,31 @@
   - back_inserter 是 output iterator，可讓 copy/transform 自動 push_back。
   - 使用 output iterator 時，目的地容量或插入策略必須明確，否則容易寫越界。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】OutputIterator
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. OutputIterator 的規範長什麼樣？和 InputIterator 差在哪？
+//     答：只支援「寫一次、往前走一次」：合法操作是 *it = value、++it / it++，而且是
+//         single-pass。它不保證能讀（*it 不是拿來取值的），也沒有 operator==——所以
+//         沒有「end output iterator」這種東西，寫多少由演算法自己決定。
+//     追問：為什麼 output iterator 常見的 ++ 是 no-op？（像 back_insert_iterator 這類
+//         adaptor，前進的動作已經由賦值時的 push_back 完成，++ 只需回傳自己）
+//
+// 🔥 Q2. std::copy(src.begin(), src.end(), dst.begin()) 對空的 dst 為什麼是 UB？
+//     答：演算法只拿到 iterator，不知道容器型別，也就無法改變容器大小；它會直接往
+//         dst.begin() 起的位置寫，而空容器根本沒有那些位置。正確做法是用 insert iterator：
+//         std::copy(src.begin(), src.end(), std::back_inserter(dst));
+//     追問：back_inserter 是怎麼做到的？（它是 output iterator adaptor，把 *it = v 轉譯
+//         成 dst.push_back(v)）
+//
+// ⚠️ 陷阱. 「OutputIterator 就是可以寫的 iterator」這句話錯在哪？
+//     答：錯在把「能寫」和「是 output iterator」畫上等號。vector::iterator 能寫，但它是
+//         random access iterator；反過來 ostream_iterator 是 output iterator，卻連讀都
+//         不能讀。category 描述的是「支援哪些操作與保證」，不是「唯讀或可寫」的二分法。
+//     為什麼會錯：多數人腦中把 category 想成權限（唯讀 / 可寫），而不是能力階層。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <iterator>
 #include <vector>

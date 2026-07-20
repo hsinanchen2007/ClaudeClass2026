@@ -59,6 +59,50 @@
   - vector 擴容會讓所有 iterator/reference/pointer 失效；list 插入通常不影響其他元素 iterator。
   - erase 常回傳下一個有效 iterator，迴圈刪除元素時應使用這個回傳值接續。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】iterator invalidation
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 什麼是 iterator invalidation？各容器的規則是什麼？
+//     答：容器被修改後，先前取得的 iterator / pointer / reference 可能不再指向有效元素，
+//         再使用即 UB。規則：
+//         * vector：發生 reallocation → 全部失效；未 reallocation 時 insert / erase →
+//           插入點或刪除點「及其之後」失效。
+//         * deque：兩端 insert → iterator 全失效，但 reference / pointer 仍有效；中間
+//           insert / erase → 全部失效；兩端 erase → 只有被刪元素失效。
+//         * list / forward_list / map / set：只有「被刪除元素」的 iterator 失效，
+//           insert 完全不影響任何既有 iterator。
+//         * unordered_*：insert 若觸發 rehash → 所有 iterator 失效，但 reference /
+//           pointer 永遠有效；erase 只影響被刪元素。
+//     追問：unordered 容器「iterator 失效但 reference 有效」怎麼解釋？（separate chaining
+//         ——元素放在各自獨立配置的節點上，rehash 只是重接 bucket array 與 next 指標，
+//         節點本身沒有搬家）
+//
+// 🔥 Q2. 在迴圈中刪除元素的正確寫法？
+//     答：C++11 起所有標準序列容器與關聯容器的 erase(iterator) 都回傳「下一個有效
+//         iterator」，所以統一寫法是：
+//             for (auto it = c.begin(); it != c.end(); ) {
+//                 if (pred(*it)) it = c.erase(it);
+//                 else ++it;
+//             }
+//         舊寫法 c.erase(it++) 是 C++98 針對 map / set / list 的技巧（當年 erase 回傳
+//         void），對 vector / deque 並不成立——後續 iterator 也一併失效了。
+//     追問：對 vector 逐個 erase 的複雜度？（O(n^2)，應改用 erase-remove idiom）／C++20
+//         有更簡單的寫法嗎？（std::erase_if(c, pred)）
+//
+// ⚠️ 陷阱. 兩個不同容器的 iterator 可以互相比較或相減嗎？
+//     答：不行，是 UB。iterator 的比較與相減只在同一個容器（同一序列）內有定義。即使兩個
+//         vector 內容完全相同，v1.begin() == v2.begin() 仍是未定義行為；v2.end() -
+//         v1.begin() 同樣無意義。要比較內容請用 c1 == c2 或 std::equal。
+//     為什麼會錯：實務上這種比較通常「剛好」回傳 false 而不當掉，於是被當成可用；標準並
+//         沒有這個保證。libstdc++ 開 _GLIBCXX_DEBUG 就會 assert 出來。
+//
+// Q3. vector 擴容時到底長大幾倍？
+//     答：標準只規定 push_back 是 amortized O(1)，並「沒有」規定成長倍率——那是
+//         implementation-defined：libstdc++ 約 2 倍、MSVC 約 1.5 倍。要避免中途
+//         reallocation，正解是事先 reserve()，而不是去推算倍率。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <vector>
 #include <list>
@@ -135,7 +179,7 @@ int main() {
 
     // -----------------------------------------------------------------------
     // 範例 5：unordered_map 的「reference 不失效」特性 — 寫法可以更靈活
-    //   只要不 erase 該 key、不 rehash，refernece 一直有效。
+    //   只要不 erase 該 key、不 rehash，reference 一直有效。
     // -----------------------------------------------------------------------
     // (略，僅作概念提醒)
 

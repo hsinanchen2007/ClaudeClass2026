@@ -92,6 +92,53 @@
   - perfect forwarding 需要 T&& 搭配 std::forward<T>，不要把所有 && 都誤認為 move。
   - template 可提升零成本抽象，但也可能造成編譯時間上升和二進位膨脹；共通實作可用非 template helper 收斂。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】perfect forwarding / forwarding reference
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. T&& 什麼時候是 forwarding reference，什麼時候只是右值參考？
+//     答：只有當 T 是「這個函式模板正在推導」的參數時，T&& 才是 forwarding
+//         reference（可綁左值也可綁右值）。以下三種都只是普通右值參考：
+//         const T&&（加了 const 就不是，本機實測傳左值直接編譯錯）、
+//         std::vector<T>&&（T 不在頂層）、類別模板成員函式裡已固定的 T&&。
+//         另外 auto&& 也是 forwarding reference。
+//     追問：推導規則？（傳左值 T 推成 U&，傳右值 T 推成 U，再套 reference collapsing）
+//
+// 🔥 Q2. 引用摺疊規則是什麼？std::move 為什麼要先 remove_reference？
+//     答：四條規則 & & → &、& && → &、&& & → &、&& && → &&，一句話：
+//         「只要有一個左值參考，結果就是左值參考」。std::move 若不先剝掉參考，
+//         傳左值時 T 推成 U&，回傳型別 T&& 會摺疊回 U&——根本 cast 不出右值
+//         （本機以 static_assert 實測確認會得到 lvalue reference）。
+//     追問：那 forward 為何反而靠這個摺疊？（它就是用 T 帶不帶 & 來決定還原成
+//         左值還是右值，摺疊是它的運作機制而不是障礙）
+//
+// 🔥 Q3. 為什麼 std::forward 一定要顯式寫 <T>，std::move 卻不用？
+//     答：forward 是「條件式」轉型，判斷依據就是 T 帶不帶 &。而函式內的 x 是
+//         具名變數、表達式永遠是左值，光看實參推不出呼叫端原本的值類別，
+//         所以 T 不能省——省略會編譯失敗（本機實測：no matching function for
+//         call to forward(int&)）。std::move 是無條件轉型，不需要這個資訊。
+//
+// ⚠️ 陷阱 1. template<class T> Person(T&&) 這種建構子為什麼會「吃掉」複製建構？
+//     答：forwarding reference 是貪婪的精準匹配。傳 non-const 左值時，複製建構子
+//         要求 const Person& 需要加上 const，而模板版 T=Person& 是精準匹配 →
+//         選中模板（本機實測：non-const 左值走模板、const 左值才走 copy ctor）。
+//         同理 g(short) 也會被 g(T&&) 搶走，因為非模板的 g(int) 需要整數提升。
+//     為什麼會錯：以為「複製建構子是特殊成員、一定優先」。它一點都不特殊，就是
+//         重載決議裡的一個候選，而且經常輸給精準匹配的模板。
+//         解法：enable_if 排除自身型別（!is_base_of_v<Person, decay_t<T>>）、
+//         tag dispatch，或 C++20 concepts。
+//
+// ⚠️ 陷阱 2. 「完美」轉發什麼時候並不完美？
+//     答：至少五種（EMC++ Item 30）：(a) braced initializer——f({1,2,3}) 的
+//         {...} 是 non-deduced context，T 根本推不出來（解法：先 auto il={1,2,3};
+//         再 f(il)）；(b) 0 或 NULL 當空指標會被推成 int 而非 nullptr_t；
+//         (c) 只宣告未定義的 static const 成員，轉發會取址 → 連結錯誤；
+//         (d) 重載函式名或模板名無法決定選哪一個，需顯式轉型；(e) bitfield
+//         無法綁定非 const 參考。
+//     為什麼會錯：「完美」二字讓人以為它能原封不動轉發任何東西。實際上它轉發的是
+//         「已經推導成功的型別」——推導不出來的東西，根本進不了轉發這一關。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <list>
 #include <memory>

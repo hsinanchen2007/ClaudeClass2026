@@ -67,6 +67,27 @@
   - 容器元素型別若昂貴，優先理解 emplace、move 和 reference/iterator 有效性，不要盲目複製。
   - 所有容器都要考慮空容器邊界；front/back/top 在空容器上呼叫通常是未定義行為或前置條件違反。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::forward_list
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. forward_list 為什麼只有 insert_after / erase_after？
+//     答：它是 singly linked list，只有 next 指標。要在某節點「之前」插入必須先找到前驅，
+//         那需要從頭走訪 O(n)。改成 *_after 版本後全部都是 O(1)，
+//         並提供 before_begin() 讓你能在第一個元素之前插入。
+//     追問：什麼情境真的會選 forward_list 而不是 list？（極度在意每節點記憶體、且只需單向走訪）
+//
+// 🔥 Q2. forward_list 為什麼沒有 size()？
+//     答：C++11 起標準要求容器的 size() 為 O(1)，那就必須多維護一個計數器。
+//         forward_list 的設計目標是「零額外 overhead 的最小 singly linked list」，
+//         因此它干脆不提供 size()（也沒有 push_back）；需要算個數請用 std::distance。
+//
+// Q3. forward_list 為什麼也有自己的 sort() 成員函式？
+//     答：std::sort 要求 random access iterator，而 forward_list::iterator 只是 forward iterator，
+//         型別上就不相容。成員 sort() 以重接節點指標的方式排序，不搬移元素、不配置新節點，
+//         且是 stable 的。同理 remove() / unique() / merge() / splice_after() 也都是成員函式。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <forward_list>
 #include <iostream>
 #include <iterator>

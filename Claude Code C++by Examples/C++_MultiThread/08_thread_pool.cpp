@@ -163,6 +163,33 @@
   - thread 生命週期要明確 join 或 detach；std::jthread 以 RAII 方式在解構時 request_stop 並 join，較不容易漏掉。
   - 效能問題如 false sharing、contention、過度建立 thread，通常在正確性之後才調整；先寫對，再量測。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】Thread pool 設計
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 如何設計一個 thread pool？
+//     答：核心組件是「固定數量的 worker + 一個受 mutex 保護的 task queue +
+//         condition_variable + stop 旗標」。Worker loop：wait 直到 queue 非空或 stop
+//         → 若 stop 且 queue 空就 return → 否則 pop 並「在鎖外」執行任務。提交介面用
+//         packaged_task<R()> 包裝、回傳 future<R> 給呼叫端取結果與例外。解構時設
+//         stop、notify_all()、join 全部 worker。
+//     追問：worker 數量怎麼定？（CPU-bound 約 hardware_concurrency()；IO-bound 可更多）
+//
+// 🔥 Q2. 為什麼任務一定要在鎖外執行？
+//     答：否則整個池退化成序列執行——一個 worker 持鎖跑任務時，其他 worker 連 pop 都
+//         做不到。正確做法是在持鎖狀態下把任務 move 出 queue，解鎖後才呼叫它。
+//     追問：任務丟出例外怎麼辦？（必須在 worker loop 內接住，否則整個 process
+//           terminate；用 packaged_task 時例外會自動存入 shared state 傳給 future）
+//
+// ⚠️ 陷阱. 在池內的任務中提交另一個任務，並等待它完成，會發生什麼？
+//     答：可能死鎖。若所有 worker 都在等待各自的子任務，就沒有人能去執行 queue 裡的
+//         子任務，池整個停住。解法：呼叫端在等待時協助執行 pending 任務（work
+//         stealing / inline execution），或把父子任務分到不同的 queue／池。
+//     為什麼會錯：大家把 thread pool 想成「無限的並行資源」，忽略了 worker 數量是
+//         固定的，一旦 worker 全部被阻塞在「等待需要 worker 才能完成的事」，就形成
+//         資源環路等待。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <thread>
 #include <mutex>

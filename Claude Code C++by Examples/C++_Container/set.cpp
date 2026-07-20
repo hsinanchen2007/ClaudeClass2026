@@ -56,6 +56,29 @@
   - 容器元素型別若昂貴，優先理解 emplace、move 和 reference/iterator 有效性，不要盲目複製。
   - 所有容器都要考慮空容器邊界；front/back/top 在空容器上呼叫通常是未定義行為或前置條件違反。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::set
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. set 的元素為什麼不能修改？
+//     答：因為元素本身就是排序依據，修改它會破壞紅黑樹的有序性，使容器內部結構不一致。
+//         因此 std::set 的 iterator 與 const_iterator 都指向 const 元素（C++11 起明確規定）。
+//         正確做法：erase 舊值再 insert 新值；或 C++17 起用 extract() 取出 node handle、
+//         改完 value() 再 insert 回去（不需重新配置記憶體）。
+//     追問：map 呢？（value_type 是 std::pair<const Key, T>——key 是 const、value 可改）
+//
+// 🔥 Q2. set 的底層是什麼？為什麼選 red-black tree 而不是 AVL tree？
+//     答：底層是 red-black tree，find / insert / erase 都是 O(log n) worst case，且可有序走訪。
+//         RB tree 平衡條件較寬鬆（最長路徑 ≤ 最短路徑的 2 倍），AVL 要求左右子樹高度差 ≤ 1；
+//         所以 RB tree 在 insert / erase 時 rotation 次數較少，對插入刪除頻繁的通用容器更劃算。
+//
+// ⚠️ 陷阱. 對 set 做 insert 之後，舊的 iterator 會失效嗎？
+//     答：不會。set / map 的 insert 完全不影響任何既有 iterator 與 reference（同 list）；
+//         只有被刪除元素的 iterator / reference 會失效。
+//         原因是紅黑樹 rebalance 只重接指標，節點位址不會改變。
+//     為什麼會錯：把 vector「擴容就全失效」的直覺套到關聯容器。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <set>
 #include <iostream>
 #include <string>

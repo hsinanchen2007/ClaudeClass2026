@@ -67,6 +67,28 @@
   - 容器元素型別若昂貴，優先理解 emplace、move 和 reference/iterator 有效性，不要盲目複製。
   - 所有容器都要考慮空容器邊界；front/back/top 在空容器上呼叫通常是未定義行為或前置條件違反。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::deque
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. deque 的底層結構具體長什麼樣子？
+//     答：deque 維護一個稱為 map（中控器）的指標陣列，每個項目指向一塊等長的連續 buffer，
+//         資料存在這些 buffer 裡、buffer 之間在記憶體上不連續（分段連續）。
+//         iterator 內部持有 cur / first / last / node 四個成員，跨越 buffer 邊界時跳到下一個 node。
+//     追問：頭尾成長時元素會被搬移嗎？（不會，只在中控器兩端補上新 buffer 指標）
+//
+// 🔥 Q2. deque 的 random access 為什麼比 vector 慢？
+//     答：vector 是單塊連續記憶體，`v[i]` 就是一次指標偏移；
+//         deque 必須先算出落在哪一塊 buffer、再算 buffer 內偏移，多一層 indirection，
+//         且 cache locality 不如 vector。複雜度都是 O(1)，差在常數。
+//
+// ⚠️ 陷阱. 在 deque 兩端 push 之後，舊的 reference 還能用嗎？
+//     答：能。在兩端 insert 會使「所有 iterator 失效」，但 reference / pointer 仍然有效（元素沒搬家）。
+//         在中間 insert / erase 則是 iterator 與 reference 全部失效。
+//     為什麼會錯：多數人把 vector 的「擴容就全部失效」直接套到 deque；
+//         也常誤以為 deque 是 contiguous——它是 random access 但 **不是** contiguous iterator。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <deque>
 #include <iostream>
 #include <algorithm>

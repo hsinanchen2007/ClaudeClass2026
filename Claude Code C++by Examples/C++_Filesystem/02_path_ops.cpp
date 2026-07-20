@@ -57,6 +57,34 @@
   - filename、stem、extension 都只是路徑字串分解，不會碰檔案系統。
   - relative、absolute、canonical 的語意不同；canonical 需要路徑存在並可能丟例外。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】path 拆解、正規化與拼接
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. absolute、canonical、weakly_canonical、relative、lexically_normal 差在哪？
+//     答：關鍵是三個維度——是否需要路徑存在、是否解析 symlink、是否移除 . 與 ..：
+//     absolute(p) 不需存在、不解析 symlink、也不移除 ..（它只是在前面接上 current_path，
+//     所以 absolute("a/../b") 仍然含有 ..，這點常被誤會）；canonical(p) 需要路徑存在
+//     （不存在會拋例外）、會解析 symlink、會移除 . 與 ..；weakly_canonical(p) 不需存在，
+//     對存在的前綴部分會解析；relative(p, base) 與 lexically_normal() 都是純字面計算，
+//     完全不碰檔案系統。
+//     追問：什麼時候該用 weakly_canonical？（要正規化一個「即將建立、目前還不存在」的
+//     路徑）為什麼 relative() 可能給出錯誤結果？（它不解析 symlink，若路徑中有 symlink，
+//     字面上的 .. 與實際位置不一致）
+//
+// 🔥 Q2. operator/ 和 operator+= / concat() 差在哪？
+//     答：operator/=（append）會在需要時插入分隔符：path("a") / "b" 得到 "a/b"；
+//     operator+= 與 concat() 是純字串串接、不插分隔符：path("a") += "b" 得到 "ab"。
+//     加副檔名時該用後者（p += ".txt"），改副檔名則用 p.replace_extension(".log")。
+//
+// ⚠️ 陷阱. canonical 和 lexically_normal 都能「正規化路徑」，可以互換嗎？
+//     答：不行，兩者的代價與風險完全不同。canonical 會實際碰檔案系統——有 I/O 成本、
+//     路徑不存在會拋例外、而且結果只反映「查詢當下」的狀態，隨後檔案可能就被改掉了
+//     （TOCTOU）。lexically_normal 是純字串運算，不碰磁碟、不會失敗，但它不知道
+//     symlink 的存在，所以 a/symlink/.. 的字面化簡結果可能與實際位置不同。
+//     為什麼會錯：把兩者都當成「把路徑整理乾淨」的同義工具，忽略一個查磁碟、一個不查。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <filesystem>
 #include <iostream>
 #include <map>

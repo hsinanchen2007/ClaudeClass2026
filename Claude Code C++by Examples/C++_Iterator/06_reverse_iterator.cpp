@@ -139,6 +139,31 @@
   - rbegin 對應最後一個元素，rend 對應第一個元素之前的停止位置。
   - 用 reverse_iterator erase 時通常要把 base() 調整到真正要刪的位置。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】reverse_iterator
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. reverse_iterator 的 base() 為什麼會差一個位置？
+//     答：為了維持左閉右開區間的一致性。reverse_iterator 內部持有一個 base iterator，
+//         它的 operator* 是「先退一格再解參考」，所以恆有 &*rit == &*(rit.base() - 1)。
+//         於是 rbegin().base() == end()、rend().base() == begin()，區間 [rbegin, rend)
+//         正好對應 [begin, end) 的反轉。
+//     追問：rbegin() 指向哪個元素？（最後一個元素，但它的 base() 是 end()）
+//
+// 🔥 Q2. 拿到一個 reverse_iterator，要怎麼用它呼叫 erase？
+//     答：不能直接寫 v.erase(rit.base())——那會刪到右邊一格。正確寫法是
+//         v.erase(std::next(rit).base()) 或 v.erase((rit + 1).base())，先退一格再取 base。
+//     追問：reverse_iterator 最低需要底層是哪一級 iterator？（bidirectional，因為它要靠
+//         -- 才能往回走；unordered_* 是 forward，所以沒有 rbegin()）
+//
+// ⚠️ 陷阱. 「rbegin() 就是 end() - 1」這個理解錯在哪？
+//     答：錯在把兩者當成同一個東西。rbegin() 確實「指到」最後一個元素，但它是
+//         reverse_iterator 型別，其 base() 等於 end() 而不是 end() - 1；型別與 base 位置
+//         兩件事都不同，混用會在 erase / insert 時整整偏一格。
+//     為什麼會錯：腦中只記住「指向哪個元素」，忽略了 reverse_iterator 是一層 adaptor，
+//         base 位置與解參考位置刻意錯開一格。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <vector>
 #include <string>

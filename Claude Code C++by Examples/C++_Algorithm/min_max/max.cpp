@@ -95,6 +95,34 @@
   - 比較浮點數時要注意 NaN；一般比較器遇到 NaN 可能讓結果不符合直覺。
   - 若要保留原資料位置，使用 element 版本回傳 iterator；若只要數值，才使用 min/max 的值版本。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::max
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 為什麼 C++ 要用 std::max 而不是 C 的巨集 `#define max(a,b) ((a)>(b)?(a):(b))`？
+//     答：巨集是文字展開，參數會被求值多次——`max(++i, j)` 展開後 `++i` 出現兩次，
+//         i 可能被遞增兩次。std::max 是函式，參數只求值一次，沒有 side-effect 問題；
+//         而且是 template，型別安全、C++14 起還是 constexpr。
+//     追問：巨集還有什麼毛病？(沒有 namespace、會和成員函式/變數名撞名，
+//           所以 <windows.h> 的 max/min 巨集才要用 NOMINMAX 關掉)
+//
+// 🔥 Q2. `std::max(a, b)` 回傳值還是 reference？相等時回傳誰？
+//     答：兩值版回傳 **const T&**；initializer_list 版 `max({a,b,c})` 回傳 **T**（值）。
+//         相等時回傳 **a**（第一個參數）——實作是 `return a < b ? b : a;`，
+//         用嚴格 `<`，相等走 a 那一支。
+//     追問：這代表什麼風險？(和 std::min 一樣的 lifetime 陷阱：不要用
+//           `const auto&` 接它的回傳值，暫存參數會 dangling)
+//
+// ⚠️ 陷阱. `std::max(1u, -1)` 會發生什麼事？
+//     答：**編譯錯誤**，不是跑出奇怪的值。std::max 是 `template<class T>`，
+//         兩個參數必須推導出同一個 T；`unsigned` 和 `int` 推不出共同型別，
+//         template argument deduction 失敗。
+//         解法：顯式指定 `std::max<int>(1u, -1)`，或先統一型別再比。
+//     為什麼會錯：多數人套用「內建運算子 `>` 會做 usual arithmetic conversions」的
+//         直覺，以為 std::max 也會自動轉型；但 template 推導不做隱式轉換，
+//         這反而幫你擋掉了 unsigned 比較的經典地雷。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <iostream>
 #include <string>

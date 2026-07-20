@@ -105,6 +105,32 @@
   - 若只是傳入唯讀文字片段且不需要擁有資料，std::string_view 可避免複製；但它不能延長原字串生命週期。
   - 處理中文或 UTF-8 時，std::string 的 size() 回傳 byte 數，不是人眼看到的字元數。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::string::append
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. append / operator+= 的複雜度是多少?為什麼?
+//     答:攤還 O(1)(amortized O(1))。string 的 buffer 採幾何成長,每次擴容
+//         把 capacity 乘上一個倍率,N 次追加只發生 O(log N) 次 reallocation,
+//         總搬移量仍是 O(N) → 平均每次 O(1)。
+//     追問:成長倍率多少?→ libstdc++ 約 2 倍、MSVC 約 1.5 倍,但這是
+//           implementation-defined,標準只要求攤還 O(1),不可寫進程式假設。
+//
+// 🔥 Q2. 要把 N 個片段拼成一個字串,最快的寫法是什麼?
+//     答:先算總長度 → reserve(total) → 連續 append/+=,全程只配置一次。
+//         寫成 a + b + c + d 會產生多個臨時 string,各自可能配置;
+//         C++20 起也可用 std::format 做型別安全且通常單次配置的格式化。
+//     追問:append 和 push_back 差在哪?→ push_back 只加一個字元;append
+//           可接字串、子字串、迭代器範圍,C++17 起還有 string_view 重載。
+//
+// ⚠️ 陷阱. s.append(buf) 與 s.append(buf, n) 為什麼結果會不同?
+//     答:append(const char*) 靠 '\0' 決定長度,遇到中段 '\0' 就停;
+//         append(const char*, count) 精確追加 count 個 byte,可含 '\0'。
+//         處理 recv()/mmap 來的二進位資料一定要用帶長度的版本。
+//     為什麼會錯:多數人以為 std::string「就是一段 bytes」,忘了資料從
+//         const char* 轉進來時,仍是走 C 字串的 '\0' 規則。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <vector>

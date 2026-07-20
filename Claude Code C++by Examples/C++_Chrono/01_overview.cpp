@@ -71,6 +71,35 @@
   - 不要用整數裸值代表毫秒或秒，duration 型別能讓單位出現在型別系統中。
   - 時間程式最常出錯的是用 system_clock 量測耗時；量測間隔應優先使用 steady_clock。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】<chrono> 總覽：duration / time_point / clock
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. chrono 相比「用 long 存毫秒」的優勢是什麼？
+//     答：型別安全。裸數值無法區分單位，sleep(1000) 究竟是秒還是毫秒只能靠註解與紀律，
+//         而單位錯誤是實務上非常常見且昂貴的 bug。chrono 把單位編碼進型別：seconds 與
+//         milliseconds 是不同型別，混用時編譯器自動轉換或直接報錯，隱式轉換只在無損
+//         方向開放。而且 std::ratio 的換算在編譯期完成，執行期零額外成本。
+//     追問：代價是什麼？（型別名冗長，需要 using namespace std::chrono_literals 搭配
+//           100ms 這類字面值改善可讀性；跨 C API 邊界時仍需 .count()）
+//
+// 🔥 Q2. chrono 的三個核心概念如何區分？
+//     答：duration 是「時間長度」（10ms、3s），是向量；time_point 是「某個時鐘紀元起算
+//         的一個時刻」，是點；clock 則提供 now() 並定義 epoch 與精度。它們構成一個
+//         affine space：point - point = duration、point ± duration = point，但
+//         point + point 沒有意義（編譯錯誤）。
+//     追問：為什麼 time_point 要把 Clock 編進型別？（不同時鐘的 epoch 意義完全不同，
+//           編進型別才能在編譯期擋掉「拿 steady_clock 的時刻去算日期」這種錯誤）
+//
+// ⚠️ 陷阱. auto ms = (t1 - t0).count(); 這行有什麼問題？
+//     答：count() 回傳的是「已脫離單位資訊的裸數值」，而 t1 - t0 的型別是
+//         Clock::duration，其單位是實作定義的。同一份程式碼換平台後，同一個數字的
+//         意義可能從奈秒變成別的單位。正確做法是先明確轉換再取值，例如
+//         duration_cast<microseconds>(d).count() 或 duration<double, std::milli>(d).count()。
+//     為什麼會錯：把 count() 當成「取出時間值」的標準動作。它其實是 chrono 型別安全
+//         的唯一破口，應該盡量延後到最後要輸出或跨 API 邊界時才呼叫。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <chrono>
 #include <iostream>
 #include <thread>

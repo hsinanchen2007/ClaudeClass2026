@@ -51,6 +51,35 @@
   - perfect forwarding 需要 T&& 搭配 std::forward<T>，不要把所有 && 都誤認為 move。
   - template 可提升零成本抽象，但也可能造成編譯時間上升和二進位膨脹；共通實作可用非 template helper 收斂。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】Template 與 Lambda
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 泛型 lambda（[](auto x){}）是哪個標準？它的本質是什麼？
+//     答：C++14，不是 C++11（極常被答錯）。編譯器生成一個匿名的 closure class，
+//         每個 auto 參數對應一個模板參數，operator() 是模板成員函式且預設為 const
+//         （除非標 mutable）。所以它本質上就是「帶模板 operator() 的函式物件」。
+//     追問：C++11 想做同樣的事怎麼辦？（自己寫一個帶模板 operator() 的 struct）
+//
+// 🔥 Q2. C++20 的 template lambda（[]<typename T>(T x){}）比泛型 lambda 多了什麼？
+//     答：能顯式宣告並取用型別參數 T。泛型 lambda 拿不到 T 的名字，要轉發只能寫
+//         std::forward<decltype(x)>(x) 這種迂迴寫法；template lambda 可以直接寫
+//         std::forward<T>(x)、可加 concept 約束，也能取出 std::vector<T> 的元素型別。
+//
+// 🔥 Q3. constexpr lambda 是哪個標準？
+//     答：C++17（本檔第 2 節的 cube 就靠它通過 static_assert）。C++17 起，只要
+//         lambda 滿足 constexpr 函式的要求，其 operator() 就隱含是 constexpr，
+//         可以參與編譯期求值。
+//
+// ⚠️ 陷阱. 兩個寫得一模一樣的 lambda 型別相同嗎？把 lambda 傳給模板有額外成本嗎？
+//     答：型別不同——每個 lambda 運算式都產生一個獨一無二的 closure type，就算原始碼
+//         逐字相同也是兩個型別，不能互相賦值。傳給模板函式（sort、count_if）沒有額外
+//         成本，operator() 會被 inline；但正因為型別各異，每個 lambda 都會讓那個模板
+//         多實例化一份，這是 code bloat 的來源之一。包成 std::function 才變成同一個
+//         型別，代價是 type erasure 的間接呼叫與可能的堆積配置。
+//     為什麼會錯：把 lambda 想成「一個函式」，而不是「一個型別」。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <iostream>
 #include <numeric>

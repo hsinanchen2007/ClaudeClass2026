@@ -72,6 +72,35 @@
   - perfect forwarding 需要 T&& 搭配 std::forward<T>，不要把所有 && 都誤認為 move。
   - template 可提升零成本抽象，但也可能造成編譯時間上升和二進位膨脹；共通實作可用非 template helper 收斂。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】constexpr 與編譯期計算
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. constexpr 函式從 C++11 到 C++20 放寬了什麼？
+//     答：C++11 的函式本體實質上只能是單一 return（要分支只能用三元、要迴圈只能
+//         遞迴）；C++14 放寬成可用區域變數、if/switch、for/while——本檔的 factorial、
+//         climb_stairs、fib 都是 C++14 才合法的寫法；C++17 讓 lambda 可以是 constexpr；
+//         C++20 再加上動態配置、try/catch、virtual 呼叫，並引入 consteval / constinit。
+//     追問：那 TMP（用模板遞迴算 Factorial<5>::value）還需要嗎？
+//         （數值計算改用 constexpr，可讀性與編譯速度都好；型別計算才留給 traits）
+//
+// 🔥 Q2. constexpr 和 consteval 差在哪？
+//     答：constexpr 是「最多可以」在編譯期執行——若傳進去的是 runtime 值，它就照常在
+//         runtime 跑，完全合法。consteval（C++20，immediate function）則是強制：
+//         每次呼叫都必須是常量求值，做不到就編譯錯誤。
+//
+// 🔥 Q3. C++11 的 constexpr 非靜態成員函式有個容易忘的隱含效果，是什麼？
+//     答：它會隱式成為 const 成員函式。所以在 C++11 底下同時宣告 constexpr int get()
+//         與 int get() const 會被視為重複宣告；C++14 起取消這個隱式 const，兩者可共存。
+//
+// ⚠️ 陷阱. 標了 constexpr 就保證會在編譯期算完嗎？
+//     答：不保證。constexpr 只是「具備在常量求值中被使用的資格」。要真的逼它在編譯期
+//         算，必須把結果綁到需要常量的位置：constexpr 變數、static_assert、陣列大小、
+//         非型別模板實參。本檔的 constexpr auto sin_table = make_sin_table(); 與
+//         static_assert(is_power_of_three(27)); 就是用這個方式強迫求值的。
+//     為什麼會錯：把 constexpr 當成「編譯期執行」的命令，其實它是「許可」。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <array>
 #include <cstdint>
 #include <iostream>

@@ -68,6 +68,42 @@
   - reset() 會刪除目前物件並接管新指標；用它比手動 delete 再賦值安全。
 */
 
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::unique_ptr
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. unique_ptr 為什麼不能 copy？那怎麼從函式回傳？
+//     答：copy 會造成兩個 unique_ptr 都認為自己擁有資源 → double free，所以 copy
+//         constructor 與 copy assignment 被 `= delete`，它是 move-only 型別。
+//         從函式回傳沒問題：回傳區域變數時會走 NRVO 或隱式 move（回傳語句中的區域
+//         物件會被當成 rvalue 處理），不需要自己寫 std::move。
+//     追問：傳進函式該怎麼寫？（只是使用物件 → 傳 T& / const T& / 裸 T*；
+//           要接管所有權 → 傳 unique_ptr<T> by value，呼叫端須 std::move，
+//           如本檔的 useSet(std::move(set))）
+//
+// 🔥 Q2. `release()`、`reset()`、`get()` 的差別？
+//     答：`release()` 放棄所有權、內部指標置 null、回傳裸指標且「不刪除物件」
+//         —— 呼叫端必須自己 delete（本檔範例 1 就示範了這點）。`reset(p)` 會
+//         「先刪除目前管理的物件」再接管 p（不給參數就只是刪除並置空）。
+//         `get()` 只回傳裸指標、不轉移所有權，用來呼叫 C API。
+//     追問：`get()` 拿到的指標可以拿去 delete 或交給另一個 smart pointer 嗎？
+//           （絕對不行 —— 會變成兩個擁有者，最後 double free）
+//
+// Q3. 為什麼推薦 `make_unique` 而不是 `unique_ptr<T>(new T)`？
+//     答：① exception safety —— `f(unique_ptr<A>(new A), g())` 中若 g() 在 new A
+//         之後、unique_ptr 建構之前拋出，A 就洩漏了（C++17 收緊求值順序後緩解，
+//         但仍建議用 make）② 不必重複寫型別名 ③ 一致性。注意 `std::make_unique`
+//         是 **C++14** 才加入的（C++11 漏掉了）。
+//     追問：make_unique 能指定自訂 deleter 嗎？（不能，和 make_shared 一樣）
+//
+// ⚠️ 陷阱. `std::unique_ptr<T>` 拿去管理 `new T[n]` 配置的陣列會怎樣？
+//     答：undefined behavior。`new[]` 必須配 `delete[]`，而 `unique_ptr<T>` 用的是
+//         `delete`。正確做法是陣列特化 `std::unique_ptr<T[]>`（用 delete[] 釋放、
+//         提供 operator[]、沒有 operator* / operator->），`make_unique<T[]>(n)`
+//         自 C++14 起可用。不過實務上大多數情況直接用 `std::vector` 更好。
+//     為什麼會錯：多數人以為 smart pointer 會「看情況」選擇 delete 或 delete[]；
+//         實際上這是型別在編譯期就決定的，執行期完全不做判斷。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <memory>      // std::unique_ptr, std::make_unique
 #include <vector>

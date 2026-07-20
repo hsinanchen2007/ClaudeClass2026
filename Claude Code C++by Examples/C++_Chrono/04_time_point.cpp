@@ -60,6 +60,34 @@
   - time_point + duration 仍是 time_point，time_point - time_point 才是 duration。
   - 儲存時間點前要想清楚是要絕對時間、相對期限，還是單純耗時。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】time_point 與 epoch 運算
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. time_point 支援哪些運算？哪些不行？
+//     答：合法：time_point ± duration → time_point、time_point - time_point →
+//         duration、同一時鐘的 time_point 互相比較。不合法：time_point + time_point
+//         （兩個時刻相加沒有意義，編譯錯誤）。另一個關鍵限制是「不同 Clock 的
+//         time_point 不可互相比較或相減」，型別不同、編譯期就被擋下；C++20 才用
+//         std::chrono::clock_cast 提供受控的轉換。
+//     追問：這種設計叫什麼？（affine space：點與向量分離，與 chrono 的單位安全一脈相承）
+//
+// 🔥 Q2. time_since_epoch() 回傳什麼？可以拿來當時間戳嗎？
+//     答：回傳「相對於該時鐘 epoch 的 duration」。只有 system_clock 的 epoch 有明確
+//         意義（C++20 起標準規定為 Unix epoch，1970-01-01 UTC 且不計閏秒），可以拿來
+//         算 timestamp。steady_clock 的 epoch 沒有定義意義（實務上常是開機時間），
+//         拿它算日期會得到完全錯誤的結果。
+//     追問：那 steady_clock 的 time_since_epoch() 有什麼用？（幾乎只用於「兩次相減」，
+//           或作為不透明的識別值，不應被解讀成任何真實時刻）
+//
+// ⚠️ 陷阱. auto d = end - start; 的 d 是什麼型別？直接印 d.count() 會怎樣？
+//     答：d 的型別是 Clock::duration，其單位是「實作定義」的（常見實作上 steady_clock
+//         的 duration 是 nanoseconds，但標準未規定）。直接印 count() 得到的數字單位
+//         不明，換平台後意義就變了。應該明確轉換：duration_cast<microseconds>(d).count()。
+//     為什麼會錯：auto 讓人忽略了這裡其實有一個「單位」的自由度。C++20 起 operator<<
+//         可直接輸出 duration 並附帶單位後綴（如 1500ms），是更安全的選擇。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <chrono>
 #include <iostream>
 #include <string>

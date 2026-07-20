@@ -63,6 +63,35 @@
   - 標準例外都繼承自 std::exception，what() 提供診斷字串。
   - out_of_range、invalid_argument、runtime_error 等型別名稱應反映錯誤性質，方便呼叫端分類處理。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::exception 階層
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 標準例外階層長什麼樣？logic_error 與 runtime_error 怎麼選？
+//     答：根是 std::exception（有虛擬的 what()），主要兩支：std::logic_error
+//     （invalid_argument、domain_error、length_error、out_of_range）代表程式邏輯錯誤、
+//     理論上可事先避免，也就是「呼叫者的 bug」（前置條件被違反）；std::runtime_error
+//     （range_error、overflow_error、underflow_error、system_error）代表執行期才知道的
+//     環境問題（檔案不存在、網路斷線）。另外還有 bad_alloc、bad_cast、bad_typeid、
+//     bad_function_call、bad_optional_access、bad_variant_access。
+//     追問：自訂例外要繼承誰？（通常繼承 std::runtime_error，它已幫你管理 what() 的
+//     字串儲存；而且自訂例外的複製建構函式不可拋，否則傳播過程可能直接 terminate）
+//
+// 🔥 Q2. std::bad_alloc 該怎麼處理？
+//     答：實務上多數程式「不要 catch 它」，讓它終止程式。理由：① 在 Linux 的 overcommit
+//     機制下，new 常常「成功」但真正碰到記憶體時被 OOM killer 殺掉，bad_alloc 根本不會
+//     被拋出 ② 已經記憶體不足時，catch 區塊裡的任何配置（包括組 log 字串）都可能再次
+//     失敗 ③ 對多數應用而言記憶體耗盡是不可恢復的。只有長時間執行、且能明確釋放大塊
+//     快取的伺服器才值得處理。不想拋例外可用 new (std::nothrow) T，失敗時回 nullptr。
+//
+// ⚠️ 陷阱. 為什麼衍生類別的 catch 必須寫在基底類別之前？
+//     答：因為 catch 子句是「由上而下，第一個可行匹配者勝」，不像函式重載那樣找最佳
+//     匹配。基底類別的 catch 接得住衍生類別的例外，所以把 catch (const std::exception&)
+//     寫在 catch (const std::out_of_range&) 前面，後者就永遠不可達（多數編譯器會警告
+//     handler is unreachable）。同理 catch (...) 必須放在最後。
+//     為什麼會錯：把 catch 的匹配想成重載決議那種「挑最貼近的」，實際上它是依序試。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <stdexcept>
 #include <string>

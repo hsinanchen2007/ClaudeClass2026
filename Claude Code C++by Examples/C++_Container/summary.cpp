@@ -34,6 +34,31 @@
   - C++_Container/C++_Container summary 的複習方式是把 API 依用途分組，再比較輸入條件、輸出語意、失敗狀態和複雜度。
   - 初學複習 summary 時，不要只背函式名稱；要能說出何時該用、何時不該用、和相近工具差在哪裡。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】STL 容器總覽
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 實務上你怎麼選容器？請講一個決策流程。
+//     答：先問三件事：(1) 需不需要依 key 查找？(2) 需不需要有序？(3) 插入刪除發生在哪裡？
+//         不需 key 查找 → sequence container：預設 vector；頭尾都要 O(1) → deque；
+//         需要 iterator / reference 穩定性或 O(1) splice → list。
+//         需 key 查找：要有序、要 range query → map / set（O(log n)）；
+//         不在乎順序、要均攤 O(1) → unordered_map / unordered_set。允許重複就加 multi。
+//     追問：為什麼預設是 vector？（連續記憶體的 cache locality 在實測上常壓過理論複雜度優勢）
+//
+// 🔥 Q2. container 和 container adaptor 的差別？
+//     答：container（vector / list / map / unordered_map …）自己管理儲存並提供 iterator；
+//         container adaptor（stack / queue / priority_queue）只是包裝另一個容器、只暴露特定介面，
+//         因此沒有 iterator、不能用 range-for、也沒有 clear。
+//         預設底層：stack / queue 是 std::deque，priority_queue 是 std::vector。
+//
+// Q3. 各容器的 iterator 分別是哪一類？
+//     答：vector / array → contiguous（C++20）；deque → random access 但 **不是** contiguous（分段儲存）；
+//         list 與 set / map / multiset / multimap → bidirectional；
+//         forward_list 與所有 unordered_* → forward（底層是 singly linked list，沒有 operator--）；
+//         stack / queue / priority_queue → 沒有 iterator。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <deque>
 #include <forward_list>

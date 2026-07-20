@@ -156,6 +156,30 @@
   - 若只是傳入唯讀文字片段且不需要擁有資料，std::string_view 可避免複製；但它不能延長原字串生命週期。
   - 處理中文或 UTF-8 時，std::string 的 size() 回傳 byte 數，不是人眼看到的字元數。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】format (std::format)
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. std::format 是哪個標準？比 printf 好在哪？
+//     答：C++20。printf 的格式字串與引數型別無法由編譯器強制對應，"%d" 配 double
+//         就是 UB；std::format 走 variadic template，型別資訊完整保留，
+//         format string 是編譯期檢查的，格式與引數不匹配會直接編譯失敗。
+//         效能上它通常只做一次配置（直接建出結果 std::string）。
+//     追問：C++23 有什麼？→ std::print / std::println，不必先產生 std::string 就能輸出。
+//
+// 🔥 Q2. 為什麼 printf("%s", some_std_string) 是 UB？
+//     答：printf 是 C variadic 函式，"%s" 要的是 const char*，但傳進去的是
+//         non-trivial 的 class type。透過 ... 傳遞這種型別本身就是未定義行為，
+//         沒 crash 只是運氣好。必須寫 printf("%s", s.c_str())，或直接改用 std::format。
+//     追問：string_view 可以嗎？→ 不行，它不保證 null-terminated（見 cstring 篇）。
+//
+// 🔥 Q3. 字串串接的效能要怎麼優化？
+//     答：a + b + c + d 會產生多個臨時 std::string，各自可能配置。
+//         最佳做法是先 reserve 總長度再連續 += / append，全程只配置一次。
+//         += 與 append 是攤還 O(1)（幾何成長），迴圈裡累加一百萬次仍是 O(n) 不是 O(n²)。
+//         需要格式化時，std::format 是型別安全且通常單次配置的選擇。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <vector>

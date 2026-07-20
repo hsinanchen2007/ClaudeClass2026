@@ -44,6 +44,29 @@
   - 容器元素型別若昂貴，優先理解 emplace、move 和 reference/iterator 有效性，不要盲目複製。
   - 所有容器都要考慮空容器邊界；front/back/top 在空容器上呼叫通常是未定義行為或前置條件違反。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::unordered_multiset
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. unordered_multiset 和 unordered_set 差在哪？
+//     答：它允許重複元素。因此 insert 永遠成功並回傳 iterator（不是 pair<iterator,bool>）；
+//         count(k) 可能 > 1（平均 O(k)，k 為相等元素數）；equal_range(k) 才真正有意義；
+//         merge 不去重、全部搬過來。其餘時間複雜度與 unordered_set 完全相同。
+//     追問：需要排序時該用什麼？（multiset，底層是 red-black tree）
+//
+// 🔥 Q2. erase(key) 會刪掉幾個元素？
+//     答：全部等值元素，並回傳刪除數量（平均 O(k)）。
+//         只想刪一個必須傳 iterator，例如 erase(ms.find(key))。
+//
+// ⚠️ 陷阱. rehash 之後，舊的 iterator 和 reference 還能用嗎？
+//     答：規則與 unordered_set 完全相同：
+//         **所有 iterator 失效，但 reference / pointer 永遠不會失效**。
+//         因為 separate chaining 的元素住在獨立配置的節點上，rehash 只重接 bucket array 與 next 指標，
+//         節點本體沒有搬家。erase 則只使被刪元素的 iterator / reference 失效。
+//     為什麼會錯：直覺以為「bucket 重新分配 = 元素被搬到新位置」，
+//         但那只發生在 open addressing。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <unordered_set>      // unordered_multiset 也在 <unordered_set>
 #include <iostream>
 #include <string>

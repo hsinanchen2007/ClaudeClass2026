@@ -93,6 +93,38 @@
   - 比較浮點數時要注意 NaN；一般比較器遇到 NaN 可能讓結果不符合直覺。
   - 若要保留原資料位置，使用 element 版本回傳 iterator；若只要數值，才使用 min/max 的值版本。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::minmax
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. std::minmax 的兩個版本各回傳什麼？
+//     答：兩值版 `minmax(a, b)` 回傳 **`std::pair<const T&, const T&>`**——pair 裡裝的
+//         是兩個 **reference**，沒有拷貝。initializer_list 版 `minmax({a, b, c})`
+//         回傳 **`std::pair<T, T>`**——裝的是值，安全。
+//         比較次數：兩值版 1 次；ilist 版至多 ⌊3N/2⌋ 次（pairwise，比分別跑
+//         min + max 的 2(N-1) 次省）。
+//     追問：和 minmax_element 差在哪？(minmax 給「值」的 pair，minmax_element
+//           給「迭代器」的 pair、用於容器範圍)
+//
+// ⚠️ 陷阱. `auto p = std::minmax(a, b + 1);` 用 auto 接住就安全了嗎？
+//     答：**不安全**。auto 確實把那個 pair 複製了一份，但 **pair 的成員本身就是
+//         reference**——複製 pair 只是複製了兩個 reference，它們仍然指向已經銷毀的
+//         `b + 1` 暫存物。用結構化繫結 `auto [lo, hi] = std::minmax(a, b+1);` 一樣救不了，
+//         繫結的還是那兩個 dangling reference。
+//         三種正解（本檔範例採用）：① 先把兩邊都存成具名 lvalue 再比；
+//         ② 改用 ilist 版 `std::minmax({a, b + 1})`（回傳 pair<T,T>，是值）；
+//         ③ 乾脆分開寫 `int lo = std::min(...), hi = std::max(...);`。
+//     為什麼會錯：大家記得的規則是「min/max 只要別用 const auto&、改用 auto 就安全」，
+//         那對 `std::min` 成立（auto 會從 const T& 複製出一個 T），但對 minmax 不成立
+//         ——被複製的是「裝著 reference 的 pair」，auto 攔不住裡面那層 reference。
+//         這也是本檔範例 1 明明只有兩個值，卻刻意寫成 `std::minmax({7, 3})` 的原因。
+//
+// 🔥 Q3. 什麼工具可以在執行期抓到這種 dangling？
+//     答：AddressSanitizer 的 **stack-use-after-scope**（`-fsanitize=address`）；
+//         編譯期則有 `-Wdangling-reference`（GCC 13 起）能對部分情形提出警告。
+//         但兩者都不保證抓得到所有情況，正解仍是「不要讓 reference 活得比對象久」。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <cstdlib>
 #include <iostream>

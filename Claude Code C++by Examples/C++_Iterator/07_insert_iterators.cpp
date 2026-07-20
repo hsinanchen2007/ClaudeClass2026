@@ -45,6 +45,31 @@
   - insert iterator 讓演算法能寫入空容器，而不是要求目的範圍已經有足夠大小。
   - front_inserter 會反轉插入順序，因為每次都插在最前面。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】insert iterators
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. back_inserter、front_inserter、inserter 三者差在哪？
+//     答：都是 insert iterator（output iterator adaptor），把「賦值」轉譯成「插入容器」：
+//         std::back_inserter(c) 呼叫 c.push_back()；std::front_inserter(c) 呼叫
+//         c.push_front()（vector 沒有這個成員，不能用）；std::inserter(c, pos) 呼叫
+//         c.insert(pos, ...)，關聯容器要用這個。
+//     追問：對 std::set 該用哪一個？（inserter；set 沒有 push_back / push_front）
+//
+// 🔥 Q2. 為什麼需要 insert iterator？直接 std::copy 到 dst.begin() 不行嗎？
+//     答：不行。演算法只拿到 iterator，不知道容器型別，也就無法改變容器大小；往空的或
+//         容量不足的 dst 寫是 UB。insert iterator 正是用來補上「邊寫邊長大」這件事：
+//         std::copy(src.begin(), src.end(), std::back_inserter(dst));
+//     追問：那先 dst.resize(n) 再 copy 可不可以？（可以，而且少了逐次插入的開銷；但要
+//         自己算對 n）
+//
+// ⚠️ 陷阱. std::copy 搭 front_inserter，結果順序為什麼是反的？
+//     答：因為每一筆都插到最前面，後寫入的會壓在前面，最終順序與來源相反。要保持原順序
+//         就用 back_inserter，或改用 inserter 指定位置。
+//     為什麼會錯：把 front_inserter 想成「從前面開始依序填入」，實際上它每次都插在
+//         容器的最前端，不會隨著寫入而往後移動。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <iterator>
 #include <vector>

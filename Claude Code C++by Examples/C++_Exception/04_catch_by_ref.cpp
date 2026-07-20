@@ -54,6 +54,32 @@
   - catch by value 會複製並可能 slicing；catch const std::exception& 可保留多型資訊。
   - catch 非 const reference 很少需要，因為錯誤處理通常不應修改例外物件。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】為什麼 catch 要用 const&
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 為什麼要 catch by const reference？
+//     答：三個理由：① 避免 object slicing——catch by value 時若拋的是衍生類別，會被切成
+//     基底類別，丟失衍生資訊與多型行為（throw Der(); 被 catch (Base b) 接到時，b 的
+//     虛擬函式呼叫的是 Base 的版本；改成 catch (const Base& b) 才會是 Der 的版本）
+//     ② 避免不必要的複製——例外物件的複製本身也可能拋例外 ③ const 表達「不修改例外
+//     物件」的意圖（要修改後再 rethrow 才用非 const 參考）。口訣：throw by value,
+//     catch by reference。
+//     追問：為什麼不 catch by pointer？（誰負責 delete 不清楚，而且接不到非指標的例外）
+//
+// 🔥 Q2. 多個 catch 的匹配規則是什麼？
+//     答：由上而下依序試，第一個可行匹配者勝，不做「最佳匹配」。所以衍生類別的 catch
+//     必須寫在基底類別之前，否則永遠不可達；catch (...) 必須放最後。這與函式重載決議
+//     的規則完全不同，是常見的區辨考點。
+//
+// Q3. catch (...) 有什麼用？有什麼問題？
+//     答：合理用途是在執行緒或 main 的最外層當「最後防線」，記 log 後 throw; 往上傳或
+//     優雅結束，以及配合 std::throw_with_nested 做例外轉譯。問題是拿不到任何例外資訊
+//     （除非用 try { throw; } catch (const std::exception& e) 這種「rethrow 再細分」的
+//     手法，或用 std::current_exception() 存起來），而且 catch (...) {} 靜默吞掉例外
+//     是嚴重反模式——它會把 bug 藏起來。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <exception>
 #include <iostream>
 #include <string>

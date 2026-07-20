@@ -59,6 +59,33 @@
   - filesystem::path 可直接交給 fstream 開檔，避免手動轉字串造成平台編碼問題。
   - 開檔失敗時 fstream 設定 failbit；filesystem 路徑正確不代表檔案可讀寫。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】filesystem 與 fstream 配合
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. C++17 起 fstream 可以直接吃 path 嗎？為什麼這件事很重要？
+//     答：可以——fstream 家族的建構子與 open() 從 C++17 起接受 const fs::path&。
+//     這很重要是因為在 C++17 之前只能寫 ifs.open(p.string())，而 .string() 在 Windows
+//     上會走本地碼頁轉換，遇到非 ASCII 檔名就壞掉。直接傳 path 讓實作使用平台的原生
+//     字元型別（Windows 上是 wchar_t），這正是那組 path 多載存在的主要理由。
+//     追問：MSVC 有 ifstream(const wchar_t*) 擴充，為什麼不夠？（不可攜；傳 path 才是
+//     標準解）
+//
+// 🔥 Q2. 要讀一個檔案，該先 fs::exists 檢查嗎？
+//     答：不該。直接開檔並檢查結果就好：std::ifstream ifs(p); if (!ifs) { ... }。
+//     先檢查再開不僅多一次 syscall，還引入 TOCTOU 競態——檢查通過之後檔案仍可能被刪除
+//     或被 symlink 取代。而且 exists() 回 true 也不代表你開得起來（可能沒有讀取權限），
+//     所以那個檢查連「省下錯誤處理」都做不到。
+//
+// ⚠️ 陷阱. 開檔失敗時，怎麼知道失敗的原因？
+//     答：fstream 只會設定 failbit，本身不提供錯誤原因。要區分「檔案不存在」「權限
+//     不足」「是個目錄」等情況，得另外用 <filesystem> 的 error_code 版 API 查詢，或在
+//     POSIX 上檢視 errno。所以實務上的順序是「先直接開、失敗之後才去查原因」——而不是
+//     反過來先查再開。
+//     為什麼會錯：期待 stream 像 filesystem API 一樣帶有 error_code，但它的錯誤模型
+//     只有幾個狀態位元。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <filesystem>
 #include <fstream>
 #include <iostream>

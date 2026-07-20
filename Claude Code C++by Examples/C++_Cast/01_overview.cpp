@@ -62,6 +62,44 @@
   - 具名 cast 的價值在於讓 code review 能直接看到風險等級：static_cast 較一般，reinterpret_cast 最低階。
   - 很多轉型需求其實是 API 設計問題；若呼叫端一直需要轉型，應回頭檢查型別關係是否設計清楚。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】C++ 轉型總覽（四種具名 cast + C-style cast）
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. C++ 四種具名轉型的用途與「檢查時機」分別是什麼？
+//     答：static_cast — 編譯期檢查的一般轉換（數值、有繼承關係的上/下轉型、
+//         void* 還原、呼叫轉換建構子）。dynamic_cast — 四種中唯一有【執行期】
+//         檢查的，靠 RTTI 做多型型別的安全下轉型/側向轉型。const_cast — 唯一
+//         能增刪 const/volatile 的。reinterpret_cast — 純粹重新解釋位元樣式，
+//         編譯器幾乎不檢查，風險最高。
+//     追問：那 C++20 的 std::bit_cast 屬於哪一類？（都不是 — 它是「值對值」的
+//           位元複製，產生新物件，不像前四種在型別層級操作既有物件）
+//
+// 🔥 Q2. 為什麼現代 C++ 禁止用 C 風格轉型 (T)x？
+//     答：三個理由：① 意圖不明確，讀 code 看不出作者想做數值轉換還是硬轉指標
+//         ② 無法用文字搜尋出所有危險轉型 ③ 最關鍵：(T)x 會【依序嘗試】
+//         const_cast、static_cast、static_cast+const_cast、reinterpret_cast、
+//         reinterpret_cast+const_cast，取第一個編得過的 — 你以為在做安全轉換，
+//         實際上可能靜默退化成 reinterpret_cast。
+//     追問：怎麼在專案中強制執行？（-Wold-style-cast 編譯警告，或 clang-tidy 的
+//           cppcoreguidelines-pro-type-cstyle-cast）
+//
+// Q3. typeid 與 dynamic_cast 的差別是什麼？
+//     答：typeid(expr) 回傳 const std::type_info&；對【多型型別的 glvalue】會在
+//         執行期取得動態型別，其他情況取編譯期靜態型別。關鍵語意差異：typeid 做
+//         的是【精確型別相等】比較（Derived 的再衍生類別會是 false），
+//         dynamic_cast 做的是【is-a 判斷】（子型別也會成功）。要「就是這個型別」
+//         用 typeid，要「是這個型別或其衍生」用 dynamic_cast。
+//     追問：type_info::name() 回傳什麼？（內容是 implementation-defined，標準未
+//           規定；GCC/Clang 給的是 mangled name，需 abi::__cxa_demangle 還原）
+//
+// ⚠️ 陷阱. functional cast 寫法 T(x) 比 (T)x 安全嗎？
+//     答：對 class type，T(x) 是呼叫建構子；但對 fundamental type，T(x) 的語意
+//         【就等同於 (T)x】，一樣會依序嘗試各種轉型。所以它並沒有比較安全。
+//     為什麼會錯：多數人看到「函式呼叫的樣子」就直覺認為它走的是建構子路徑，
+//         因而以為避開了 C-style cast 的問題 — 實際上換湯不換藥。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <cstdint>
 #include <cstring>
 #include <iostream>

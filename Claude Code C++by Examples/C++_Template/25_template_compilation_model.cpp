@@ -107,6 +107,35 @@
   - header-only template 要注意 ODR：template 本身可在多個 translation unit 實例化，但非 template helper 若放 header 通常要 inline 或放到 detail/template 中。
 */
 
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】Template 編譯模型
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 為什麼 template 定義要放在 header？「模板不能分離編譯」是什麼意思？
+//     答：編譯器要生成 Foo<int>，必須在「使用點」看得見模板的完整定義。若定義只放在
+//         foo.cpp，編譯 main.cpp 時生不出 Foo<int>，而編譯 foo.cpp 時又不知道有人要用
+//         int → link 期 undefined reference。所以把定義放 header（或 .ipp 再 include）
+//         是 C++ 編譯模型的要求，不是風格偏好。
+//     追問：那 header 裡的非模板函式要注意什麼？（要加 inline，否則多個 TU include
+//         就違反 ODR；模板本身有 ODR 豁免，多個 TU 各自實例化沒問題）
+//
+// 🔥 Q2. explicit instantiation 與 extern template 各做什麼？
+//     答：explicit instantiation（在 .cpp 寫 template class Foo<int>;）把需要的型別
+//         一次生成好，適合型別集合封閉的情況；extern template（C++11，在 header 寫
+//         extern template class Foo<int>;）則是告訴其他 TU「別自己實例化，別處有」，
+//         省下重複實例化與 linker 去重的成本，編譯時間與 binary 大小都會下降。
+//
+// 🔥 Q3. 什麼是 lazy instantiation？
+//     答：實例化類別模板時，只實例化類別本身與「真正被用到」的成員函式；沒被呼叫的
+//         成員函式不會實例化，因此即使它對某個 T 語法上不成立也不會報錯。
+//         這就是為什麼容器模板對不支援某項操作的型別仍能編譯——只要你不呼叫它。
+//
+// ⚠️ 陷阱. C++ 有沒有 export template 可以真正把模板分離編譯？
+//     答：C++98 標準裡有這個關鍵字，但幾乎沒有編譯器實作，C++11 已將它移除。
+//         今天寫 export template 只會得到編譯錯誤。真正的解方是 C++20 modules。
+//     為什麼會錯：舊書與舊八股仍在講 export，被問到就答「有這個關鍵字可以用」；
+//         正確答法是「標準曾經有、已移除；實務靠 header 或 explicit instantiation」。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <type_traits>
 #include <vector>

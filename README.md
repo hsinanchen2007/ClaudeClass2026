@@ -9,6 +9,7 @@ Claude 與 Codex 各自獨立授課的學習筆記與範例程式碼合集。
 | `Claude C++ STL多線程課程/` | **5 階段／30 課．已完成**，thread / 生命週期 / 共享資料 / mutex |
 | `Claude C++11 到 C++26 課程/` | **15 章．已完成**，型別推導與初始化、右值參考與移動語意 |
 | `Claude Code C++by Examples/` | **20 個主題／405 支範例**，容器、多執行緒、智慧指標、模板、工具… |
+| `Codex C++by Examples/` | **20 個主題／405 支獨立教材**，與 Claude `.cpp` 路徑 1:1，含講義、LeetCode、實務與面試速查 |
 | `Claude Python課程/` | **31 課．已完成**，基礎語法、流程控制與四大資料結構 |
 | `Claude AI CUDA課程/` | 185 課 / 13 Parts，GPU 硬體到 AI 推論引擎系統（**進行中，見下方進度**） |
 | `Codex AI CUDA課程/` | 185 課 / 13 Parts，Codex 獨立版本的 GPU/CUDA/AI 課程（**進行中，見下方進度**） |
@@ -255,6 +256,41 @@ Claude 與 Codex 各自獨立授課的學習筆記與範例程式碼合集。
 
 | 主題 | 範例數 |
 |---|---|
+| `C++_Algorithm` | 83 |
+| `C++_Bit` | 13 |
+| `C++_Cast` | 9 |
+| `C++_Chrono` | 10 |
+| `C++_Container` | 18 |
+| `C++_Cpp11` | 16 |
+| `C++_Cpp14` | 8 |
+| `C++_Cpp17` | 14 |
+| `C++_Exception` | 10 |
+| `C++_Filesystem` | 9 |
+| `C++_IOStream` | 11 |
+| `C++_Iterator` | 15 |
+| `C++_Lambda` | 11 |
+| `C++_MultiThread` | 31 |
+| `C++_OOP` | 29 |
+| `C++_Random` | 10 |
+| `C++_SmartPointers` | 6 |
+| `C++_String` | 59 |
+| `C++_Template` | 29 |
+| `C++_Utility` | 14 |
+
+</details>
+
+## `Codex C++by Examples/` 進度
+
+**20 個主題分類**　｜　Codex 獨立撰寫、可離線閱讀與執行的 C++ 教科書式範例
+範例程式 405 支（`.cpp`），相對路徑與 Claude 版本 1:1，內容不互相複製
+
+編譯與教材稽核方式見 [`Codex C++by Examples/BUILD_GUIDE.md`](Codex%20C++by%20Examples/BUILD_GUIDE.md)。
+
+<details>
+<summary>展開全部 20 個主題</summary>
+
+| 主題 | 範例數 |
+|---|---:|
 | `C++_Algorithm` | 83 |
 | `C++_Bit` | 13 |
 | `C++_Cast` | 9 |

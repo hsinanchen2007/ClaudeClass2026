@@ -162,6 +162,53 @@
   - 找出檔案內容是否含敏感字 (字符集) → find_first_of。
 ================================================================================
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】非修改型序列演算法(non-modifying)家族總覽
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 要在一段資料裡「找東西」,find / search / find_end / find_first_of /
+//        adjacent_find 該怎麼選?
+//     答:看你要找的東西是什麼形狀 —
+//         單一 value → find(述詞版是 find_if / find_if_not);
+//         整個子序列按順序、第一次 → search,最後一次 → find_end;
+//         候選集合中的任一元素 → find_first_of;
+//         第一對「位置相鄰」且滿足關係的元素 → adjacent_find。
+//     追問:它們「找不到」時的共同約定是什麼?
+//           (一律回傳 last,不是 nullptr 也不是 npos;解參考前必須先和 last 比)
+//
+// 🔥 Q2. 這個家族裡哪些會 short-circuit?哪些一定走完全程?
+//     答:會短路的:find 系列、search 系列、adjacent_find、mismatch,
+//         以及 all_of / any_of / none_of(得到結論就停)。
+//         一定走完全程的:count / count_if(必須算出確切個數)、
+//         for_each / for_each_n(對每個元素都要套用 f)。
+//         所以「只想知道有沒有」千萬別寫 count_if(...) > 0。
+//
+// Q3. 這些演算法各需要哪一種 iterator?為什麼不一致?
+//     答:find / count / equal / mismatch / for_each 只需 InputIterator(單次走訪即可);
+//         adjacent_find / search / search_n / find_end 需要 ForwardIterator,
+//         因為它們得回頭或同時看到多個位置(多次走訪);
+//         find_first_of 的主序列只要 InputIterator,但候選集合那段要 ForwardIterator,
+//         因為它會被重複掃描。
+//     追問:為什麼演算法要標示最低 iterator 需求?(這是泛型的契約 —
+//           它決定演算法能套用在哪些容器上,以及實作可以做哪些最佳化)
+//
+// ⚠️ 陷阱 Q4. 這個家族的「空區間 / 空子序列」語意一致嗎?
+//     答:不一致,而且這正是最愛考的地方 —
+//         all_of 空 → true(vacuous truth)、any_of 空 → false、none_of 空 → true;
+//         equal 兩端皆空 → true;
+//         std::search 的空子序列 → first,但 std::find_end 的空子序列 → last;
+//         search_n 的 count <= 0 → first(C++20 起明確規定)。
+//     為什麼會錯:大家假設同一族演算法的邊界行為會統一,於是憑通則猜;
+//         實際上 search 與 find_end 剛好相反,只能逐個記。
+//
+// Q5. equal 和 mismatch 的三參數版為什麼要避開?
+//     答:三參數版只給 (first1, last1, first2),假設第二段至少和第一段一樣長,
+//         第二段較短就越界讀取 — UB。
+//         C++14 起兩者都加了四參數版(帶 last2),會檢查兩端長度;
+//         若兩端都是 random access iterator,長度不同還能 O(1) 直接判定。
+//         新程式碼一律用四參數版。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <iostream>
 #include <vector>

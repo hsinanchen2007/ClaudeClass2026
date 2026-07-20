@@ -58,6 +58,34 @@
   - 現代 C++ 優先把資源交給 std::unique_ptr、std::vector、std::string、std::fstream 等 RAII 成員，讓編譯器產生的解構子就足夠。
   - 觀察解構子輸出時要記得暫時物件、容器元素、例外離開 scope 都會觸發解構；不要只用 main 結尾才會解構的直覺理解。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】解構子（Destructor）
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. destructor 什麼時候被呼叫？順序如何？
+//     答：區域物件離開 scope、對動態物件 delete、容器或母物件被銷毀、程式結束時的
+//     全域物件；例外造成的 stack unwinding 也會呼叫「已完整建構」物件的 destructor —
+//     這正是 RAII 能提供 exception safety 的原因。
+//     順序是建構的完全反序：自己的本體 → 成員（宣告的反序）→ base class。
+//     追問：什麼時候「需要」自己手寫 destructor？（類別直接持有裸資源時；而一旦手寫了，
+//     copy constructor 與 copy assignment 通常也要一起處理 — 這就是 Rule of Three）
+//
+// 🔥 Q2. exception 從 destructor 拋出去會怎樣？
+//     答：C++11 起 destructor 預設是 noexcept，exception 逃出去會直接呼叫 std::terminate；
+//     若又發生在 stack unwinding 過程中（已有一個 exception 在飛）同樣是 terminate。
+//     原則：destructor 絕不外拋，內部要 try/catch 吞掉或記錄。
+//
+// Q3. 在 destructor 裡呼叫 virtual function 會發生什麼？
+//     答：與 constructor 對稱 — 進到 Base 的 destructor 時，derived 的部分已經解構完畢，
+//     動態型別退回 Base，呼叫到的是 Base 的版本。呼叫 pure virtual 函式則是 UB。
+//
+// ⚠️ 陷阱. 用 `new[]` 配置、卻用 `delete` 釋放會怎樣？
+//     答：undefined behavior。`new`/`delete` 與 `new[]`/`delete[]` 必須成對使用。
+//     同理，`std::unique_ptr<T>` 不能拿來管理 `new[]` 的結果，要用 `std::unique_ptr<T[]>`。
+//     為什麼會錯：以為「反正都是把那塊記憶體還回去」；實際上陣列版必須知道元素個數才能
+//     逐一呼叫 destructor，兩者走的是不同的釋放路徑。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <fstream>     // std::ofstream 寫檔
 #include <string>

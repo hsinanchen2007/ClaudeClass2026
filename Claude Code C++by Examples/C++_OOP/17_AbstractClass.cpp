@@ -76,6 +76,40 @@
   - 抽象 base 不應在建構子中呼叫純虛擬函式；那時 derived 尚未建立完成，呼叫純虛擬通常代表設計錯誤。
   - 以抽象類別設計 Leetcode 或工作題時，重點是分離「使用者依賴的介面」和「底層資料結構的實作」。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】pure virtual function 與 abstract class
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. virtual function 與 pure virtual function 的差別？
+//     答：`virtual void f();` 提供預設實作，derived 可覆寫也可不覆寫；
+//         `virtual void f() = 0;` 是 pure virtual，使該 class 成為 abstract class
+//         → 不能被實例化，derived 必須覆寫所有 pure virtual，否則自己也是 abstract。
+//         本檔的 Shape::area()/perimeter() 是前者的對照組 describe() 的最好例子。
+//     追問：抽象類別可以有 constructor 與成員資料嗎？（可以；它只是不能單獨實例化，
+//           derived 建構時仍會呼叫它的 constructor）
+//
+// 🔥 Q2. pure virtual function 可以有實作嗎？pure virtual destructor 呢？
+//     答：可以。`= 0` 只表示「derived 必須覆寫」，不代表不能提供定義；derived 可用
+//         `Base::f()` 顯式呼叫來重用共通邏輯（本檔 Circle::describe() 就呼叫
+//         Shape::describe()）。pure virtual destructor 也合法，而且「必須」提供定義
+//         —— derived 解構結束後一定會呼叫到它。
+//     追問：什麼時候會想用 pure virtual destructor？（想讓 class 抽象，但又沒有別的
+//           函式適合設成 pure virtual 時）
+//
+// Q3. 需要「可替換的行為」時，一定要用 abstract class 嗎？
+//     答：不一定。abstract class + virtual 是「執行期」可替換（付出 vptr 與間接呼叫
+//         成本，且介面一改所有實作都要跟著改）；若型別在編譯期就決定，template 或
+//         `std::function` / lambda 往往更輕。判準是：需不需要在執行期換掉實作。
+//     追問：介面該設計多大？（越小越好；每加一個 virtual 函式，所有 derived 都被迫跟進）
+//
+// ⚠️ 陷阱. 可以在 constructor 裡呼叫 virtual / pure virtual 函式嗎？
+//     答：不是「不能」，而是「不會如你預期」。Base 的 constructor 執行時，物件的動態
+//         型別就是 Base，derived 的 override 不會生效。若呼叫的是 pure virtual，
+//         則是 undefined behavior（實務上常見 abort 並印 "pure virtual method called"）。
+//     為什麼會錯：多數人以為物件「一開始就是 Derived」；實際建構順序是 base → derived，
+//         base 建構期間 derived 部分根本還不存在。要做建構後初始化就用 factory 包兩步。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <vector>
 #include <memory>     // std::unique_ptr (第 20 篇深入)

@@ -140,6 +140,50 @@
   - 多路合併 (k-way merge):用 min-heap 從 k 個來源輪流取最小元素。
 ================================================================================
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】Heap 演算法家族總覽
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. STL 的 heap 為什麼預設是 max-heap?怎麼改成 min-heap?
+//     答:因為預設比較器是 std::less<>,而 heap property 定義為
+//     「comp(父, 子) 不成立」,即 !(父 < 子) → 父 ≥ 子 → 根是最大值。
+//     要 min-heap 就傳 std::greater<>{}:
+//         std::make_heap(v.begin(), v.end(), std::greater<>{});
+//     關鍵是**同一組 heap 的所有操作必須用同一個 comp**(make/push/pop/sort/
+//     is_heap 都要傳),混用是 UB。
+//     追問:那 std::priority_queue 為什麼也是 max?(答:同樣預設 std::less;
+//     但注意它的模板參數順序是 <T, Container, Compare>,要指定比較器就得
+//     連容器一起寫:priority_queue<int, vector<int>, greater<int>>。)
+//
+// 🔥 Q2. std::priority_queue 和這些 heap 演算法是什麼關係?何時用哪個?
+//     答:priority_queue 是**容器轉接器**,內部預設以 std::vector<T> 儲存,
+//     並直接呼叫 make_heap / push_heap / pop_heap 來實作 push/pop/top。
+//     選擇準則:要現成、封裝好的佇列介面 → priority_queue;
+//     需要直接握有底層 vector(批次 reserve、遍歷全部元素、一次 make_heap
+//     建堆、最後轉 sort_heap 輸出)→ 用這套低階演算法。
+//     追問:priority_queue 為什麼不能遍歷?(答:轉接器刻意只暴露 top/push/pop,
+//     不提供 begin/end —— 這正是需要遍歷時得改用 vector + heap 演算法的原因。)
+//
+// Q3. 這五個 API 的複雜度各是多少?為什麼 heap 適合「動態維護極值」而不是
+//     「一次排完」?
+//     答:make_heap O(N)、push_heap O(log N)、pop_heap O(log N)、
+//     sort_heap O(N log N)、is_heap / is_heap_until O(N)。
+//     全部要求 RandomAccessIterator(vector/deque/array/原生陣列可,
+//     list/forward_list 不可)。
+//     heap 的價值在於「插入與取極值都只要 O(log N),且取極值 O(1) 可看」,
+//     適合資料持續進出的場景(排程、Top-K、Dijkstra、k-way merge);
+//     若只是一次性把整段排好,std::sort 通常比 make_heap + sort_heap 更快
+//     (introsort 的 quicksort 主幹 cache 友善)。
+//
+// ⚠️ 陷阱. 我只是改了 heap 中間某個元素的值,heap 還合法嗎?
+//     答:不保證。改大可能違反「父 ≥ 子」、改小可能違反「該節點 ≥ 其子」,
+//     而標準沒有提供「修復單一節點」的公開 API(沒有 sift-up/sift-down 可呼叫)。
+//     安全做法是重新 make_heap(O(N));或先移除該元素、改好再 push_heap。
+//     為什麼會錯:大家以為 heap 像 vector 一樣可以隨意 operator[] 賦值 ——
+//     可以寫,但寫完之後這段區間對所有 heap 演算法而言前置條件已不成立,
+//     再呼叫 pop_heap / sort_heap 就是 UB。用 is_heap 可以驗證這件事。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <functional>
 #include <iostream>

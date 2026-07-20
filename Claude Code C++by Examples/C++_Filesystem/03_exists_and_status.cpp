@@ -46,6 +46,41 @@
   - exists(p) 可能因權限或競態得到不完整資訊，工作程式應考慮 error_code overload。
   - status 和 symlink_status 對符號連結處理不同，掃描工具要先決定是否跟隨連結。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】查詢檔案存在與屬性
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 為什麼 if (fs::exists(p)) { open(p); } 是有問題的？
+//     答：這是典型的 TOCTOU（Time-Of-Check to Time-Of-Use）競態。檢查與使用之間有時間
+//     窗，其他行程或執行緒可以：刪掉該檔案讓 open 失敗；用 symlink 取代該路徑指向敏感
+//     檔案，讓你的程式以自己的權限寫入不該寫的地方（經典提權漏洞）；或建立同名檔案，
+//     讓你以為在建新檔卻覆蓋了別人的。正解是「不要先檢查再操作，直接操作並處理失敗」：
+//     讀檔就 std::ifstream ifs(p); if (!ifs) { ... }；建檔要「不存在才建立」就用
+//     O_CREAT | O_EXCL（這個組合本身是原子的）。
+//     追問：<filesystem> 能消除 TOCTOU 嗎？（不能。它是對 syscall 的薄封裝，exists、
+//     create_directory 等都是各自獨立的呼叫，之間必然有時間窗；需要嚴格保證得靠
+//     O_NOFOLLOW 這類 open 旗標或平台專屬 API）
+//
+// 🔥 Q2. <filesystem> 的兩套 API（拋例外 vs error_code）該用哪個？
+//     答：幾乎每個函式都有兩個多載：bool exists(const path&) 錯誤時拋 filesystem_error
+//     （帶有 path1()、path2()、code()）；bool exists(const path&, error_code&) noexcept
+//     則設定 ec、不拋。拋例外版程式碼乾淨，適合「檔案操作失敗就是致命錯誤」的情境；
+//     error_code 版適合「失敗是預期情況」（掃描目錄時遇到權限不足的子目錄）、效能敏感
+//     路徑，或不能用例外的環境。關鍵是：用了 error_code 版就「一定要檢查 ec」，否則
+//     錯誤被完全吞掉，函式回傳預設值看起來像正常結果。
+//     追問：exists(p, ec) 回傳 false 有幾種意思？（至少三種：檔案真的不存在、權限不足
+//     無法判斷、路徑過長等其他錯誤——必須看 ec 才能區分）
+//
+// ⚠️ 陷阱. status() 和 symlink_status() 差在哪？exists() 對斷掉的 symlink 回什麼？
+//     答：status(p) 會「跟隨」symlink，回傳目標的狀態，symlink 斷掉時回
+//     file_type::not_found；symlink_status(p) 不跟隨，回傳 symlink 本身的狀態
+//     （file_type::symlink）。因此 fs::exists(p) 對一個斷掉的 symlink 會回 false——
+//     即使那個 symlink 檔案本身確實存在。要判斷「symlink 本身存在」得寫
+//     fs::exists(fs::symlink_status(p))。
+//     為什麼會錯：把 exists() 理解成「這個路徑上有沒有東西」，實際上它問的是「跟隨到
+//     最後有沒有一個存在的目標」。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <filesystem>
 #include <fstream>
 #include <iostream>

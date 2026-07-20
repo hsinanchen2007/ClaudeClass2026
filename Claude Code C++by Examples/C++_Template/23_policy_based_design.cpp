@@ -60,6 +60,34 @@
   - perfect forwarding 需要 T&& 搭配 std::forward<T>，不要把所有 && 都誤認為 move。
   - template 可提升零成本抽象，但也可能造成編譯時間上升和二進位膨脹；共通實作可用非 template helper 收斂。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】Policy-Based Design
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 什麼是 policy-based design？標準庫有現成例子嗎？
+//     答：把類別的「變化點」拆成獨立的 policy class，用模板參數在編譯期組合注入，
+//         由 Alexandrescu 在《Modern C++ Design》發揚。標準庫到處都是這個思想：
+//         std::vector<T, Allocator>、std::set<K, Compare>、
+//         std::basic_string<C, Traits, Alloc> 的第二、三個參數都是 policy。
+//
+// 🔥 Q2. 和 GoF 的 Strategy pattern 差在哪？
+//     答：同一個想法的兩個時間點。Strategy 靠介面 + 指標在 runtime 注入，可以執行
+//         中切換、換策略不必重編譯，但每次呼叫都有 virtual dispatch 成本；
+//         policy 是編譯期注入，完全 inline、無額外執行期成本，但換策略要重編譯。
+//
+// 🔥 Q3. 為什麼 policy 常用「繼承」而不是用成員變數持有？
+//     答：為了 empty base optimization——沒有狀態的 policy（例如本檔的
+//         SingleThreaded）當基底時可以完全不佔空間，當成員則至少佔 1 byte，
+//         還可能因對齊再放大。注意 EBO 是編譯器/ABI 層級的最佳化，主流實作都做，
+//         但標準只是允許、並非一律保證。C++20 起也可改用 [[no_unique_address]]。
+//
+// ⚠️ 陷阱. Cache<int, SingleThreaded> 和 Cache<int, MultiThreaded> 是同一個型別嗎？
+//     答：不是，是兩個完全獨立的型別。不能互相賦值、不能放進同一個容器，
+//         也不能用同一個非模板函式簽名接收。
+//     為什麼會錯：把 policy 想成「設定值」；它其實參與型別身分，每多一個 policy
+//         維度就多一組實例化，這也是型別簽名爆炸與錯誤訊息難讀的根源。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <list>
 #include <mutex>

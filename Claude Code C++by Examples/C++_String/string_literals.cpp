@@ -162,6 +162,37 @@
   - 若只是傳入唯讀文字片段且不需要擁有資料，std::string_view 可避免複製；但它不能延長原字串生命週期。
   - 處理中文或 UTF-8 時，std::string 的 size() 回傳 byte 數，不是人眼看到的字元數。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】字串字面值後綴 operator""s / operator""sv
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. "abc"、"abc"s、"abc"sv 三者差在哪?
+//     答："abc" 是 const char[4],static storage duration,程式全程有效;
+//         "abc"s (C++14, std::string_literals) 產生一個 std::string 臨時
+//         物件,會複製字元、超過 SSO 門檻時還會 heap 配置;
+//         "abc"sv (C++17, std::string_view_literals) 產生 std::string_view,
+//         零配置,指向的就是那塊 static 資料。
+//     追問：為什麼 "abc"sv 安全,指向臨時 string 的 view 卻不安全?
+//         → 字面量是 static storage duration,活到程式結束;臨時 string
+//           在完整表達式結束就沒了。
+//
+// 🔥 Q2. 有了 std::string("abc"),為什麼還需要 "abc"s?
+//     答：operator""s 收的是 (const char*, size_t),長度由編譯器給,所以
+//         能正確保留內含 '\0' 的字面量:"abc\0def"s 的 size() 是 7,而
+//         std::string("abc\0def") 走 const char* 建構子,遇到第一個 '\0'
+//         就停,只拿到 "abc"。另外在 auto / 模板推導處能直接得到 std::string
+//         而不是 const char*。
+//
+// ⚠️ 陷阱. 為什麼 auto x = "a" + "b"; 編不過?
+//     答：兩個字面量各自 decay 成 const char*,"+" 於是變成**指標算術**,
+//         而兩個指標相加沒有定義 → 編譯錯誤。std::string 的 operator+
+//         只有在**任一側**是 std::string 時才會被選中。
+//     為什麼會錯：腦中把 "a" 當成「字串物件」,以為 + 是字串串接。實際上
+//         它是 const char[2],C++ 語言層級沒有為原生字串提供串接運算子。
+//     解法："a"s + "b" (C++14)、std::string("a") + "b",或先宣告一個
+//         std::string 變數再相加。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <string_view>

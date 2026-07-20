@@ -85,6 +85,36 @@
   - perfect forwarding 需要 T&& 搭配 std::forward<T>，不要把所有 && 都誤認為 move。
   - template 可提升零成本抽象，但也可能造成編譯時間上升和二進位膨脹；共通實作可用非 template helper 收斂。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】requires-expression 與 concept 組合（C++20）
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. requires-expression 有哪四種需求子句？
+//     答：(1) simple：a + b;（只要這個式子合法）；(2) type：typename T::value_type;
+//         (3) compound：{ a.size() } -> std::convertible_to<std::size_t>;
+//         (4) nested：requires sizeof(T) <= 16;（再嵌一層布林條件）。
+//     追問：compound requirement 還能加 noexcept 嗎？（可以，寫在 } 之後）
+//
+// 🔥 Q2. requires clause 與 requires expression 差在哪？requires requires 是什麼？
+//     答：clause 是「約束條件」，寫在 template<> 之後或函式簽名尾；expression 是
+//         requires(T a){ ... } 這種「需求清單」，它本身求值成 bool。把一個匿名的
+//         expression 直接當成 clause 的條件，寫出來就是 requires requires { ... }。
+//
+// ⚠️ 陷阱 1. compound requirement 的 -> 後面可以直接接型別嗎？
+//     答：不行，-> 後面必須是 type-constraint（concept），不是型別本身。
+//         { a.size() } -> std::size_t;                  // 編譯錯誤
+//         { a.size() } -> std::same_as<std::size_t>;    // 正確
+//     為什麼會錯：把 -> 讀成「宣告回傳型別」；它其實是「對回傳型別套一個 concept」。
+//
+// ⚠️ 陷阱 2. 兩個重載各自寫出「字面上相同」的約束，就能靠 subsumption 分流嗎？
+//     答：不一定。subsumption 比的是 atomic constraint，而兩個 atomic constraint
+//         只有「來自同一個運算式」才算相同。若在兩處各手寫一次 std::is_integral_v<T>，
+//         即使長得一模一樣也不是同一條，包含關係不成立，呼叫時會 ambiguous。
+//     為什麼會錯：以為比的是「條件的值」或「條件的文字」，實際比的是來源運算式。
+//         正解是把共同條件抽成具名 concept，讓兩邊都引用同一個它（本檔 HashableEq
+//         由 Hashable && equality_comparable 組成，就是這個寫法）。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <concepts>
 #include <iostream>

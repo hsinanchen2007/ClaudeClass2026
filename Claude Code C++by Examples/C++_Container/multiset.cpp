@@ -46,6 +46,27 @@
   - 容器元素型別若昂貴，優先理解 emplace、move 和 reference/iterator 有效性，不要盲目複製。
   - 所有容器都要考慮空容器邊界；front/back/top 在空容器上呼叫通常是未定義行為或前置條件違反。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::multiset
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. multiset 和 set 的差別？
+//     答：multiset 允許重複元素，insert 永遠成功並回傳 iterator（非 pair<iterator,bool>）；
+//         count(key) 可能 > 1，equal_range(key) 才真正有意義。
+//         兩者底層同樣是 red-black tree，insert / find / erase(by iterator) 都是 O(log n)，
+//         但 count(key) 與 erase(key) 是 O(log n + k)（k 為等值元素個數）。
+//     追問：C++11 對等值元素的順序有保證嗎？（有，維持插入順序）
+//
+// ⚠️ 陷阱 1. multiset::erase(key) 會刪掉幾個？
+//     答：全部等值元素，回傳刪除個數。「只刪一個」必須寫 erase(ms.find(key))。
+//     為什麼會錯：直覺以為 erase 是「刪一筆」，對允許重複的容器而言它是「刪一組」。
+//
+// ⚠️ 陷阱 2. 可以透過 iterator 修改 multiset 的元素嗎？
+//     答：不行。元素本身就是排序依據，修改會破壞紅黑樹的有序性，
+//         因此 iterator 與 const_iterator 都指向 const 元素。
+//         要改就 erase 舊值再 insert 新值，或 C++17 起用 extract() 取出 node handle、改完再 insert 回去。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <set>            // multiset 與 set 共用 <set>
 #include <iostream>
 #include <string>

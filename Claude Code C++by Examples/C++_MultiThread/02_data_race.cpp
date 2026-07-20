@@ -126,6 +126,39 @@
   - thread 生命週期要明確 join 或 detach；std::jthread 以 RAII 方式在解構時 request_stop 並 join，較不容易漏掉。
   - 效能問題如 false sharing、contention、過度建立 thread，通常在正確性之後才調整；先寫對，再量測。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】Data race：定義、UB 後果、與 race condition 的區別
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. Data race 與 Race condition 的差別？
+//     答：Data race 是語言層面的定義——兩個 thread 並行存取同一記憶體位置、至少一個
+//         是寫、且未以同步關係排序，結果是 UB。Race condition 是邏輯層面——程式正確性
+//         取決於事件的相對時序。兩者互不蘊含：每個操作各自上鎖可消滅 data race，但
+//         if (m.count(k)) m.at(k) 這種 check-then-act 仍是 race condition。
+//     追問：舉一個「沒有 data race 但有 race condition」的例子？（TOCTOU、先查餘額
+//           再扣款）
+//
+// 🔥 Q2. counter++ 為什麼不是原子的？
+//     答：它是 read-modify-write 三步（載入、加一、寫回）。兩個 thread 可能同時讀到
+//         同一個舊值、各自加一後寫回，一次更新就此消失。要原子必須用 std::atomic 的
+//         fetch_add（單一 RMW 指令）或用 mutex 保護整段。
+//     追問：加了 -O0 就會正確嗎？（不會，優化等級只影響出錯機率，不影響正確性）
+//
+// 🔥 Q3. 為什麼 data race 是 UB，而不是「頂多讀到舊值」？
+//     答：因為編譯器在優化時被允許假設程式沒有 data race。基於這個假設它可以把變數
+//         提升到暫存器、合併或重排載入與儲存、甚至產生 invented write。一旦假設被
+//         打破，觀察到的行為就完全無法用「舊值／新值」來推理，包括撕裂讀寫與無窮迴圈。
+//     追問：怎麼在執行期抓？（ThreadSanitizer，見 lesson 14）
+//
+// ⚠️ 陷阱. 兩個 thread 各自 push_back 到同一個 vector 不安全；那寫入「不同元素」呢？
+//     答：寫入不同元素是安全的——標準保證對不同記憶體位置的並行存取不構成 data race。
+//         唯一例外是 std::vector<bool>：它是位元壓縮的特化，相鄰元素共用同一個 byte，
+//         並行寫入不同索引就是 data race。平行填值請用 std::vector<char>。
+//     為什麼會錯：大家記得「容器不是 thread-safe」，卻不知道「不同元素」本來是安全的，
+//         也不知道 vector<bool> 破壞了這個保證。（push_back 則永遠不安全：會同時寫
+//         size，還可能 reallocation 使所有指標失效。）
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <thread>
 #include <vector>

@@ -132,6 +132,29 @@
   - ostreambuf_iterator 直接寫字元到 buffer，少了格式化層，通常比 operator<< 單字元輸出更直接。
   - 處理 binary bytes 時仍要注意 char signedness 和檔案開啟模式。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】istreambuf_iterator / ostreambuf_iterator
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. istreambuf_iterator 和 istream_iterator 差在哪？該用哪一個？
+//     答：istream_iterator 走高階格式化層（operator>>），會跳過空白、會把 "42" 解析成
+//         int；istreambuf_iterator 直接走 streambuf 字元層，一個 byte 都不漏，也不解析。
+//         要「原原本本搬字元」就用 streambuf 版，要「解析成型別」才用 istream_iterator。
+//     追問：為什麼 streambuf 版比較快？（省掉 operator>> 的解析、locale 處理與 sentinel
+//         物件建構）
+//
+// 🔥 Q2. 怎麼用一行把整個檔案讀進 std::string？
+//     答：std::string s{ std::istreambuf_iterator<char>(file), {} };
+//         第二個 {} 就是 default constructed 的 end-of-stream sentinel。用 streambuf 版
+//         才能保留原檔所有空白與換行。
+//     追問：為什麼不用 istream_iterator<char>？（它會把空白與換行全部吃掉）
+//
+// Q3. istreambuf_iterator 的 operator* 和 operator++ 底層各做什麼？
+//     答：operator* 呼叫 sgetc()，只 peek 目前字元、不前進；operator++ 呼叫 sbumpc()，
+//         取出字元並前進。它是 InputIterator，同樣是 single-pass。
+//         ostreambuf_iterator 則是 OutputIterator：*it = c 等同 sputc(c)，++ 是 no-op。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <iterator>
 #include <sstream>

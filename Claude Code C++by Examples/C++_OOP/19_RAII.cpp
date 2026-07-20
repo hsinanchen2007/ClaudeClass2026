@@ -65,6 +65,33 @@
   - RAII destructor 應盡量不拋例外，因為它常在錯誤處理過程被自動呼叫。
   - RAII 不是只為記憶體而生，而是 C++ 管理任何有限資源的核心設計方法。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】RAII
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 什麼是 RAII？為什麼它能提供 exception safety？
+//     答：Resource Acquisition Is Initialization —— 在 constructor 取得資源、在
+//         destructor 釋放資源，把資源生命週期綁在物件生命週期上。之所以能提供
+//         exception safety，是因為例外造成 stack unwinding 時，「已完整建構」的
+//         物件其 destructor 一定會被呼叫（本檔範例 3 的 mayThrow 正是在示範這件事）。
+//     追問：舉幾個標準庫的 RAII 型別？（std::lock_guard、std::unique_ptr、
+//           std::fstream、std::vector、std::string）
+//
+// 🔥 Q2. RAII 型別為什麼通常要禁止 copy，或正確定義 copy？
+//     答：預設的 memberwise copy 會讓兩個物件持有同一份資源 → 兩次釋放（double free
+//         / 重複 close / 重複 unlock）。所以本檔的 ScopedTimer、FileHandle、
+//         ScopedLock 都把 copy constructor 與 copy assignment `= delete`。
+//         若資源本來就可共享或可深拷貝，才去正確定義 copy（見第 23 篇 Rule of 3/5/0）。
+//     追問：那 move 呢？（多數 RAII handle 是「可移動不可複製」—— 所有權轉移是合理的）
+//
+// ⚠️ 陷阱. destructor 裡可以拋出例外嗎？
+//     答：不該。C++11 起 destructor 預設是 `noexcept(true)`，例外逃出 destructor
+//         會直接呼叫 `std::terminate`；若當下正在 stack unwinding（已有一個例外在飛），
+//         同樣是 terminate。原則：destructor 內部自己 try/catch 吞掉或記錄。
+//     為什麼會錯：多數人把 destructor 當成一般函式，覺得「釋放失敗就丟出去讓上層處理」。
+//         但 destructor 最常被呼叫的時機正是錯誤處理過程本身，此時再丟就無路可退了。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <cstdint>
 #include <chrono>      // 時間相關 std::chrono

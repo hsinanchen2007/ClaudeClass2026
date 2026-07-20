@@ -74,6 +74,36 @@
   - 不要把 static 當成逃避物件設計的工具；若狀態其實屬於某個物件，就應該放在物件內，否則依賴關係會變隱形。
   - 命名 static 成員時可用 ClassName::member 明確指出它是類別層級資料，避免讀者誤以為每個物件各有一份。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】static 成員
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. static 成員變數與 static 成員函式各有什麼特性？
+//     答：static 資料成員屬於類別本身，所有物件共用同一份；static 成員函式沒有 this，
+//     因此不能直接存取非 static 成員，呼叫時也不需要任何物件。
+//     追問：static 成員函式可以是 virtual 嗎？（不行 — virtual 分派要從物件取 vptr，
+//     沒有 this 就無從分派，兩者語意互斥，編譯錯誤）
+//
+// 🔥 Q2. static 成員變數要在哪裡定義？
+//     答：C++17 之前，非 const 的 static 資料成員必須在 class 外提供一次定義
+//     （`int Foo::count = 0;`），只宣告不定義會在連結期得到 undefined reference。
+//     C++17 起可寫 `inline static int count = 0;` 在 class 內一次完成；
+//     `static constexpr` 資料成員自 C++17 起也隱含 inline。
+//
+// Q3. function-local static 的初始化是執行緒安全的嗎？
+//     答：是。C++11 起標準保證 function-local static 的初始化只會執行一次且是
+//     thread-safe（俗稱 magic static），這正是 Meyers Singleton 的基礎；
+//     C++11 之前才需要 double-checked locking 那套（而且當年還做不對）。
+//     追問：那 static 成員本身也安全嗎？（只保證「初始化」；之後的讀寫仍是共享狀態，
+//     多執行緒修改要自己同步，否則就是 data race）
+//
+// ⚠️ 陷阱. 不同 translation unit 的非區域 static 物件，初始化順序是什麼？
+//     答：未定義 — 這就是 static initialization order fiasco。跨 TU 的非區域 static
+//     物件之間沒有任何順序保證，若 A 的建構子用到 B，可能讀到還沒初始化的 B。
+//     為什麼會錯：以為「檔案順序 / 連結順序」決定初始化順序。
+//     解法是改用 function-local static（初次被使用時才建構，順序自然正確）。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <unordered_map>

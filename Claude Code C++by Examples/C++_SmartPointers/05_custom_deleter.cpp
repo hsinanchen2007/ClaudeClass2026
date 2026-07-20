@@ -93,6 +93,41 @@
   - unique_ptr 的 deleter 型別是指標型別的一部分，因此不同 deleter 會形成不同 unique_ptr 型別。
   - shared_ptr 把 deleter 放在 control block 中，型別不會出現在 shared_ptr<T> 的 T 裡。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】Custom Deleter（自訂釋放器）
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 為什麼自訂 deleter 會改變 sizeof(unique_ptr)，卻不影響 sizeof(shared_ptr)？
+//     答：unique_ptr<T, D> 的 deleter 型別 D 是「型別的一部分」，所以會佔物件空間 ——
+//         無狀態的 functor 或無捕獲 lambda 因 empty base optimization 不佔空間，但
+//         函式指標、有狀態的 functor、std::function 都會讓 unique_ptr 變大。
+//         shared_ptr<T> 的 deleter 則是 type erasure 後存在 control block 裡、不屬於
+//         型別，所以大小不變（通常是兩個指標大小，這是常見實作、非標準保證）。
+//     追問：實務差異？（shared_ptr<FILE> 不論 deleter 為何都是同一型別、可放進同一個
+//         容器；unique_ptr 必須把 deleter 型別寫出來 —— 本檔的 FilePtr 與 FilePtr2
+//         就是兩個不同型別）
+//
+// 🔥 Q2. 自訂 deleter 有哪些實際用途？怎麼寫？
+//     答：管理非 new 配置的資源：FILE*（fclose）、malloc 記憶體（free）、OS handle
+//         （close/CloseHandle）、第三方 C 函式庫的 xxx_destroy()、物件池的「歸還」。
+//         unique_ptr 有三種寫法：函式指標、無捕獲 lambda、stateless functor（最後者
+//         無空間開銷，最推薦）。shared_ptr 則直接 shared_ptr<FILE>(fp, fclose)。
+//
+// 🔥 Q3. 為什麼 make_shared 不支援自訂 deleter？
+//     答：make_shared 的價值就在「物件與 control block 配置在同一塊記憶體」，釋放路徑
+//         因此是固定的；一旦讓使用者插入自訂 deleter，這個優化就不成立。需要自訂
+//         deleter 只能用 shared_ptr<T>(raw, deleter) 建構子。make_unique 同理也不支援。
+//
+// ⚠️ 陷阱. shared_ptr<Base> 管理 Derived、而 Base 沒有 virtual destructor，會漏解構嗎？
+//     答：不會 —— 這是 shared_ptr 少見的優勢。deleter 是在「建構時」依當時的靜態型別
+//         決定並存進 control block 的，所以 shared_ptr<Base> sp = make_shared<Derived>();
+//         會記得「用 Derived 的方式刪除」。unique_ptr<Base> 則不行（它用
+//         default_delete<Base>，走 delete (Base*) → UB）。
+//     為什麼會錯：這題常被反過來理解成「那就不需要 virtual destructor 了」—— 錯。只要
+//         還有人可能用裸指標或 unique_ptr 持有該物件，仍然是 UB，不要拿這個技巧去
+//         設計 API。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <memory>
 #include <cstdio>

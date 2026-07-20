@@ -67,6 +67,29 @@
   - std::function 可保存不同 callable，但可能有型別抹除成本和配置成本；效能敏感處可優先用 template 接 callable。
   - lambda 放進 algorithm 時應讓 predicate 無副作用或副作用明確，否則演算法意圖會變難讀。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】generic lambda（C++14）/ template lambda（C++20）
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 什麼是 generic lambda？編譯器怎麼實作？是哪個標準？
+//     答：C++14（常被誤答成 C++11）起參數可以寫 auto：[](auto a, auto b){ return a+b; }。
+//     編譯器把 operator() 生成為「模板成員函式」：
+//     template<class T1, class T2> auto operator()(T1 a, T2 b) const;
+//     所以同一個閉包物件可以用不同型別呼叫，每種組合各自實例化一份。
+//     追問：C++20 有什麼改進？（模板化 lambda []<class T>(std::vector<T> v){}，可以直接
+//     取得型別名稱、也能加上 requires 約束）
+//
+// 🔥 Q2. generic lambda 裡要做完美轉發怎麼寫？
+//     答：[](auto&&... args){ f(std::forward<decltype(args)>(args)...); }。這裡 auto&&
+//     是轉發參考，配合 decltype(args) 取回推導出來的型別，才能保留每個引數的值類別。
+//
+// ⚠️ 陷阱. generic lambda 是「執行期泛型」嗎？一個 auto 參數能少產生幾份程式碼嗎？
+//     答：不是，也不會。它是編譯期模板：每種實際型別組合都會實例化一份 operator()，
+//     和寫成函式模板的程式碼量是同一個量級，沒有型別擦除，也沒有執行期分派。
+//     為什麼會錯：把 auto 想成別的語言裡的 Object/dynamic，於是誤以為它是一份程式碼
+//     在執行期處理各種型別。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <iostream>
 #include <map>

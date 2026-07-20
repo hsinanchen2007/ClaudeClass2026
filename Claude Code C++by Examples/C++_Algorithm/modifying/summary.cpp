@@ -156,6 +156,47 @@
   - 在資料集隨機取樣作測試 → sample。
 ================================================================================
 */
+
+// ===========================================================================
+// 【面試題】修改型序列演算法(Modifying Sequence Operations)家族總覽
+// ---------------------------------------------------------------------------
+// 🔥 Q1. 為什麼 STL 演算法「不能」改變容器大小?
+//     答:因為演算法只拿到 iterator,拿不到容器本身。iterator 能讀寫既有元素,
+//         但配置/釋放空間、改變 size 只有容器的成員函式做得到。這是 STL
+//         「演算法與容器分離」設計的直接代價,也是本章一半陷阱的共同根源。
+//         兩個後果:寫入型演算法不會替你擴容;移除型演算法不會真的縮短容器。
+//     追問:那 back_inserter 為什麼就可以?
+//         (答:它是包著容器參考的 output iterator,寫入時實際呼叫的是 push_back)
+//
+// 🔥 Q2. 哪些演算法需要「目的端已有足夠空間」?寫不夠會怎樣?
+//     答:所有會寫到 d_first / out 的:copy 家族、move 家族、transform、
+//         fill / fill_n、generate / generate_n、replace_copy、reverse_copy、
+//         rotate_copy、unique_copy、sample。空間不足就是 UB(buffer overrun),
+//         不會有例外也不會有錯誤訊息。對策:先 resize(),或用 back_inserter /
+//         inserter 這類 insert iterator。注意 reserve() 不算——它只給 capacity,
+//         size 仍是 0。
+//
+// 🔥 Q3. 「移除型」演算法的統一慣用法是什麼?
+//     答:remove / remove_if / unique 都只做「邏輯移除」——把要保留的元素往前壓,
+//         回傳新的邏輯終點,size() 不變,尾端元素是 valid but unspecified。
+//         必須搭配 erase-remove idiom 才會真的縮短:
+//           v.erase(std::remove(v.begin(), v.end(), value), v.end());
+//           v.erase(std::unique(v.begin(), v.end()), v.end());
+//         C++20 起可直接用 std::erase(v, value) / std::erase_if(v, pred)。
+//
+// ⚠️ 陷阱. 這一章有哪幾個「名字會騙人」的演算法?
+//     答:三個。(1) remove 不會 remove;(2) <algorithm> 的 std::move 是搬運演算法,
+//         和 <utility> 的型別轉換 std::move 同名不同物;(3) unique 不是「全域去重」,
+//         只處理相鄰重複,不先 sort 就會留下別處的重複值。
+//     為什麼會錯:這些名字描述的是「演算法對區間做了什麼」,
+//         而不是「使用者以為的容器操作」。
+//
+// Q4. 通用演算法和容器成員函式同名時,該選哪個?
+//     答:一律優先用成員函式。list::remove / list::unique / list::reverse / list::sort
+//         操作的是節點,真的會改變 size 或不搬移元素,效率與語意都更好;
+//         關聯容器(set/map)則根本不該用這些通用演算法,要用自己的 erase。
+// ===========================================================================
+
 #include <algorithm>
 #include <iostream>
 #include <numeric>

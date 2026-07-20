@@ -77,6 +77,47 @@
   - noexcept 是函式介面承諾；若例外逃出 noexcept 函式會呼叫 std::terminate。
   - move constructor 標 noexcept 可讓 vector 等容器在搬移元素時選擇更有效且安全的路徑。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】noexcept 與移動語意的效能連動
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. noexcept 是什麼？違反了會怎樣？
+//     答：它宣告函式不會拋出例外。若例外真的試圖逃出 noexcept 函式，會直接呼叫
+//     std::terminate()，而且不保證做 stack unwinding。兩種用法：說明符
+//     void f() noexcept;，以及運算子 noexcept(expr)——編譯期 bool，用來查詢某個運算式
+//     是否宣告為不拋，可寫出條件式的 noexcept(noexcept(x.swap(y)))。它的價值是：讓標準庫
+//     選擇更快的路徑、讓編譯器省略 unwinding 相關程式碼、作為契約與文件。
+//     追問：哪些函式應該標 noexcept？（移動建構、移動賦值、swap、解構函式（隱含）、
+//     記憶體釋放函式；以及確實簡單不拋的葉節點函式。反過來說，標了之後再移除是契約與
+//     ABI 的破壞，不要隨便亂標）
+//
+// 🔥 Q2. std::vector 擴容為什麼要看 move 建構是不是 noexcept？（move_if_noexcept）
+//     答：push_back 承諾強例外保證。擴容時要把舊元素搬到新緩衝區：若用 move，搬到一半
+//     拋例外的話舊 buffer 已被掏空、新 buffer 不完整，無法回滾，強保證破功；若用 copy，
+//     搬到一半拋例外時舊 buffer 完好無損，丟掉新 buffer 即可回滾。所以標準庫用
+//     std::move_if_noexcept：當元素的移動建構函式是 noexcept（或該型別根本不可複製）
+//     時才 move，否則退回 copy。實務衝擊是——忘了在自己的類別上標 noexcept，vector 擴容
+//     會默默退回複製，效能差好幾倍，而且沒有任何警告。
+//     追問：怎麼檢查？（static_assert(std::is_nothrow_move_constructible_v<T>);）
+//
+// ⚠️ 陷阱. 在 noexcept 函式裡呼叫可能拋例外的東西，能通過編譯嗎？
+//     答：能。noexcept 不是編譯期強制檢查，編譯器最多給警告（GCC 的 -Wterminate 只在
+//     能靜態判定必然拋出時才警告）。void f() noexcept { throw 1; } 編得過，執行到那行
+//     直接 std::terminate()。所以 noexcept 是你對編譯器與使用者的承諾，違約的懲罰是
+//     執行期直接死亡，而不是編譯錯誤——這也是「亂標 noexcept 很危險」的原因：它不會
+//     幫你檢查，只會讓出事時更難除錯（例外根本無法被 catch）。
+//     為什麼會錯：把它類比成 Java 的 throws 那種編譯期檢查機制。
+//
+// 🔥 Q. 「zero-cost exception」的 zero-cost 是相對什麼而言？
+//     答：相對於舊的 **SjLj（setjmp/longjmp）** 模型。SjLj 要在每個有 cleanup 的
+//         scope 進出時執行 setjmp 註冊／註銷，**沒有例外也要付錢**。
+//         現代 table-based（DWARF/Itanium ABI）改成把 unwind 資訊放進獨立的
+//         .eh_frame / LSDA 表，正常路徑一條指令都不用多跑，代價轉移到「真的丟出
+//         例外時」要查表 unwind（很慢）與「binary 變大」。
+//     追問：所以什麼時候不該用例外？（高頻錯誤路徑——例外一旦變常態，查表成本
+//         遠超回傳錯誤碼；以及 binary size 受限的嵌入式環境）
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <type_traits>
 #include <utility>

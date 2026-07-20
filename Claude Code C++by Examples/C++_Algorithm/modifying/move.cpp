@@ -103,6 +103,36 @@
   - move algorithm 會把元素搬到目的地，來源仍有效但值可能改變；後續只能重新指定或安全銷毀。
   - shuffle/sample 需要亂數引擎；不要每次呼叫都用同一個固定種子，除非你刻意要可重現測試結果。
 */
+
+// ===========================================================================
+// 【面試題】std::move(<algorithm> 版)/ std::move_backward
+// ---------------------------------------------------------------------------
+// 🔥 Q1. <algorithm> 的 std::move 和 <utility> 的 std::move 是同一個嗎?
+//     答:不是,只是同名。<utility> 的 std::move(x) 是「型別轉換」,把 lvalue 轉成
+//         xvalue,不搬任何東西;<algorithm> 的 std::move(first, last, d_first)
+//         是「搬運演算法」,對整段範圍逐一做 move-assignment,是 std::copy 的孿生兄弟。
+//         看參數個數就能分辨。
+//
+// 🔥 Q2. 被 move 走的來源元素,之後還能用嗎?
+//     答:標準規定標準函式庫型別在移動後處於「valid but unspecified」狀態——
+//         可以安全解構、可以指派新值、可以呼叫不依賴具體內容的成員(如 size()、clear()),
+//         但「不可以假設它的內容」。實務上 std::string / std::vector 移動後通常會變空,
+//         但那是實作行為、不是標準保證,不該依賴。
+//     追問:那寫 assert(s.empty()) 檢查移動後的 string 對嗎?(答:不對,標準沒這樣保證)
+//
+// Q3. 什麼時候該用 move_backward?
+//     答:和 copy_backward 同理——當來源與目的在同一容器內重疊,「且目的在來源後方」時,
+//         由前往後搬會先覆蓋掉還沒讀到的元素,必須改用 move_backward 從尾巴往前寫。
+//         口訣:往前搬用 move,往後搬用 move_backward。
+//
+// ⚠️ 陷阱. 對 std::vector<int> 用 std::move 取代 std::copy,會比較快嗎?
+//     答:不會,兩者完全等價。int 這種 trivially copyable 型別沒有「可轉移的資源」,
+//         move-assignment 就是一次複製。真正受益的是內部持有 heap 資源的型別
+//         (string、vector、unique_ptr——後者甚至只能 move 不能 copy)。
+//     為什麼會錯:把 move 當成「比較快的 copy」這個萬用咒語。move 快的原因是省掉
+//         資源的深層複製,沒有資源可省時它就只是一次普通的指派。
+// ===========================================================================
+
 #include <algorithm>
 #include <iostream>
 #include <memory>

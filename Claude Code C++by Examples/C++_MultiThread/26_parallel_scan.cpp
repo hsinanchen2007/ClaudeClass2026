@@ -165,6 +165,35 @@
   - thread 生命週期要明確 join 或 detach；std::jthread 以 RAII 方式在解構時 request_stop 並 join，較不容易漏掉。
   - 效能問題如 false sharing、contention、過度建立 thread，通常在正確性之後才調整；先寫對，再量測。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】平行 prefix sum（scan）
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. Prefix sum 看起來每個位置都依賴前一個，怎麼平行化？
+//     答：用兩（三）階段的 block-based scan。Phase 1：把陣列切成 N 塊，每塊「獨立」
+//         算塊內 prefix sum 與塊總和（完全平行）。Phase 2：對 N 個塊總和做序列 prefix
+//         sum，得到每塊的 offset（序列，但只有 N 項，通常遠小於元素數）。Phase 3：
+//         每塊獨立把自己的 offset 加回去（完全平行）。序列的部分被壓到 O(N/blk)。
+//     追問：總工作量有變嗎？（變多，大約是序列版的兩倍，因為資料要被走過兩次；平行
+//           化換到的是牆鐘時間，不是總計算量）
+//
+// 🔥 Q2. 為什麼 scan 比 reduce 難平行化？
+//     答：reduce 只需要一個最終結果，任何結合順序都可以，是純粹的樹狀歸約；scan 要
+//         輸出「每個位置的累積值」，位置 i 的結果依賴前面所有元素，存在真實的序列
+//         相依鏈。所以 scan 必須靠「先算出每塊的偏移量再回填」這種兩階段結構來打斷
+//         相依，代價是多一次資料掃描。
+//     追問：標準庫的對應演算法？（std::reduce、std::inclusive_scan / exclusive_scan，
+//           皆可搭配 execution policy）
+//
+// Q3. inclusive_scan 與 exclusive_scan 差在哪？
+//     答：inclusive 的第 i 個輸出「包含」第 i 個輸入（out[i] = a[0]+...+a[i]）；
+//         exclusive 不包含（out[i] = init + a[0]+...+a[i-1]，out[0] 為 init）。
+//         exclusive_scan 因此必須提供 init 值。實務上 compaction、bucket 的起始位址
+//         計算多半要的是 exclusive 版本。
+//     追問：與 std::partial_sum 差在哪？（partial_sum 保證序列順序，不接受 execution
+//           policy；inclusive_scan 不保證結合順序，因此可平行，對浮點可能有微小差異）
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <vector>
 #include <thread>

@@ -53,6 +53,51 @@
   - reinterpret_cast 是低階重新解讀位元或位址，最容易違反 aliasing、alignment 和生命週期規則；能不用就不用。
   - C++ 風格轉型 (T)x 太模糊，可能偷偷做 const_cast 或 reinterpret_cast；教材應優先使用具名 cast 表達意圖。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】static_cast
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. static_cast 和 dynamic_cast 做下轉型（downcast）差在哪裡？
+//     答：static_cast<Derived*>(basePtr) 【完全不做執行期檢查】 — 編譯器直接
+//         相信你。若該物件實際上不是 Derived（不是 Derived 的 base subobject），
+//         標準明文規定行為【未定義】。dynamic_cast 則在執行期查 RTTI，失敗時
+//         指標版回 nullptr、參考版拋 std::bad_cast，代價是速度較慢且要求來源
+//         型別是多型的。
+//     追問：你「百分之百確定」型別時該用哪個？（static_cast 較快；但更好的設計
+//           是根本不需要 downcast — 用 virtual 函式把行為交給物件自己）
+//
+// 🔥 Q2. static_cast 具體能做哪些轉換？
+//     答：主要有：① 算術型別互轉（含 narrowing）② 有繼承關係的上/下轉型
+//         ③ void* 轉回原本的物件指標型別 ④ 呼叫使用者定義轉換或 converting
+//         constructor ⑤ 左值轉 xvalue（static_cast<T&&>）⑥ scoped enum ↔ 整數
+//         ⑦ static_cast<void>(expr) 明確丟棄運算式的值。
+//     追問：static_cast<void>(x) 有什麼用？（抑制 [[nodiscard]] 或
+//           unused-variable 警告，同時明寫「我是故意忽略它的」）
+//
+// Q3. 為什麼 static_cast 不能從 virtual base 下轉型？
+//     答：virtual base subobject 在最衍生物件中的【偏移量只有執行期才知道】
+//         （需查 vbtable/vtable），編譯期的 static_cast 無從計算。因此標準直接
+//         禁止這種轉換，會編譯錯誤 — 這種情況必須改用 dynamic_cast。
+//
+// Q4. std::move 本質上是什麼？
+//     答：它就是一個 static_cast — 語意等同
+//         static_cast<std::remove_reference_t<T>&&>(x)，無條件把運算式轉成
+//         rvalue reference。它【不搬移任何東西】，真正的搬移由之後被 overload
+//         resolution 選中的 move constructor / move assignment 完成。
+//     追問：對 const T& 用 std::move 會怎樣？（得到 const T&&，綁不到 move
+//           constructor，於是【靜默退回 copy】，效能問題不會有任何錯誤訊息）
+//
+// ⚠️ 陷阱. 用 static_cast 做錯誤的下轉型後存取成員，一定會崩潰嗎？
+//     答：【不一定 — 這正是它危險的地方】。UB 的定義是「標準不保證任何結果」，
+//         不是「保證會崩潰」。若 derived 只多了幾個成員而你剛好沒碰到，程式可能
+//         看起來正常跑很久，然後在毫無關聯的地方毀損資料。本檔的錯誤下轉型示範
+//         已改成 -DDEMONSTRATE_UB 才編入（配 -fsanitize=undefined 才看得到
+//         UBSan 抓它），正是因為預設不該讓範例程式跑 UB。
+//     為什麼會錯：多數人的錯誤模型是「UB = 會當掉」，於是把「測試跑起來沒問題」
+//         當成 cast 正確的證據。實際上「沒觀察到症狀」完全不構成任何保證 —
+//         換個編譯器、換個最佳化等級、換個記憶體佈局就可能爆。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <cstdlib>
 #include <iostream>
 #include <type_traits>

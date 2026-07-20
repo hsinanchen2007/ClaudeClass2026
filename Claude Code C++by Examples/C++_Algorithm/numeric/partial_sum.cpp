@@ -132,6 +132,35 @@
   - gcd/lcm 對整數工作；lcm 可能溢位，即使最後型別是 long long 也要注意輸入大小。
   - 數值演算法最容易出錯的是型別和溢位，不是語法；工作程式應刻意選擇初始值型別。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::partial_sum
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. partial_sum 做什麼?為什麼前綴和這麼常用?
+//     答:輸出與輸入等長的累進和 —— out[0] = in[0]、out[i] = in[0] + ... + in[i]。
+//         在 <numeric>,恰好 N-1 次運算,C++20 起 constexpr。價值在於把「區間和查詢」
+//         從 O(n) 降到 O(1):sum(i, j) = prefix[j+1] - prefix[i]。
+//     追問:可以就地做嗎?(可以,d_first 允許等於 first,直接覆寫原容器)
+//
+// 🔥 Q2. partial_sum、inclusive_scan、exclusive_scan 三者怎麼選?
+//     答:inclusive_scan (C++17) 結果與 partial_sum 相同,但契約上允許重排結合順序,所以
+//         只有它有 execution policy 多載可平行;partial_sum 保證嚴格左至右,不可平行。
+//         exclusive_scan 則是「排除自己」:out[0] = init、out[i] = init + in[0] + ... + in[i-1],
+//         而且 init 是必填參數 —— 因為 out[0] 就是它。
+//     追問:為什麼平行框架偏好 exclusive_scan?(算「每個 bucket 的寫入起始 offset」時,
+//         需要的正是「我之前的總和、不含我」)
+//
+// ⚠️ 陷阱. 用 prefix[j+1] - prefix[i] 查區間和時,最常見的錯在哪?
+//     答:忘了多留一格。要能表達「空前綴」,prefix 必須是 n+1 長、prefix[0] = 0,並把
+//         partial_sum 寫到 prefix.begin() + 1 (本檔 LC303 正是這個寫法)。若直接對 n 長的
+//         partial_sum 結果套公式,i = 0 時就會需要 prefix[-1],只能再加分支特判。
+//     為什麼會錯:公式背起來了,但沒意識到公式預設的是「長度 n+1、首格為 0」的版面。
+//
+// Q3. 傳自訂 op 能做出什麼?
+//     答:任何「邊掃邊維護累積狀態」的序列:std::multiplies<>{} 得累進積、取 max 得
+//         running max (股價題常用)、取 min 得 running min。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <functional>
 #include <iostream>
 #include <iterator>

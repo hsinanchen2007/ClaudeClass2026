@@ -197,6 +197,44 @@
   - 二分搜尋 mid 計算 → midpoint 防溢位。
 ================================================================================
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】<numeric> 家族總覽
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. <numeric> 這個家族可以怎麼分類?為什麼它們不在 <algorithm>?
+//     答:大致三類 —— (1) fold,歸約成單一值:accumulate、reduce、inner_product、
+//         transform_reduce;(2) scan,輸出與輸入等長的累積序列:partial_sum、
+//         inclusive_scan、exclusive_scan、transform_inclusive_scan / transform_exclusive_scan;
+//         (3) 其他:adjacent_difference (partial_sum 的逆運算)、填值的 iota,以及整數工具
+//         gcd / lcm (C++17) 與 midpoint (C++20)。標準把它們歸在「numeric operations」一節
+//         而非 algorithms,所以宣告在 <numeric>;最實際的影響是 —— 只 include <algorithm>
+//         會編譯失敗,這幾乎是每個人踩的第一個坑。
+//
+// 🔥 Q2. 這個家族裡,哪些能平行、哪些不能?判準是什麼?
+//     答:判準是「介面有沒有保證求值順序」。保證順序 → 沒有 execution policy 多載:
+//         accumulate、inner_product、partial_sum、iota。允許重排 → 有 policy 多載:
+//         reduce、transform_reduce、inclusive_scan、exclusive_scan、transform_*_scan,
+//         以及 adjacent_difference。
+//     追問:為什麼 partial_sum 沒有、adjacent_difference 反而有?(差分每個位置只依賴相鄰
+//         兩項、天生可切塊;前綴和有跨位置依賴,標準另外開了 inclusive_scan 這條平行路線)
+//
+// ⚠️ 陷阱. 「reduce 就是可以平行的 accumulate」—— 這句話錯在哪?
+//     答:錯在把它當成單純的效能開關。reduce 換掉的是「契約」:不保證順序、不保證結合方式,
+//         因此要求 op 同時 associative 與 commutative。字串串接、減法用 reduce 一開始就錯,
+//         而且不加 policy 也一樣錯。浮點加總雖然可以用,但結果不保證與 accumulate 完全相同。
+//     為什麼會錯:以為「沒開平行 = 退化成 accumulate」,但順序未定是介面語意,
+//         不是執行期才決定的性質。
+//
+// Q3. fold 與 scan 該怎麼選?各家 init 的語意差在哪?
+//     答:要單一結果選 fold,要「每個位置的累積值」選 scan。init 方面:accumulate 的 init
+//         必填且決定結果型別;reduce 的 init 可省略;inclusive_scan 的 init 可省略;
+//         exclusive_scan 的 init 必填,因為 out[0] 就是它。
+//
+// Q4. std::midpoint (C++20) 解決什麼經典 bug?
+//     答:二分搜尋寫 int mid = (lo + hi) / 2,在 lo + hi 溢位時會出錯 (著名的 binary search
+//         overflow bug);std::midpoint(lo, hi) 不會產生這個中間溢位。它同樣宣告在 <numeric>。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <numeric>
 #include <string>

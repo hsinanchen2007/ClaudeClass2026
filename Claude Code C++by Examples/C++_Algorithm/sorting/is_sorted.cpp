@@ -97,6 +97,43 @@
   - std::is_sorted 呼叫後元素位置可能改變；若其他資料結構保存索引或指向元素的 iterator，要重新檢查關聯是否仍正確。
   - std::is_sorted 的選擇要看需求：完整排序用 sort/stable_sort，只要第 N 名用 nth_element，只要前 K 名用 partial_sort。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::is_sorted / std::is_sorted_until
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. is_sorted 和 is_sorted_until 的差別?
+//     答:同一個演算法的兩種 API。is_sorted 回 bool「整段是不是已排序」;
+//         is_sorted_until 回 iterator「第一個破壞順序的位置」,整段有序時回 last。
+//         所以 is_sorted(first, last) 等價於 is_sorted_until(first, last) == last。
+//         兩者都是 O(n)、最多 n-1 次比較,遇到第一個逆序即停止;
+//         空區間與單一元素一律視為已排序 (is_sorted 回 true)。
+//     追問:預設判定的是嚴格遞增嗎?
+//           (不是,預設用 operator< 判定「非遞減」,{1, 2, 2, 3} 算已排序;
+//            要檢查遞減順序就傳 std::greater<>{})
+//
+// 🔥 Q2. 檢查用的 comparator 有什麼要求?
+//     答:必須和「排序時會用的那個 comparator」是同一個,而且同樣必須構成
+//         strict weak ordering — 這是整個排序家族共同的鐵律。拿另一個
+//         comparator 去檢查,得到的答案對後續的 sort / 二分搜尋沒有意義。
+//     追問:為什麼二分搜尋前特別在意這件事?
+//           (lower_bound / binary_search 的前置條件就是「已依同一準則排序」,
+//            違反時不會報錯,但結果無意義)
+//
+// Q3. is_sorted 適用哪些 iterator?和 sort 一樣嗎?
+//     答:不一樣。is_sorted / is_sorted_until 只需要 forward iterator
+//         (只做相鄰比較、單向前進),所以 std::forward_list 也能用;
+//         而 sort / partial_sort / nth_element 都要求 random access iterator。
+//         兩者自 C++11 加入,並自 C++20 起為 constexpr。
+//
+// ⚠️ 陷阱. 「先 is_sorted 檢查,已排序就跳過 sort」是有效的最佳化嗎?
+//     答:通常不是。你為此多付一次完整的 O(n) 掃描,而 std::sort 對已排序的
+//         輸入本來就很快 — introsort 的收尾是一次 insertion sort,對幾乎有序
+//         的序列近似 O(n)。這兩個函式真正的用途是「資料完整性斷言 / 單元測試 /
+//         除錯」(搭配 is_sorted_until 找出第一個亂序位置),而不是省時間。
+//     為什麼會錯:把「檢查很便宜、排序很貴」當成通則,忽略了兩者都至少要
+//         走過一次資料,以及 sort 在近乎有序輸入上的實際成本並不高。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <functional>
 #include <iostream>

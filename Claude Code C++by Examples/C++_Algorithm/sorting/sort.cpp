@@ -114,6 +114,66 @@
   - std::sort 呼叫後元素位置可能改變；若其他資料結構保存索引或指向元素的 iterator，要重新檢查關聯是否仍正確。
   - std::sort 的選擇要看需求：完整排序用 sort/stable_sort，只要第 N 名用 nth_element，只要前 K 名用 partial_sort。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::sort
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. std::sort 用的是什麼排序演算法?複雜度?穩定嗎?
+//     答:主流實作 (SGI STL / libstdc++) 採 introsort (內省排序) — 三層混合:
+//         以 quicksort 為主,遞迴深度超過限制時切換 heapsort 避免退化成 O(n²),
+//         子區間短於門檻時停止遞迴,最後對整體做一次 insertion sort
+//         (對「幾乎排好」的序列近似 O(n))。
+//         C++11 起標準要求 O(n log n) worst case;C++03 只要求平均 O(n log n)。
+//         std::sort 不保證穩定,且要求 random access iterator。
+//         ⚠️ 遞迴深度限制 2*log2(n)、小區間門檻 _S_threshold = 16,
+//            libstdc++ 為此值,但這是 implementation-defined、標準未規定。
+//     追問:為什麼小區間改用 insertion sort?
+//           (小 n 時常數因子小、cache 友善,且省下遞迴開銷)
+//
+// Q2. sort + unique + erase 去重慣用法是什麼?
+//     答:std::unique 只移除「相鄰」的重複元素,所以必須先 sort;而且它和
+//         std::remove 一樣不會改變容器大小,只回傳新的邏輯終點,必須配合
+//         成員 erase 才會真的縮短容器:
+//             std::sort(v.begin(), v.end());
+//             v.erase(std::unique(v.begin(), v.end()), v.end());
+//         總複雜度 O(n log n)。若不需要有序結果,改用 unordered_set 可到平均 O(n)。
+//
+// ⚠️ 陷阱 1. 什麼是 strict weak ordering?comparator 寫錯會怎樣?
+//     答:std::sort、std::map 等要求 comparator 構成 strict weak ordering:
+//         (1) irreflexive:comp(a,a) 恆為 false;
+//         (2) asymmetric:comp(a,b) 為 true 則 comp(b,a) 必為 false;
+//         (3) transitive:comp(a,b) && comp(b,c) ⇒ comp(a,c);
+//         (4) equivalence 本身也必須有傳遞性。
+//         最常見的錯誤是寫 return a <= b; — 當 a == b 時兩個方向都回 true,
+//         違反 asymmetry。後果是 undefined behavior:libstdc++ 的 introsort
+//         內層迴圈依賴 comparator 保證 pivot 會擋住指標,comparator 壞掉時
+//         可能越界存取而 crash,而不只是「排序結果錯」。
+//     為什麼會錯:多數人腦中的模型是「comparator 只是決定誰排前面,寫錯頂多
+//         順序怪怪的」。實際上它是演算法的前置條件 (precondition),違反即 UB。
+//     追問:怎麼 debug?(-D_GLIBCXX_DEBUG 會檢查 comparator 的 irreflexivity)
+//           多鍵比較最安全的寫法?
+//           (return std::tie(a.x, a.y) < std::tie(b.x, b.y); — 交給 tuple 的
+//            字典序比較,不必自己手寫而寫壞 asymmetry)
+//
+// ⚠️ 陷阱 2. std::sort 之後,原本的 iterator / reference 還指向同一個元素嗎?
+//     答:不會。std::sort 不會使 iterator「失效」— 記憶體沒有重新配置、size
+//         沒變,iterator 仍可安全解參考;但元素的值被搬移了,原本 it 指向的
+//         位置現在放的是別的元素。「iterator 仍然 valid」和「它指向的內容不變」
+//         是兩件事,面試時要能區分。相對地 std::list::sort() 是重接節點,
+//         iterator 會跟著原本的元素走。
+//     為什麼會錯:一般人把 iterator invalidation 當成唯一的風險模型,
+//         看到「沒有失效」就以為「一切照舊」,忽略值已經整批換了位置。
+//
+// ⚠️ 陷阱 3. 可以直接對 std::map 用 std::sort 嗎?
+//     答:不行,而且有兩層原因。(1) map::iterator 是 bidirectional,
+//         std::sort 需要 random access,型別上就編譯失敗;(2) 更根本地,
+//         map 的元素型別是 std::pair<const Key, T> — key 是 const、不可 assign,
+//         而排序必須搬移 / 賦值元素。要「依 value 排序」,正確做法是先複製到
+//         std::vector<std::pair<K, V>> 再 sort。std::set 同理不能被 std::sort。
+//     為什麼會錯:以為「sort 只吃兩個 iterator,任何容器都塞得進去」,
+//         忽略了 iterator category 與元素可賦值性這兩個前置條件。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <functional>
 #include <iostream>

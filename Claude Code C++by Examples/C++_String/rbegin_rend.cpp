@@ -109,6 +109,40 @@
   - 若只是傳入唯讀文字片段且不需要擁有資料，std::string_view 可避免複製；但它不能延長原字串生命週期。
   - 處理中文或 UTF-8 時，std::string 的 size() 回傳 byte 數，不是人眼看到的字元數。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::string::rbegin / rend (反向迭代器)
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. reverse_iterator 和它的 base() 是什麼關係?
+//     答：std::reverse_iterator 內部存的是「下一個位置」。對一個
+//         reverse_iterator r,標準的關係是 &*r == &*(r.base() - 1) ——
+//         也就是 r 指到的元素,比 r.base() 指到的位置**前一格**。
+//         因此 rbegin().base() == end(),rend().base() == begin()。
+//     追問：為什麼要設計成差一格?
+//         → 為了讓 rend() 能對應到 begin(),否則就得表示 begin() - 1
+//           這種不合法的位置。
+//
+// 🔥 Q2. 拿反向搜尋的結果去 erase,位置怎麼換算?
+//     答：因為差一格,要刪掉 reverse_iterator it 指到的那個字元,得寫
+//         s.erase(it.base() - 1);直接寫 s.erase(it.base()) 會刪到它的
+//         **後一個**字元。這個 off-by-one 是 reverse_iterator 最典型的
+//         bug 來源,而且在字串短、剛好刪對邊界時常常「看起來是對的」。
+//
+// Q3. reverse_iterator 也適用一般的失效規則嗎?
+//     答：適用,而且完全相同。任何可能重新配置或改變長度的操作
+//         (operator+=、append、insert、erase、resize、reserve、swap…)
+//         都會讓 reverse_iterator 一併失效 —— 因為它只是包了一個普通的
+//         iterator,底層失效它就跟著失效。
+//
+// ⚠️ 陷阱. std::string(s.rbegin(), s.rend()) 可以用來反轉中文字串嗎?
+//     答：不行。reverse_iterator 是逐 **byte** 反轉,UTF-8 的多位元組字元
+//         會被拆散、位元組順序顛倒,產生無效的編碼序列。它只對單位元組
+//         編碼 (ASCII) 安全。
+//     為什麼會錯：把 std::string 當成「字元序列」。它其實是**位元組**序列,
+//         size() 回傳的也是 byte 數 —— "中文".size() 在 UTF-8 下是 6 不是 2。
+//         要正確反轉得先做 UTF-8 解碼,標準庫沒有現成方案。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <algorithm>

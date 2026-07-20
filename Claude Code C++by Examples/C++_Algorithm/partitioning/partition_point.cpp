@@ -99,6 +99,45 @@
   - std::partition_point 完成後資料通常只保證被分成兩段，不保證每段內已排序；把 partition 當 sort 使用會得到錯誤假設。
   - std::partition_point 若回傳 iterator，它通常代表 true 區結尾或第一個 false 位置；使用前要把這個位置當成半開區間邊界理解。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::partition_point
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. partition_point 做什麼？前置條件是什麼？
+//     答：對一個**已經分割好**的範圍，用二分搜尋找出分界點，
+//         回傳「第一個不滿足 pred 的位置」——與 std::partition 的回傳值
+//         同義，但它不重排資料，只查詢，O(log N) 次述詞呼叫。
+//         前置條件是範圍必須已依同一述詞分割；違反就是 **UB**，
+//         不是回傳錯誤值而已。不確定就先用 is_partitioned 驗證。
+//     追問：全部滿足或全部不滿足時回傳什麼？（全滿足回 last、
+//           全不滿足回 first）／它是 C++ 哪一版加入的？（C++11）
+//
+// 🔥 Q2. partition_point 和 lower_bound 是什麼關係？
+//     答：lower_bound 是 partition_point 的特例。
+//         lower_bound(first, last, v)
+//           == partition_point(first, last, [&](const T& x){ return x < v; })
+//         已排序的範圍，對「x < v」這個述詞來說天然就是已分割的，
+//         這正是二分搜尋能成立的理由。partition_point 更通用——
+//         任何單調的述詞都可以，不限於和某個 value 比大小。
+//     追問：那什麼時候該用 partition_point 而不是 lower_bound？
+//           （述詞不是單純的值比較時，例如 LC 278 的 isBadVersion、
+//             狀態機的 OK→FAIL 轉換點、二分答案的可行性判定）
+//
+// Q3. 為什麼說它和 partition 是「同一個問題的兩半」？
+//     答：partition 是**改寫**——花 O(N) 把資料重排成已分割並回傳分界；
+//         partition_point 是**查詢**——假設已分割，花 O(log N) 找出分界。
+//         兩者回傳值意義完全相同，差別只在誰負責讓範圍變成已分割。
+//
+// ⚠️ 陷阱. partition_point 在 std::list 上也是 O(log N) 嗎？
+//     答：**不是整體 O(log N)**。標準保證的是「O(log N) 次述詞呼叫」，
+//         但只有 RandomAccessIterator 才能 O(1) 跳到中點。
+//         list 只有 BidirectionalIterator，每次「跳中點」都得一步步走，
+//         iterator 前進的總步數是 **O(N)**。
+//     為什麼會錯：多數人把「比較/述詞次數」直接當成「總時間複雜度」。
+//         這和 std::lower_bound 用在 std::set 上退化的道理完全一樣——
+//         二分搜尋的 log 只省下比較，省不了非隨機存取的走訪成本。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <iostream>
 #include <vector>

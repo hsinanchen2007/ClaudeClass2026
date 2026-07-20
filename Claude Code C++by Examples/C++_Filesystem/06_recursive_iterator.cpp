@@ -51,6 +51,31 @@
   - recursive_directory_iterator 會深入子目錄，遇到權限問題可能丟例外或需用 options 跳過。
   - 遞迴掃描大型目錄要注意效能、符號連結循環與最大深度控制。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】recursive_directory_iterator
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. recursive_directory_iterator 比 directory_iterator 多了什麼？
+//     答：它會深度優先遞迴進入子目錄，並額外提供 depth()（目前深度）、
+//     disable_recursion_pending()（跳過即將進入的那個目錄）、pop()（跳出目前這一層），
+//     以及 directory_options 參數。其餘性質與 directory_iterator 相同：InputIterator、
+//     順序未指定、不含 . 與 .. 。
+//     追問：怎麼跳過某棵子樹？（在該目錄「被進入之前」呼叫 it.disable_recursion_pending()
+//     ——時機是關鍵，進去之後再呼叫就沒用了）
+//
+// 🔥 Q2. 它預設會跟隨目錄 symlink 嗎？為什麼這個預設值很重要？
+//     答：預設不跟隨，除非明確給 directory_options::follow_directory_symlink。這個預設
+//     值防止了 symlink 迴圈造成的無窮遞迴（例如目錄內有個 symlink 指回自己的祖先），
+//     也避免掃描範圍意外擴散到整個檔案系統。要開啟跟隨時，必須自己負責處理迴圈偵測。
+//
+// ⚠️ 陷阱. 掃描整個目錄樹時，遇到一個沒有權限的子目錄會怎樣？
+//     答：預設會拋 filesystem_error，整個迴圈就此中斷——已經掃到的結果還在，但剩下的
+//     完全沒掃。對「掃描使用者主目錄」這種必然會遇到權限問題的工作，正解是建構時給
+//     directory_options::skip_permission_denied，或改用接受 error_code 的形式並在
+//     迴圈中逐項檢查。
+//     為什麼會錯：以為權限不足只會讓「那一項」被跳過，實際上例外會直接終止整個遍歷。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <cstdint>
 #include <filesystem>
 #include <fstream>

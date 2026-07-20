@@ -145,6 +145,31 @@
   - thread 生命週期要明確 join 或 detach；std::jthread 以 RAII 方式在解構時 request_stop 並 join，較不容易漏掉。
   - 效能問題如 false sharing、contention、過度建立 thread，通常在正確性之後才調整；先寫對，再量測。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::shared_mutex（讀寫鎖）
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. shared_mutex 適用什麼場景？代價是什麼？
+//     答：多個 reader 可同時持有 shared_lock，writer 需獨佔的 unique_lock。適合
+//         「讀遠多於寫、且臨界區夠長」的場景（設定表、路由表、快取）。代價是內部狀態
+//         比 mutex 複雜，上鎖／解鎖成本明顯較高；若臨界區很短（只讀一個整數），普通
+//         mutex 甚至 atomic 反而更快。另需注意 writer starvation，公平性取決於實作。
+//     追問：C++ 標準何時引入？（shared_timed_mutex 是 C++14，shared_mutex 是 C++17）
+//
+// 🔥 Q2. 能不能把 shared_lock「升級」成 unique_lock？
+//     答：標準不支援鎖升級。若兩個 reader 同時想升級，彼此都在等對方釋放 shared 所有權
+//         → 死鎖。正確做法是先釋放 shared lock，再取得 unique lock，然後「重新驗證」
+//         條件——因為中間有空窗，狀態可能已被別人改掉。
+//     追問：那降級（unique → shared）呢？（標準同樣沒有提供原子降級的介面）
+//
+// 🔥 Q3. 有沒有比 shared_mutex 更好的讀多寫少方案？
+//     答：Copy-on-Write 快照（lesson 18）或 RCU：資料以不可變物件持有，讀者只做一次
+//         原子載入取得當下快照，之後完全無鎖、也完全不會被 writer 阻塞。代價是每次寫
+//         都要複製整份、記憶體峰值為兩份。適合讀寫比極端懸殊的設定類資料。
+//     追問：CoW 與 RCU 差在哪？（回收機制不同：CoW 靠 shared_ptr 引用計數，RCU 靠
+//           grace period，讀端更便宜但回收較延遲）
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <thread>
 #include <mutex>

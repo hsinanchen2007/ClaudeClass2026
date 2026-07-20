@@ -153,6 +153,31 @@
   - cctype 適合 ASCII command、簡單 token、設定檔 key 等 byte-level 處理；真正自然語言文字應使用 Unicode-aware library。
 */
 
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】cctype (isalpha / toupper …)
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. char 是 signed 還是 unsigned？
+//     答：implementation-defined。C++ 有三個相異型別：char、signed char、
+//         unsigned char，char 的符號性由實作決定——x86 Linux 上通常是 signed，
+//         ARM / PowerPC 上常是 unsigned。所以不能假設 char 一定非負。
+//     追問：C++20 的 char8_t 解決了什麼？→ 讓 UTF-8 位元組有專屬型別，型別上與 char 分離。
+//
+// ⚠️ 陷阱. std::toupper(ch) 直接把 char 傳進去有什麼問題？
+//     答：<cctype> 這一家（isalpha / isupper / toupper …）規定：引數若既不能表示為
+//         unsigned char、也不等於 EOF，行為就是 UB。
+//         在 char 為 signed 的平台上，UTF-8 位元組如 0xE4 會是負值 → 直接踩 UB。
+//         正確寫法：std::toupper(static_cast<unsigned char>(ch));
+//     為什麼會錯：這些函式的參數型別寫的是 int，看起來「什麼整數都能傳」，
+//         於是沒人想到要轉型；而在只有 ASCII 的測試資料下它又永遠不會出錯。
+//
+// 🔥 Q2. 為什麼 std::transform(s.begin(), s.end(), s.begin(), ::toupper) 是錯的？
+//     答：transform 會把 char 逐個直接餵給 ::toupper，等同上面那個沒轉型的呼叫，
+//         碰到非 ASCII 位元組就是 UB。要包一層 lambda 自己轉型：
+//         [](unsigned char c){ return static_cast<char>(std::toupper(c)); }
+//     追問：大小寫轉換要注意 locale 嗎？→ 要，這組函式受目前 C locale 影響，
+//           而且是 byte-level 的；真正的 Unicode 文字必須用 Unicode-aware library。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <algorithm>

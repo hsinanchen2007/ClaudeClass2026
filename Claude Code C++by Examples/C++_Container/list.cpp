@@ -64,6 +64,34 @@
   - 容器元素型別若昂貴，優先理解 emplace、move 和 reference/iterator 有效性，不要盲目複製。
   - 所有容器都要考慮空容器邊界；front/back/top 在空容器上呼叫通常是未定義行為或前置條件違反。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::list
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. vector、list、deque 如何選？為什麼實務上 list 常常比 vector 慢？
+//     答：list 是 doubly linked list，已持有 iterator 時任意位置插入/刪除都是 O(1)，
+//         但無 random access、查找 O(n)。雖然理論複雜度好看，實測常輸 vector：
+//         (1) 節點分散在 heap，cache locality 差；(2) 每次插入都要一次 heap allocation；
+//         (3) 每節點多兩個指標的記憶體 overhead。預設選 vector，真的需要穩定性才選 list。
+//     追問：那 list 的真正優勢是什麼？（iterator / reference 穩定性 + O(1) splice）
+//
+// 🔥 Q2. std::list 的 size() 是 O(1) 還是 O(n)？splice 呢？
+//     答：C++11 起標準要求所有容器的 size() 為 O(1)，所以 list::size() 是 O(1)（內部維護計數器）。
+//         代價落在 splice：接「整個 list」是 O(1)，
+//         但接部分區間的 splice(pos, other, first, last) 因為要更新元素個數，是 O(distance(first,last))。
+//
+// Q3. 為什麼 std::list 有自己的 sort()，而不能用 std::sort？
+//     答：std::sort 需要 random access iterator（introsort 要做 partition 與 heap 操作），
+//         而 list::iterator 只是 bidirectional iterator，型別上就不相容。
+//         list::sort() 採 merge sort，透過重接節點指標排序，不搬移元素也不配置新節點，且是 stable。
+//
+// ⚠️ 陷阱. 對 list 做 insert / sort 之後，舊的 iterator 還有效嗎？
+//     答：都有效。list 的 insert 完全不影響既有 iterator；
+//         只有「被刪除元素」的 iterator / reference 會失效。
+//         sort() 之後 iterator 仍指向同一個元素，只是該元素在序列中的位置變了。
+//     為什麼會錯：拿 vector「插入就可能全失效」的直覺套到所有容器。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <list>
 #include <iostream>
 #include <algorithm>

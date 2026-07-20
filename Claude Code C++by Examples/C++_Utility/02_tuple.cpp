@@ -78,6 +78,30 @@
   - structured binding 能改善 tuple 使用體驗，但欄位名稱仍只在 binding 當下存在。
   - tuple 適合泛型工具和短距離回傳；若資料會跨模組傳遞，具名型別通常更好。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::tuple
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. tuple 怎麼取值？取錯了會怎樣？
+//     答：std::get<I>(t) 依索引、std::get<T>(t) 依型別（C++14 起，型別重複時編譯錯）。
+//     兩者都是純編譯期操作，取錯就是編譯失敗——這一點和 std::variant 相反，variant 的
+//     std::get 是執行期檢查、取錯會拋 std::bad_variant_access。
+//     追問：怎麼把 tuple 展開餵給一個函式？（std::apply(f, t)，C++17；它內部以標準的
+//     INVOKE 語意呼叫，所以成員函式指標之類的可呼叫物也適用）
+//
+// 🔥 Q2. tuple 和 structured bindings 怎麼配合？和 std::tie 差在哪？
+//     答：auto [a, b, c] = f(); 會「宣告新變數」，可用 auto&／const auto& 控制是否複製；
+//     std::tie(a, b, c) = f(); 是「賦值給既有變數」，而且可以用 std::ignore 跳過某項。
+//     structured bindings 沒辦法跳過（可用 [[maybe_unused]] 抑制未使用警告）。
+//
+// ⚠️ 陷阱. tuple 的元素在記憶體中是照宣告順序排列的嗎？可以 memcpy 到對應的 struct 嗎？
+//     答：不行。標準未規定 tuple 的成員佈局；libstdc++ 以遞迴繼承實作，實際上是反序
+//     存放。所以不可假設它與對應 struct 佈局相同，不可 memcpy，也不適合用於序列化或
+//     跨 ABI 的介面——那些場合請用自訂 struct。
+//     為什麼會錯：把 tuple 想成「匿名的 struct」，於是預期它有相同的記憶體佈局；但
+//     tuple 是純函式庫設施，佈局是 implementation-defined。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <tuple>
 #include <string>

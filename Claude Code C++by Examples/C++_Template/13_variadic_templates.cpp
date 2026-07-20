@@ -67,6 +67,30 @@
   - perfect forwarding 需要 T&& 搭配 std::forward<T>，不要把所有 && 都誤認為 move。
   - template 可提升零成本抽象，但也可能造成編譯時間上升和二進位膨脹；共通實作可用非 template helper 收斂。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】variadic template（可變參數模板）
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 什麼是 parameter pack？sizeof... 是什麼？屬哪個標準？
+//     答：C++11 引入。typename... Ts 是 template parameter pack，Ts... args 是
+//         function parameter pack。sizeof...(Ts) 取「包內元素個數」，是編譯期常數，
+//         與取位元組大小的 sizeof 是兩個完全不同的運算子。
+//     追問：展開可以寫在哪些位置？（函式呼叫實參、初始化列表、基底類別清單、
+//         sizeof...、以及 C++17 的 fold expression；不能憑空寫 ...）
+//
+// 🔥 Q2. C++11/14 沒有 fold expression 時，怎麼「遍歷」一個 pack？
+//     答：兩種經典手法。(a) 遞迴：一個終止 overload ＋ 一個拆 head/rest 的遞迴
+//         overload，就是本檔 print_all 的寫法；(b) initializer_list ＋ 逗號 trick：
+//         (void)std::initializer_list<int>{ (f(args),0)... }。C++17 起改用
+//         fold expression 一行解決，但遞迴模式在需要拆 head/rest 時仍不可取代。
+//
+// Q3. f(args...) 與 f(args)... 差在哪？
+//     答：差很多。f(args...) 是把整個 pack 攤成 f 的多個實參，只呼叫 f 一次；
+//         f(args)... 是把「f(args)」當成展開模式，對每個元素各呼叫一次，
+//         展開成 f(a1), f(a2), f(a3)。規則是「... 貼在要重複的模式後面」，
+//         看懂這一點才讀得動 STL 與 Boost 裡的 variadic 程式碼。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <memory>
 #include <string>

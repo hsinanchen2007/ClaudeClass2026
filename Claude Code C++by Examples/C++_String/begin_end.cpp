@@ -126,6 +126,42 @@
   - 若只是傳入唯讀文字片段且不需要擁有資料，std::string_view 可避免複製；但它不能延長原字串生命週期。
   - 處理中文或 UTF-8 時，std::string 的 size() 回傳 byte 數，不是人眼看到的字元數。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::string::begin / end (正向迭代器)
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. std::string 的 iterator 什麼時候失效?請完整列一次。
+//     答：任何可能重新配置緩衝區或改變長度的操作都會失效 ——
+//         operator+=、append、push_back、insert、erase、replace、resize、
+//         reserve、shrink_to_fit、assign、operator=、clear、swap。
+//         只讀操作 (size、find、compare、const operator[]、substr) 不會。
+//     追問：c_str() / data() 回傳的指標也一樣嗎?
+//         → 是,規則完全相同。這是實務上更常踩的版本。
+//
+// 🔥 Q2. begin()/end() 和 cbegin()/cend() 差在哪?該用哪個?
+//     答：cbegin/cend (C++11) 無論物件本身是不是 const,都回傳
+//         const_iterator;begin/end 則看物件的 const 性 —— 非 const 物件
+//         得到 iterator,const 物件得到 const_iterator。不需要修改時用
+//         cbegin/cend,可以把唯讀意圖寫在型別上,也避免在 auto 推導下
+//         不小心拿到可寫的 iterator。
+//
+// Q3. 為什麼 C++11 要求「非 const 的 begin() 不得使 iterator 失效」?
+//     答：這正是 COW (copy-on-write) 實作在 C++11 之後不再合法的原因之一。
+//         COW 下多個 string 共享同一塊 buffer,一旦有人索取可寫的 iterator
+//         就必須「分家」複製,而分家一定會讓既有的指標與 iterator 失效 ——
+//         這與新標準的要求直接衝突。結果是現代實作全面改用 SSO + eager copy。
+//
+// ⚠️ 陷阱. 下面這段刪除字元的迴圈錯在哪?
+//         for (auto it = s.begin(); it != s.end(); ++it)
+//             if (*it == 'x') s.erase(it);
+//     答：erase 之後 it 已經失效,接下來的 ++it 與解參考都是 UB。
+//         正確寫法是 it = s.erase(it) (erase 回傳下一個有效位置,且該輪
+//         不要再 ++it);C++20 更簡單:std::erase(s, 'x')。
+//     為什麼會錯：以為 erase 只是「拿掉一個元素、其他不動」。對連續儲存
+//         的容器而言,被刪位置之後的元素全部往前搬,該位置起的所有
+//         iterator 都失效。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <algorithm>

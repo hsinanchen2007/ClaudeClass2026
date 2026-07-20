@@ -163,6 +163,44 @@
   - thread 生命週期要明確 join 或 detach；std::jthread 以 RAII 方式在解構時 request_stop 並 join，較不容易漏掉。
   - 效能問題如 false sharing、contention、過度建立 thread，通常在正確性之後才調整；先寫對，再量測。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::atomic：適用範圍、volatile、CAS
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. std::atomic 與 mutex 該怎麼選？
+//     答：atomic 保護的是「單一變數的單一操作」，靠 CPU 的 lock 前綴 / LL-SC 指令
+//         達成，無系統呼叫、無 context switch，適合計數器、旗標、指標交換。mutex
+//         保護的是「一段臨界區、多個變數的不變式」，競爭時 thread 會睡眠（futex）。
+//         判準：需要同時更新兩個以上變數並維持不變式，atomic 就做不到。
+//     追問：atomic 一定比 mutex 快嗎？（不一定；高競爭下 cache line ping-pong 可能
+//           反而更慢，且 std::atomic<T> 對大型 T 會退化成內部帶鎖，is_lock_free()
+//           回 false）
+//
+// 🔥 Q2. volatile 能用於多執行緒同步嗎？
+//     答：不能。C++ 的 volatile 只保證「不要把這個存取優化掉或合併」，語意是給 MMIO
+//         與 signal handler 用的。它不提供原子性（v++ 仍是三步），也不提供任何跨
+//         thread 的記憶體順序保證。多執行緒一律用 std::atomic。
+//     追問：那為何舊程式碼的 volatile bool stop 看起來能動？（x86 強記憶體序加上單純
+//           bool 讀寫恰好可行，但仍是 UB；換架構或開高優化就壞。注意 Java/C# 的
+//           volatile 有 acquire/release 語意，C++ 沒有——這是常見的跨語言誤解）
+//
+// 🔥 Q3. CAS（compare_exchange）是什麼？weak 與 strong 差在哪？
+//     答：CAS 是「若當前值等於 expected 就寫入 desired，否則把實際值寫回 expected 並
+//         回傳 false」，是所有無鎖演算法的基石。weak 允許 spurious failure（值相符也
+//         可能回 false），因為 LL/SC 架構上 cache line 被驅逐、中斷、context switch
+//         都會讓 store-conditional 失敗；strong 內部自行迴圈吞掉偽失敗。規則：本來就
+//         寫在迴圈裡就用 weak（更快，x86 上兩者等價），單次一次性嘗試才用 strong。
+//     追問：CAS 失敗會改寫 expected，這在迴圈中有什麼好處？（自動取得最新值，不用重讀）
+//
+// ⚠️ 陷阱. std::atomic<int> x; x = x + 1; 是原子的嗎？
+//     答：不是。這是原子 load → 普通加法 → 原子 store 三個獨立操作，中間可被插入而
+//         丟失更新。x++ 與 x += 1 才是原子的（對應 fetch_add，單一 RMW 指令）。要
+//         原子地做任意運算必須用 CAS 迴圈：
+//         int old = x.load(); while (!x.compare_exchange_weak(old, old * 2)) {}
+//     為什麼會錯：大家以為「變數宣告成 atomic，碰到它的敘述就都變原子」，其實原子性
+//         只存在於單一成員操作，跨多次存取的複合敘述不受保護。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <thread>
 #include <atomic>     // std::atomic

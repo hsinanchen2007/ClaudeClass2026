@@ -74,6 +74,33 @@
   - decltype(name) 取得宣告型別，decltype((expr)) 會依 value category 產生 reference，括號差異很重要。
   - decltype 常用在泛型程式中保留精確回傳型別，比 auto 更不會丟失 reference。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】decltype
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. decltype 的推導規則？
+//     答：兩條。(1) 運算元是「未加括號的變數名或類別成員存取」→ 直接取它的
+//         宣告型別，reference 與 cv 全部保留。(2) 其他情形當成一般運算式，
+//         依值類別加工：lvalue → T&、xvalue → T&&、prvalue → T。
+//     追問：那跟 auto 差在哪？（auto 走 template 推導會丟掉 reference 與
+//         top-level const，decltype 完整保留；C++14 的 decltype(auto) 才兼得兩者）
+//
+// 🔥 Q2. decltype 會求值括號裡的運算式嗎？
+//     答：不會。decltype 的運算元是 unevaluated operand，只做型別分析。
+//         所以 `decltype(f())` 不會呼叫 f，f 只有宣告沒有定義也照樣能用。
+//     追問：還有哪些 unevaluated context？（sizeof、noexcept 運算子；
+//         `std::declval` 正是靠這點才能「不真的建構物件」就取得其型別）
+//
+// ⚠️ 陷阱. `int x = 0;` 時，decltype(x) 與 decltype((x)) 分別是什麼？
+//     答：`decltype(x)` 是 int（走規則 1，看宣告）；`decltype((x))` 是 int&
+//         （加了括號就不再是裸名字，成為 lvalue 運算式，走規則 2 補上 &）。
+//         本檔 Demo 2 已用 static_assert 驗證。既然是參考，它就必須初始化。
+//     為什麼會錯：多數人把括號當成「純排版、沒有語意」的符號。但在 decltype
+//         裡它恰好是切換規則 1／規則 2 的開關。實務後果：寫 decltype(auto) 的
+//         轉發函式時，`return x;` 回傳 int，`return (x);` 卻回傳 int& —— 若 x 是
+//         區域變數，後者就是回傳懸垂參考（本機 g++ 會發 -Wreturn-local-addr）。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <type_traits>
 #include <vector>

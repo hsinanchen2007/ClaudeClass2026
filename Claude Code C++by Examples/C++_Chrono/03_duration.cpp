@@ -82,6 +82,34 @@
   - duration_cast 會明確處理可能截斷的轉換，例如 microseconds 轉 milliseconds。
   - 用 auto 接 duration 運算結果時要知道單位可能被推導成共同型別，不一定是你肉眼看到的單位。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】duration 與單位轉換
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. duration 的型別結構是什麼？
+//     答：duration<Rep, Period> 兩個參數：Rep 是儲存數值的算術型別（int、int64_t、
+//         double）；Period 是 std::ratio<N, D>，表示「每個 tick 等於幾秒」。例如
+//         milliseconds 的 Period 是 ratio<1, 1000>。單位由型別系統攜帶，所以
+//         seconds + milliseconds 會自動轉換到兩者的公同單位再相加，編譯期就防止了
+//         單位錯誤——這正是 chrono 相對於裸數值的核心價值。
+//     追問：ratio 的運算在何時進行？（編譯期，執行期沒有換算成本）
+//
+// 🔥 Q2. 什麼時候需要 duration_cast？
+//     答：當轉換「會損失精度」時需要顯式 cast。規則：細 → 粗（ms → s）有損，必須顯式
+//         duration_cast；粗 → 細（s → ms）無損，可隱式轉換。若 Rep 是浮點型別，轉換
+//         一律視為無損，也可隱式轉換。
+//     追問：想保留小數怎麼辦？（用 duration<double, std::milli>(d).count() 而不是
+//           duration_cast<milliseconds>，後者會截斷掉小數部分）
+//
+// ⚠️ 陷阱. duration_cast<seconds>(1999ms) 等於多少？那 -1999ms 呢？
+//     答：分別是 1 秒與 -1 秒。duration_cast 執行的是「朝零截斷」，不做四捨五入，
+//         所以負值是 -1 而不是 -2。若要四捨五入用 std::chrono::round<seconds>(...)，
+//         向下取整用 floor，向上用 ceil（皆為 C++17 起提供）。
+//     為什麼會錯：多數人以為「轉換 = 四捨五入」，而且就算知道會截斷，也常誤以為
+//         截斷等於 floor。負值情境下 duration_cast（朝零）與 floor（朝負無窮）結果
+//         不同，是最常被忽略的坑。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <chrono>
 #include <iostream>
 

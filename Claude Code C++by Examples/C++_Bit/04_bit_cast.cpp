@@ -68,6 +68,35 @@
   - bit_cast 要求來源和目標都是 trivially copyable 且大小相同；它不是 reinterpret_cast 的萬用安全版。
   - 浮點數 bit_cast 成整數常用於觀察 IEEE 754 表示，但不能假設所有平台浮點格式都完全一樣。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::bit_cast 與 type punning
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. bit_cast、reinterpret_cast、memcpy、union 做 type punning 差在哪？
+//     答：① reinterpret_cast<float&>(i) 讀寫會違反 strict aliasing，是 UB——編譯器做
+//     type-based alias analysis 時可以假設 int* 與 float* 不會指向同一物件，開最佳化後
+//     產生錯誤結果 ② 讀取 union 中「非最後寫入」的成員在 C 中合法，在 C++ 中是 UB
+//     （雖然 GCC/Clang 以擴充支援）③ std::memcpy 是 C++20 之前唯一可攜的正解，編譯器
+//     認得這個慣用法，通常最佳化成單一暫存器搬移 ④ std::bit_cast（C++20）標準定義、
+//     沒有 aliasing 問題、而且是 constexpr（memcpy 不是）。優先順序：bit_cast > memcpy >
+//     union（C 可、C++ 不可）> reinterpret_cast（別用）。
+//     追問：bit_cast 有什麼硬性要求？（sizeof(To) == sizeof(From)，且兩者都必須是
+//     trivially copyable）經典的 fast inverse sqrt 用 *(long*)&x 在現代 C++ 是什麼？（UB）
+//
+// 🔥 Q2. 用 reinterpret_cast<char*> 逐位元組檢視一個物件，也是 UB 嗎？
+//     答：這個是合法的。char、unsigned char 與 std::byte 享有 aliasing 豁免，可以合法
+//     別名任意物件的物件表示（object representation）。所以「逐位元組 dump」是允許的，
+//     不合法的是「用另一個具體型別的 lvalue 去存取」，例如把 int 物件當成 float 來讀。
+//
+// ⚠️ 陷阱. 大小端（endianness）會影響 << 和 >> 的結果嗎？
+//     答：不會。位移是對「值」操作，與該值在記憶體中的位元組排列順序無關——這是關於
+//     endianness 最常見的誤解。endianness 只在你「以位元組為單位觀察或傳輸」時才會顯現：
+//     序列化、網路協定、mmap 二進位檔、跨平台檔案格式。C++20 起可用
+//     if constexpr (std::endian::native == std::endian::little) 在編譯期零成本判斷，
+//     而且要記得 native 可能既不等於 little 也不等於 big（mixed-endian）。
+//     為什麼會錯：把「最低位的位元」與「最低位址的位元組」混為一談，兩者是不同層次的概念。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <cstdint>
 #include <cstring>
 #include <iostream>

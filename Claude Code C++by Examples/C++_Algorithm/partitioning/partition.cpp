@@ -102,6 +102,41 @@
   - std::partition 完成後資料通常只保證被分成兩段，不保證每段內已排序；把 partition 當 sort 使用會得到錯誤假設。
   - std::partition 若回傳 iterator，它通常代表 true 區結尾或第一個 false 位置；使用前要把這個位置當成半開區間邊界理解。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::partition
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. std::partition 和 std::stable_partition 的差別？
+//     答：兩者都把滿足 pred 的元素移到前段、不滿足的移到後段，並回傳分界
+//         iterator。差別在保證：partition **不保證兩組內部的相對順序**，
+//         換來的是 O(1) 空間、O(N) 時間（RandomAccess 下最多 N/2 次 swap）。
+//         stable_partition 保證組內順序不變，代價是嘗試配置 O(N) 暫存。
+//         不在乎組內順序就用 partition，它更省也更快。
+//     追問：partition 需要哪種 iterator？（ForwardIterator 即可，所以
+//           std::forward_list 也能用；stable_partition 需要 BidirectionalIterator）
+//
+// 🔥 Q2. 回傳值是什麼？怎麼用它？
+//     答：回傳「第一個不滿足 pred 的元素」的位置，也就是後段的開頭。
+//         配合半開區間理解：[first, mid) 是滿足組，[mid, last) 是不滿足組。
+//         所以滿足的個數就是 distance(first, mid)。
+//     追問：如果全部都滿足或全部都不滿足，回傳什麼？
+//           （全滿足回 last，全不滿足回 first——半開區間的自然結果）
+//
+// Q3. partition 和 quicksort 的 partition step 是同一回事嗎？
+//     答：概念相同——都是「以某條件把區間切成兩邊，再對兩邊各自處理」。
+//         差別在 std::partition 是接受任意一元述詞的通用工具，
+//         而 quicksort 的 partition 是以 pivot 值比較為述詞的特例。
+//         同樣的概念也是 quickselect 與 Dutch National Flag（LC 75）的基礎。
+//
+// ⚠️ 陷阱. partition 之後，後段（不滿足組）會維持原本的相對順序嗎？
+//     答：**不會，兩組都不保證**。很多人以為「被搬走的是滿足組，
+//         所以沒被動到的不滿足組應該原封不動」——錯。實作是從兩端
+//         往中間互換，兩組的內部順序都可能被打亂。
+//     為什麼會錯：腦中的錯誤模型是「partition 像 stable 版的挑選搬移」，
+//         實際上它是雙指標對撞式 swap，誰跟誰換完全取決於原始位置。
+//         只要有任何一組的順序有意義，就必須改用 stable_partition。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <iostream>
 #include <vector>

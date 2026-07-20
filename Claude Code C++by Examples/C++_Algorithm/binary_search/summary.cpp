@@ -136,6 +136,45 @@
   - 浮點區間統計 → 取代 multiset.count,用排序 vector + equal_range。
 ================================================================================
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】二分搜尋家族總覽 (binary_search / lower_bound / upper_bound / equal_range)
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 這四個 API 怎麼選?
+//     答:看你要的「回傳型別」就決定了。
+//         只要知道存不存在 → binary_search(回 bool)。
+//         要位置、要插入點 → lower_bound(第一個 >= value,最常用)。
+//         要「第一個 > value」或做分桶 → upper_bound。
+//         要整段相等區間或個數 → equal_range,個數 = hi - lo。
+//         想要「位置 + 存在性」不要呼叫兩次:lower_bound 一次,
+//         再檢查 it != last && *it == value 即可。
+//     追問:那 partition_point 是什麼?
+//           (答:同樣 O(log N) 二分,但吃的是一元述詞而非值 —
+//            lower_bound 可視為以「< value」為述詞的 partition_point 特例)
+//
+// 🔥 Q2. 四者共用哪些前置條件?違反了會怎樣?
+//     答:三件事。(1) 區間必須依 comp 已排序(嚴格說是對該述詞已 partitioned);
+//         (2) 搜尋用的 comp 必須與當初排序用的完全一致 — 用 lambda A 排序、
+//         lambda B 搜尋等同於在未排序資料上二分;(3) comp 必須是 strict weak
+//         ordering,要寫 `<` 不能寫 `<=`。任一條違反都是 UB:不丟例外、
+//         不回錯誤碼,只給出「看起來像答案」的結果。
+//     追問:「等價」和「相等」有差嗎?
+//           (答:有。標準只用 comp 判定等價 — !comp(a,b) && !comp(b,a),
+//            全程不呼叫 operator==;自訂 comp 下兩者可能不一致)
+//
+// ⚠️ 陷阱. 這家族都是 O(log N),所以對 std::list、std::set 也很快?
+//     答:不對。要分開講「比較次數」和「總時間」。比較次數確實恆為 O(log N),
+//         但那要能 O(1) 跳到中點才會反映成 O(log N) 時間 — 也就是需要
+//         random access iterator。對 std::list / std::set 這類 bidirectional
+//         iterator,每次跳中點都得逐步 ++,iterator 前進總步數是 O(N),
+//         總時間退化成 O(N),跟 std::find 同一級。
+//     為什麼會錯:大家背的是「二分搜尋 = O(log n)」這個結論,卻沒記住它成立
+//         的前提是「隨機定址」。實務通則:關聯容器一律優先用同名成員函式
+//         (set::lower_bound / multimap::equal_range …),沿紅黑樹下降才是真正的
+//         O(log N);而且成員版在 C++14 起搭配透明比較器(std::less<>)還支援
+//         異質鍵查找,自由函式版沒有這個能力。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <iostream>
 #include <vector>

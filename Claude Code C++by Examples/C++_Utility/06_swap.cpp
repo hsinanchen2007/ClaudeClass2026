@@ -73,6 +73,33 @@
   - any 提供執行期任意型別保存，但取回需要知道正確型別；過度使用會失去靜態型別檢查優勢。
   - std::move/std::forward/std::exchange/as_const 都是表達意圖的工具；它們本身不一定搬移或複製資料。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::swap 與 ADL 兩步式慣用法
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. std::swap 的預設實作是什麼？為什麼要寫 using std::swap;？
+//     答：預設實作是三次移動：T tmp = std::move(a); a = std::move(b); b = std::move(tmp);
+//     兩步式（two-step）慣用法是先 using std::swap; 引入標準版當後備，再以未限定的
+//     swap(a, b) 呼叫，讓 ADL 先找到使用者為自己的型別提供的高效版本（常常只是交換
+//     指標）。若寫死 std::swap(a, b) 就繞過了 ADL，永遠用不到那個自訂版本。
+//     追問：為什麼不建議特化 std::swap？（函式模板不能偏特化，而全特化又限制多；正解是
+//     在自己的 namespace 提供 swap 重載，讓 ADL 找得到）
+//
+// 🔥 Q2. 為什麼 swap「必須」是 noexcept？
+//     答：因為 swap 是回滾機制本身。copy-and-swap 的強例外保證論證建立在「最後那一步
+//     不可能失敗」之上：若 swap 會拋例外，資料已部分交換，既沒完成也回不去。骨牌效應是
+//     swap 非 noexcept → move assignment 可能無法標 noexcept →
+//     is_nothrow_move_constructible 為 false → vector 擴容退回複製 → 效能損失。
+//     追問：std::swap 本身是 noexcept 嗎？（條件式：noexcept(is_nothrow_move_constructible_v<T>
+//     && is_nothrow_move_assignable_v<T>)）
+//
+// ⚠️ 陷阱. 自己寫的 swap 需要配置記憶體，標 noexcept 只是形式問題嗎？
+//     答：不是。真正的 swap 應該只交換指標或 POD 成員，本質上不可能失敗；若你的 swap
+//     需要配置記憶體，那是類別設計有問題的訊號（該用 pimpl，或讓成員自己是 RAII 型別），
+//     而不是「把 noexcept 拿掉就好」。
+//     為什麼會錯：把 noexcept 當成一個可有可無的標註，忽略它是整個例外安全機制的地基。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <utility>
 #include <vector>

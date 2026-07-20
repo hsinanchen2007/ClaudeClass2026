@@ -63,6 +63,29 @@
   - 容器元素型別若昂貴，優先理解 emplace、move 和 reference/iterator 有效性，不要盲目複製。
   - 所有容器都要考慮空容器邊界；front/back/top 在空容器上呼叫通常是未定義行為或前置條件違反。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::span (C++20)
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. std::span 是什麼？解決什麼問題？
+//     答：std::span<T> 是對連續記憶體的「非擁有 (non-owning) view」，內部就是 (pointer, size)，
+//         不管生命週期、不做配置，建構與存取都是 O(1)。
+//         用途是統一函式介面：一個吃 std::span<const int> 的函式可同時接受
+//         std::vector<int>、std::array<int,N>、C 陣列，而不需要寫成 template 或傳 (ptr, len) 兩個參數。
+//     追問：span 要 pass by value 還是 reference？（by value，它本身就很輕）
+//
+// 🔥 Q2. static extent 和 dynamic extent 差在哪？
+//     答：std::span<int, 5> 是 static extent——大小是編譯期常數，尺寸不需存在物件裡，
+//         且能在編譯期檢查不匹配。std::span<int>（即 Extent = std::dynamic_extent）大小在執行期決定，
+//         物件內額外存一個 size，彈性較大但少了編譯期保證。
+//
+// ⚠️ 陷阱. span 會不會延長被指向物件的壽命？
+//     答：不會。span 不擁有也不管理生命週期，若底層 vector 擴容、被清空或解構，
+//         span 就懸空 (dangling)，再存取就是 UB。尤其不要回傳指向局部容器的 span。
+//     為什麼會錯：把它當成「輕量版 vector」，
+//         實際上它與 std::string_view 同屬一類（view），危險模型也完全相同。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <span>
 #include <vector>
 #include <array>

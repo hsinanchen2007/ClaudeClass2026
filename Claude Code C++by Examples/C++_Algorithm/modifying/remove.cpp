@@ -122,6 +122,41 @@
   - move algorithm 會把元素搬到目的地，來源仍有效但值可能改變；後續只能重新指定或安全銷毀。
   - shuffle/sample 需要亂數引擎；不要每次呼叫都用同一個固定種子，除非你刻意要可重現測試結果。
 */
+
+// ===========================================================================
+// 【面試題】std::remove / remove_if(Algorithm 主題最高頻)
+// ---------------------------------------------------------------------------
+// 🔥 Q1. 為什麼 std::remove 不會真的刪除元素?
+//     答:因為演算法只拿到一對 iterator,拿不到容器本身,而「改變容器大小」只有容器的
+//         成員函式做得到。remove 的實際作為是:把「不該被移除」的元素依序搬到區間前段
+//         (維持相對順序),回傳指向新邏輯終點的 iterator。容器的 size() 與 end()
+//         完全不變,尾端殘留的元素處於 valid but unspecified 狀態。
+//     追問:C++11 之後那個「搬」是 copy 還是 move?(答:move-assignment,對重型元素更快)
+//
+// 🔥 Q2. erase-remove idiom 怎麼寫?為什麼比逐個 erase 好?
+//     答:v.erase(std::remove(v.begin(), v.end(), value), v.end());
+//         條件版是 v.erase(std::remove_if(v.begin(), v.end(), pred), v.end());
+//         整體 O(n)——remove 一次線性搬移,erase 一次砍掉尾巴。逐個呼叫 vector::erase
+//         每次都要搬後面所有元素,退化成 O(n^2)。
+//     追問:C++20 有沒有更短的寫法?
+//
+// 🔥 Q3. C++20 之後還需要寫 erase-remove idiom 嗎?
+//     答:不用了。C++20 加入非成員的 std::erase(v, value) 與 std::erase_if(v, pred),
+//         一行完成、也不會忘記傳第二個參數。注意這是 C++20 才有的,C++17 以前仍須用
+//         erase-remove idiom。
+//
+// ⚠️ 陷阱. std::remove(v.begin(), v.end(), 2); 單獨寫一行,size 會變嗎?
+//     答:不會。size() 一模一樣,而且尾端元素的值已經是 unspecified,直接印出來會看到
+//         「看似還在的舊值」或殘留的重複值。回傳值被丟掉就等於什麼事都沒完成。
+//     為什麼會錯:名字叫 remove,大家自然假設它像 vector::erase 一樣會縮短容器。
+//         STL 的設計是演算法與容器分離,這個名字是歷史包袱。
+//
+// Q4. std::list 上該用 std::remove 還是成員 list::remove?
+//     答:用成員版。list::remove() 直接卸下並銷毀節點,真的會改變 size();
+//         通用的 std::remove 只能搬值。關聯容器(set/map)則完全不適用這些演算法,
+//         要用容器自己的 erase。
+// ===========================================================================
+
 #include <algorithm>
 #include <iostream>
 #include <iterator>

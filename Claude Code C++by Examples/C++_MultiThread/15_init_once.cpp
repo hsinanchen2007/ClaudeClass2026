@@ -171,6 +171,36 @@
   - thread 生命週期要明確 join 或 detach；std::jthread 以 RAII 方式在解構時 request_stop 並 join，較不容易漏掉。
   - 效能問題如 false sharing、contention、過度建立 thread，通常在正確性之後才調整；先寫對，再量測。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】執行緒安全的一次性初始化：magic static / call_once / DCLP
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 如何實作 thread-safe singleton？
+//     答：最佳解是 Meyers singleton（magic static）：
+//         static T& instance() { static T inst; return inst; }
+//         C++11 起標準保證 function-local static 的初始化是 thread-safe 的——多個
+//         thread 同時進入時只有一個執行初始化，其餘阻塞等待完成。次選是 std::call_once
+//         + std::once_flag（適用於非 static 的情境）。不要手寫 double-checked locking。
+//     追問：有什麼隱憂？（static destruction order fiasco：跨 TU 的解構相依可能失效；
+//           必要時用永不解構的 leaky singleton）
+//
+// 🔥 Q2. DCLP 在 C++11 之前為什麼是錯的？現在呢？
+//     答：舊寫法 if (!p) { lock; if (!p) p = new T; } 的問題在於 p = new T 包含三步：
+//         配置記憶體、呼叫建構子、把位址寫入 p。編譯器／CPU 可以把「寫入 p」重排到
+//         「建構子完成」之前，於是另一個 thread 在第一層檢查看到非空指標，卻拿到尚未
+//         建構完成的物件。C++11 之前語言沒有記憶體模型，volatile 也無法修正。C++11
+//         之後把 p 宣告為 std::atomic<T*>、第一層用 load(acquire)、寫入用 store(release)
+//         即可正確——但既然 magic static 更短更快，實務上沒有理由自己寫 DCLP。
+//     追問：用預設的 seq_cst 寫 DCLP 對嗎？（對，只是比 acquire/release 稍慢）
+//
+// 🔥 Q3. thread_local 有什麼陷阱？
+//     答：每個 thread 各有一份獨立實體，首次使用時建構、thread 結束時解構。陷阱：
+//         (1) 存取有間接成本；(2) detached thread 的解構時機不保證可靠；(3) 在動態
+//         載入的函式庫中語意複雜；(4) thread pool 中「thread 不會結束」，導致
+//         thread_local 狀態跨任務殘留、造成污染。
+//     追問：在 thread pool 裡怎麼安全使用？（明確在任務開始或結束時重置，別依賴解構）
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <thread>
 #include <vector>

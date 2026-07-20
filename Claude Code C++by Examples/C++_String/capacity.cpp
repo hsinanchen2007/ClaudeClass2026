@@ -132,6 +132,38 @@
   - 若只是傳入唯讀文字片段且不需要擁有資料，std::string_view 可避免複製；但它不能延長原字串生命週期。
   - 處理中文或 UTF-8 時，std::string 的 size() 回傳 byte 數，不是人眼看到的字元數。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】capacity / SSO
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 什麼是 SSO(Small String Optimization)?為什麼 std::string 不一定在堆上?
+//     答:短字串直接存放在 string 物件自身的內嵌 buffer(隨物件位於 stack 或所屬
+//     物件內),完全不呼叫 operator new;長度超過門檻才改為 heap 配置。動機是真實
+//     程式的字串多半很短,而 heap allocation 相對昂貴(鎖、cache miss、碎片)。
+//     所以「std::string 一定會 new」是錯的。
+//     追問:怎麼驗證有沒有走 SSO?→ 看 s.data() 是否落在 [&s, &s+sizeof(s)) 區間內。
+//
+// 🔥 Q2. SSO 的門檻是多少?
+//     答:先講「這是 implementation-defined,標準未規定任何數字」,再舉實例:
+//     libstdc++ 15 字元(sizeof(std::string)==32)、libc++ 22 字元(sizeof==24)、
+//     MSVC STL 15。libstdc++ 是 16 bytes 的 buffer 留 1 byte 給 '\0',所以是 15。
+//     追問:為什麼 libc++ 物件更小卻裝更多?→ 它用 union 把 capacity 欄位也讓給
+//     buffer 用,只留 1 bit 當 long/short 旗標。
+//
+// 🔥 Q3. capacity() / reserve() / shrink_to_fit() 各自做什麼?
+//     答:capacity() 是「不重新配置就能容納的字元數」(保證 >= size());
+//     reserve(n) 確保 capacity() >= n,不會改變 size();shrink_to_fit() 只是
+//     非約束性請求,實作可以完全忽略。成長因子同樣是 implementation-defined
+//     (libstdc++ 約 2 倍,實測 15 → 30 → 60;MSVC 約 1.5 倍),幾何成長讓
+//     += / append 維持攤還 O(1)。
+//
+// ⚠️ 陷阱. capacity() 大於 0 就代表已經發生 heap 配置嗎?
+//     答:不一定。空字串在 libstdc++ 上 capacity() 就已經是 15,那是內嵌 buffer,
+//     一次 malloc 都沒有發生。
+//     為什麼會錯:多數人腦中的模型是「capacity > 0 ⇒ 有動態記憶體」,忽略了 SSO
+//     讓前面那幾個字元的容量是白送的。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <vector>

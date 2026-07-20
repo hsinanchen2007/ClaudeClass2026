@@ -86,6 +86,53 @@
   - shared_ptr 的 control block 很重要；不要用同一裸指標建立多個 shared_ptr。
   - custom deleter 用於 FILE*、C API handle、特殊釋放函式；deleter 型別也會影響 unique_ptr 型別大小。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::unique_ptr
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. unique_ptr 為什麼不能 copy？那要從函式回傳怎麼辦？
+//     答：copy 會讓兩個 unique_ptr 都認為自己擁有資源 → double free，所以 copy
+//         constructor 與 copy assignment 都被 = delete，它是 move-only 型別。回傳
+//         區域變數不必寫 std::move：回傳語句中的區域物件會走 NRVO 或隱式 move。
+//     追問：那寫了 std::move 會更好嗎？（不會，反而可能抑制 NRVO）
+//
+// 🔥 Q2. release()、reset()、get() 差在哪？
+//     答：release() 放棄所有權、內部指標設 null、回傳裸指標但「不刪除物件」，呼叫端
+//         必須自己負責釋放。reset(p) 會「先刪除」目前管理的物件再接管 p。get() 只借出
+//         裸指標、不轉移所有權，用來呼叫 C API。
+//     追問：get() 的回傳值可以拿去 delete 或交給另一個 smart pointer 嗎？（絕對不行）
+//
+// 🔥 Q3. 為什麼建議 make_unique 而不是 unique_ptr<T>(new T)？
+//     答：① exception safety：f(unique_ptr<A>(new A), g()) 中若 g() 在 new A 之後、
+//         unique_ptr 建構之前拋出，A 就洩漏了（C++17 收緊了求值順序，但仍建議用 make）
+//         ② 不必重複寫型別名。注意 make_unique 是 C++14 才加入的（C++11 漏掉了）。
+//     追問：make_unique 能傳自訂 deleter 嗎？（不能，和 make_shared 一樣）
+//
+// Q4. unique_ptr 支援 incomplete type，這對 pImpl 有什麼意義？
+//     答：成員宣告處 T 可以不完整，但「deleter 被實例化的地方」（destructor、move
+//         assignment、reset）T 必須完整。所以 pImpl 必須把 destructor 宣告在 header、
+//         定義在 .cpp（~Widget(); 加上 Widget::~Widget() = default;）—— 本檔的
+//         Database 就是這個寫法。
+//     追問：shared_ptr 有同樣限制嗎？（沒有，deleter 在建構時就決定並型別擦除了）
+//
+// ⚠️ 陷阱. unique_ptr<Base> 管理 Derived，而 Base 沒有 virtual destructor 會怎樣？
+//     答：undefined behavior。unique_ptr<Base> 用的是 default_delete<Base>，走
+//         delete (Base*)。同樣情況下 shared_ptr<Base> 反而安全 —— 它在建構時就把
+//         「該怎麼刪」記進 control block 了。
+//     為什麼會錯：很多人以為「用了智慧指標就不必管 virtual destructor」，那只對
+//         shared_ptr 成立，而且不該拿來當 API 的設計依據。
+//
+// 🔥 Q. unique_ptr 的前身 std::auto_ptr 為什麼被淘汰？這跟移動語意有什麼關係？
+//     答：auto_ptr 的「拷貝」其實會把來源掏空（copy 後 p1.get() == nullptr），
+//         但它長得像拷貝——放進 STL 容器時，容器內部的一次拷貝就會靜默毀掉你的資料。
+//         C++11 之前沒有語法能表達「這是搬移不是拷貝」，只能用拷貝硬撐；
+//         **auto_ptr 正是「為什麼 C++11 需要移動語意」最好的動機故事**。
+//         C++11 deprecated、C++17 從標準移除，由 unique_ptr（只可 move、不可 copy）取代。
+//     追問：那為什麼現在還編得過？（libstdc++ 為相容仍提供；加
+//         -D_GLIBCXX_USE_DEPRECATED=0 就會出現 'auto_ptr' is not a member of 'std'。
+//         又一次證明「編得過」不等於「還在標準裡」）
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <memory>
 #include <string>

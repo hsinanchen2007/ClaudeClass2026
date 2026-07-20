@@ -134,6 +134,41 @@
   - 若只是傳入唯讀文字片段且不需要擁有資料，std::string_view 可避免複製；但它不能延長原字串生命週期。
   - 處理中文或 UTF-8 時，std::string 的 size() 回傳 byte 數，不是人眼看到的字元數。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::string::data
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. data() 和 c_str() 差在哪?各自從哪個標準版本開始是現在這樣?
+//     答:C++11 起,const 版本的 data() 與 c_str() 完全等價 —— 都回傳
+//         null-terminated 的 const char*,且 data()[size()] == '\0' 是標準保證
+//         (c_str() 從 C++98 就有此保證,data() 是 C++11 才補上)。
+//         C++17 起 data() 另有非 const overload 回傳 char*,可直接寫入 buffer;
+//         c_str() 至今只有 const 版本。
+//     追問:非 const data() 可以寫 data()[size()] 嗎?→ 可以讀,但寫成
+//         非 '\0' 的值是 UB,那會破壞 null-terminated 的不變式。
+//
+// 🔥 Q2. 為什麼 C++11 之後 COW(Copy-On-Write)實作不再合法?
+//     答:C++11 沒有明文寫「禁止 COW」,而是新增的要求讓 COW 無法合法實作,
+//         其中最關鍵的一條正好牽涉本檔:非 const 的 data()、operator[]、
+//         at()、begin()、end() 被要求「不得使既有指標/引用/迭代器失效」——
+//         但 COW 必須在此刻「分家」複製,勢必失效。
+//         另外標準要求對不同 string 物件的並行操作不得產生 data race
+//         (COW 共享 buffer 與 refcount 會違反),且 operator[] 要求攤還常數
+//         時間(COW 的隱藏 deep copy 破壞此性質)。結果是現代實作全面改用
+//         SSO + eager copy。
+//     追問:GCC 為此付出什麼代價?→ GCC 5 改寫 basic_string 造成 ABI 斷裂,
+//         才有 std::__cxx11 這個 inline namespace 與 Dual ABI。
+//
+// ⚠️ 陷阱.「data() 不保證 null 結尾,所以不能直接餵給 C API」—— 對嗎?
+//     答:這是 C++98/03 的正確答案,對 C++11 之後是錯的。C++11 起
+//         data() 與 c_str() 指向同一塊 null-terminated 的 buffer,
+//         直接傳給 C API 沒有問題。
+//     為什麼會錯:這句話在舊教材裡是標準答案,很多人背了就沒再更新。
+//         要注意真正還成立的限制是另一件事:若字串「中間」含有 '\0',
+//         C API 仍會在第一個 '\0' 停止 —— 那是 C 字串的限制,不是
+//         data() 少了結尾 '\0'。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <cstring>

@@ -66,6 +66,55 @@
   - reinterpret_cast 是低階重新解讀位元或位址，最容易違反 aliasing、alignment 和生命週期規則；能不用就不用。
   - C++ 風格轉型 (T)x 太模糊，可能偷偷做 const_cast 或 reinterpret_cast；教材應優先使用具名 cast 表達意圖。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】reinterpret_cast 與 strict aliasing
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 什麼是 strict aliasing？為什麼用 reinterpret_cast 做 type punning 是 UB？
+//     答：strict aliasing 規則規定：【透過與物件實際型別不相容的 lvalue 存取該
+//         物件是 UB】（char / unsigned char / std::byte 是例外）。所以
+//         float f = 1.0f; int i = *reinterpret_cast<int*>(&f); 是 UB — 編譯器
+//         基於「int* 和 float* 不會指向同一塊記憶體」這個假設做最佳化（重排、
+//         快取到暫存器、消除重複載入），可能產生你完全沒預期的結果。
+//         正解：用 std::memcpy，或 C++20 的 std::bit_cast。
+//     追問：C 語言的 union type punning 在 C++ 合法嗎？（【不合法】 — C++ 中讀取
+//           非 active member 是 UB，雖然多數編譯器實務上容忍；C 語言則明文允許）
+//
+// 🔥 Q2. reinterpret_cast 能做什麼？標準給了什麼保證？
+//     答：能做的：指標 ↔ 足夠大的整數型別（std::uintptr_t）、不同型別的物件指標
+//         互轉、函式指標互轉、轉為參考型別。危險之處在於它【只改變型別解釋，
+//         不做任何值調整、不做安全檢查】。標準給的保證只有兩條：① 對齊符合時
+//         轉換不改變指標的值 ② 指標轉成 uintptr_t 再轉回原型別，【保證與原指標
+//         相等】。除此之外「能轉」不代表「轉完能安全解參考」。
+//
+// Q3. 什麼情況下真的必須用 reinterpret_cast？
+//     答：都是低階/系統程式：① 序列化 — 把物件當位元組讀寫（轉成 char* /
+//         unsigned char* / std::byte*，這是 aliasing 規則允許的方向）② 記憶體
+//         映射 I/O — 把固定位址整數轉成硬體暫存器指標 ③ 與 C API 互動
+//         （void* callback 的 user data）④ 函式指標型別轉換（如 dlsym 的回傳值）。
+//         原則：能用 memcpy / bit_cast 就別用它。
+//
+// ⚠️ 陷阱 A. reinterpret_cast<char*> 讀取物件的位元組是 UB 嗎？
+//     答：【不是】 — 這是 strict aliasing 的明文例外：透過 char*、unsigned char*、
+//         std::byte*（C++17）檢視任意物件的位元組表示是合法的。但關鍵在於這個
+//         例外是【單向的】：反方向不成立 — 把一個 char 陣列 reinterpret_cast 成
+//         T* 再存取，若該處並沒有真正的 T 物件（未經 placement new 開始其生命
+//         週期），就是 UB。想安全取值請 memcpy 到一個正確型別的變數，或用
+//         std::bit_cast。
+//     為什麼會錯：多數人記成「char* 和任意型別可以自由互轉」，把一條【檢視位元組
+//         的單向豁免】誤讀成雙向通行證。「檢視某個已存在物件的位元組」和「宣稱
+//         某塊原始記憶體裡住著一個 T」是完全不同的兩件事。
+//
+// ⚠️ 陷阱 B. 多重繼承下用 reinterpret_cast 轉指標會怎樣？
+//     答：【指標值不會被調整】。多重繼承中 Derived* 轉成第二個 Base2* 是需要
+//         【加上偏移量】的 — static_cast / dynamic_cast 會正確調整，
+//         reinterpret_cast（以及退化成 reinterpret 的 C-style cast）不會，於是
+//         你得到一個指向錯誤位置的指標，後續存取是 UB，且往往表現為極難除錯的
+//         資料毀損。結論：有繼承關係的轉型一律用 static_cast / dynamic_cast。
+//     為什麼會錯：腦中的模型是「指標就是一個位址，轉型只是換個型別標籤」 —
+//         忽略了多重繼承下【同一個物件的不同 base subobject 位在不同位址】。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <cstdint>
 #include <cstring>
 #include <iostream>

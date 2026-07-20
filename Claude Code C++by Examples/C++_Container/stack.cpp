@@ -56,6 +56,31 @@
   - 容器元素型別若昂貴，優先理解 emplace、move 和 reference/iterator 有效性，不要盲目複製。
   - 所有容器都要考慮空容器邊界；front/back/top 在空容器上呼叫通常是未定義行為或前置條件違反。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::stack
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. stack 的底層預設容器是什麼？可以換嗎？
+//     答：stack 是 container adaptor（本身不是真正的容器），預設底層是 std::deque。
+//         只要底層提供 back() / push_back() / pop_back() / empty() / size() 就可以換，
+//         所以 std::vector 與 std::list 都可以（`std::stack<int, std::vector<int>>`）。
+//     追問：為什麼預設選 deque 而不是 vector？（deque 成長時不需要整塊搬移已有元素）
+//
+// 🔥 Q2. stack 為什麼沒有 iterator？沒有 clear？
+//     答：adaptor 刻意只暴露 LIFO 介面（push / pop / top / empty / size），
+//         以避免使用者繞過堆疊語意存取內部。因此沒有 begin / end（不能用 range-for）、
+//         沒有 operator[] / find、沒有 clear（要清空只能 `while (!s.empty()) s.pop();`），
+//         也沒有 reserve / capacity——即使底層是 vector 也一樣拿不到。
+//
+// ⚠️ 陷阱. 為什麼 pop() 不回傳被彈出的元素？
+//     答：std::stack::pop() 的回傳型別是 void，要取值必須先 top() 再 pop()。
+//         原因是 exception safety：若 pop() 要回傳 by value，它必須先移除元素再回傳副本，
+//         而那個 copy / move constructor 一旦拋例外，元素已經不在容器裡了——資料永遠遺失。
+//         拆成 top() + pop() 兩步，兩個動作都能各自安全。
+//     為什麼會錯：很多人用其他語言（Python 的 list.pop()）的直覺，
+//         以為 pop 一定會把值還給你。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <stack>
 #include <vector>
 #include <deque>

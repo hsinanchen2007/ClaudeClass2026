@@ -66,6 +66,33 @@
   - 屬性如 [[nodiscard]]、[[maybe_unused]]、[[fallthrough]] 是對編譯器和讀者的意圖標記，不應拿來掩蓋設計問題。
   - string_view、optional、variant、structured binding 等特性改善介面表達力，但也帶來生命週期或狀態檢查責任。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::string_view
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. std::string_view 是什麼？為什麼要有它？
+//     答：非擁有（non-owning）的唯讀字串視圖，本質是 {const char* ptr; size_t len}。
+//         目的是消除唯讀傳字串時的複製與堆配置：const std::string& 參數在傳入字面量
+//         或 char* 時會隱式建構臨時 std::string（可能配置堆），string_view 則零複製。
+//         而且它的 substr 是 O(1)（只調指標／長度），std::string::substr 是 O(n) 複製。
+//     追問：參數該傳值還是 const&？（傳值，它只有兩個字，複製極廉價）
+//
+// ⚠️ 陷阱1. std::string_view sv = std::string("hello"); 有什麼問題？
+//     答：立即懸垂。臨時 std::string 在該完整運算式結束時解構，sv 隨即指向已釋放的
+//         記憶體，之後任何存取都是 UB。同理不可指向函式內區域 string 後回傳。
+//     為什麼會錯：大家以為「參考的生命週期延長」規則會救它；但 string_view 是持有
+//         指標的一個類別，不是參考，那條規則根本不適用。
+//
+// ⚠️ 陷阱2. 什麼時候不該用 string_view？
+//     答：① 需要 null-terminated 字串時——它不保證 \0 結尾，把 sv.data() 直接丟給
+//            printf 或 C API 是 bug，必須先造 std::string。
+//         ② 需要把字串保存進物件成員／容器、又無法保證來源存活時（應存 std::string）。
+//         ③ 被觀察的 string 可能被修改或擴容時（重新配置後 view 立即懸垂）。
+//         ④ 需要修改內容時（view 是唯讀）。
+//     為什麼會錯：把它當成「更快的 const std::string&」直接全面替換，卻忽略它只是
+//         借來的指標，既不保證結尾字元、也不保證來源還活著。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <cctype>
 #include <iostream>
 #include <string>

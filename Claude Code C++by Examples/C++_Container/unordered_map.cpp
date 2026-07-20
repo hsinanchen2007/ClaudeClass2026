@@ -53,6 +53,44 @@
   - 容器元素型別若昂貴，優先理解 emplace、move 和 reference/iterator 有效性，不要盲目複製。
   - 所有容器都要考慮空容器邊界；front/back/top 在空容器上呼叫通常是未定義行為或前置條件違反。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::unordered_map
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. unordered_map 和 map 的差別？hash table vs red-black tree 怎麼選？
+//     答：unordered_map 底層是 hash table，find / insert / erase 為 average O(1)、worst case O(n)
+//         （全部碰撞退化成一條鏈），元素無序，key 需要 std::hash 特化 + operator==。
+//         map 底層是 red-black tree，三個操作都是 O(log n) worst case，元素依 key 排序，
+//         可做 range query（lower_bound / upper_bound）與有序走訪，key 只需 operator<。
+//         記憶體通常 unordered_map 較大（多了 bucket array）。
+//     追問：worst case O(n) 什麼時候會發生、能被攻擊嗎？（hash collision DoS，惡意輸入刻意造同 bucket）
+//
+// 🔥 Q2. load_factor / max_load_factor / rehash / reserve 各是什麼？
+//     答：load_factor() = size() / bucket_count()，即平均每個 bucket 的元素數。
+//         max_load_factor()（預設 1.0）是觸發 rehash 的門檻：插入後將超過它就自動 rehash。
+//         rehash(n) 要求 bucket 數至少 n；reserve(n) 意思是「我要放 n 個元素」，
+//         等價於 rehash(ceil(n / max_load_factor()))。事先 reserve 可避免多次 rehash。
+//
+// Q3. hash 衝突有哪些解法？libstdc++ 用哪種？
+//     答：主要兩類：separate chaining（鏈地址法，每個 bucket 掛一條鏈）與
+//         open addressing（開放定址，linear / quadratic probing、double hashing）。
+//         libstdc++ 的 unordered_map 採用 separate chaining，且所有元素串在一條 singly linked list 上，
+//         這也解釋了為什麼 unordered 容器的 iterator 只是 forward iterator（沒有 operator--）。
+//
+// ⚠️ 陷阱 1. rehash 之後，舊的 iterator 和 reference 還能用嗎？
+//     答：**所有 iterator 失效，但 reference / pointer 永遠不會失效**。
+//         因為 separate chaining 的元素住在獨立配置的節點上，rehash 只重接 bucket array 與 next 指標，
+//         節點本體完全沒搬家。erase 則只使被刪元素的 iterator / reference 失效。
+//     為什麼會錯：拿 vector 擴容「整塊搬家、iterator 與 reference 一起失效」的模型套到 hash table；
+//         但只有 open addressing 才會搬動元素本體。
+//
+// ⚠️ 陷阱 2. 用 std::pair 當 unordered_map 的 key 為什麼編譯不過？
+//     答：標準沒有為 std::pair / std::tuple 提供 std::hash 特化（operator== 倒是有）。
+//         解法：自己寫 hash functor、改用 std::map（只需 operator<）、或把 pair 編碼成單一整數。
+//         注意：簡單把兩個 hash 值 XOR 起來是壞習慣——
+//         會讓 (x,y) 與 (y,x) 碰撞、且 (x,x) 恆為 0。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <unordered_map>
 #include <iostream>
 #include <string>

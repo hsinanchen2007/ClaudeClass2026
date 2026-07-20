@@ -156,6 +156,40 @@
   - 若只是傳入唯讀文字片段且不需要擁有資料，std::string_view 可避免複製；但它不能延長原字串生命週期。
   - 處理中文或 UTF-8 時，std::string 的 size() 回傳 byte 數，不是人眼看到的字元數。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】regex_basics (std::regex)
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. regex_match 與 regex_search 差在哪？
+//     答：regex_match 要求「整個字串」完全符合 pattern；
+//         regex_search 只要字串中存在「子字串」符合就算命中。
+//         以 pattern 「一或多個數字」對 "abc123"：match 是 false，search 是 true；
+//         對 "123" 則兩者都是 true。
+//     追問：想用 search 卻又要求整段？→ 自己補 anchors，^ 與 $ 把 pattern 夾起來。
+//
+// 🔥 Q2. 為什麼寫 regex 幾乎都用 raw string literal R"(…)"？
+//     答：反斜線要被吃兩層——C++ 字串字面量先吃一層，regex 引擎再吃一層，
+//         所以「一個數字」得寫成 "\\d"，複雜 pattern 很快變成一整片反斜線。
+//         raw string literal 不處理跳脫，R"(\d+)" 寫出來的就是 regex 引擎看到的，
+//         可讀性與正確率都高得多。
+//
+// 🔥 Q3. std::regex 為什麼慢？什麼時候不該用它？
+//     答：規格要求支援 backtracking 與 capture group，而 STL 實作（尤其 libstdc++）
+//         並未做最積極的優化，效能比 RE2 / Hyperscan / PCRE2 慢一個量級或更多。
+//         低頻任務（驗證、設定檔解析、一次性 transform）用它很划算，零外部相依；
+//         高吞吐熱路徑就該換 RE2 或 ctre（compile-time regex）。
+//     追問：至少要做哪個優化？→ std::regex 昂貴的是「建構」（parse + compile），
+//           呼叫 regex_search 相對便宜，所以絕不可在迴圈裡重建，
+//           應寫成 static const std::regex re(…) 編譯一次、重複使用。
+//
+// ⚠️ 陷阱. 把使用者輸入的字串直接當 pattern 丟進 std::regex 有什麼風險？
+//     答：ReDoS（Regex Denial-of-Service）。某些 pattern 的回溯行為對特定輸入是
+//         指數時間，例如 ^(a+)+$ 配上一長串 "aaaa…!"，單一請求就能讓 server 卡死。
+//     為什麼會錯：大家習慣防的是「輸入資料」（怕注入），卻沒意識到 pattern 本身
+//         就是一段可執行的計算，複雜度是由攻擊者決定的。
+//         防禦：別讓使用者送 pattern；非得如此就改用保證線性的引擎並限制長度。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <regex>

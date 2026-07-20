@@ -163,6 +163,41 @@
   - 若只是傳入唯讀文字片段且不需要擁有資料，std::string_view 可避免複製；但它不能延長原字串生命週期。
   - 處理中文或 UTF-8 時，std::string 的 size() 回傳 byte 數，不是人眼看到的字元數。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::string::assign
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. assign(std::move(other)) 一定是 O(1) 嗎?
+//     答:不一定。長字串走 heap 模式時只要搬 pointer / size / capacity → O(1);
+//         但短字串走 SSO(內嵌 buffer)時,資料就在物件本體裡,必須真的
+//         memcpy 那塊 buffer,是有常數上界的複製,不是「只搬指標」。
+//     追問:SSO 門檻是多少?→ libstdc++ 為 15 個字元,但這是
+//           implementation-defined,標準沒有規定任何數字,不可依賴。
+//
+// 🔥 Q2. 被 move 走的來源字串,之後還能用嗎?會是空字串嗎?
+//     答:狀態是「valid but unspecified」——物件仍然合法,可以安全解構、
+//         可以重新賦值、可以呼叫 clear() 這類沒有前置條件的操作;
+//         但標準「不保證」它是空字串。實務上多數實作會清空,不可依賴。
+//     追問:那讀 moved-from 物件的內容算 UB 嗎?→ 不是 UB,但結果未指定;
+//           拿它去做斷言或邏輯判斷就是 bug。
+//
+// 🔥 Q3. 什麼時候該用 assign 而不是 operator=?
+//     答:需要「只取來源的一部分」或「明確指定長度」時。例如
+//         assign(str, pos, count) 取子字串、assign(buf, len) 從
+//         不一定 null-terminated 的二進位 buffer 精確複製 len 個 byte、
+//         assign(first, last) 從任意 iterator 範圍指派。單純整條覆蓋用
+//         operator= 就好。
+//     追問:assign 會縮小 capacity 嗎?→ 不會。capacity 夠就原地覆寫,
+//           所以「reserve 一次 + 反覆 assign」是常見的 buffer 重用手法。
+//
+// ⚠️ 陷阱. assign(buf) 和 assign(buf, n) 對含有中段 '\0' 的資料為何結果不同?
+//     答:assign(const char*) 走 C 字串規則,在第一個 '\0' 就停下;
+//         assign(const char*, count) 精確複製 count 個 byte,中段 '\0' 照收。
+//         處理 recv() / mmap / protobuf payload 一定要用帶長度的版本。
+//     為什麼會錯:std::string 確實能合法存放內含 '\0' 的資料(size() 正確),
+//         於是大家忘了「從 const char* 灌進去」這條入口仍然由 '\0' 決定長度。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <vector>

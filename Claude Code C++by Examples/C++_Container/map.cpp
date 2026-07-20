@@ -50,6 +50,38 @@
   - 容器元素型別若昂貴，優先理解 emplace、move 和 reference/iterator 有效性，不要盲目複製。
   - 所有容器都要考慮空容器邊界；front/back/top 在空容器上呼叫通常是未定義行為或前置條件違反。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::map
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. map 和 unordered_map 的差別？各自的複雜度？
+//     答：map 底層是 red-black tree（自平衡 BST），元素依 key 排序，
+//         find / insert / erase 都是 O(log n) worst case，
+//         可做 range query（lower_bound / upper_bound）與有序走訪。
+//         unordered_map 底層是 hash table，average O(1)、worst case O(n)（全部碰撞退化），元素無序。
+//         key 需求：map 要 operator<（strict weak ordering），unordered_map 要 std::hash 特化 + operator==。
+//     追問：需要有序走訪或 range query 時能用 unordered_map 嗎？（不行，這正是 map 的契約）
+//
+// 🔥 Q2. 為什麼 map 選 red-black tree 而不是 AVL tree？
+//     答：RB tree 的平衡條件較寬鬆（最長路徑不超過最短路徑的 2 倍），
+//         AVL 則要求任一節點左右子樹高度差 ≤ 1。因此 RB tree 在 insert / erase 時觸發 rotation 的次數較少
+//         （其餘用變色解決），對「插入刪除頻繁」的通用容器整體更劃算；
+//         AVL 因為更嚴格平衡，查詢略快，適合讀多寫少。兩者查詢都是 O(log n)。
+//
+// 🔥 Q3. map::operator[]、at()、find() 有什麼差別？
+//     答：operator[] 在 key 不存在時會插入一個 value-initialized 的元素並回傳其 reference，
+//         所以它會改變容器大小。at() 在 key 不存在時 throw std::out_of_range，有 const 版本。
+//         find() 回傳 iterator、找不到回 end()，絕不插入，是純查詢的正確做法；C++20 另有 contains()。
+//     追問：`if (m["k"] == 0)` 有什麼副作用？（即使原本沒有 "k" 也會插入一筆）
+//
+// ⚠️ 陷阱. map 的 operator[] 為什麼不能用在 const map 上？
+//     答：因為它在 key 不存在時會插入元素，是 mutating 操作，所以只有 non-const 版本。
+//         const map 上請用 at()（會 throw）或 find()。連帶一提：
+//         這也是為什麼 map 的 mapped_type 必須是 default-constructible——operator[] 要 value-initialize 新元素。
+//     為什麼會錯：大家把它當成像 vector::operator[] 那樣的純存取，
+//         但 vector 的版本不插入，所以才有 const 版本。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <map>
 #include <iostream>
 #include <string>

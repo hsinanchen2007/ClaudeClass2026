@@ -102,6 +102,30 @@
   - move algorithm 會把元素搬到目的地，來源仍有效但值可能改變；後續只能重新指定或安全銷毀。
   - shuffle/sample 需要亂數引擎；不要每次呼叫都用同一個固定種子，除非你刻意要可重現測試結果。
 */
+
+// ===========================================================================
+// 【面試題】std::reverse / reverse_copy
+// ---------------------------------------------------------------------------
+// 🔥 Q1. std::reverse 的迭代器需求與複雜度?
+//     答:需要 bidirectional iterator(頭尾往中間夾,逐對 swap),恰好 N/2 次 swap,
+//         時間 O(n)、空間 O(1)、in-place。它只改變元素的「位置」,不改變元素的值。
+//         因為只要 bidirectional,所以 std::list 也可以用——但 list 有更好的成員版。
+//
+// 🔥 Q2. 只是想「反向走訪」,該用 reverse 嗎?
+//     答:不該。要反向讀就用 rbegin()/rend()(或 C++20 的 std::views::reverse),
+//         那是 O(1) 建立、完全不動資料。std::reverse 是 O(n) 而且會真的改寫容器內容,
+//         在熱路徑上反覆呼叫是常見的效能地雷。
+//
+// Q3. reverse 和 rotate 的關係?
+//     答:rotate 可用三次 reverse 實作——reverse 前段、reverse 後段、再 reverse 全體,
+//         這是「陣列循環移位」的經典解法。反過來說,reverse 是 rotate 的組成零件。
+//
+// Q4. 為什麼 std::list 要用成員 list::reverse() 而不是 std::reverse?
+//     答:成員版只重接節點的前後指標,不搬移元素本身,對重型元素更快,而且 iterator
+//         仍跟著原本的元素走。通用的 std::reverse 是逐對 swap 元素值。
+//         同樣的「成員版優先」原則也適用於 list::sort、list::unique、list::remove。
+// ===========================================================================
+
 #include <algorithm>
 #include <iostream>
 #include <iterator>

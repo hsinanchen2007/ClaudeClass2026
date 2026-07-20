@@ -66,6 +66,34 @@
   - perfect forwarding 需要 T&& 搭配 std::forward<T>，不要把所有 && 都誤認為 move。
   - template 可提升零成本抽象，但也可能造成編譯時間上升和二進位膨脹；共通實作可用非 template helper 收斂。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】tag dispatch
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 什麼是 tag dispatch？相對 SFINAE 有什麼優點？
+//     答：用一個「空標籤型別」當額外參數，靠正常的重載決議選實作，而不是靠
+//         SFINAE 把候選剔除。優點：語法直觀、多個 overload 一字排開、錯誤訊息
+//         乾淨，而且可以用「繼承層次」天然表達優先序。缺點是需要有能產生 tag
+//         的 trait 體系。
+//     追問：runtime 成本多少？（零。tag 是空型別、選哪個 overload 在編譯期就定了，
+//         inline 之後整層 dispatch 會完全消失）
+//
+// 🔥 Q2. STL 的 std::advance 為什麼要用 tag dispatch？
+//     答：依 iterator_traits<It>::iterator_category 選最快的實作——random access
+//         直接 it += n 是 O(1)，bidirectional 與 input 只能跑迴圈是 O(n)。
+//         呼叫端永遠只寫 advance(it, n)，效能隨容器自動最佳化。
+//     追問：為什麼「繼承層次」是關鍵？（本機以 is_base_of 實測確認
+//         input ← forward ← bidirectional ← random_access 是一條繼承鏈，
+//         所以某個類別沒有專屬 overload 時，會自動退回 base 的版本 —— 這就是
+//         不必寫任何條件式就得到的 fallback 優先序）
+//
+// Q3. C++17 有了 if constexpr，tag dispatch 是不是過時了？
+//     答：沒有。if constexpr 只能在「同一個函式本體」內部分支；tag dispatch 是
+//         overload 層級的，可以被第三方擴充新的 tag、不同版本可以有不同簽章與
+//         不同型別需求。自家可控的型別用 if constexpr 較簡潔，要開放擴充的
+//         框架（如 STL 的 iterator 體系）仍然要用 tag。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <iterator>
 #include <list>

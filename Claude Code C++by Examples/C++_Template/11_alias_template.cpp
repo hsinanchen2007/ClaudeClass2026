@@ -53,6 +53,32 @@
   - perfect forwarding 需要 T&& 搭配 std::forward<T>，不要把所有 && 都誤認為 move。
   - template 可提升零成本抽象，但也可能造成編譯時間上升和二進位膨脹；共通實作可用非 template helper 收斂。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】alias template（別名模板）
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. alias template 與 typedef 差在哪？標準庫的 _t 別名屬於哪個標準？
+//     答：using 別名（C++11）可以帶模板參數，typedef 不行，只能靠
+//         「struct + 內嵌 typedef」模擬。alias 不引入新型別，只是同義詞。
+//         標準庫 enable_if_t / decay_t 這類 _t 別名是 C++14，_v 變數模板是 C++17。
+//     追問：enable_if_t 怎麼實作的？（用 alias 包住 typename enable_if<B,T>::type）
+//
+// 🔥 Q2. 為什麼 alias template 不能特化？需要依型別分流時怎麼辦？
+//     答：標準禁止 alias template 的全特化與偏特化（本機實測：語法直接不合法）。
+//         因為 alias 是「透明」的——編譯器一看到就立刻替換掉，不經過實例化的
+//         型別選擇階段。要分流請用 class template 偏特化，再用 alias 包成 _t 介面；
+//         這正是 std::remove_reference 與 remove_reference_t 的分工。
+//
+// ⚠️ 陷阱. 「alias template 是 non-deduced context、無法推導」——對嗎？
+//     答：不對，不能一概而論。簡單 alias 是透明的：宣告 Vec<T> = std::vector<T> 後，
+//         template<class T> void f(Vec<T>) 推導 T 完全沒問題（本機實測通過），
+//         因為它就等同 f(std::vector<T>)。真正推不出來的是 alias 展開後落在
+//         non-deduced context，例如 using Hard = typename Foo<T>::type;——那是
+//         T::type 本來就不可推導，與 alias 這層無關。
+//     為什麼會錯：把「alias 不引入新型別」誤讀成「alias 會擋住推導」。透明恰恰相反，
+//         它在推導開始前就被展開掉了，推不推得出來完全看展開後長什麼樣。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <iostream>
 #include <type_traits>

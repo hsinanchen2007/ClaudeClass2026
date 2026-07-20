@@ -147,6 +147,40 @@
   - thread 生命週期要明確 join 或 detach；std::jthread 以 RAII 方式在解構時 request_stop 並 join，較不容易漏掉。
   - 效能問題如 false sharing、contention、過度建立 thread，通常在正確性之後才調整；先寫對，再量測。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::mutex 與 RAII 鎖包裝器
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. lock_guard / unique_lock / scoped_lock 怎麼選？
+//     答：三者都是 RAII。lock_guard（C++11）最輕，建構即鎖、解構即解，沒有任何成員
+//         函式，不能提前解鎖也不能 move。unique_lock（C++11）可延遲上鎖（defer_lock）、
+//         中途 unlock()/lock()、可 move、可 try_lock_for，代價是多一個狀態旗標；
+//         condition_variable::wait() 強制要求 unique_lock。scoped_lock（C++17）能一次
+//         鎖多把 mutex 且內部用免死鎖演算法，單把時等價 lock_guard。
+//     追問：scoped_lock 為何能免死鎖？（內部走 std::lock 的 try-and-back-off）
+//
+// 🔥 Q2. 為什麼一定要用 RAII 而不是手動 lock()/unlock()？
+//     答：臨界區中間若拋出例外或提早 return，手寫的 unlock() 就被跳過，mutex 永久被
+//         持有、其他 thread 全部卡死。RAII 讓解鎖綁在解構子上，stack unwinding 時
+//         保證執行。這是「例外安全」在並行程式上的直接體現。
+//     追問：臨界區該多大？（涵蓋「檢查 + 修改」的完整不變式，但不要把 I/O 或耗時
+//           運算包進去）
+//
+// 🔥 Q3. mutex 保護的到底是什麼？
+//     答：保護的是「共享資料的不變式」，不是某一行程式碼。同一份資料的所有存取路徑
+//         都必須用同一把鎖，而且鎖的範圍要涵蓋整個不變式成立的區間；只鎖住寫、不鎖
+//         讀，仍然是 data race。
+//     追問：回傳臨界區內部資料的指標／參考有什麼問題？（鎖已釋放但參考還在，等於把
+//           保護漏掉，是常見的介面設計錯誤）
+//
+// ⚠️ 陷阱. std::lock_guard<std::mutex>(mtx); 這行做了什麼？
+//     答：它建立一個「立刻解構的臨時物件」——上鎖後在同一行結束時就解鎖，等於完全
+//         沒有保護。正確寫法必須有變數名：std::lock_guard<std::mutex> lk(mtx);
+//     為什麼會錯：漏寫變數名看起來仍像一句合法的宣告。順帶一提，同一個 thread 對
+//         同一把 std::mutex 第二次 lock() 是 UB（std::mutex 不可重入），實務上表現
+//         為自我死鎖。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <thread>
 #include <mutex>      // std::mutex, std::lock_guard

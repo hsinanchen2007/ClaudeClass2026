@@ -112,6 +112,37 @@
   - 對 std::string 找子字串時，string::find 通常更直接；std::search 的價值在於它能套用到任何 iterator range。
 */
 
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::search
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. search / find_end / find_first_of / find 四者怎麼區分?
+//     答:search = 子序列「按順序」第一次出現;find_end = 同樣的子序列最後一次出現;
+//         find_first_of = 候選集合中「任一元素」第一次出現(字元集模式);
+//         find = 單一 value 第一次出現。
+//         關鍵字是「按順序」— 這是 search 與 find_first_of 最大的差異。
+//     追問:回傳值語意一致嗎?(search 與 find_end 回傳的都是該次出現的「起始位置」)
+//
+// 🔥 Q2. C++17 為 search 加了什麼?什麼時候值得用?
+//     答:加了「searcher 物件」多載 search(first, last, searcher),
+//         可選 std::default_searcher、std::boyer_moore_searcher、
+//         std::boyer_moore_horspool_searcher(需 #include <functional>)。
+//         Boyer-Moore 系列會先對 pattern 做預處理表,再據以一次跳過多個位置;
+//         因為預處理只做一次,對「同一個 pattern 反覆搜尋大量文字」效益最大。
+//     追問:那 find_end 也有 searcher 版嗎?(沒有 — 只有 search 有)
+//
+// ⚠️ 陷阱 Q3. 子序列(pattern)為空時,std::search 回傳什麼?
+//     答:回傳 first,不是 last —— 空 pattern 被視為「在開頭就匹配成功」。
+//         而 std::find_end 對空子序列回傳的是 last。兩者剛好相反,要分開記。
+//     為什麼會錯:習慣把「找不到就回 last」當成通則,
+//         於是把空 pattern 也歸到「找不到」那一類;
+//         但空序列在語意上是「處處都匹配」,search 取最前面那個位置。
+//
+// Q4. 經典版(非 searcher)的複雜度是多少?
+//     答:最壞 O(N × S) — 樸素逐一對齊比對,N 為主序列長、S 為子序列長。
+//         對 std::string 找子字串,std::string::find 通常更直接;
+//         std::search 的價值在於它能套用到任何 iterator 區間,不限字串。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <functional>   // searchers
 #include <iostream>

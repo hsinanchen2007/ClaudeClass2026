@@ -89,6 +89,34 @@
   - move algorithm 會把元素搬到目的地，來源仍有效但值可能改變；後續只能重新指定或安全銷毀。
   - shuffle/sample 需要亂數引擎；不要每次呼叫都用同一個固定種子，除非你刻意要可重現測試結果。
 */
+
+// ===========================================================================
+// 【面試題】std::iter_swap
+// ---------------------------------------------------------------------------
+// 🔥 Q1. iter_swap(a, b) 和 std::swap(a, b) 差在哪?
+//     答:iter_swap 交換的是「兩個 iterator 指向的元素」(語意等同 swap(*a, *b));
+//         std::swap(a, b) 交換的是「兩個 iterator 變數本身」,元素完全沒動。
+//         名字很像但作用的層次不同,是很常見的口誤來源。複雜度 O(1)。
+//
+// ⚠️ 陷阱. 那我自己寫 auto tmp = *a; *a = *b; *b = tmp; 不是一樣嗎?
+//     答:對一般容器一樣,但對 proxy 容器(最典型的是 std::vector<bool>)會壞掉。
+//         vector<bool> 的 operator* 回傳的是 proxy reference 而不是 bool&,
+//         auto tmp = *a; 推導出來的是那個 proxy(仍指著原位置),不是值的複本,
+//         於是 tmp 會跟著被改寫,交換失敗。iter_swap 則透過 ADL 找到專為該 proxy
+//         提供的 swap,是安全的做法。
+//     為什麼會錯:大家假設 *it 一定是真正的 reference。vector<bool> 是標準裡著名的
+//         特例,它把多個 bool 壓進位元,沒有真正的 bool& 可以回傳。
+//
+// Q2. C++20 之後寫自訂 iterator,該支援什麼?
+//     答:C++20 引入 std::ranges::iter_swap 這個 customization point,比 C++98 的
+//         std::iter_swap 更通用(能處理 proxy iterator 與跨型別交換)。
+//         自訂 iterator 若要支援交換,應該讓 ranges::iter_swap 找得到你的實作。
+//
+// Q3. 兩個 iterator 指向同一個位置時會怎樣?
+//     答:就是自我交換,通常無害但也沒有意義。不過這提醒了一件事:寫演算法時最好自己
+//         避開這種呼叫,別假設每個型別的 swap 都對自我交換做過驗證。
+// ===========================================================================
+
 #include <algorithm>
 #include <iostream>
 #include <list>

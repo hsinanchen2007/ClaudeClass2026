@@ -81,6 +81,39 @@
   - 多執行緒下 Singleton 內部狀態仍需要同步；thread-safe 初始化不代表之後所有操作都 thread-safe。
   - 只有在確定概念上真的只有一個，例如 process-wide logger 或 registry，且接受全域狀態代價時，才考慮 Singleton。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】Singleton 單例模式
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 如何實作 thread-safe 的 Singleton？
+//     答：C++11 起最簡潔的是 **Meyers Singleton**：函式內 `static Singleton inst;`
+//         —— 標準保證 function-local static 的初始化是「執行緒安全且只執行一次」
+//         （俗稱 magic static），而且是 lazy 的，第一次呼叫才建構。再把建構子設
+//         private、copy / move 全部 `= delete`（本檔 Logger 正是這個範式）。
+//     追問：那還需要 double-checked locking 嗎？（不需要。DCLP 在 C++11 之前是
+//           壞的、需要 memory barrier；有了 magic static 就沒有理由再手寫它）
+//
+// 🔥 Q2. `instance()` 為什麼回傳 reference 而不是 pointer？
+//     答：reference 表達「絕不會是 null」，呼叫端不必檢查；也避免使用者寫出
+//         `delete logger;` 這種災難（物件的生命週期由 static storage duration 管，
+//         不該由呼叫端釋放）。
+//
+// Q3. Singleton 的缺點是什麼？
+//     答：① 本質是「美化過的全域變數」，隱藏依賴 —— 函式看起來沒有參數，其實依賴
+//         全域狀態，單元測試很難注入替身、狀態還會跨測試殘留。② destruction order
+//         fiasco —— 跨 translation unit 的 static 物件解構順序無法保證，若某個
+//         Singleton 在解構時去用另一個已被解構的 Singleton 就是 UB。
+//     追問：替代方案？（依賴注入 —— 把物件當參數傳進去，可替換、可 mock、生命週期明確）
+//
+// ⚠️ 陷阱. Meyers Singleton 是 thread-safe 的，所以 `Logger::instance().log(...)`
+//          也是 thread-safe 的吧？
+//     答：不是。標準保證的只有「初始化」執行緒安全且只做一次；至於之後對這個實例做的
+//         任何操作，仍然要自己同步。本檔 Logger::log() 內部特地放了
+//         `std::lock_guard<std::mutex>` 正是為了這件事。
+//     為什麼會錯：多數人把「thread-safe initialization」直接理解成「這個物件
+//         thread-safe」。兩者是完全不同層次的保證。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <mutex>      // 演示「執行緒安全」用，雖然 Meyer's 已經自帶執行緒安全

@@ -66,6 +66,38 @@
   - perfect forwarding 需要 T&& 搭配 std::forward<T>，不要把所有 && 都誤認為 move。
   - template 可提升零成本抽象，但也可能造成編譯時間上升和二進位膨脹；共通實作可用非 template helper 收斂。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】Type Erasure
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 什麼是 type erasure？標準庫的例子？
+//     答：把具體型別藏起來、對外只留統一介面，內部靠虛擬呼叫（或函式指標表）分派。
+//         典型就是本檔的三層結構：Concept（抽象介面）+ Model<F>（具體包裝）
+//         + 對外容器類別。標準庫例子：std::function、std::any、
+//         以及 std::shared_ptr 的 deleter。
+//     追問：和 std::variant 差在哪？（variant 是封閉集合、編譯期決定、不需 heap；
+//         type erasure 是開放集合，任何符合介面的型別都能塞進來）
+//
+// 🔥 Q2. 為什麼 shared_ptr 的 deleter 不在型別裡，unique_ptr 的卻在？
+//     答：shared_ptr<T> 把 deleter 用 type erasure 收進控制區塊，所以帶不同 deleter
+//         的 shared_ptr<T> 仍是同一個型別、可互相賦值；unique_ptr<T, D> 把 D 寫進
+//         型別，換 deleter 就是換型別，代價是型別不相容，好處是無狀態 deleter 可被
+//         EBO 吃掉、也沒有多一層間接呼叫。
+//
+// 🔥 Q3. type erasure vs CRTP vs virtual 三者怎麼選？
+//     答：virtual＝侵入式（對方必須繼承你的基底）+ 執行期多型；
+//         CRTP＝非侵入但型別編譯期固定，做不出異質容器；
+//         type erasure＝非侵入 + 執行期多型，代價是一次間接呼叫與可能的堆積配置。
+//         「別人的型別（含 lambda）一行都不用改就能放進同一個容器」只有它做得到。
+//
+// ⚠️ 陷阱. std::function 一定會做 heap allocation 嗎？
+//     答：不一定。多數實作有 small buffer optimization，夠小的 callable 會直接放在
+//         function 內部緩衝區。但「多小才算小」是 implementation-defined、
+//         標準未規定，也沒有承諾任何大小以下必定不配置，因此不能拿來當效能保證。
+//     為什麼會錯：看到「type erasure 要 heap」就以為每次都 new，
+//         或反過來以為只捕獲一兩個 int 的 lambda 一定不會配置。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <memory>
 #include <random>

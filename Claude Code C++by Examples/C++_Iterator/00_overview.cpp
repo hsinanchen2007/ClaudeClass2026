@@ -126,6 +126,39 @@
   - begin/end 形成半開區間，end 是停止標記，不是最後元素。
   - 理解 iterator category 後，才知道某演算法為什麼能不能用在 list、vector 或 stream 上。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】iterator 分類總覽
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. C++ 的 iterator 有哪幾種分類？各自能做什麼？
+//     答：C++17 前有 5 種：Input（只讀、single-pass）、Output（只寫、single-pass）、
+//         Forward（可讀寫、單向、有 multi-pass 保證）、Bidirectional（多了 --）、
+//         Random Access（多了 +n / -n / [] / <）。C++20 再加 Contiguous（元素記憶體連續）。
+//         它們層層加強：Contiguous ⊃ Random Access ⊃ Bidirectional ⊃ Forward ⊃ Input。
+//     追問：Input 和 Forward 的關鍵差別？（multi-pass guarantee：Forward 可複製後各自
+//         走訪並得到相同序列，Input 不行）
+//
+// 🔥 Q2. 各容器的 iterator 分別是哪一類？
+//     答：vector / array / deque → random access（C++20 中 vector、array 是 contiguous，
+//         deque 不是）；list / set / map / multiset / multimap → bidirectional；
+//         forward_list 與所有 unordered_* → forward（底層 singly linked list，沒有 --）；
+//         stack / queue / priority_queue 是 container adaptor，根本沒有 iterator。
+//     追問：為什麼 deque 是 random access 卻不是 contiguous？（跨 buffer 邊界時
+//         &v[i] + 1 != &v[i+1]）
+//
+// Q3. begin() / end() 為什麼是左閉右開區間 [first, last)？
+//     答：(1) 空區間自然表達為 first == last，不需特例；(2) 長度就是 last - first，不用 +1；
+//         (3) 迴圈條件簡潔（it != last），且「尾後位置」不需要真實存在的最後元素。
+//         end() 指向最後一個元素之後，解參考 *end() 是 UB。
+//
+// ⚠️ 陷阱. iterator 就是指標嗎？
+//     答：不是，但指標是合法的 iterator。iterator 是一個「概念」——任何滿足所需 operator
+//         與關聯型別的型別都算。裸指標 T* 恰好滿足 random access（C++20 contiguous）的
+//         全部要求，所以 C 陣列可直接餵給 STL 演算法。
+//     為什麼會錯：多數人把「iterator 是泛化的指標」這個比喻當成實作事實。但 list::iterator
+//         是包著節點指標的 class，back_insert_iterator 甚至沒有「指向」任何東西。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <iterator>
 #include <vector>

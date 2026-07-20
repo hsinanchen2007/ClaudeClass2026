@@ -48,6 +48,30 @@
   - vector、deque、array 提供 random access iterator；list 不提供，因此 sort algorithm 不能直接用在 list iterator 上。
   - 二分搜尋在 forward iterator 上比較次數仍是 logN，但移動 iterator 可能是 O(N)。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】RandomAccessIterator
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. RandomAccessIterator 比 Bidirectional 多了哪些操作？
+//     答：多了 O(1) 的跳躍與比較：it + n、it - n、it += n、it -= n、it1 - it2、it[n]，
+//         以及 <、>、<=、>= 這組關係運算子。正因為 it1 - it2 是 O(1)，std::distance 對
+//         這一級才能做到 O(1)。標準容器中 vector、array、deque 提供這一級。
+//     追問：哪些演算法非它不可？（std::sort、std::nth_element、std::binary_search 這類
+//         需要跳躍或二分的）
+//
+// 🔥 Q2. deque 是 random access，為什麼 C++20 卻不算 contiguous？
+//     答：contiguous 要求元素在記憶體中連續、&*(it + n) == &*it + n 恆成立。deque 是分段
+//         儲存（一塊塊 buffer 加上一張 map），跨 buffer 邊界時 &v[i] + 1 != &v[i+1]，
+//         所以隨機存取雖是 O(1)，卻不能把它當成一整塊陣列傳給 C API。
+//     追問：哪些型別是 contiguous？（vector、array、string、span，以及裸指標 T*）
+//
+// ⚠️ 陷阱. 泛型程式碼的迴圈條件為什麼一定要寫 it != last，不能寫 it < last？
+//     答：operator< 只對 random access iterator 有定義。對 list、map 或 istream_iterator
+//         寫 it < last 會編譯失敗；it != last 則對所有 category 都成立。
+//     為什麼會錯：平常只在 vector 上寫迴圈，< 用起來從不出事，於是把它當成通用寫法，
+//         直到把同一段程式碼模板化、套到 list 上才爆炸。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <vector>
 #include <iterator>

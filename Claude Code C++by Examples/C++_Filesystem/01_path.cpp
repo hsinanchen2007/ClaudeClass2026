@@ -60,6 +60,35 @@
   - std::filesystem::path 保存平台路徑語意，operator/ 可安全組合路徑片段。
   - path 可存在但檔案不存在；路徑物件和檔案系統狀態要分開理解。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::filesystem::path 基礎
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. path 和 std::string 差在哪？為什麼需要一個專門的型別？
+//     答：四個理由：① 跨平台分隔符——path 內部使用 native 格式，operator/ 會自動處理
+//     拼接，不必手寫 "a" + "/" + "b" ② 原生字元型別——Windows 上 path::value_type 是
+//     wchar_t，POSIX 上是 char；用 std::string 存路徑在 Windows 上處理非 ASCII 檔名
+//     會壞掉 ③ 結構化存取——filename()、stem()、extension()、parent_path()，而且路徑
+//     元素本身可迭代 ④ 比較與正規化——lexically_normal()、compare()。
+//     追問：怎麼轉回字串？（.string() 可能牽涉轉換；.native() 零成本但型別依平台；
+//     .generic_string() 一律用 /；.u8string() 在 C++20 起回傳 std::u8string，這是相對
+//     C++17 的 breaking change，原本接 std::string 的程式碼會編譯失敗）
+//
+// 🔥 Q2. /a/b/c.txt 的 filename()、stem()、extension()、parent_path() 各是什麼？
+//     答：依序是 c.txt、c、.txt、/a/b。注意 extension() 是「包含那個點」的（.txt 而不是
+//     txt）。三個必考的邊界：① /a/b/ 的 filename() 是空字串（尾端有隱含的空元素），
+//     想取目錄名 b 要寫 p.parent_path().filename() ② 開頭的點不算副檔名——.bashrc 的
+//     stem() 是 .bashrc、extension() 是空，has_extension() 回 false ③ 只取最後一個
+//     副檔名——archive.tar.gz 的 stem() 是 archive.tar、extension() 是 .gz。
+//
+// ⚠️ 陷阱. path("/home/user") / "/etc" 的結果是什麼？
+//     答：是 "/etc"，不是 "/home/user/etc"。operator/ 遇到絕對路徑的右運算元會丟棄左邊
+//     （與 Python 的 os.path.join 行為一致）。這在拼接使用者輸入時是路徑穿越漏洞的來源。
+//     安全的做法是先 lexically_normal()，再檢查結果是否仍以 base 為前綴；或直接拒絕
+//     含 .. 或以 / 開頭的輸入。
+//     為什麼會錯：把 operator/ 想成單純的字串接合，忽略它有「絕對路徑重設」的語意。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <filesystem>
 #include <iostream>
 #include <string>

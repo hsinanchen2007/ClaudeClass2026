@@ -97,6 +97,26 @@
   - perfect forwarding 需要 T&& 搭配 std::forward<T>，不要把所有 && 都誤認為 move。
   - template 可提升零成本抽象，但也可能造成編譯時間上升和二進位膨脹；共通實作可用非 template helper 收斂。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】Class Template 基礎
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 類別模板的成員函式什麼時候被實例化？
+//     答：惰性實例化（lazy instantiation）。實例化 Box<T> 時只實例化類別本身與
+//         「真正被呼叫到」的成員函式；沒被呼叫的成員即使對該 T 語法不合法也不會
+//         報錯。這正是容器對不支援某些操作的型別仍能編譯的原因。
+//     追問：那要怎麼強迫檢查全部成員？（顯式實例化 template class Box<int>;）
+//
+// 🔥 Q2. CTAD 是哪個標準？什麼時候要自己寫 deduction guide？
+//     答：C++17；C++17 之前一律要寫 Box<int> b(42)。當建構子參數型別與類別模板
+//         參數的對應關係不直觀時要自己寫：template<typename T> class Wrap{ Wrap(T*); }
+//         直接寫 Wrap(p) 會推成 T=int*，想要 T=int 得補 Wrap(T*) -> Wrap<T>;。
+//
+// Q3. 成員函式在 class 外定義時，為什麼要寫 template<typename T> T Foo<T>::get()？
+//     答：Foo 本身不是型別，Foo<T> 才是。class 外定義必須先用 template<typename T>
+//         重新引入 T，再用 Foo<T>:: 限定。只寫 Foo::get 會被當成特化或直接語法錯誤。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <vector>
 #include <stack>

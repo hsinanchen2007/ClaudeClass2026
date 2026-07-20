@@ -32,6 +32,36 @@
   - C++_String/C++_String summary 的複習方式是把 API 依用途分組，再比較輸入條件、輸出語意、失敗狀態和複雜度。
   - 初學複習 summary 時，不要只背函式名稱；要能說出何時該用、何時不該用、和相近工具差在哪裡。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::string 整體設計(SSO / COW / ABI)
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 什麼是 SSO?為什麼現代 std::string 都採用它?
+//     答:短字串直接存在 string 物件自身的內嵌 buffer,不呼叫 operator new,
+//     超過門檻才轉 heap 配置。門檻是 implementation-defined、標準未規定任何數字:
+//     libstdc++ 為 15 字元、libc++ 為 22 字元,不可依賴這些數字寫程式。
+//     追問:SSO 對 move 有什麼影響?→ 短字串無法只搬指標,必須真的 memcpy buffer,
+//     所以 std::string 的 move 不是無條件 O(1)。
+//
+// 🔥 Q2. 什麼是 COW(Copy-On-Write)?為什麼 C++11 之後不能用了?
+//     答:COW 讓多個 string 共享同一塊 buffer + 引用計數,寫入時才真的複製;
+//     GCC 5 之前的 libstdc++ 就是 COW。C++11 並非明文一句話禁止它,而是新要求
+//     讓 COW 無法合法實作:非 const 的 operator[]/at()/begin()/data() 不得使
+//     指標與迭代器失效(COW 必須在此時分家)、對不同 string 物件的並行操作不得
+//     產生 data race、operator[] 要求攤還常數時間。結果現代實作全面改用 SSO。
+//     追問:COW 在多執行緒下具體壞在哪?→ refcount 必須 atomic,連單執行緒程式
+//     也要付原子操作代價。
+//
+// Q3. GCC 的 std::string Dual ABI 是怎麼回事?
+//     答:GCC 5 為符合 C++11 改寫了 basic_string,ABI 因此斷裂。libstdc++ 採
+//     Dual ABI:新實作放在 inline namespace std::__cxx11,舊實作保留,兩者共存
+//     於同一個 libstdc++.so。由巨集 _GLIBCXX_USE_CXX11_ABI 控制(預設 1)。
+//     典型症狀是連結時出現 undefined reference to foo(std::__cxx11::basic_string...)
+//     ——型別名字裡帶 __cxx11 就是 ABI 不一致的指紋。
+//     追問:為什麼跨 .so / DLL 邊界傳 std::string 被視為壞設計?→ ABI 太脆弱,
+//     換標準庫版本、編譯器或旗標就爆;C API 邊界應該傳 const char* + 長度。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <cctype>
 #include <iostream>
 #include <string>

@@ -108,6 +108,26 @@
   - 若只是傳入唯讀文字片段且不需要擁有資料，std::string_view 可避免複製；但它不能延長原字串生命週期。
   - 處理中文或 UTF-8 時，std::string 的 size() 回傳 byte 數，不是人眼看到的字元數。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】max_size 與 sizeof(std::string)
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. sizeof(std::string) 是多少?為什麼各實作不一樣?
+//     答:這是 implementation-defined,標準未規定任何數字。常見 64-bit 實作:
+//     libstdc++ 32 bytes(SSO 可存 15 字元)、libc++ 24 bytes(SSO 可存 22 字元)、
+//     MSVC STL 32 bytes(15 字元)。差異來自內部佈局取捨:libstdc++ 是
+//     pointer + size + union{capacity, buf},libc++ 則把 capacity 欄位也讓給
+//     buffer,只留 1 bit 當 long/short 旗標,因此物件更小反而塞得下更多字元。
+//     追問:為什麼 libstdc++ 是 15 不是 16?→ 16 bytes 的 buffer 要留 1 byte 給 '\0'。
+//
+// Q2. max_size() 代表什麼?可以拿來當「配置一定會成功」的依據嗎?
+//     答:它是「在這個型別與當前 allocator / 平台下,理論上最多能放多少字元」的
+//     查詢介面,不是可用記憶體的保證。實際能不能配置到還受 RAM、swap、
+//     位址空間碎片、cgroup 限制影響。它的用途是泛型程式碼的 sanity check——
+//     例如反序列化讀到長度 N 時先擋掉不合理的值。
+//     追問:超過 max_size() 會怎樣?→ reserve/resize 等會丟 std::length_error。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <stdexcept>

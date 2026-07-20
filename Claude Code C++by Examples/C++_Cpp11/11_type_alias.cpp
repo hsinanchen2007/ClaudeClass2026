@@ -68,6 +68,37 @@
   - using Alias = Type 比 typedef 更容易閱讀，尤其是函式指標和 template alias。
   - alias 不建立新型別，只是原型別的另一個名字；型別安全性不會因此提高。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】type alias（using / C++11）
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. using 別名與 typedef 差在哪？
+//     答：對非模板情形兩者完全等價。真正的差別是 using 支援「alias template」
+//         （帶模板參數的別名），typedef 做不到：
+//           template <class T> using Vec = std::vector<T>;   // 只有 using 可以
+//         另外函式指標的可讀性也好得多：using FP = int(*)(int,int);
+//     追問：新程式碼該用哪個？（一律 using；typedef 只剩「與舊 codebase 保持
+//           一致」這條理由）
+//
+// Q2. alias template 可以特化嗎？
+//     答：不行。寫 template<> using Vec<int> = std::vector<int>; 是語法錯誤
+//         （本機 g++ -std=c++11 -pedantic-errors 實測報 expected unqualified-id
+//         before 'using'）。要依型別分流，得改用 class template 偏特化，再用一個
+//         alias 取它的 ::type 當短名——這正是標準庫 _t 系列別名的作法。
+//     追問：enable_if_t、decay_t 這些 _t 別名屬哪個標準？（C++14；C++11 只有
+//           std::enable_if<...>::type 的寫法）
+//
+// ⚠️ 陷阱. using Meters = int; using Seconds = int; 能拿來做型別安全嗎？
+//     答：不能。alias 不建立新型別，只是同一個型別的另一個名字，所以 Meters 與
+//         Seconds 就是 int，下面兩個看似「重載」其實是同一個函式：
+//           void f(Meters) {}
+//           void f(Seconds) {}   // ❌ error: redefinition of 'void f(int)'
+//         （本機 g++ -std=c++11 -pedantic-errors 實測）
+//     為什麼會錯：把「取了不同名字」誤當成「變成不同型別」。要真正的 strong
+//         typedef，標準沒有現成語法，得包一層 struct：struct Meters { int v; };
+//         這樣才是不同型別、才能各自重載、也才擋得住單位混用。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <functional>
 #include <iostream>
 #include <map>

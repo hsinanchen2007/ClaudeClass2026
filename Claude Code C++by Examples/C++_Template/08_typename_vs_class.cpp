@@ -75,6 +75,30 @@
   - perfect forwarding 需要 T&& 搭配 std::forward<T>，不要把所有 && 都誤認為 move。
   - template 可提升零成本抽象，但也可能造成編譯時間上升和二進位膨脹；共通實作可用非 template helper 收斂。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】typename / class 與 Dependent Name
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. typename 與 class 在模板參數位置真的完全等價嗎？
+//     答：宣告型別參數時 100% 等價，純粹是風格與歷史包袱。差別在其他位置：
+//         typename 另有消歧義用途（見 Q2），class 沒有；而在 template template
+//         parameter 的位置，C++17 起才允許用 typename 取代 class，C++14 以前只能寫 class。
+//     追問：那為什麼歷史上要引入 typename？（class 讓人誤以為只能傳 class type）
+//
+// 🔥 Q2. 為什麼要寫 typename Container::const_iterator？什麼是 two-phase lookup？
+//     答：模板分兩階段查名：非待決名稱在「定義點」解析，待決（dependent）名稱要到
+//         「實例化點」才解析。編譯器在第一階段無法判斷 T::const_iterator 是型別還是
+//         靜態成員，標準規定「預設當成非型別」，所以想當型別用就必須加 typename。
+//     追問：什麼時候可以省？（base class list；C++20 起在只可能是型別的位置）
+//
+// ⚠️ 陷阱. 加了 typename 就萬無一失嗎？t.get<int>() 為什麼編不過？
+//     答：不是。待決名稱如果是「成員模板」，要用的是 template 消歧義字而不是
+//         typename ── 必須寫 t.template get<int>()（或 T::template rebind<U>）。
+//         否則編譯器會把 get 後面的 < 當成小於號解析，噴出看似毫不相干的語法錯誤。
+//     為什麼會錯：以為 typename 管所有 dependent name。typename 只負責宣告
+//         「這是型別」；「這是模板」是另一個獨立的歧義，得用 template 關鍵字解。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <list>
 #include <map>

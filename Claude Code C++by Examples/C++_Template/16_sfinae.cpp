@@ -85,6 +85,42 @@
   - perfect forwarding 需要 T&& 搭配 std::forward<T>，不要把所有 && 都誤認為 move。
   - template 可提升零成本抽象，但也可能造成編譯時間上升和二進位膨脹；共通實作可用非 template helper 收斂。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】SFINAE / enable_if
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. SFINAE 是什麼？
+//     答：Substitution Failure Is Not An Error。重載決議時把推導出的模板實參
+//         代入函式「宣告」，若產生無效的型別或表達式，編譯器不報錯，只是靜靜
+//         把該候選從 overload set 剔除，繼續試其他候選；全部候選都失敗才報錯。
+//     追問：現代的替代方案？（C++17 if constexpr 處理函式內部分支、C++20
+//         concepts/requires 處理「該不該進入這個重載」，錯誤訊息好非常多）
+//
+// 🔥 Q2. std::enable_if 怎麼運作？有哪幾種放法？各屬哪個標準？
+//     答：enable_if<B,T> 只有在 B 為 true 時才有 ::type，否則沒有 → 觸發 SFINAE。
+//         三個位置：① 回傳型別（本檔用法）② 額外的預設模板參數（最推薦，
+//         不污染函式簽章）③ 函式參數。標準版本要分清楚：std::enable_if 是 C++11、
+//         enable_if_t 別名是 C++14、is_integral_v 這種 _v 是 C++17。
+//     追問：建構子為什麼不能用「回傳型別」那一版？（建構子沒有回傳型別，
+//         只能用第 ② 種）
+//
+// Q3. std::void_t 是哪個標準？detection idiom 怎麼運作？
+//     答：C++17（但在 C++11 只要一行就能自製：template<class...> using void_t = void;）。
+//         原理是把任意型別序列映射到 void，配合「偏特化 + SFINAE」：若
+//         T::size() 存在，偏特化的 void_t<decltype(...)> 替換成功 → 選中
+//         true_type；不存在則替換失敗 → 退回主模板 false_type。本檔的
+//         has_size 就是這個模式。
+//
+// ⚠️ 陷阱. SFINAE 為什麼救不了「函式本體裡的錯誤」？
+//     答：替換只發生在 immediate context——模板參數列、回傳型別、函式參數型別。
+//         本機實測：auto f(T t) -> decltype(t.foo()) 在沒有 foo() 時會被靜默剔除、
+//         正確 fallback 到別的候選；但 void g(T t){ t.foo(); } 在沒有 foo() 時是
+//         hard error（error: has no member named 'foo'），直接編譯失敗，
+//         fallback 完全救不到。
+//     為什麼會錯：把 SFINAE 想成「編譯器會試著編譯整個函式，編不過就換一個」。
+//         實際上它只試「宣告」；宣告一旦通過就定案，本體裡的錯誤已經是真錯誤。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <sstream>
 #include <type_traits>

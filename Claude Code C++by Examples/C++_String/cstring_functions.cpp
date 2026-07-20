@@ -155,6 +155,35 @@
   - 若只是傳入唯讀文字片段且不需要擁有資料，std::string_view 可避免複製；但它不能延長原字串生命週期。
   - 處理中文或 UTF-8 時，std::string 的 size() 回傳 byte 數，不是人眼看到的字元數。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】cstring (strlen / strcpy / memcpy …)
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. std::string、const char*、std::string_view 三者怎麼選？
+//     答：std::string 擁有資料、可修改可增長、保證 null-terminated，
+//         要「存起來」（成員變數、回傳值）就用它。
+//         const char* 不擁有資料，靠 '\0' 定界，strlen 是 O(n)，無法表達內含 '\0'
+//         的資料，也不帶生命週期資訊——只該出現在 C API 邊界。
+//         std::string_view（C++17）是不擁有的「指標 + 長度」，O(1) 建構與 substr，
+//         但不保證 null-terminated，實務上當成 parameter-only type 使用。
+//     追問：那什麼時候還是該用 const std::string&？→ 函式內部需要 c_str() 呼叫 C API 時。
+//
+// ⚠️ 陷阱. 為什麼 string_view 不能直接傳給 printf("%s") 或其他 C API？
+//     答：因為 string_view 不保證結尾有 '\0'。它常常只是指向某個更大 buffer 的
+//         一小段（例如從中間 substr 出來的），C API 會從起點一路讀到下一個 '\0'，
+//         讀過頭就是 buffer overread。要先轉成 std::string 才能安全 c_str()。
+//     為什麼會錯：view 印出來「看起來就是那段字」，讓人以為它和 const char* 可互換；
+//         但兩者的定界方式根本不同——一個靠長度，一個靠 '\0'。
+//
+// 🔥 Q2. std::string 內部可以存 '\0' 嗎？傳給 C API 會怎樣？
+//     答：可以。std::string 另外存了 size()，不靠 '\0' 判長度，
+//         所以 "a\0b" 這種內容 size() 正確回 3。
+//         但一旦交給 strlen / strcpy 這類 C 函式，它們只認 '\0'，資料會在第一個
+//         '\0' 被截斷——這是「C++ 字串跨到 C 邊界」的典型資料遺失點。
+//     追問：那 c_str() 和 data() 差在哪？→ C++11 起兩者完全等價，
+//           都保證 data()[size()] == '\0'（C++98 時代 data() 才不保證）。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <cstring>

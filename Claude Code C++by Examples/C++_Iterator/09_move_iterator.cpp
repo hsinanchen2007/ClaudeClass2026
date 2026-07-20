@@ -120,6 +120,31 @@
   - 搬移後來源元素仍在容器中，但值通常不可再當原內容使用。
   - make_move_iterator 常用於把一段 unique_ptr 或大型 string 搬到另一個容器。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::move_iterator
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. std::move_iterator 做了什麼？為什麼需要它？
+//     答：它是 iterator adaptor，把底層 iterator 的 reference 從 T& 改成 T&&，於是 *it
+//         取出來的是 rvalue，overload resolution 自動選中 move 版本。這讓既有演算法與容器
+//         的 range constructor 不必改寫就能改走 move，例如：
+//         std::vector<std::string> dst(std::make_move_iterator(src.begin()),
+//                                      std::make_move_iterator(src.end()));
+//     追問：它的 iterator_category 是什麼？（沿用底層 iterator 的等級，只換掉解參考行為）
+//
+// 🔥 Q2. 用 move_iterator 搬完之後，來源容器還能用嗎？
+//     答：容器本身仍然有效、size 也沒變，但每個元素都處於 moved-from 狀態——標準只保證
+//         「valid but unspecified」。合法的動作是重新賦值或 clear()，不能假設它是空字串或
+//         任何特定值。要繼續用原資料就不該用 move_iterator。
+//     追問：什麼情況必須用它？（元素只能 move 不能 copy，例如 vector<unique_ptr<T>>）
+//
+// ⚠️ 陷阱. 對元素沒有 move constructor 的型別包上 move_iterator，會發生什麼事？
+//     答：靜默退回 copy。因為 T&& 可以繫結到 const T& 參數，沒有 move 版本時就選到 copy
+//         版本，程式照常編譯、照常正確，只是完全沒有加速。
+//     為什麼會錯：多數人以為加了 move_iterator 就「保證會 move」，於是把效能沒改善歸咎到
+//         別的地方。對 int、double 這類 trivially copyable 型別也一樣，move 等同 copy。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <iterator>
 #include <vector>

@@ -76,6 +76,36 @@
   - enum class 不會自動轉成 int，能避免不同 enum 混用。
   - 使用 enum class 時需要加作用域名稱，例如 Color::Red，這讓大型程式命名更安全。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】enum class（C++11）
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. enum class 相對傳統 unscoped enum 的優點？
+//     答：三點——(1) 作用域：列舉值不洩漏到外層，Color::Red 與 Fruit::Red 不會
+//         撞名；(2) 強型別：不隱式轉成 int，要 static_cast，也擋掉不同 enum 之間
+//         的誤比較；(3) 可指定底層型別 enum class E : uint8_t {...}，精準控制
+//         ABI / 序列化大小。
+//     追問：指定底層型別是 scoped enum 專屬的嗎？（不是。C++11 起 unscoped enum
+//           也能指定底層型別，這點常被誤答成 enum class 獨有）
+//
+// 🔥 Q2. enum class 可以前向宣告嗎？
+//     答：可以。scoped enum 的底層型別預設為 int，大小已知，所以直接寫
+//         enum class Color; 就合法。unscoped enum 則必須顯式寫出底層型別
+//         （enum Legacy : int;）才能前向宣告，只寫 enum Legacy; 會編譯錯。
+//         （本機 g++ -std=c++11 -pedantic-errors 實測兩者行為如上）
+//
+// ⚠️ 陷阱. enum class 不能隱式轉 int，那兩個 enum class 值可以用 < 直接比大小嗎？
+//     答：可以。同一個 scoped enum 型別之間，==、!=、<、> 等關係運算子都能直接
+//         使用，完全不需要 static_cast：
+//           Color a = Color::Red, b = Color::Blue;   bool lt = a < b;   // ✅ OK
+//         被禁掉的是「隱式轉成 int」與「跨不同 enum 型別比較」——後者如
+//         Color::Red == Fruit::Apple 才會 error: no match for 'operator=='。
+//         （本機 g++ -std=c++11 -pedantic-errors 實測兩種情形）
+//     為什麼會錯：把「不隱式轉 int」過度推論成「任何比較都得先 cast」。實務後果
+//         就在本檔下方的 logIfAbove：它把兩個 LogLevel 都 cast 成 int 才比大小，
+//         那兩個 static_cast 其實是多餘的，直接寫 current >= threshold 即可。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <cstdint>
 #include <iostream>
 #include <string>
@@ -191,7 +221,8 @@ int main() {
     // ─────────────────────────────────────────────────────────
     enum class LogLevel : std::uint8_t { Trace, Debug, Info, Warn, Error };
     auto logIfAbove = [](LogLevel current, LogLevel threshold, const std::string& msg) {
-        // enum class 不能直接比較 — 但 underlying 是整數，可以 cast 比
+        // ⚠️ 更正：【同型別】的 enum class 可以直接比較（==、!=、<、> 都合法）。
+        //    不能做的是「與整數或與不同 enum 型別」比較——那才需要 cast。
         if (static_cast<int>(current) >= static_cast<int>(threshold)) {
             std::cout << "[log] " << msg << '\n';
         }

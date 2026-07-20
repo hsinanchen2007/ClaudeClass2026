@@ -72,6 +72,32 @@
   - std::setw 只影響下一次格式化輸出，std::setprecision 則會持續保存。
   - 格式化輸出若要局部設定，實務上可使用 stringstream 或保存/還原 flags。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】IO 格式化 manipulators
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. setw 和 setprecision 的「黏性」差在哪？
+//     答：std::setw(n) 只作用於「下一次」輸出，之後自動失效，所以每個欄位都要重設；
+//     setprecision、fixed、hex、left、setfill 等則是黏性（sticky），設定後一直有效到
+//     下次改變。所以 cout << setw(10) << "a" << "b"; 中的 "b" 沒有寬度 10，而
+//     cout << setprecision(3) << x << y; 中 x 與 y 都是 3 位精度。
+//     追問：怎麼還原格式？（存下 std::ios_base::fmtflags f = cout.flags(); 事後
+//     cout.flags(f)，或寫一個 RAII wrapper；C++20 的 std::format 沒有這個問題，
+//     因為每次呼叫的格式是獨立的）
+//
+// 🔥 Q2. setprecision(n) 的 n 到底是什麼意思？
+//     答：依模式而異——預設模式下是「有效位數」，在 std::fixed 或 std::scientific 之下
+//     才是「小數點後位數」。這是這組 manipulator 最常被答錯的地方。
+//
+// ⚠️ 陷阱. cout << 0.1; 印出 0.1，是不是代表 double 精確存下了 0.1？
+//     答：不是。cout 預設精度是 6 位有效位數，把值四捨五入顯示成 0.1 而已，實際儲存的
+//     double 是 0.1000000000000000055511... 要看到真實值可寫
+//     cout << std::setprecision(17) << 0.1;。17 這個數字來自
+//     std::numeric_limits<double>::max_digits10，它保證 double → 文字 → double 無損
+//     來回轉換；要做這種 round-trip，C++17 的 std::to_chars 是更好的現代選擇。
+//     為什麼會錯：把「印出來好看」當成「存得精確」，忽略了輸出端預設就在做四捨五入。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iomanip>
 #include <iostream>
 

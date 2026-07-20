@@ -166,6 +166,58 @@
   - thread 生命週期要明確 join 或 detach；std::jthread 以 RAII 方式在解構時 request_stop 並 join，較不容易漏掉。
   - 效能問題如 false sharing、contention、過度建立 thread，通常在正確性之後才調整；先寫對，再量測。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】C++ 記憶體模型與 memory_order
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 說明 relaxed / acquire / release / acq_rel / seq_cst 的語意
+//     答：relaxed 只保證該操作本身是原子的，以及同一個原子變數上的 modification
+//         order 一致性（所有 thread 對同一變數看到的修改順序一致）；不建立任何跨變數
+//         的順序、不產生 synchronizes-with。release（用於 store）禁止「之前」的讀寫被
+//         重排到它之後；acquire（用於 load）禁止「之後」的讀寫被重排到它之前。acq_rel
+//         給 RMW 用，讀端 acquire、寫端 release。seq_cst 在 acquire/release 之上，額外
+//         保證所有 seq_cst 操作存在單一全域總順序 S，且 S 與各物件的 modification
+//         order、與 happens-before 一致。
+//     追問：release/acquire 如何真正建立同步？（見 Q2）
+//
+// 🔥 Q2. release 與 acquire 是怎麼「配對」的？
+//     答：當 acquire load「實際讀到了」那個 release store 寫入的值（或其 release
+//         sequence 中的值），兩者才建立 synchronizes-with，進而 happens-before，於是
+//         release 之前的所有寫入（包含非原子寫）對 acquire 之後可見。關鍵在「讀到了」
+//         ——單獨用 release、或單獨用 acquire、或 acquire 讀到的是別人寫的值，都不成立
+//         同步。它建立的是「同一個變數上一對特定操作」之間的關係，不是全域屏障。
+//     追問：這個保證涵蓋非原子變數嗎？（涵蓋。這正是「用一個 atomic 旗標發布一整塊
+//           普通資料」這個模式成立的理由）
+//
+// 🔥 Q3. seq_cst 比 acquire/release 多保證了什麼？
+//     答：多的是單一全域總順序，實務上體現為阻止 StoreLoad 重排。經典反例
+//         （store buffer / Dekker）：T1 做 x.store(1,release) 後 load y；T2 做
+//         y.store(1,release) 後 load x。在 release/acquire 下「兩邊都讀到 0」是允許的
+//         （兩個 store 還卡在各自 CPU 的 store buffer）。全部改成 seq_cst 後，因為存在
+//         總順序，兩個 store 必有先後，兩邊同時讀到 0 就不可能發生。
+//     追問：成本？（x86 上 seq_cst load 免費，store 需 MFENCE 或 XCHG；ARM 需 DMB）
+//
+// Q4. memory_order_consume 為什麼不建議用？
+//     答：consume 原本想表達比 acquire 更弱、只沿資料依賴鏈傳遞順序，在 ARM/POWER 上
+//         可省掉屏障。但標準對 dependency-ordered-before 的定義難以在編譯器中正確實作
+//         （優化可能消除依賴），因此主流編譯器都直接把 consume 提升為 acquire，實質
+//         沒有效益。面試答「知道它存在，實務一律用 acquire」即為正解。
+//     追問：Linux kernel 的 rcu_dereference 怎麼處理？（自訂的編譯器屏障與依賴規則約定）
+//
+// ⚠️ 陷阱. 這段程式碼對嗎？
+//     T1: data = 42; ready.store(true, relaxed);
+//     T2: while (!ready.load(relaxed)) {}  assert(data == 42);
+//     答：錯，assert 可能失敗。relaxed 只保證 ready 自身的原子性與 modification order
+//         一致性，完全不建立 synchronizes-with，因此對非原子的 data 沒有任何可見性
+//         保證；而 data 被兩個 thread 無同步地存取，本身就構成 data race → UB。正確
+//         寫法是 store 用 release、load 用 acquire。
+//     為什麼會錯：腦中的錯誤模型是「relaxed 只是不加屏障，值遲早會傳過去，頂多晚一點」。
+//         實際上 relaxed 完全不排序其他變數的存取，編譯器也可自由重排那兩行。
+//         更麻煩的是這在 x86 上幾乎測不出來：x86-TSO 不允許 StoreStore/LoadLoad 重排，
+//         硬體恰好給了保證，但編譯器層級的重排仍可能發生，換到 ARM 立刻壞掉。
+//         結論：記憶體序要靠推理與 code review 驗證，不能靠測試。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <thread>
 #include <atomic>

@@ -167,6 +167,28 @@
   - 若只是傳入唯讀文字片段且不需要擁有資料，std::string_view 可避免複製；但它不能延長原字串生命週期。
   - 處理中文或 UTF-8 時，std::string 的 size() 回傳 byte 數，不是人眼看到的字元數。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::string 建構與 move
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 建構一個 std::string 一定會配置堆記憶體嗎?
+//     答:不一定。SSO 會把短字串直接放進 string 物件自身的內嵌 buffer,零 heap
+//     配置;超過門檻才呼叫 operator new。門檻是 implementation-defined、標準
+//     未規定任何數字——libstdc++ 為 15 字元、libc++ 為 22 字元,不可寫死依賴。
+//     追問:怎麼驗證?→ 檢查 s.data() 是否落在 [&s, &s+sizeof(s)) 區間內。
+//
+// 🔥 Q2. std::string 的 move constructor 是 O(1) 嗎?
+//     答:不一定。長字串(heap 模式)只搬 pointer/size/capacity,是 O(1);
+//     但短字串(SSO 模式)必須 memcpy 內嵌 buffer,雖有常數上界,卻不是
+//     「只搬指標」。move constructor 仍是 noexcept,因為 memcpy 不會拋。
+//     追問:為什麼 noexcept 很重要?→ vector<string> 擴容時才會選 move 而非 copy。
+//
+// ⚠️ 陷阱. move 之後的來源字串保證是空的嗎?
+//     答:不保證。標準只說它處於 valid but unspecified 狀態,你只能對它做
+//     「無前置條件」的操作(clear()、重新賦值、解構),不可讀取內容並假設是 ""。
+//     為什麼會錯:多數實作實務上確實會清空,於是很多人把觀察到的行為當成標準保證。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <vector>

@@ -57,6 +57,22 @@
   - if init-statement 可把暫時變數限制在 if/else 範圍內，減少外層命名污染。
   - 常見寫法是 if (auto it = m.find(k); it != m.end())，it 只在判斷分支中可見。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】if with initializer
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. if 帶 initializer 有什麼價值？
+//     答：if (auto it = m.find(k); it != m.end()) 把變數的作用域限縮在 if/else 內，
+//         避免污染外層、避免同名衝突，也讓 RAII 鎖等資源儘早釋放。
+//         等價於用一對額外大括號把 if 包住，但更簡潔。
+//     追問：init 中宣告的變數在 else 分支看得到嗎？
+//           （看得到，作用域涵蓋整個 if/else）
+//
+// Q2. 和 range-based for 的 initializer 差在哪？
+//     答：for (init; decl : range) 是 C++20 才加入的，不是 C++17。
+//         C++17 這一輪只有 if 與 switch 拿到 init statement。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <map>
 #include <unordered_map>

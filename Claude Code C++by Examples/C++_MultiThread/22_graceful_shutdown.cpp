@@ -163,6 +163,35 @@
   - thread 生命週期要明確 join 或 detach；std::jthread 以 RAII 方式在解構時 request_stop 並 join，較不容易漏掉。
   - 效能問題如 false sharing、contention、過度建立 thread，通常在正確性之後才調整；先寫對，再量測。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】Graceful shutdown
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 如何做 graceful shutdown？
+//     答：三件事缺一不可。(1) 通知：設定 atomic<bool> stop 或 stop_token，而且必須把
+//         stop 納入「所有」CV 的 predicate，否則等待中的 thread 永遠醒不來。
+//         (2) 喚醒：用 notify_all()，不能用 notify_one()——要叫醒全部等待者。
+//         (3) 等待：join 每一個 worker，確認資源都已釋放後，才允許主要物件解構。
+//     追問：C++20 有什麼幫助？（jthread + stop_token 把「通知」與「等待」自動化，
+//           解構時自動 request_stop 再 join）
+//
+// 🔥 Q2. 最常見的 shutdown bug 是什麼？
+//     答：解構順序錯誤：先解構了 queue 或 logger，worker 才醒來去存取它 → 存取已解構
+//         物件（UB）。正確順序是「先讓所有 worker 停下並 join，再釋放它們用到的資源」，
+//         也就是資源要以與建立相反的順序銷毀，而 join 必須排在任何資源釋放之前。
+//     追問：為什麼在解構子裡 join 還不夠？（成員解構的順序是宣告順序的反序，若
+//           worker thread 成員宣告在 queue 之後，就會先解構 queue，要靠明確的
+//           shutdown() 或調整宣告順序）
+//
+// ⚠️ 陷阱. 設好 stop 旗標並 notify_all()，worker 卻還是不結束，可能是什麼原因？
+//     答：最常見的是 stop 沒有被納入 CV 的 predicate——worker 醒來後 predicate 仍為
+//         false（例如 queue 還是空的），於是又睡回去。另一種是 worker 卡在阻塞式 IO
+//         （read()、accept()），stop 旗標根本叫不醒它。
+//     為什麼會錯：大家以為 notify 是「把 thread 叫起來往下走」，實際上帶 predicate 的
+//         wait 被喚醒後會重新檢查條件，條件不成立就繼續等。至於阻塞式 IO，則需要
+//         eventfd/self-pipe、socket timeout 或 shutdown() 這類可中斷機制。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <thread>
 #include <vector>

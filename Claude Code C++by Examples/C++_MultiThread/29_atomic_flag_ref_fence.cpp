@@ -196,6 +196,37 @@
   - thread 生命週期要明確 join 或 detach；std::jthread 以 RAII 方式在解構時 request_stop 並 join，較不容易漏掉。
   - 效能問題如 false sharing、contention、過度建立 thread，通常在正確性之後才調整；先寫對，再量測。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】atomic_flag / atomic_ref / atomic_thread_fence
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. std::atomic_flag 有什麼特別之處？
+//     答：它是標準「唯一保證永遠 lock-free」的原子型別，只有 test_and_set 與 clear
+//         （C++20 再加 test 與 wait/notify）。std::atomic<int> 在常見平台上幾乎一定
+//         lock-free，但那是實作性質而非標準保證，可用 is_lock_free() 查詢。因為介面
+//         極簡且保證無鎖，atomic_flag 是手寫 spinlock 的標準材料。
+//     追問：手寫 spinlock 要注意什麼？（上鎖用 test_and_set(acquire)、解鎖用
+//           clear(release)；迴圈中先用 test() 唯讀輪詢再嘗試 test_and_set，避免持續
+//           以獨佔狀態拉走 cache line，並加上 pause 指令）
+//
+// 🔥 Q2. std::atomic_ref<T> 解決什麼問題？
+//     答：C++20 新增，讓你把「既有的普通變數」暫時當作原子物件來操作。它解決的實際
+//         困境是：手上的 buffer 或結構必須是 plain int/float（要餵 SIMD、mmap、
+//         第三方 C API），不能改成 std::atomic<int>，但某幾個欄位又需要原子存取。
+//         注意在 atomic_ref 存活期間，該物件的所有存取都必須經由 atomic_ref，否則
+//         仍是 data race；而且被引用的物件必須滿足其對齊要求。
+//     追問：為什麼不能直接把整個陣列宣告成 atomic？（atomic<T> 的大小／對齊可能與 T
+//           不同，也無法保證能與期望 plain T 佈局的外部 API 相容）
+//
+// Q3. atomic_thread_fence 與「在 atomic 操作上指定 memory_order」差在哪？
+//     答：fence 是獨立的屏障，不附著於特定原子操作。典型用法是做一連串 relaxed 寫入
+//         後，用一次 fence(release) 收尾，比每個寫入都用 release store 便宜。它的
+//         順序保證涵蓋範圍更廣、擺放位置更彈性，代價是推理更難：同步關係不再由「哪個
+//         變數的哪一對操作」清楚標示，review 時更容易看漏。
+//     追問：fence 可以單獨使用嗎？（不行。仍要與另一端的 acquire fence 或 acquire
+//           操作配對，並且中間要有實際被讀到的原子變數作為傳遞的媒介）
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <atomic>
 #include <chrono>
 #include <iostream>

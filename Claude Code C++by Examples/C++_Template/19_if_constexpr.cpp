@@ -55,6 +55,35 @@
   - perfect forwarding 需要 T&& 搭配 std::forward<T>，不要把所有 && 都誤認為 move。
   - template 可提升零成本抽象，但也可能造成編譯時間上升和二進位膨脹；共通實作可用非 template helper 收斂。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】if constexpr
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. if constexpr 屬哪個標準？跟普通 if 的關鍵差別在哪？
+//     答：C++17，常被誤答成 C++14（本機以 -std=c++14 -pedantic-errors 實測，
+//         GCC 明確拒絕：'if constexpr' only available with -std=c++17）。
+//         差別：if constexpr 在編譯期求值，未選中的分支在模板實例化時被「丟棄」
+//         ——只需語法合法，語意可以不合法（例如對 int 呼叫 .size()）。普通 if
+//         兩個分支都必須能編譯，所以寫不出這種泛型分流。
+//     追問：條件可以是 runtime 變數嗎？（不行，必須是可轉成 bool 的 constant
+//         expression，常見是 trait::value、sizeof(T)、constexpr 變數）
+//
+// 🔥 Q2. if constexpr 能取代所有 SFINAE 嗎？
+//     答：不能。它處理的是「進到函式以後要走哪條路」；SFINAE 與 concepts 處理的是
+//         「這個函式該不該進入 overload set」。if constexpr 不影響重載決議與偏序，
+//         也沒辦法讓一個函式「消失」，更不能改變函式簽章。要做 overload 層級的
+//         選擇，還是得用 concepts / SFINAE / tag dispatch。
+//
+// ⚠️ 陷阱. 「if constexpr 條件是 false，那一整段就不會被檢查」——任何地方都成立嗎？
+//     答：不成立，只有在「模板」裡才成立。本機實測：非模板函式中寫
+//         if constexpr (false) { x.size(); } 而 x 是 int，照樣編譯錯誤
+//         （error: request for member 'size' in 'x', which is of non-class type 'int'）；
+//         同一段程式碼搬進 template 就順利通過。
+//     為什麼會錯：把 if constexpr 記成「條件 false 就整段跳過不看」。編譯器不是
+//         不看，而是「不實例化」——沒有模板就沒有實例化這回事，該做的語意檢查
+//         一項都不會少。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <type_traits>

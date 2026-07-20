@@ -58,6 +58,35 @@
   - create_directory 只建立一層，create_directories 才會建立整條缺少的路徑。
   - remove_all 很危險，應先確認目標路徑，避免刪到非預期目錄。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】建立 / 刪除 / 拷貝 / rename
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. remove、remove_all、rename、copy 各有哪些坑？
+//     答：remove(p) 只刪單一檔案或「空」目錄，回傳 bool，而且檔案原本就不存在時回
+//     false 但不算錯誤；remove_all(p) 遞迴刪除、回傳刪除的項目數，失敗時回
+//     static_cast<uintmax_t>(-1)——它極度危險，路徑算錯就會刪掉整棵目錄樹，使用前務必
+//     驗證；rename(from, to) 跨檔案系統（不同掛載點）會失敗（EXDEV），需要退回「複製 +
+//     刪除」，而且目標已存在時的行為在 POSIX 與 Windows 上不同；copy() 預設不遞迴，
+//     要加 copy_options::recursive，目標存在時預設拋例外，可用 overwrite_existing／
+//     skip_existing／update_existing 調整，單檔請用 copy_file。
+//     追問：create_directory 和 create_directories 差在哪？（前者只建一層，父目錄不存在
+//     就失敗；後者建整條路徑。兩者在目錄已存在時都回 false，但那不是錯誤）
+//
+// 🔥 Q2. 為什麼 remove_all 不跟隨 symlink 是重要的安全性質？
+//     答：如果它會跟隨目錄 symlink，那麼只要有人在你即將刪除的目錄樹裡放一個指向
+//     /home 或系統目錄的 symlink，你的清理程式就會把目標目錄的內容一併刪掉。標準規定
+//     remove_all 刪除的是 symlink 本身而不是它指向的內容，正是為了阻斷這條攻擊路徑。
+//     同理，recursive_directory_iterator 預設也不跟隨目錄 symlink。
+//
+// ⚠️ 陷阱. 「先 exists 檢查、不存在才 create」這種寫法安全嗎？
+//     答：不安全，是 TOCTOU。檢查與建立之間，別人可能已經建立了同名檔案（於是你覆蓋了
+//     它），或放了一個 symlink（於是你寫到別的地方去）。正解是用具原子性的操作：
+//     建檔用 O_CREAT | O_EXCL；建目錄則直接呼叫 create_directory 並接受「已存在時回
+//     false」這個結果，而不是先問再做。臨時檔請用 mkstemp 這類原子建立的介面。
+//     為什麼會錯：把「檢查 + 動作」兩個 syscall 想成一個不可分割的步驟。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <filesystem>
 #include <fstream>
 #include <iostream>

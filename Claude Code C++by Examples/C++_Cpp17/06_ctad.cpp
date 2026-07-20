@@ -60,6 +60,29 @@
   - CTAD 讓 class template 可從建構參數推導模板參數，例如 std::pair p{1,2.0}。
   - 推導不一定符合你想要的型別，公開 API 或教學中有時明寫模板參數更清楚。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】CTAD（Class Template Argument Deduction）
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. CTAD 是什麼？和 make_pair / make_tuple 的關係？
+//     答：std::pair p{1, 2.0}; 編譯器由建構子引數推出 pair<int,double>，不必再寫
+//         make_pair。編譯器先由所有建構子與明確寫出的推導指引產生一組虛擬函式，
+//         再走一般的重載決議。
+//     追問：make_* 系列全過時了嗎？（大體上是，但 make_unique / make_shared 不可
+//           取代——它們負責的是例外安全與單次配置，不是型別推導）
+//
+// ⚠️ 陷阱. CTAD 有哪些「推導出乎意料」的情況？
+//     答：① std::vector v{vec};（vec 是 vector<int>）推成 copy，即 vector<int>，
+//            而非 vector<vector<int>>——這是特殊的 copy 優先規則。
+//         ② std::pair p{"a", "b"}; 推成 pair<const char*, const char*>，
+//            不是 std::string；要 std::pair p{"a"s, "b"s} 或自訂推導指引。
+//         ③ C++17 不支援 aggregate 的 CTAD（需自寫推導指引，C++20 才支援）。
+//         ④ C++17 的 CTAD 不適用於別名模板（C++20 放寬）。
+//         ⑤ 只有在完全沒寫模板引數時才啟動，連 std::pair<> 都不行。
+//     為什麼會錯：大家把 CTAD 想成「編譯器會猜我要的型別」，但它實際上只是拿建構
+//         子跑重載決議，字面量該退化成指標就退化，不會幫你升級成 std::string。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <array>
 #include <iostream>
 #include <map>

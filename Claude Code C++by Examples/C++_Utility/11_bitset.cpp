@@ -73,6 +73,29 @@
   - bitset 支援 count、test、set、reset、flip，比手寫整數遮罩更易讀。
   - to_ulong/to_ullong 若 bitset 數值放不進目標型別會丟 overflow_error。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::bitset
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. std::bitset 適合什麼場景？和 std::vector<bool> 差在哪？
+//     答：bitset<N> 的大小在編譯期固定、就地儲存、不做堆配置，提供 count()、any()、
+//     all()、test()、flip()、位元運算與 to_string()。vector<bool> 則是動態大小的特化，
+//     也是有名的「不是真正的容器」——operator[] 回傳 proxy 而不是 bool&，不能取位址、
+//     不滿足容器需求。要動態大小又想避開 proxy，可用 vector<std::uint64_t> 自行管理或
+//     boost::dynamic_bitset。
+//     追問：bitset 的 count() 大概怎麼實作？（以字為單位處理，實作通常直接用 popcount 指令）
+//
+// 🔥 Q2. bitset 越界存取會怎樣？
+//     答：operator[] 不做邊界檢查（越界是 UB）；test(pos) 會檢查並在越界時拋
+//     std::out_of_range。這與 vector 的 operator[] vs at() 是同一組設計哲學。
+//
+// ⚠️ 陷阱. 要把 bitset 當旗標傳給 C API，直接 to_ulong() 就好嗎？
+//     答：要小心。to_ulong()／to_ullong() 在數值無法用目標型別表示時會拋
+//     std::overflow_error，所以 N 大於目標型別位元數且高位有設定時就會失敗。傳給 C API
+//     之前必須確認 N 與目標型別相容。
+//     為什麼會錯：以為轉換是純粹的位元重新詮釋、不可能失敗；實際上它是有值域檢查的轉換。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <bitset>
 #include <string>

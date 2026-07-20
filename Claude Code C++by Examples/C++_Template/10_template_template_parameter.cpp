@@ -64,6 +64,27 @@
   - perfect forwarding 需要 T&& 搭配 std::forward<T>，不要把所有 && 都誤認為 move。
   - template 可提升零成本抽象，但也可能造成編譯時間上升和二進位膨脹；共通實作可用非 template helper 收斂。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】Template Template Parameter（TTP）
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. TTP 跟直接傳 typename Container 差在哪？什麼時候才值得用？
+//     答：判準是「元素型別由誰來填」。使用者若能自己寫 Stack<std::vector<int>>，
+//         用 typename Container 就夠；若你想讓他只選容器策略、元素型別由類別內部
+//         填（GenericStack<int, std::vector> 內部才組出 std::vector<int>），才輪到 TTP。
+//     追問：實務常見嗎？（相對少見，std::stack 這類 adapter 是典型場景）
+//
+// 🔥 Q2. 為什麼 TTP 幾乎都寫成 template<typename...> class C？
+//     答：因為多數 STL 容器不只一個模板參數，std::vector 是 <元素型別, Allocator>。
+//         把 TTP 寫死成單一參數的 template<typename> class C 去接 std::vector 並不
+//         可靠；改成 variadic 之後，不論容器有幾個模板參數都能接，是最通用的寫法。
+//
+// Q3. TTP 的位置該寫 class 還是 typename？
+//     答：C++14 以前該位置只能寫 class，C++17 起 typename 也合法。注意這跟「宣告
+//         型別參數時 typename 與 class 等價」是不同的位置、不同的規則 ── 面試官
+//         問「typename 和 class 有沒有差」時，這正是那個「有差」的地方。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <deque>
 #include <iostream>
 #include <list>

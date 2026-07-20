@@ -49,6 +49,22 @@
   - switch init-statement 適合先計算分類值，再依 case 分支處理。
   - init 變數作用域涵蓋整個 switch，case 內若要宣告變數仍需注意大括號。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】switch with initializer
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. switch (init; expr) 解決什麼問題？
+//     答：把「只為了餵給 switch 而存在」的變數作用域收進 switch 內，例如
+//         switch (auto st = query(); st.code)，離開 switch 後 st 即失效，
+//         不再污染外層。與 if with initializer 是同一組 C++17 特性。
+//     追問：init 宣告的變數在每個 case 分支都看得到嗎？
+//           （看得到，作用域是整個 switch 敘述）
+//
+// Q2. 這個語法是哪個標準？其他控制流程也有嗎？
+//     答：if / switch 帶 init 是 C++17；range-based for 帶 init 要到 C++20。
+//         寫版本號時別把兩者混為一談。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <vector>

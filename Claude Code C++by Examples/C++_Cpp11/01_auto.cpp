@@ -86,6 +86,34 @@
   - auto 會依初始化式推導型別；沒有初始化式就不能推導。
   - auto x = expr 會複製或移動值，若要避免複製大型物件應寫 const auto&。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】auto 型別推導
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. auto 的推導規則是什麼？
+//     答：沿用 template type deduction，分三種情形。`auto x = e` 按值推導，丟掉
+//         top-level const 與 reference，陣列／函數退化成指標；`auto& x`、
+//         `const auto& x` 保留 const 且不退化；`auto&& x` 是 forwarding
+//         reference，接左值得左值參考、接右值得右值參考。
+//     追問：那 `const auto* p = &x;` 的 const 為什麼沒被丟掉？
+//         （被丟的只有 top-level const，這裡的 const 修飾的是「被指的物件」）
+//
+// 🔥 Q2. auto 推導與 template 推導唯一的差異在哪？
+//     答：braced initializer。`auto x = {1, 2, 3};` 推導成
+//         `std::initializer_list<int>`；但同一組 `{1, 2, 3}` 傳給
+//         `template <class T> void f(T)` 卻完全推不出 T——它是 non-deduced
+//         context，編譯器不會替你猜成 initializer_list。
+//     追問：所以完美轉發為什麼「轉發不了」`f({1, 2, 3})`？（正是同一個原因）
+//
+// ⚠️ 陷阱. `std::vector<bool> v{true}; auto b = v[0];` 的 b 是什麼型別？
+//     答：不是 bool，而是 proxy 型別 `std::vector<bool>::reference`。
+//         vector<bool> 是位元壓縮的特化版，`operator[]` 回傳的是代理物件而不是
+//         `bool&`。之後若 v 被 clear() 或擴容，b 內部指向的位元就失效，再讀是 UB。
+//     為什麼會錯：多數人腦中的模型是「auto 會推成我看到的那個值的型別」，但
+//         auto 忠實推導的是「運算式真正的型別」，而代理物件本來就設計成隱形的。
+//         解法是顯式型別初始化慣用法：`auto b = static_cast<bool>(v[0]);`
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <typeinfo>
 #include <vector>

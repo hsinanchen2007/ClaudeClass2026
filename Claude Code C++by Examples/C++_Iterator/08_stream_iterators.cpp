@@ -47,6 +47,30 @@
   - ostream_iterator 可把演算法結果直接輸出到 stream，常搭配 delimiter。
   - stream iterator 失敗時會到達 end iterator，錯誤狀態仍保存在 stream 中。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】istream_iterator / ostream_iterator
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. istream_iterator 是哪一類 iterator？它的 end 從哪裡來？
+//     答：是 InputIterator——只讀、single-pass，資料從 stream 取出就消耗掉，無法走第二遍。
+//         它的「結尾」是 default constructed 的 istream_iterator<T>{}，也就是
+//         end-of-stream sentinel；當 stream 讀取失敗或到達 EOF，iterator 就與它相等。
+//     追問：讀取失敗和 EOF 分得出來嗎？（分不出來，兩者都讓 iterator 等於 end；要判斷
+//         真正原因得回頭查 stream 自己的狀態旗標）
+//
+// 🔥 Q2. 為什麼 istream_iterator<char> 讀出來的字元少了空白和換行？
+//     答：因為它背後用的是 operator>>，屬於格式化輸入，預設會跳過 whitespace。要一個字元
+//         都不漏，就改用 istreambuf_iterator<char>（低階字元層），或對 stream 設
+//         unsetf(std::ios::skipws)。
+//     追問：ostream_iterator 的第二個建構參數是什麼？（每寫一筆後附加的 delimiter）
+//
+// ⚠️ 陷阱. vector<int> v(istream_iterator<int>(in), istream_iterator<int>()); 為什麼不能用？
+//     答：這行會被編譯器解讀成一個「函式宣告」，也就是 Most Vexing Parse。改成大括號即可：
+//         vector<int> v{ istream_iterator<int>(in), istream_iterator<int>{} };
+//     為什麼會錯：以為括號裡放的一定是物件，但只要那段文字也能被解析成參數列，標準規定
+//         優先當宣告解析。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <iterator>
 #include <sstream>

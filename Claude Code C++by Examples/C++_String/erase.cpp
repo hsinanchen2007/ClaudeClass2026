@@ -167,6 +167,40 @@
   - 若只是傳入唯讀文字片段且不需要擁有資料，std::string_view 可避免複製；但它不能延長原字串生命週期。
   - 處理中文或 UTF-8 時，std::string 的 size() 回傳 byte 數，不是人眼看到的字元數。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::string::erase
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. erase-remove idiom 是什麼?為什麼 std::remove 自己不能縮短字串?
+//     答:寫法是 s.erase(std::remove(s.begin(), s.end(), 'a'), s.end())。
+//         std::remove 是演算法,只拿得到 iterator、看不到容器本體,所以它
+//         只能把要保留的字元往前搬並回傳「新的邏輯結尾」,size 完全沒變;
+//         必須再呼叫成員 erase 把尾巴那段真的砍掉。
+//     追問:C++20 有更好的寫法嗎?→ 有,std::erase(s, 'a') /
+//           std::erase_if(s, pred) 一行搞定(見 erase_free.cpp)。
+//
+// 🔥 Q2. erase(pos, count) 的邊界語意是什麼?
+//     答:從 pos 移除 count 個字元,count 預設為 npos 表示「刪到結尾」;
+//         count 超過剩餘長度不會拋例外,會自動截斷;但 pos > size() 會丟
+//         std::out_of_range。回傳 *this,可鏈式呼叫。
+//     追問:erase 之後 capacity 會變小嗎?→ 不會,erase 只縮 size 不還記憶體,
+//           要真的釋放得再呼叫 shrink_to_fit(而且那只是非約束性請求)。
+//
+// 🔥 Q3. erase 的複雜度與迭代器失效規則?
+//     答:O(N)——被刪位置之後的字元要往前 memmove。因為只縮不長,
+//         不會 reallocation,所以被刪位置「之前」的 iterator/pointer 仍有效,
+//         被刪位置「及其後」的全部失效,end() 一律失效。
+//
+// ⚠️ 陷阱. for (auto it = s.begin(); it != s.end(); ++it) if (*it=='x') s.erase(it);
+//     這段錯在哪?
+//     答:erase(it) 之後 it 已經失效,再 ++it 是 UB。改成 it = s.erase(it)
+//         也還是錯——erase 回傳的已經是「下一個」字元,迴圈的 ++it 會再跳
+//         一格,連續兩個 'x' 就會漏刪。
+//         正解是條件性遞增:刪到就 it = s.erase(it),否則才 ++it。
+//     為什麼會錯:多數人把 erase 想成「刪完原地不動」,忽略了它回傳的
+//         iterator 已經指向下一個元素,於是重複前進了兩次。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <cctype>

@@ -57,6 +57,26 @@
   - std::invoke 統一呼叫函式、函式物件、成員函式指標和資料成員指標。
   - 泛型 wrapper 若要支援所有 callable 形式，std::invoke 比手寫 f(args...) 更完整。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::invoke
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 為什麼需要 std::invoke？它統一了什麼？
+//     答：可呼叫物件的呼叫語法本來有好幾種：普通函式／函式物件是 f(a)，成員函式
+//         指標是 (obj.*pmf)(a) 或 (ptr->*pmf)(a)，成員資料指標是 obj.*pmd，
+//         還得處理 reference_wrapper 與智慧指標。
+//         std::invoke(f, args...) 以標準的 INVOKE 語意把這些收斂成單一寫法，
+//         泛型程式碼（std::function、std::thread、std::bind、演算法）就不必為每種
+//         情況各寫一份特化。
+//     追問：成員函式的第一個引數是什麼？（物件本身——invoke(pmf, obj, args...)，
+//           obj 可以是物件、參考、指標或 reference_wrapper）
+//
+// Q2. std::apply 和它是什麼關係？
+//     答：std::apply(f, tuple) 把 tuple 展開成引數後，內部同樣以 INVOKE 語意呼叫；
+//         差別只在引數來源是一個 tuple 而不是逐個列出。
+//         那個位置可放任何支援 get / tuple_size 的型別，例如 std::array、std::pair。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <functional>
 #include <iostream>

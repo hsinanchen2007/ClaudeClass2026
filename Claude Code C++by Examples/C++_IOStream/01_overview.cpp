@@ -79,6 +79,32 @@
   - stream 保存格式設定，例如進位、寬度、精度；格式狀態會持續影響後續輸出。
   - 讀寫 stream 後要檢查狀態，因為失敗不一定丟例外，更多時候是設定 failbit。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】iostream 體系總覽
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. cout、cerr、clog 差在哪？該怎麼選？
+//     答：cout 接 stdout、有緩衝；cerr 接 stderr、預設 unitbuf（每次輸出後自動 flush）；
+//     clog 也接 stderr 但有緩衝。所以：緊急錯誤用 cerr（即使程式隨後崩潰也保證看得到）、
+//     大量診斷 log 用 clog（有緩衝、效能好）、正常輸出用 cout。重導向時
+//     ./prog > out.txt 2> err.txt 可以把資料與 log 分離。
+//     追問：cerr 需要 endl 嗎？（不用，它本來就每次都 flush）
+//
+// 🔥 Q2. 怎麼讓自訂型別支援 cout <<？
+//     答：重載非成員的 operator<<：
+//     std::ostream& operator<<(std::ostream& os, const Point& p);
+//     重點四項：① 必須是非成員（左運算元是 ostream，不是你的型別）② 參數與回傳都用
+//     std::ostream&（不是 cout），才能同時支援檔案流、stringstream 與鏈式呼叫
+//     ③ 需要存取私有成員時宣告為 friend ④ 不要在裡面加 endl，換行由呼叫者決定。
+//     追問：C++20 有更現代的做法嗎？（特化 std::formatter<Point>，讓 std::format 支援）
+//
+// Q3. iostream 的繼承體系為什麼用虛擬繼承？
+//     答：basic_istream 與 basic_ostream 都虛擬繼承自 basic_ios，basic_iostream 同時
+//     繼承兩者。若非虛擬繼承就會有兩份 basic_ios 子物件（菱形問題），狀態位元與緩衝區
+//     指標會分裂成兩套。這是實務上少數合理使用虛擬繼承的正面教材。實際做 I/O 的是
+//     std::streambuf（透過 rdbuf() 取得），stream 類別只負責格式化。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <sstream>
 #include <string>

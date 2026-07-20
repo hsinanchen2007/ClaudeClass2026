@@ -34,6 +34,42 @@
   - C++_Cpp17/C++_Cpp17 summary 的複習方式是把 API 依用途分組，再比較輸入條件、輸出語意、失敗狀態和複雜度。
   - 初學複習 summary 時，不要只背函式名稱；要能說出何時該用、何時不該用、和相近工具差在哪裡。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】C++17 總覽
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. C++17 主要新增了哪些語言與函式庫特性？
+//     答：語言層：structured bindings、if constexpr、if/switch with init、
+//         inline variables、CTAD、fold expressions、auto 非型別模板參數、
+//         巢狀命名空間 namespace a::b::c、[[nodiscard]]/[[maybe_unused]]/
+//         [[fallthrough]]、constexpr lambda、保證的 copy elision。
+//         函式庫層：string_view、optional、variant、any、invoke/apply、byte、
+//         filesystem、平行演算法（std::execution）、shared_mutex。
+//     追問：哪些是純語言特性、不需 include？（structured bindings、if constexpr、
+//           CTAD、fold expression；string_view/optional/variant/any/invoke 都要標頭）
+//
+// 🔥 Q2. fold expression 是什麼？四種形式？
+//     答：對 parameter pack 以二元運算子摺疊，取代 C++11 的遞迴模板寫法。
+//         一元右摺 (E op ...)、一元左摺 (... op E)、
+//         二元右摺 (E op ... op init)、二元左摺 (init op ... op E)。
+//         例如 (args + ...) 就是求和。
+//     追問：空 pack 會怎樣？（一元摺疊對空 pack 只有 &&（true）、||（false）、
+//           逗號（void()）三個運算子有定義，其餘是編譯錯誤 → 改用二元摺疊給初值）
+//
+// Q3. C++17 對 lambda 做了哪兩個增強？
+//     答：① constexpr lambda：滿足 constexpr 條件時 operator() 隱式為 constexpr，
+//            可在編譯期求值，也可顯式寫 [](int x) constexpr {...}。
+//         ② [*this] 捕獲：以值複製整個 *this 到閉包，解決非同步／回呼中 this 懸垂。
+//         （注意 generic lambda 是 C++14 的，別記到 C++17 頭上）
+//
+// ⚠️ 陷阱. C++17 的「保證 copy elision」保證了什麼？NRVO 也在內嗎？
+//     答：以 prvalue 初始化同型別物件時（T t = T(); 或回傳 prvalue），標準保證不產生
+//         臨時物件——這是語意規定而非最佳化許可，所以即使複製與移動建構子都被
+//         delete，這種初始化仍然合法，工廠函式因此可以回傳不可移動的型別。
+//     為什麼會錯：多數人把它擴大解讀成「C++17 起省略複製都被保證」，但 NRVO
+//         （回傳具名區域變數）仍然只是可選的最佳化，標準並未保證。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <utility>

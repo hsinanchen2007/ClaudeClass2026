@@ -84,6 +84,37 @@
   - std::function 可保存不同 callable，但可能有型別抹除成本和配置成本；效能敏感處可優先用 template 接 callable。
   - lambda 放進 algorithm 時應讓 predicate 無副作用或副作用明確，否則演算法意圖會變難讀。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】lambda 的本質 / closure type
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. lambda 的本質是什麼？編譯器怎麼實作它？
+//     答：lambda 是語法糖。編譯器為每個 lambda 運算式生成一個唯一、未命名的 class
+//     （closure type）：每個捕獲成為一個 private 非靜態資料成員，函式本體成為
+//     operator()（預設為 const）。lambda 運算式本身是該型別的一個 prvalue。
+//     追問：兩個字面上完全一樣的 lambda 是同一個型別嗎？（不是，每次出現都產生
+//     獨立型別，所以彼此不能賦值，也因此才需要 auto 或 std::function 來承接）
+//
+// 🔥 Q2. 請手寫一個等價於 lambda 的 functor class。
+//     答：int x; double y; auto f = [x, &y](int a){ return x + y + a; }; 等價於一個
+//     class：int x 成員（值捕獲的副本）、double& y 成員（參考捕獲）、
+//     auto operator()(int a) const { return x + y + a; }。標準措辭是捕獲會
+//     direct-initialize 對應成員，編譯器不必真的生出一個具名建構子。
+//     追問：為什麼 operator() 預設是 const？（讓閉包在多次呼叫間不改變自身狀態；
+//     加 mutable 就移除這個 const）
+//
+// Q3. IIFE（立即呼叫的 lambda）有什麼用？
+//     答：const auto v = [&]{ ...多步驟計算...; return r; }(); 讓「要算好幾步才得到」
+//     的變數仍能宣告為 const，同時把中間暫存變數限縮在 lambda 內、不污染外層命名。
+//     編譯器通常能完全 inline，實務上零開銷。
+//
+// ⚠️ 陷阱. 可以寫 decltype(f1) g = f2; 把兩個「長得一模一樣」的 lambda 互相賦值嗎？
+//     答：不行。兩者是不同型別，而且有捕獲的閉包型別沒有賦值運算子；C++20 前連無捕獲
+//     lambda 都沒有預設建構子（C++20 起無捕獲 lambda 才可預設建構與賦值）。
+//     為什麼會錯：多數人把 lambda 想成「一種值」，而它其實是「一個匿名型別的物件」，
+//     型別身分由出現位置決定，不由簽名或內容決定。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <iostream>
 #include <string>

@@ -62,6 +62,40 @@
   - 若外部程式需要把 Derived* 轉成 Base*，public inheritance 才能自然成立；private/protected inheritance 會限制這種轉換。
   - 設計繼承時先決定語意，再選存取權限；不要先為了通過編譯改 public/protected，否則類別關係會變混亂。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】三種繼承方式與存取控制
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. public / protected / private 繼承的差別？
+//     答：決定 base 成員在 derived 中的「最高存取等級」。public 繼承 — base 的
+//         public 仍 public、protected 仍 protected（is-a 關係）；protected 繼承 —
+//         base 的 public 降為 protected；private 繼承 — 全部降為 private。
+//         只有 public 繼承允許外部把 Derived* 隱式轉成 Base*。
+//     追問：private 繼承 vs 組合（composition）該選哪個？（優先組合；只有需要覆寫
+//           base 的 virtual、或需要 empty base optimization 時才用 private 繼承）
+//
+// 🔥 Q2. protected 成員與 private 成員對子類別有什麼差別？慣例是什麼？
+//     答：private 連子類別都碰不到（本檔的 Employee::ssn_）；protected 對自己與
+//         子類別可見、對外不可見（name_ / salary_）。慣例是「能 private 就 private」
+//         —— protected 等於把內部表示公開給所有子類別，日後重構成本很高。
+//     追問：private 成員子類別看不到，代表 Derived 物件裡沒有那份資料嗎？
+//           （不是。存取控制只管「名稱能從哪裡使用」，base subobject 仍完整存在）
+//
+// Q3. 什麼是 diamond problem？virtual inheritance 如何解決？
+//     答：B、C 各自繼承 A，D 同時繼承 B、C → D 內含「兩份 A subobject」，存取 A 的
+//         成員產生 ambiguity 且浪費空間。解法是 `class B : virtual public A`、
+//         `class C : virtual public A`，讓 A 成為 virtual base，D 中只有一份共享的 A。
+//     追問：virtual base 由誰負責初始化？（由最衍生類別 D 直接呼叫 A 的 constructor；
+//           B / C 初始化列表中對 A 的初始化會被忽略）
+//
+// ⚠️ 陷阱. Derived 定義了同名函式後，Base 的其他重載還能用嗎？
+//     答：不能。derived 只要定義了同名成員函式，base 中「所有」同名重載都被隱藏
+//         （name hiding），即使參數型別完全不同。解法：在 derived 寫 `using Base::f;`
+//         把 base 的整組重載拉回 derived scope。
+//     為什麼會錯：多數人以為 overload resolution 會跨 base / derived 一起比對；
+//         實際上「名稱查找」在 derived scope 找到就停止，根本輪不到 overload resolution。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <vector>

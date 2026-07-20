@@ -55,6 +55,36 @@
   - system_clock::to_time_t 常以秒為單位，會丟失 sub-second 精度。
   - 本地時間顯示會牽涉時區；timestamp 本身是時間點，不包含使用者所在地格式。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】Unix timestamp 與 time_t 互轉
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 如何取得與還原 Unix timestamp？
+//     答：取得：對 system_clock::now().time_since_epoch() 做
+//         duration_cast<seconds>(...).count()；還原：用
+//         system_clock::time_point(seconds(secs))。也可以用 system_clock::to_time_t()
+//         與 from_time_t()。必須用 system_clock——steady_clock 的 epoch 沒有定義意義
+//         （常是開機時間），拿它算 timestamp 會得到完全錯誤的日期。
+//     追問：毫秒級的 timestamp 怎麼取？（duration_cast<milliseconds>，注意目標型別的
+//           位寬要足夠，秒級 32-bit 會在 2038 年溢位）
+//
+// 🔥 Q2. Unix time 與閏秒的關係？
+//     答：Unix time 定義上「不計閏秒」——閏秒發生時同一個秒數會重複或被跳過，所以兩個
+//         Unix timestamp 相減得到的不是真實經過的 SI 秒數。C++20 起標準明確規定
+//         system_clock 表示 Unix time 且不計閏秒；需要真實物理時間差要用 utc_clock，
+//         兩者之間以 clock_cast 轉換。
+//     追問：這在實務上會踩到嗎？（一般業務不會，但在跨閏秒的長時間間隔、時間序列
+//           資料庫、金融時間戳對齊上會）
+//
+// Q3. localtime / gmtime 在多執行緒下有什麼問題？
+//     答：std::localtime 與 std::gmtime 回傳指向「共享的靜態內部緩衝區」的指標，多個
+//         thread 同時呼叫會互相覆寫，是典型的 data race。POSIX 提供可重入的
+//         localtime_r / gmtime_r。C++20 之後更好的做法是直接用 zoned_time 與
+//         std::format，完全避開 C 的時間 API。
+//     追問：localtime 還有什麼坑？（它依賴行程層級的 TZ 設定，在伺服器上通常應該
+//           一律以 UTC 儲存與運算，只在最終顯示時才轉成本地時區）
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <chrono>
 #include <ctime>
 #include <iomanip>

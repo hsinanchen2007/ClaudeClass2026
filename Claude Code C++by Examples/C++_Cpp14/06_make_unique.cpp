@@ -41,11 +41,13 @@
 //      auto p1 = std::make_unique<MyClass>(arg1, arg2);
 //
 //      // 陣列（C++14 也支援）
-//      auto arr = std::make_unique<int[]>(10);     // int[10] 預設初始化
+//      auto arr = std::make_unique<int[]>(10);     // int[10]，元素為 value-initialization（全部歸零）
 //
 //  注意：
 //   * 沒有「make_unique 帶 deleter」版本（不像 unique_ptr 本身可帶 deleter）
-//   * 用 array 版時 size 是 runtime 給的；元素 default-init（基本型別 = 未初始化）
+//   * 用 array 版時 size 是 runtime 給的；元素是 **value-initialization**，
+//     基本型別會被歸零（本機實測：刻意弄髒 heap 後 make_unique<int[]>(16) 仍全為 0）。
+//     想要「不初始化以省成本」要用 C++20 的 std::make_unique_for_overwrite。
 //
 //  ┌────────────────────────────────────────────────────────────┐
 //  │ 四、本檔示範                                               │
@@ -67,6 +69,41 @@
   - make_unique 把 new 包起來，避免建構參數求值時發生例外造成資源洩漏。
   - make_unique<T[]> 可建立動態陣列，但多數情況 vector 仍比裸陣列更好。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::make_unique（C++14）
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 為什麼 C++11 有 make_shared 卻沒有 make_unique？
+//     答：純粹是 C++11 標準委員會的疏漏，C++14 補上——這也是最常被拿來考
+//         「標準版本分界」的一題：unique_ptr 本身是 C++11，make_unique 是 C++14。
+//         在 C++11 模式下寫 std::make_unique 會直接找不到符號。
+//     追問：那 C++11 要怎麼建？（std::unique_ptr<T> p(new T(args...));，
+//           要重複寫一次型別名，且有下一題的例外安全問題）
+//
+// 🔥 Q2. make_unique 相對「裸 new + unique_ptr」的好處是什麼？
+//     答：(1) 例外安全：f(std::unique_ptr<T>(new T), g()) 在 C++17 之前求值順序
+//         未指定，可能先 new T、再呼叫 g()，g() 拋例外時 T 還沒被接管 → 洩漏；
+//         make_unique 把配置與接管綁成單一函式呼叫，無法被插入。
+//         (2) 不必重複型別名，可直接搭配 auto。(3) 使用者程式碼裡完全不出現 new。
+//     追問：C++17 之後第 (1) 點還成立嗎？（C++17 收緊了函式引數的求值順序，
+//           這個特定洩漏被堵住，但 make_unique 的簡潔與一致性仍是主要理由）
+//
+// Q3. make_unique<T[]>(n) 建出來的元素有初始化嗎？
+//     答：有——標準規定它等價於 new T[n]()，是 value-initialization，
+//         所以 int 會被歸零。這一點跟自己寫 new int[n]（無括號、default-init、
+//         內建型別是未定值）不同，本機實測前者全 0、後者是垃圾值。
+//         若確定要「不初始化以省成本」，那是 C++20 的 make_unique_for_overwrite。
+//
+// ⚠️ 陷阱. make_unique 是不是也像 make_shared 一樣「只配置一次記憶體」？
+//     答：不是。make_shared 的單次配置優勢來自「把物件與控制區塊放進同一塊記憶體」，
+//         而 unique_ptr 根本沒有控制區塊（獨佔所有權、不需引用計數），
+//         所以 make_unique 就是一次普通的 new，沒有任何配置次數上的好處。
+//         它也不支援自訂 deleter——要 deleter 只能寫 unique_ptr<T, D> p(new T, d)。
+//     為什麼會錯：兩個工廠函式名字對稱、常被並列教學，很容易把 make_shared 的
+//         優點整組平移過來。反過來說，make_shared 的「延後釋放」缺點
+//         （只要還有 weak_ptr，整塊含物件本體的記憶體都不釋放）也同樣不適用於此。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <memory>
 #include <string>

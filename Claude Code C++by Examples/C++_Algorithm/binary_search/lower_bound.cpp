@@ -100,6 +100,45 @@
   - 比較器必須和排序時使用的規則一致；用不同規則搜尋同一批資料，結果會像資料沒排序一樣不可信。
   - 在 vector 上 iterator 相減可得到索引，在 list 上不行；iterator category 會影響你能不能做 O(1) 距離計算。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::lower_bound
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. lower_bound、upper_bound、equal_range 的差別?
+//     答:三者都要求區間已依同一準則排序(嚴格說是對該述詞已 partitioned)。
+//         lower_bound 回傳第一個 >= value 的位置;upper_bound 回傳第一個 > value
+//         的位置;equal_range 一次回傳 {lower_bound, upper_bound}。
+//         「等於 value 的元素個數」= upper_bound - lower_bound。
+//         lower_bound 的位置同時也是「插入 value 後仍保持有序」的最左插入點。
+//     追問:找不到 value 時 lower_bound 回傳什麼?
+//           (答:第一個大於 value 的位置,或 last — 見下方陷阱)
+//
+// 🔥 Q2. 複雜度是 O(log N) 嗎?對 std::list 呢?
+//     答:要分「比較次數」與「總時間」。比較次數恆為 O(log N)。
+//         但只有 random access iterator 能 O(1) 跳到中點,總時間才是 O(log N);
+//         對 std::list 這種 bidirectional iterator,跳中點要一步步 ++,
+//         iterator 前進的總步數是 O(N),總時間因此退化成 O(N)。
+//     追問:那 lower_bound 最低需要哪種 iterator?
+//           (答:LegacyForwardIterator 即可,所以 forward_list 也能編譯過,只是慢)
+//
+// ⚠️ 陷阱1. 為什麼不該對 std::set 用 std::lower_bound?
+//     答:因為通用演算法版本會退化。std::lower_bound 的比較次數雖是 O(log N),
+//         但 set 的 iterator 只是 bidirectional,每次「跳到中點」都得一步步走,
+//         iterator 前進總次數是 O(N);而成員函式 set::lower_bound() 直接沿紅黑樹
+//         下降,是真正的 O(log N)。通則:關聯容器一律優先用同名成員函式。
+//     為什麼會錯:大家記得的是「二分搜尋 = O(log n)」,卻忘了那句話成立的前提
+//         是「能 O(1) 定址中點」。同理 std::find 對 set 是 O(n)、set::find() 才是
+//         O(log n);std::count 對 set 也是同樣的退化。
+//
+// ⚠️ 陷阱2. it != end() 就代表找到了嗎?
+//     答:不代表。lower_bound 回傳的是「第一個不小於 value」的位置,value
+//         不存在時它會指向下一個更大的元素 — 這是合法且有意義的插入點,
+//         不是 end()。必須額外檢查:it != v.end() && *it == value。
+//     為什麼會錯:大家把它類比成 std::find / map::find 的「找不到就回 end()」
+//         慣例,但 lower_bound 的語意是「邊界」不是「查詢」,只有在 value
+//         大於所有元素時才會回 end()。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <iostream>
 #include <vector>

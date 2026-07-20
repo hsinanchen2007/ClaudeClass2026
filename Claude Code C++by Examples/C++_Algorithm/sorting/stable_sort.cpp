@@ -116,6 +116,37 @@
   - std::stable_sort 呼叫後元素位置可能改變；若其他資料結構保存索引或指向元素的 iterator，要重新檢查關聯是否仍正確。
   - std::stable_sort 的選擇要看需求：完整排序用 sort/stable_sort，只要第 N 名用 nth_element，只要前 K 名用 partial_sort。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::stable_sort
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. sort 和 stable_sort 的差別?為什麼複雜度不一樣?
+//     答:stable_sort 保證等價元素 (comparator 判定「不分先後」的元素) 的相對
+//         順序與輸入相同,std::sort 不保證。複雜度也不同:stable_sort 在能取得
+//         額外記憶體時是 O(n log n) (典型為 merge sort),無法配置額外記憶體時
+//         退化為 O(n log² n) 的 in-place merge;std::sort 恆為 O(n log n) 且
+//         不配置額外記憶體,常數通常較小。
+//     追問:什麼時候非用 stable_sort 不可?
+//           (等價元素的原順序本身就帶有資訊時;若等價即不可區分,
+//            例如純整數,用 sort 即可)
+//
+// 🔥 Q2. 多鍵排序 (multi-key sort) 怎麼用 stable_sort 做?
+//     答:由「最次要的鍵」往「最主要的鍵」依序 stable_sort。因為 stable_sort
+//         不會破壞先前已建立的順序,前一輪的結果自動成為後一輪的 tie-breaker。
+//         例如要 (班級↑, 分數↓) 排:先 stable_sort 分數,再 stable_sort 班級。
+//     追問:一次 sort 配複合 comparator 也做得到嗎?
+//           (做得到,而且通常更快 — 在 comparator 裡直接比較 tie-breaker,
+//            安全寫法是 std::tie(a.k1, a.k2) < std::tie(b.k1, b.k2);
+//            多階段 stable_sort 的價值在於排序鍵是動態決定的場合)
+//
+// ⚠️ 陷阱. 「穩定」是不是代表元素不會被搬動、iterator 仍指向原本的元素?
+//     答:不是。stable_sort 保證的只是「等價元素之間的先後關係」不變,元素的
+//         值一樣會在容器裡整批搬移。和 std::sort 一樣:iterator 沒有失效
+//         (記憶體未重新配置),但它指向的內容已經換人。
+//     為什麼會錯:把 stable 誤讀成「元素不動 / 引用穩定」;
+//         stable 只描述等價元素的相對次序,與 iterator 指向哪個元素無關。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <iostream>
 #include <string>

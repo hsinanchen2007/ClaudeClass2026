@@ -52,6 +52,32 @@
   - std::has_single_bit(x) 比 x && !(x & (x - 1)) 更直接表達 power-of-two 判斷。
   - <bit> 函式多半要求 unsigned integer；傳入 signed 值前先確認轉型語意。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】<bit> header（C++20）
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. C++20 的 <bit> 提供哪些函式？有什麼共同限制？
+//     答：popcount（set bit 個數）、countl_zero／countl_one（從最高位起連續 0／1 的
+//     個數）、countr_zero／countr_one（從最低位起）、has_single_bit（是否為 2 的冪）、
+//     bit_width（表示 x 所需的位數，x == 0 回 0）、bit_ceil／bit_floor（不小於／不大於
+//     x 的 2 的冪）、rotl／rotr（循環位移）、bit_cast、以及 std::endian。共同限制是：
+//     引數必須是 unsigned integer type（不含 bool、char、char8_t 等）。全部 constexpr，
+//     且通常直接映射到 POPCNT／LZCNT／TZCNT／ROL 等硬體指令。
+//     追問：為什麼 std::popcount(5) 編譯失敗？（5 是 int，constraint 要求無號型別；
+//     要寫 std::popcount(5u) 或 static_cast<unsigned>(n)）
+//
+// 🔥 Q2. std::rotl 相對手寫 (x << s) | (x >> (N - s)) 的優勢是什麼？
+//     答：手寫版在 s == 0 時會變成 x >> N（例如 32 位型別的 x >> 32），而「位移量 >=
+//     型別寬度」在任何標準版本都是 UB——這個邊界條件極容易漏掉，而且平常測試不會踩到。
+//     std::rotl／rotr 對任意 s 都良好定義，s 為負數代表反向旋轉，也不是 UB。
+//
+// Q3. std::popcount 和 __builtin_popcount／_mm_popcnt_u32 差在哪？
+//     答：__builtin_popcount 是 GCC/Clang 擴充、不可攜（MSVC 用 __popcnt）；
+//     _mm_popcnt_u32 是 intrinsic，需要 CPU 支援且要開對應的編譯旗標，在不支援的機器上
+//     會是非法指令。std::popcount 是標準、constexpr、可攜的，實作會在硬體支援時使用
+//     POPCNT 指令、否則退回軟體實作。現代 C++ 一律優先用 std::popcount。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #if __cplusplus >= 202002L
 #  include <bit>

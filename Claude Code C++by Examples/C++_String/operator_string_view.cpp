@@ -137,6 +137,36 @@
   - 若只是傳入唯讀文字片段且不需要擁有資料，std::string_view 可避免複製；但它不能延長原字串生命週期。
   - 處理中文或 UTF-8 時，std::string 的 size() 回傳 byte 數，不是人眼看到的字元數。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::string::operator string_view (隱式轉換)
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. std::string 為什麼提供「隱式」轉換到 string_view?
+//     答：C++17 起 basic_string 有 operator basic_string_view() const noexcept,
+//         而且**沒有** explicit。所以任何吃 string_view 的函式都能直接收
+//         std::string,不必手寫 static_cast。轉換本身只複製「指標 + 長度」,
+//         O(1)、不配置、不複製任何字元。
+//     追問：那反方向 string_view → string 為什麼要 explicit?
+//         → 那是會配置記憶體的深複製,隱式做太容易寫出看不見的成本。
+//
+// 🔥 Q2. 這個隱式轉換安全嗎?
+//     答：轉換動作本身安全 (O(1)、noexcept),但產生的 view 生命週期綁在
+//         來源 string 身上。只要來源是具名、活著的 string,而 view 只在
+//         呼叫期間使用,就沒問題;一旦把 view 存起來或帶出來源的作用域,
+//         就是 dangling。來源被 append/resize 而重新配置時同樣失效。
+//     追問：為什麼 f(std::string_view) 收字面量比 f(const std::string&) 快?
+//         → 後者要為 const char* 隱式建構一個臨時 std::string (可能 heap
+//           配置),前者只是包一組指標與長度。
+//
+// ⚠️ 陷阱. std::string_view sv = getName();  (getName 回傳 std::string by value)
+//     答：隱式轉換讓它順利編譯,但那個臨時 std::string 在完整表達式結束時
+//         就解構 → sv 立即 dangling,之後每次讀取都是 UB。
+//     為什麼會錯：轉換是隱式的,編譯器不會擋;而 const std::string& r =
+//         getName(); 卻是**合法**的 (const reference 延長臨時物件生命週期)。
+//         這個「引用會延長、view 不會」的不對稱正是最愛考的點。
+//         GCC/Clang 的 -Wdangling-gsl 能抓到部分這類情形。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <string_view>

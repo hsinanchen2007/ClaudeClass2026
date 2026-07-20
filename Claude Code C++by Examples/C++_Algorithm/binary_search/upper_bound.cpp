@@ -90,6 +90,38 @@
   - 比較器必須和排序時使用的規則一致；用不同規則搜尋同一批資料，結果會像資料沒排序一樣不可信。
   - 在 vector 上 iterator 相減可得到索引，在 list 上不行；iterator category 會影響你能不能做 O(1) 距離計算。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::upper_bound
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. upper_bound 和 lower_bound 差在哪?兩者怎麼合用?
+//     答:lower_bound 回傳第一個 >= value 的位置,upper_bound 回傳第一個
+//         > value(嚴格大於)的位置 — 差別只在 value 本身算不算進去。
+//         合用時 [lower_bound(v), upper_bound(v)) 就是所有等於 v 的元素,
+//         個數 = upper - lower;若兩者相等即代表 v 不存在。
+//         若兩個邊界都要,直接用 equal_range 語意更清楚。
+//     追問:那「插入」該用哪一個?
+//           (答:要插在既有相等元素之前用 lower_bound,插在其後用 upper_bound;
+//            後者能維持先來後到的群組順序)
+//
+// 🔥 Q2. 複雜度?對非 random access iterator 呢?
+//     答:比較次數是 O(log N),但總時間只有在 random access iterator 上
+//         才是 O(log N)。對 std::list 這類 bidirectional iterator,跳中點得
+//         逐步 ++,iterator 前進總步數是 O(N),整體退化為 O(N)。
+//         最低需求是 LegacyForwardIterator;範圍必須依同一 comp 已排序,否則 UB。
+//     追問:對 std::multiset 呢?
+//           (答:改用成員 multiset::upper_bound(),沿樹下降才是真正的 O(log N))
+//
+// ⚠️ 陷阱. upper_bound(v) 回傳的是「最後一個等於 v 的位置」嗎?
+//     答:不是。它回傳的是「第一個大於 v」的位置,也就是最後一個 v 的
+//         再下一格 — 是半開區間的右端,可能等於 last。想拿「最後一個等於 v」
+//         必須先確認 hi != begin 才能 --hi,而且還要驗證 *(hi-1) == v,
+//         因為 v 不存在時 hi-1 指到的是「最後一個小於 v 的元素」。
+//     為什麼會錯:「lower/upper」的字面像是「下界/上界」這組對稱詞,直覺會
+//         腦補成「第一個 v / 最後一個 v」。實際上兩者回傳的都是「邊界位置」,
+//         且都遵守 STL 半開區間 [first, last) 的慣例 — 右端一律是「超過尾端」。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <iostream>
 #include <vector>

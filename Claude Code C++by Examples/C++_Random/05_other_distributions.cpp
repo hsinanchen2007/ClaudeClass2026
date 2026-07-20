@@ -53,6 +53,36 @@
   - distribution 可能保存內部 cache，例如 normal_distribution；重設狀態可用 reset()。
   - 模擬程式要把模型參數寫清楚，否則亂數看似合理但統計意義錯誤。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】其他常用分佈
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 標準提供哪些常用分佈？各用在什麼場景？
+//     答：bernoulli_distribution（以機率 p 回傳 true，用於「要不要發生」）、
+//         binomial_distribution（n 次獨立試驗的成功次數）、poisson_distribution
+//         （單位時間內的事件數，如請求到達）、normal_distribution（常態，量測誤差、
+//         雜訊）、exponential_distribution（事件間隔時間）、discrete_distribution
+//         （依權重挑索引，見 LC 528）。選錯分佈比寫錯程式更難發現，模擬前務必先確定
+//         你要的機率模型。
+//     追問：poisson 與 exponential 的關係？（同一個過程的兩種視角：前者看「單位時間
+//           內幾次」，後者看「兩次之間隔多久」）
+//
+// 🔥 Q2. distribution 是有狀態的嗎？有什麼實務影響？
+//     答：是。operator() 不是 const，因為 distribution 可以快取內部狀態。最典型的是
+//         normal_distribution：常見實作一次計算會產生「兩個」獨立的常態值，把第二個
+//         快取起來下次直接回傳。實務影響：(1) 不能宣告成 const；(2) 每次呼叫都重建
+//         distribution 會丟掉快取，效能變差；(3) 想重現結果時只 reseed engine 不夠，
+//         還要呼叫 dist.reset() 清掉快取；(4) 複製 distribution 會連狀態一起複製。
+//     追問：什麼時候該呼叫 reset()？（切換 engine、重新 seed、或需要嚴格重現時）
+//
+// Q3. 要「依權重隨機挑一個」有哪些做法？
+//     答：最直接是 std::discrete_distribution，傳入權重即可。手寫則是建 prefix sum
+//         陣列 + 二分搜尋：建構 O(n)、查詢 O(log n)。若查詢極頻繁且權重固定，可用
+//         Alias Method 做到查詢 O(1)，代價是額外空間與較複雜的建構。
+//     追問：權重會動態變動怎麼辦？（用 Fenwick tree 維護 prefix sum，更新與查詢
+//           都是 O(log n)）
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <cmath>
 #include <iomanip>
 #include <iostream>

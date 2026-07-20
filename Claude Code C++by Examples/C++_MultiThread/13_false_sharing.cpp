@@ -165,6 +165,36 @@
   - 修 false sharing 前要先用 profiler 或對照實驗確認瓶頸；它常見但不是所有多執行緒慢速的原因。
 */
 
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】False sharing 與 cache line
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 什麼是 false sharing？如何解決？
+//     答：兩個 thread 各自寫入「邏輯上無關」的變數，但它們落在同一條 cache line 上。
+//         由於 cache 一致性協定（MESI）以 cache line 為單位，每次寫都會使對方 core 的
+//         該 line 失效，造成來回搬運（ping-pong），效能可能掉數倍。解法：用
+//         alignas(std::hardware_destructive_interference_size)（C++17）或保守的
+//         alignas(64) 把熱點變數各自對齊到獨立 cache line；或加 padding；或最徹底的
+//         ——改成 thread-local 累加、最後才合併。
+//     追問：如何確認真的是 false sharing？（perf c2c、perf stat 看 cache-miss，或把
+//           padding 加上去看是否變快）
+//
+// 🔥 Q2. cache line 是 64 bytes 嗎？
+//     答：x86-64 與多數目前常見的平台上是 64 bytes，但這是「硬體／實作定義」的值，
+//         C++ 標準並未規定。標準提供的是
+//         std::hardware_destructive_interference_size（C++17）作為可攜的查詢方式，
+//         應該用它而不是硬編數字。
+//     追問：destructive 與 constructive interference size 差在哪？（前者是「要分開的
+//           最小距離」，後者是「可放在一起共享的最大範圍」）
+//
+// ⚠️ 陷阱. struct { std::atomic<long> a; std::atomic<long> b; }; 兩個 thread 各自狂寫
+//     a 和 b，為什麼可能比單執行緒還慢？
+//     答：False sharing。a 與 b 相鄰、共 16 bytes，必定落在同一條 64-byte cache line。
+//         兩個 core 各自寫入時 MESI 不斷讓對方失效，每次寫都變成跨核同步（數十到上百
+//         cycle）。邏輯上完全正確、也沒有 data race，但硬體層面它們在爭用同一個資源。
+//     為什麼會錯：大家的心智模型停在「不同變數 = 互不干擾」，只檢查了正確性層面的
+//         獨立性，忽略了記憶體是以 cache line 為單位在核心之間搬運的。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <thread>
 #include <atomic>

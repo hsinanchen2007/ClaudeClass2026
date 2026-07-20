@@ -144,6 +144,35 @@
   - 若只是傳入唯讀文字片段且不需要擁有資料，std::string_view 可避免複製；但它不能延長原字串生命週期。
   - 處理中文或 UTF-8 時，std::string 的 size() 回傳 byte 數，不是人眼看到的字元數。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::string 的比較運算子
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. std::string 的 < 到底是怎麼比的?
+//     答：字典序 (lexicographical) 逐位元組比較,底層走
+//         char_traits<char>::compare (memcmp 語意,以 unsigned char 比較)。
+//         結果是**位元組序**,不是任何語言的字母序;UTF-8 中文字串比出來
+//         的是 byte 大小關係,和字典排序無關。
+//     追問：那要做語言相關的排序怎麼辦?
+//         → 標準庫只有 std::locale / collate 的有限支援,實務上用 ICU。
+//
+// 🔥 Q2. C++20 的 operator<=> 改變了什麼?
+//     答：C++20 起 basic_string 提供 operator== 與 operator<=>
+//         (three-way comparison),編譯器由這兩個自動合成 <、<=、>、>=,
+//         原本要手寫的六個運算子縮成兩個。對 std::string 而言,<=> 回傳
+//         的是 std::strong_ordering。
+//     追問：既然有 <=>,為什麼 == 還要單獨保留?
+//         → == 可以先比長度,不等就直接 false;走 <=> 得真的逐位元組比,
+//           留獨立的 == 是為了這個短路優化。
+//
+// ⚠️ 陷阱. std::string 的比較會受目前 locale 影響嗎?
+//     答：**不會**。它固定是 char_traits 的位元組比較,和 setlocale 設什麼
+//         完全無關。要 locale-aware 的比較,得用 std::collate 或 ICU。
+//     為什麼會錯：把它和 C 的 strcoll 混為一談 —— strcoll 才是 locale-aware
+//         的排序比較,strcmp 與 std::string 的 </== 都不是。很多人看到
+//         程式在不同機器排序結果不同,誤以為是 locale,其實是編碼不同。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <vector>

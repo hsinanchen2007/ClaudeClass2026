@@ -90,6 +90,37 @@
   - shared_ptr 的 control block 很重要；不要用同一裸指標建立多個 shared_ptr。
   - custom deleter 用於 FILE*、C API handle、特殊釋放函式；deleter 型別也會影響 unique_ptr 型別大小。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::weak_ptr
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 什麼是循環引用（circular reference）？weak_ptr 怎麼打破它？
+//     答：A 持有 shared_ptr<B>、B 持有 shared_ptr<A> 時，兩邊的 strong count 永遠不會
+//         降到 0 → 記憶體洩漏，而且 destructor 永不執行。解法是把其中一邊（通常是
+//         反向邊／parent／observer 那一邊）改成 weak_ptr，需要用時 lock() 取得一個
+//         暫時的 shared_ptr。
+//     追問：parent/child 樹狀結構怎麼設計？（parent 持 child 的 shared_ptr、child 持
+//         parent 的 weak_ptr —— 本檔的 TreeNode 就是這個結構）
+//
+// 🔥 Q2. weak_ptr 為什麼沒有 operator* / operator->？
+//     答：它觀察的物件隨時可能消失，直接解引用無法保證安全，所以標準根本不提供這兩個
+//         運算子。必須呼叫 lock()：它以原子操作嘗試提升為 shared_ptr，物件還活著就
+//         回傳有效的 shared_ptr（strong count +1），已死則回傳空的 shared_ptr。
+//
+// Q3. weak_ptr 會延長什麼東西的壽命？
+//     答：不延長「物件」的壽命（strong count 才決定物件生死），但會延長「control
+//         block」的壽命（weak count 決定 control block 生死）。這正是物件死後
+//         expired() 仍能正確回報的原因 —— 計數器還在。副作用：make_shared 的
+//         「物件 + control block 同一塊」會讓物件記憶體被 weak_ptr 卡住無法歸還。
+//
+// ⚠️ 陷阱. if (!wp.expired()) { auto sp = wp.lock(); ... } 有什麼問題？
+//     答：TOCTOU race —— 在「檢查」與「lock」這兩個動作之間，物件可能已被別的執行緒
+//         銷毀。正確寫法是直接 if (auto sp = wp.lock()) { ... }，把「檢查 + 提升」
+//         合成單一原子動作。
+//     為什麼會錯：直覺把 expired() 當成防呆檢查，但它回傳的只是一個瞬間快照，下一行
+//         就可能失效；真正提供存活保證的是 lock() 拿到的那個 shared_ptr 本身。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <memory>
 #include <vector>

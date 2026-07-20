@@ -65,6 +65,37 @@
   - structured binding 會把 pair、tuple、array 或有對應介面的 struct 拆成多個名字。
   - auto [a,b] 預設可能複製元素；要修改原資料應寫 auto& [a,b]。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】structured bindings
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. structured bindings 到底綁定到什麼？
+//     答：編譯器先產生一個隱藏的未命名變數 e，auto / auto& / const auto& 這些
+//         修飾其實是套在 e 上，不是套在 a、b 上。
+//         a、b 本身不是獨立變數，而是「指涉 e 之子物件」的名字。
+//     追問：auto [a,b] = p; 會不會複製？（會，e 是 p 的副本）
+//
+// 🔥 Q2. structured bindings 支援哪三種情況？
+//     答：① 原生陣列：逐元素綁定，數量須完全相符。
+//         ② tuple-like：型別特化了 std::tuple_size<E>，則以 std::tuple_element<i,E>
+//            決定型別，取值走成員 e.get<i>() 或 ADL 的 get<i>(e)。
+//         ③ 所有 non-static data member 皆為 public 且同屬一個 class。
+//     追問：只有 private 成員的 class 可以嗎？
+//           （不行，除非自行特化 tuple_size / tuple_element / get）
+//
+// ⚠️ 陷阱1. auto [a,b] = std::pair<int,double>{}; 之後 decltype(a) 是參考嗎？
+//     答：不是。decltype(a) 給的是「被指涉的型別」，tuple-like 情形等於
+//         std::tuple_element<0,E>::type，所以是 int 而非 int&。
+//     為什麼會錯：多數人知道底層一定引入了隱藏參考，就以為 decltype 會反映出來；
+//         但 a 不是變數而是名字，decltype 對它有特殊規則。
+//
+// ⚠️ 陷阱2. structured binding 的名字可以被 lambda 捕獲嗎？
+//     答：C++17 不行（它們不是變數，標準明文禁止捕獲）；C++20 起放寬，允許捕獲。
+//         C++17 的變通：先 auto x = a; 複製到真正的變數，再捕獲 x。
+//     為什麼會錯：它們用起來就像一般區域變數，於是同一段程式 C++17 編不過、
+//         C++20 卻能過，是典型的版本陷阱。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <map>
 #include <tuple>

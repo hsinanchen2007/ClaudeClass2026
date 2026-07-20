@@ -154,6 +154,41 @@
   - thread 生命週期要明確 join 或 detach；std::jthread 以 RAII 方式在解構時 request_stop 並 join，較不容易漏掉。
   - 效能問題如 false sharing、contention、過度建立 thread，通常在正確性之後才調整；先寫對，再量測。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::thread 基礎：建立、join/detach、參數傳遞
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. Thread 與 Process 的差別？
+//     答：Process 是資源配置單位，擁有獨立虛擬位址空間、page table、fd table；
+//         Thread 是 CPU 排程單位，同一 process 內共享 code/data/heap/fd，但各自
+//         擁有 stack、暫存器與 thread_local。所以 thread 間通訊直接讀寫共享記憶體
+//         （快但需同步），process 間必須走 IPC。Linux 底層兩者都是 task_struct。
+//     追問：為什麼一個 thread segfault 會拖垮整個 process？
+//
+// 🔥 Q2. join() 與 detach() 差在哪？兩個都不呼叫會怎樣？
+//     答：join() 阻塞當前 thread 直到目標結束並回收資源；detach() 讓它在背景獨立
+//         執行，std::thread 物件與其脫鉤、變成 non-joinable。兩個都不呼叫：解構時
+//         若仍 joinable()，會呼叫 std::terminate() 直接中止程式。這是刻意設計——
+//         隱式 join 會讓解構點意外阻塞，靜默 detach 則導致懸空存取，都比崩潰危險。
+//     追問：joinable() 何時回 false？（預設建構、已 join、已 detach、已被 move 走）
+//
+// 🔥 Q3. detach() 最大的風險是什麼？
+//     答：生命週期不再受控。detached thread 若捕捉了區域變數的參考／指標，而建立它
+//         的函式已返回，就是懸空存取（UB）；更隱蔽的是 main() 返回後 static 物件
+//         開始解構、runtime 開始收尾，detached thread 仍在跑。標準沒有任何機制讓你
+//         等待 detached thread。
+//     追問：真要 fire-and-forget 怎麼做？（改用 thread pool，或 jthread + stop_token
+//           並在 shutdown 時明確等待）
+//
+// ⚠️ 陷阱. void f(int&); 為什麼 std::thread t(f, x); 編譯不過？
+//     答：std::thread 建構子對每個參數做 decay-copy（decay 後複製／移動到執行緒自己
+//         的儲存空間），再以「右值」傳給可呼叫物件——右值綁不到非 const 左值參考。
+//         必須寫 std::ref(x) 包成 reference_wrapper，並自行保證 x 活得比 thread 久。
+//     為什麼會錯：多數人腦中的模型是「參數照函式簽章原樣轉發」，實際上是先值複製
+//         一份。同理把 const char* 傳給收 std::string 的函式，字串轉換發生在「新
+//         執行緒中」，若原字串已銷毀就是 UB —— 應直接傳 std::string。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>   // std::cout
 #include <thread>     // std::thread, C++11 引入的執行緒類別
 #include <chrono>     // std::chrono::milliseconds, 給 sleep_for 使用

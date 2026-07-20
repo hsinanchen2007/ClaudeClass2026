@@ -62,6 +62,35 @@
   - range-based for 會呼叫 begin/end；容器在迴圈中被修改時要小心 iterator 失效。
   - for (auto x : v) 會複製元素，修改 x 不會改容器；要修改元素應寫 auto&。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】range-based for
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. range-based for 實際展開成什麼？
+//     答：大致是 `auto&& __r = range;` 取得 `__b = begin(__r)`、`__e = end(__r)`，
+//         再 `for (; __b != __e; ++__b) { 宣告 = *__b; body }`。所以自訂型別
+//         只要提供 begin()/end() 就能被 range-for 走訪（見本檔 CountUp）。
+//     追問：begin 與 end 可以是不同型別嗎？（C++11/14 要求兩者同型別；
+//         C++17 起才放寬允許 sentinel，這是很常被追打的版本分界）
+//
+// 🔥 Q2. `auto x`、`auto& x`、`const auto& x` 三種寫法怎麼選？
+//     答：`auto x` 每輪都拷貝一份元素，改它不影響容器；`auto& x` 取參考、可就地
+//         修改；`const auto& x` 唯讀且免拷貝。元素便宜（int）用第一種無妨，元素
+//         貴（string、vector）一律用 const auto&。
+//     追問：那 `std::vector<bool>` 為什麼不能用 `auto&`？（operator[] 回傳的是
+//         proxy 暫時物件，非 const 左值參考綁不上去，本機 g++ 實測即編譯錯）
+//
+// ⚠️ 陷阱. `for (auto x : getObj().items())` 安全嗎？（items() 回傳成員容器的參考）
+//     答：不安全，是懸垂存取。被 `auto&& __r` 延長壽命的，只有「__r 直接綁定的
+//         那個臨時物件」；這裡 __r 綁到的是 items() 回傳的參考，而 getObj() 產生
+//         的臨時物件在該完整運算式結束時就被銷毀，迴圈是在對已死物件的成員迭代。
+//         本機以 -fsanitize=address 實測，確實報 stack-use-after-scope。
+//     為什麼會錯：大家記得「range-for 會幫我延長臨時物件的壽命」，卻沒注意到被
+//         延長的只有 __r 綁的那一個。`for (auto x : getVector())` 是安全的（__r
+//         直接綁到那個臨時 vector）。保險寫法：先 `auto obj = getObj();`，
+//         把物件實際留在具名區域變數裡，再迭代 `obj.items()`。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <vector>

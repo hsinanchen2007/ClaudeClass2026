@@ -96,6 +96,44 @@
   - 在建構子中呼叫 shared_from_this 通常會失敗，因為 control block 尚未把 weak_this 接好。
   - 不要同時用裸 this 建立新的 shared_ptr；這會產生第二個 control block 並導致 double delete。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::enable_shared_from_this
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. enable_shared_from_this 解決什麼問題？
+//     答：成員函式裡只有 this（一個裸指標），若寫 return shared_ptr<T>(this); 會建立
+//         「第二個獨立的 control block」，兩邊各自計數歸零 → 物件被 delete 兩次（UB）。
+//         繼承 enable_shared_from_this<T> 後，物件內嵌一個 weak_this，在第一次被
+//         shared_ptr 接管時由 shared_ptr 的 constructor 初始化；之後
+//         shared_from_this() 回傳的就是共用「同一個 control block」的 shared_ptr。
+//
+// 🔥 Q2. 為什麼必須是 public 繼承？
+//     答：shared_ptr 的 constructor 靠 trait 偵測「T 是否繼承自
+//         enable_shared_from_this」，private/protected 繼承從外部偵測不到 → weak_this
+//         靜默不會被初始化 → 之後 shared_from_this() 失敗。這種 bug 特別難查，因為
+//         它完全不會有編譯錯誤。
+//
+// 🔥 Q3. 在 constructor 裡呼叫 shared_from_this() 會怎樣？
+//     答：拋出 std::bad_weak_ptr（C++17 起為定義行為；C++17 之前是 UB）。因為
+//         weak_this 是在物件建構完成、被 shared_ptr 接管的那一刻，才由 shared_ptr 的
+//         constructor 填入，constructor 執行期間它還是空的。解法：把需要它的邏輯移到
+//         建構後的 init()，並用 static factory 把這兩步包起來（本檔 Widget::create）。
+//     追問：在 destructor 裡呼叫呢？（同樣失敗 —— 此時 strong count 已歸零，
+//         lock() 拿不到）
+//
+// Q4. C++17 的 weak_from_this() 什麼時候用？
+//     答：它回傳內嵌 weak_this 的副本。好處是物件「尚未被 shared_ptr 管理」時不會拋
+//         例外，只是回傳一個 expired 的 weak_ptr，呼叫端用 lock() 檢查即可。當
+//         callback 只想觀察、不想延長物件壽命時就該用它（本檔 Listener / Worker）。
+//
+// ⚠️ 陷阱. 對 stack 上的物件呼叫 shared_from_this() 會怎樣？
+//     答：拋 std::bad_weak_ptr（C++17 起）。stack 物件、只用裸指標持有的物件、被
+//         unique_ptr 管理的物件，都不符合「由 shared_ptr 擁有」這個前提。
+//     為什麼會錯：以為「只要有繼承 enable_shared_from_this 就能用」，但真正的前提是
+//         物件已被 shared_ptr 接管。所以這種 class 應該用 factory 強制「只能以
+//         shared_ptr 建立」。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <memory>
 #include <string>

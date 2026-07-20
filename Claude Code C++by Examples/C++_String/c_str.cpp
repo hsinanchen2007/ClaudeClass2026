@@ -105,6 +105,43 @@
   - 若只是傳入唯讀文字片段且不需要擁有資料，std::string_view 可避免複製；但它不能延長原字串生命週期。
   - 處理中文或 UTF-8 時，std::string 的 size() 回傳 byte 數，不是人眼看到的字元數。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::string::c_str
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. c_str() 和 data() 有什麼差別?
+//     答:C++11 起兩者對 const string 完全等價,都回傳 null-terminated 的
+//         const char*,且 data()[size()] == '\0' 是標準保證。差別只剩:
+//         C++17 起 data() 多了一個非 const overload(回傳 char*),
+//         c_str() 則永遠只有 const 版本。
+//     追問:C++98 呢?→ 當年只有 c_str() 保證 null 結尾,data() 不保證,
+//         這是老教材與老面試題的來源。
+//
+// 🔥 Q2. 為什麼跨 C API 邊界要傳 const char*(或指標+長度),而不是 std::string?
+//     答:std::string 的佈局是實作細節,跨 .so/DLL 邊界傳它會綁死編譯器、
+//         標準庫版本與編譯旗標(GCC 5 的 Dual ABI、_GLIBCXX_USE_CXX11_ABI
+//         就是經典事故)。C API 只認「以 '\0' 結尾的 char 陣列」,
+//         c_str() 就是把 string 轉成這個共同語言的標準介面。
+//     追問:那 string_view 可以直接傳給 printf("%s") 嗎?→ 不行,
+//         string_view 不保證 null-terminated,要先轉成 std::string。
+//
+// 🔥 Q3. c_str() 回傳的指標什麼時候失效?
+//     答:任何可能重新配置或修改字串的操作之後都算失效:append、+=、
+//         push_back、insert、erase、resize、reserve、shrink_to_fit、賦值等。
+//         典型 bug:const char* p = s.c_str(); s += "x"; 之後再用 p → dangling。
+//     追問:那該怎麼安全使用?→ 拿到就馬上用完,不要存起來跨越任何修改;
+//         需要長期持有就自己複製一份 std::string。
+//
+// ⚠️ 陷阱.「std::string 內部沒有 '\0' 結尾」—— 對還是錯?
+//     答:對現代 C++ 而言是錯的。自 C++11 起標準保證 buffer 在 [0, size()]
+//         範圍有效且 data()[size()] == '\0',所以內部確實是 null-terminated。
+//         正確的說法是「std::string 不『依賴』'\0' 判斷長度」(長度由 size()
+//         決定),因此它能合法存放內含 '\0' 的資料 —— 但尾端那個 '\0' 是有的。
+//     為什麼會錯:把「不依賴 '\0'」誤記成「沒有 '\0'」。這題常以反向提問
+//         出現(面試官說「string 沒有 \0 結尾對吧?」),要能指出 C++11 之後
+//         的正確語意。順帶一提:字串中間若含 '\0',傳給 C API 仍會被截斷。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <cstdio>

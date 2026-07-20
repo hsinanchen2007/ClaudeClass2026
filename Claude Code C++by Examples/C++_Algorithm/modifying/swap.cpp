@@ -118,6 +118,35 @@
   - move algorithm 會把元素搬到目的地，來源仍有效但值可能改變；後續只能重新指定或安全銷毀。
   - shuffle/sample 需要亂數引擎；不要每次呼叫都用同一個固定種子，除非你刻意要可重現測試結果。
 */
+
+// ===========================================================================
+// 【面試題】std::swap
+// ---------------------------------------------------------------------------
+// 🔥 Q1. 標準容器的 swap 複雜度是多少?
+//     答:O(1)。因為只交換內部的指標、size、capacity 等成員,元素本身完全不動。
+//         唯一的例外是 std::array——它的元素實際存在物件內部,沒有指標可換,
+//         所以是 O(n),逐元素 swap。
+//     追問:那 std::array 為什麼不能做到 O(1)?
+//
+// 🔥 Q2. 容器 swap 之後,原本的 iterator / reference 會失效嗎?
+//     答:不會失效,但「換了主人」。C++11 明確規定 swap 不會使 iterator、reference、
+//         pointer 失效,它們仍指向原本那些元素——只是那些元素現在屬於另一個容器了。
+//         例外是 end() iterator,它不保證有效。這也是 swap trick
+//         (用 vector<T>(v).swap(v) 收縮 capacity)能成立的基礎。
+//
+// Q3. 通用版 std::swap 是怎麼實作的?成本多少?
+//     答:C++11 起用 move:一次 move construction 加兩次 move assignment,共 3 次移動,
+//         並且是 noexcept-aware(能從型別的 move 操作推導出 noexcept)。
+//         C++11 之前用 copy,對重型物件昂貴得多。
+//
+// ⚠️ 陷阱. 自訂型別要怎麼寫才能被泛型程式碼正確 swap?
+//     答:提供成員 swap,再在「同一個 namespace」提供自由函式 swap 呼叫它。使用端要寫
+//         using std::swap; swap(a, b); 讓 ADL 挑到你的版本。
+//     為什麼會錯:很多人直接寫 std::swap(a, b),那就寫死了通用版、永遠找不到你的版本;
+//         也有人想在 namespace std 裡加 overload——標準只允許有限度的特化,
+//         自行加 overload 是 UB。
+// ===========================================================================
+
 #include <algorithm>
 #include <iostream>
 #include <string>

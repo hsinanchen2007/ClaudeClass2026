@@ -149,6 +149,35 @@
   - thread 生命週期要明確 join 或 detach；std::jthread 以 RAII 方式在解構時 request_stop 並 join，較不容易漏掉。
   - 效能問題如 false sharing、contention、過度建立 thread，通常在正確性之後才調整；先寫對，再量測。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】MPMC 佇列與分片（sharding）降低爭用
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 單一共享 queue 的 thread pool 為什麼無法線性擴展？
+//     答：所有 producer 與 consumer 都要取得同一把 mutex，隨著執行緒數上升，鎖成為
+//         序列化的瓶頸（Amdahl 定律中的序列部分），而且鎖與 queue 的 head 節點形成
+//         cache line 熱點，跨核搬運成本急速上升。核心數越多，爭用越嚴重，甚至可能
+//         出現「加核心反而變慢」。
+//     追問：怎麼量測是不是卡在鎖上？（perf 看鎖相關的等待時間，或觀察加核心時
+//           throughput 的曲線是否走平甚至下滑）
+//
+// 🔥 Q2. Sharding 為什麼有效？代價是什麼？
+//     答：把一條 queue 拆成 N 條，每個 producer 只往自己分到的那條 push，consumer 以
+//         round-robin 嘗試各條——爭用被分散到 N 把鎖上，衝突機率大幅下降。代價是
+//         失去全域 FIFO 順序、可能出現負載不均（某條積壓、某條空轉），因此通常要搭配
+//         work stealing 或隨機挑選來平衡。
+//     追問：為什麼不直接寫 lock-free MPMC queue？（正確的 lock-free MPMC 涉及安全記憶
+//           體回收與 ABA，複雜度極高；sharding 只多十幾行就能解決大多數場景）
+//
+// Q3. Lock-free 與 wait-free 差在哪？
+//     答：兩者都屬 non-blocking。Lock-free 保證任意時刻「至少有一個」thread 能取得
+//         進展（系統整體不停滯），但個別 thread 可能因 CAS 一直失敗而餓死。Wait-free
+//         保證「每一個」thread 都能在有限步數內完成，最強但實作複雜、常數成本高。
+//         典型的 CAS 迴圈是 lock-free；fetch_add 這種硬體直接支援的 RMW 才是 wait-free。
+//     追問：lock-free 一定比有鎖快嗎？（不一定；它真正的價值是延遲可預測性，以及
+//           「不怕持鎖者被搶佔或掛掉」）
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <thread>
 #include <vector>

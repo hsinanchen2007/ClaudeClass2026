@@ -56,6 +56,27 @@
   - 容器元素型別若昂貴，優先理解 emplace、move 和 reference/iterator 有效性，不要盲目複製。
   - 所有容器都要考慮空容器邊界；front/back/top 在空容器上呼叫通常是未定義行為或前置條件違反。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::queue
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. queue 的底層預設容器是什麼？為什麼不能用 std::vector？
+//     答：queue 是 container adaptor，預設底層是 std::deque，也可換成 std::list。
+//         它要求底層提供 front() / back() / push_back() / pop_front() / empty() / size()，
+//         而 std::vector 沒有 pop_front()（從頭刪除是 O(n)，標準沒提供這個介面），所以不能當 queue 底層。
+//
+// 🔥 Q2. queue 為什麼沒有 iterator、也沒有 clear()？
+//     答：因為 adaptor 的設計目的就是「只暴露 FIFO 介面」，避免使用者繞過 push / pop 直接動資料；
+//         所以沒有 begin / end（不能用 range-for）、沒有 operator[] / find、也沒有 clear。
+//         要清空只能 `while (!q.empty()) q.pop();`，或直接指派一個新的空 queue。
+//     追問：需要走訪所有元素時怎麼辦？（不要用 adaptor，直接用 std::deque）
+//
+// Q3. queue 和 priority_queue 的差別？
+//     答：queue 是嚴格 FIFO（先進先出），push / pop / front / back 都是 O(1)；
+//         priority_queue 是「優先度最高者先出」，底層是 heap，push / pop 為 O(log n)、top 為 O(1)，
+//         且只能看 top（沒有 back）。BFS 用 queue；Dijkstra / Top-K 用 priority_queue。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <queue>
 #include <deque>
 #include <list>

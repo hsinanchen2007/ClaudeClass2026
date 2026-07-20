@@ -129,6 +129,39 @@
   - 若只是傳入唯讀文字片段且不需要擁有資料，std::string_view 可避免複製；但它不能延長原字串生命週期。
   - 處理中文或 UTF-8 時，std::string 的 size() 回傳 byte 數，不是人眼看到的字元數。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::swap 對 std::string 的重載 (非成員版本)
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. std::swap(a, b) 和 a.swap(b) 有什麼差別?
+//     答：<string> 為 basic_string 提供了非成員的 swap 重載,它的行為就是
+//         去呼叫 a.swap(b),所以成本與效果相同 —— 都是常數時間、不搬動
+//         heap 上的字元。差別在通用性:泛型程式碼裡的 swap(a, b) 對內建
+//         型別與任何自訂型別都寫得出來,成員版本只有具備 .swap() 的型別
+//         才有。
+//     追問：如果沒有這個專用重載,泛型版的 std::swap 會做什麼?
+//         → 一次 move 建構 + 兩次 move 賦值。對 string 而言仍不複製字元,
+//           但比直接交換內部欄位多繞了一圈。
+//
+// 🔥 Q2. 為什麼慣用寫法是 using std::swap; swap(a, b); 而不是 std::swap(a, b);?
+//     答：這是 two-step swap 慣用法。先 using std::swap 把標準版本放進
+//         overload set 當後備,再用**非限定**呼叫 swap(a, b),讓 ADL
+//         (argument-dependent lookup) 能在該型別自己的命名空間裡找到更
+//         高效的專用 swap。寫死 std::swap(a, b) 會關掉 ADL,永遠只拿得到
+//         標準版本。
+//     追問：C++20 有更省事的做法嗎?
+//         → std::ranges::swap 這個 CPO 已經把 two-step 規則封裝好,直接
+//           呼叫就有正確行為。
+//
+// ⚠️ 陷阱. swap 之後,指向這兩個字串的 iterator 會怎麼樣?
+//     答：標準對 basic_string 的 swap 規定是「所有 iterator、pointer、
+//         reference 都可能失效」—— 這和 vector、list 的 swap 不同,那些
+//         容器的 iterator 交換後仍然有效,只是改成隸屬另一個容器。
+//     為什麼會錯：把「容器 swap 不會使 iterator 失效」的通則直接套到
+//         std::string。string 因為 SSO 的存在,內容可能就住在物件自身的
+//         內嵌 buffer 裡,根本沒辦法承諾 iterator 會跟著資料一起搬家。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <utility>

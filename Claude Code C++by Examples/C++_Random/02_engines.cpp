@@ -63,6 +63,37 @@
   - mt19937 狀態大但品質穩定，minstd_rand 較小較快但統計性質不同。
   - 不要在每次產生亂數時重新建立 engine，否則序列品質和效能都會變差。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】隨機引擎（engine）
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. <random> 的架構是什麼？engine 與 distribution 如何分工？
+//     答：分三層。(1) Seed sequence：std::random_device、std::seed_seq 負責產生種子。
+//         (2) Engine（URBG）：從種子產生均勻分布的原始位元序列，如 mt19937、
+//         mt19937_64、minstd_rand。(3) Distribution：把 engine 的輸出「塑形」成目標
+//         分布，如 uniform_int_distribution、normal_distribution。關鍵分工是：engine
+//         只負責產生高品質位元，distribution 負責消除 bias。
+//     追問：為什麼不建議用 default_random_engine？（它是實作定義的別名，各家指向不同
+//           的 engine，不可攜且品質不保證）
+//
+// 🔥 Q2. std::random_device 與 std::mt19937 該怎麼搭配？
+//     答：random_device 是「非確定性」隨機源（實作通常取自作業系統的熵池），品質高但
+//         很慢，而且不可 seed、不可重現。mt19937 是確定性 PRNG，週期 2^19937 − 1，
+//         速度極快、統計性質好，但不具密碼學安全性——觀察足夠多的連續輸出即可還原
+//         內部狀態。標準搭配是：用 random_device 產生種子，用 mt19937 產生大量數字。
+//     追問：密碼學用途怎麼辦？（別用 <random>，改用專門的 CSPRNG，例如作業系統提供的
+//           getrandom / /dev/urandom，或 libsodium、OpenSSL）
+//
+// Q3. mt19937 與 mt19937_64 差在哪？mt19937 有什麼缺點？
+//     答：前者輸出 32-bit、狀態 624 個 32-bit word；後者輸出 64-bit、狀態 312 個
+//         64-bit word，週期同為 2^19937 − 1。需要 64-bit 隨機值（Zobrist hashing、
+//         大範圍整數）時直接用 mt19937_64，不要拼接兩個 32-bit 輸出。mt19937 的缺點：
+//         狀態大（約 2.5 KB）對 cache 不友善、非密碼學安全、且未通過部分現代統計測試。
+//         替代品有 PCG、xoshiro 系列，但它們不在標準庫內。
+//     追問：uniform_int_distribution<int64_t> 配 32-bit 的 mt19937 可以嗎？（可以，
+//           distribution 會呼叫 engine 多次組合，只是效率較差）
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <chrono>
 #include <iostream>
 #include <random>

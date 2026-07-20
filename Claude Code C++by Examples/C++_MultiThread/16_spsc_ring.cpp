@@ -158,6 +158,34 @@
   - thread 生命週期要明確 join 或 detach；std::jthread 以 RAII 方式在解構時 request_stop 並 join，較不容易漏掉。
   - 效能問題如 false sharing、contention、過度建立 thread，通常在正確性之後才調整；先寫對，再量測。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】Lock-free SPSC ring buffer
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. SPSC ring buffer 為什麼可以完全不用 CAS？
+//     答：因為只有一個 writer 寫 head、只有一個 reader 寫 tail——每個索引都只有唯一
+//         的寫者，不存在「兩個 thread 同時想改同一個索引」的競爭，自然不需要
+//         compare_exchange。只要兩個索引是 atomic，用 store(release) / load(acquire)
+//         配對即可保證「資料寫入先於索引推進可見」。這是最快的執行緒間佇列。
+//     追問：容量取 2 的冪有什麼好處？（可用 & (cap-1) 取代取模，除法／取模在熱路徑
+//           上相對昂貴）
+//
+// 🔥 Q2. push 時 head 的 store 為什麼必須是 release，pop 時的 load 必須是 acquire？
+//     答：元素資料本身是普通的非原子物件。producer 先寫 slot，再用 release store 推進
+//         head；consumer 用 acquire load 讀到那個新的 head 值時，兩者建立
+//         synchronizes-with，於是 release 之前對 slot 的寫入對 consumer 保證可見。
+//         若寫成 relaxed，consumer 可能看到新的 head 卻讀到尚未寫入的舊 slot 內容。
+//     追問：讀自己這一端的索引可以用 relaxed 嗎？（可以，因為只有自己會寫它，不需要
+//           跨執行緒的順序保證）
+//
+// ⚠️ 陷阱. head 與 tail 相鄰宣告會有什麼問題？
+//     答：False sharing。producer 一直寫 head、consumer 一直寫 tail，若兩者落在同一條
+//         cache line，每次寫都讓對方的 cache line 失效，跨核 ping-pong 直接吃掉無鎖
+//         設計的全部收益。必須用 alignas 把兩個索引放到各自的 cache line。
+//     為什麼會錯：無鎖設計者常只檢查「有沒有 CAS、有沒有鎖」，把效能問題全歸給同步
+//         原語，忽略了真正的瓶頸往往是記憶體與 cache 的存取模式。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <atomic>
 #include <array>
 #include <thread>

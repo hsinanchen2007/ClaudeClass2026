@@ -91,6 +91,48 @@
   - shared_ptr 的 control block 很重要；不要用同一裸指標建立多個 shared_ptr。
   - custom deleter 用於 FILE*、C API handle、特殊釋放函式；deleter 型別也會影響 unique_ptr 型別大小。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::shared_ptr
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. control block 裡面有什麼？shared_ptr 本身多大？
+//     答：cppreference 明列 control block 含：指向被管理物件的指標（或物件本身）、
+//         型別擦除的 deleter、型別擦除的 allocator、strong count、weak count。
+//         shared_ptr 物件本身則存兩個指標（物件指標 + control block 指標），所以
+//         sizeof(shared_ptr) 通常是裸指標的兩倍 —— 這是常見實作，並非標準保證。
+//     追問：為什麼要存兩個指標，不從 control block 查？（為了支援 aliasing
+//         constructor，以及解引用時少一次間接定址）
+//
+// 🔥 Q2. shared_ptr 是 thread-safe 的嗎？
+//     答：必須分三層講。① control block 的引用計數操作是 atomic，多執行緒同時複製或
+//         銷毀「不同的 shared_ptr 實例」（即使指向同一物件）是安全的，物件保證只被
+//         刪一次。② 被管理的物件本身完全不受保護，讀寫它仍要自行同步。③ 多執行緒
+//         存取「同一個 shared_ptr 實例」且其中含非 const 操作（reset、指派）就是
+//         data race；C++20 起應改用 std::atomic<std::shared_ptr<T>>。
+//     追問：原子計數的代價？（比非原子遞增顯著昂貴，多核競爭時尤其明顯；這正是
+//         「別到處亂傳 shared_ptr，優先傳 const T& 或裸指標」的理由）
+//
+// 🔥 Q3. make_shared 與 shared_ptr<T>(new T) 差在哪？什麼時候「不該」用 make_shared？
+//     答：make_shared 一次配置就同時容納 control block 與物件（少一次 allocation、
+//         cache locality 較好），也避開建構過程中的洩漏窗口。不該用它的情況：
+//         ① 需要自訂 deleter ② 需要接管既有的裸指標 ③ 物件很大又會有長壽 weak_ptr
+//         —— 單次配置下，物件那塊記憶體要等最後一個 weak_ptr 消失才歸還
+//         ④ 建構子是 private/protected（make_shared 不是 friend）。
+//     追問：物件與 control block 各自何時被釋放？（strong count 歸零 → 解構物件；
+//         control block 要等 weak count 也歸零才釋放）
+//
+// Q4. aliasing constructor 是什麼？
+//     答：shared_ptr<U>(sp, ptr) —— 共用 sp 的 control block（因此維持擁有者的生命
+//         週期），但 get() 回傳你指定的 ptr。用來安全地持有某個大物件的成員或子物件，
+//         同時保證整個母物件不被銷毀。
+//
+// ⚠️ 陷阱. 用同一個裸指標建立兩個 shared_ptr 會怎樣？
+//     答：會產生「兩個獨立的 control block」，各自計數歸零、各刪一次 → double free
+//         （UB）。shared_ptr<T> b(a.get()); 是同一個 bug 的另一種寫法。
+//     為什麼會錯：多數人腦中以為 shared_ptr 會「認得」這個指標已經被管理了。但引用
+//         計數在 control block 裡、不在物件裡 —— 裸指標只能交給 smart pointer 一次。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <memory>
 #include <string>

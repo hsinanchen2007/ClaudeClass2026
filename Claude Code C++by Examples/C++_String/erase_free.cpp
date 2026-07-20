@@ -145,6 +145,40 @@
   - 若只是傳入唯讀文字片段且不需要擁有資料，std::string_view 可避免複製；但它不能延長原字串生命週期。
   - 處理中文或 UTF-8 時，std::string 的 size() 回傳 byte 數，不是人眼看到的字元數。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::erase / std::erase_if(自由函式版,C++20)
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. std::erase(s, 'x') 是哪個標準加入的?它取代了什麼寫法?
+//     答:C++20(P1209 uniform container erasure)。它把 C++20 之前的
+//         erase-remove idiom
+//           s.erase(std::remove(s.begin(), s.end(), 'x'), s.end());
+//         包成一行 std::erase(s, 'x');,語意清楚又不容易漏掉第二個 s.end()。
+//         同一對函式對 vector / deque / list / map / set 也同時加入,行為一致。
+//     追問:要用自訂條件刪除呢?→ std::erase_if(s, pred),同樣是 C++20。
+//
+// 🔥 Q2. 為什麼 std::remove 不能自己把容器縮短?
+//     答:std::remove 是泛型演算法,只透過 iterator 操作,根本拿不到容器
+//         本體,也就無法呼叫改變 size 的成員函式。它只能把要保留的元素往前
+//         搬、回傳新的邏輯結尾;真正縮短一定要容器自己的 erase 出手。
+//     追問:這是設計缺陷嗎?→ 不是,正是這個解耦讓同一個演算法能套用在
+//           陣列、容器與任意 iterator 範圍上。
+//
+// 🔥 Q3. 自由函式 erase 與成員函式 erase 差在哪?回傳值一樣嗎?
+//     答:成員版依「位置」操作(pos/count 或 iterator),回傳 *this 或 iterator;
+//         自由函式版依「內容」操作(值或 predicate),回傳「被刪除的元素個數」
+//         (size_type)。回傳值不同是最常被問到的區辨點。
+//     追問:回傳個數有什麼用?→ 可以做快路徑判斷,例如
+//           if (std::erase_if(s, isControl) > 0) 才記 log。
+//
+// ⚠️ 陷阱. std::erase 會讓字串佔用的記憶體變小嗎?
+//     答:不會。它內部就是 erase-remove idiom,只縮 size、完全不動 capacity,
+//         也不會 reallocation。想連 buffer 一起縮要接 shrink_to_fit(),
+//         而且那還只是非約束性請求,實作可以完全忽略。
+//     為什麼會錯:大家把「刪掉元素」直覺等同於「釋放記憶體」,但 STL 容器
+//         普遍把 size 與 capacity 分開管理,刪除從不主動歸還記憶體。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <cctype>

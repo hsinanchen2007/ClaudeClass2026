@@ -87,6 +87,32 @@
   - std::tie 可用來拆 pair 或做字典序比較，但 structured binding 通常更易讀。
   - pair 的比較是先比 first，再比 second；這可用於排序，但要確認符合需求。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::pair
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. std::pair 和 std::tuple 的差別？什麼時候兩個都不該用？
+//     答：pair 固定兩個元素（.first / .second），tuple 可以任意個（std::get<I>，C++14 起
+//     也支援 std::get<T>）。但兩者的成員都沒有語意——當這組值代表一個有名字的概念時，
+//     具名 struct 幾乎總是更好的選擇。C++17 起搭配 structured bindings，
+//     auto [k, v] = *it; 讓可讀性大幅改善。
+//     追問：std::tie 有什麼用？（① 拆解到既有變數：std::tie(a, b) = f(); ② 用
+//     std::ignore 跳過某項 ③ 一行實作字典序比較：
+//     return std::tie(a, b, c) < std::tie(o.a, o.b, o.c);）
+//
+// 🔥 Q2. make_pair 在 C++17 之後還需要嗎？
+//     答：大致上不需要了，CTAD 讓 std::pair p{1, 2.0}; 直接推出 pair<int, double>。
+//     但兩者不完全等價：make_pair 會對引數做 decay，CTAD 在某些情境推導結果不同，
+//     所以不能無腦替換。
+//
+// ⚠️ 陷阱. std::pair p{"a", "b"}; 推導出來是什麼型別？
+//     答：pair<const char*, const char*>，不是 pair<std::string, std::string>。若把它
+//     存起來而字面量來源不再有效（例如來自暫存的 std::string 的 c_str()），就會懸垂。
+//     修法：std::pair p{"a"s, "b"s};（using namespace std::string_literals）或明寫型別。
+//     為什麼會錯：以為 CTAD 會「推導出你想要的型別」，實際上它只忠實反映引數的型別，
+//     而字串字面量的型別就是 const char[N] → 衰退成 const char*。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <iostream>
 #include <utility>     // std::pair, std::make_pair, std::get, std::piecewise_construct

@@ -41,6 +41,63 @@
   - C++_Cpp11/C++_Cpp11 summary 的複習方式是把 API 依用途分組，再比較輸入條件、輸出語意、失敗狀態和複雜度。
   - 初學複習 summary 時，不要只背函式名稱；要能說出何時該用、何時不該用、和相近工具差在哪裡。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】C++11 總覽：值類別與移動語義（本目錄無專門檔案，集中於此）
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. C++11 的五種值類別是什麼？
+//     答：三個基本類別 + 兩個複合類別。
+//         lvalue ：有身分、不可移動（變數名、*p、回傳左值參考的函式呼叫）
+//         prvalue：無身分、可移動（字面值〔字串字面值除外，它是 lvalue〕、
+//                  回傳非參考的函式呼叫、a+b）
+//         xvalue ：有身分「且」可移動（std::move(x)、回傳右值參考的函式呼叫）
+//         glvalue = lvalue ∪ xvalue（有身分）；rvalue = prvalue ∪ xvalue（可移動）
+//     追問：std::move(x) 是 prvalue 嗎？（❌ 是 xvalue，這是最常見的錯答。可用
+//           decltype 驗證：xvalue 運算式的 decltype 得 T&&，prvalue 得 T。本機
+//           g++ -std=c++11 實測 decltype(std::move(x)) 為 int&&、decltype(f())
+//           為 int，兩個 static_assert 都通過）
+//
+// 🔥 Q2. std::move 與 std::forward 差在哪？
+//     答：std::move 是「無條件」轉型成右值；std::forward<T> 是「條件式」轉型，
+//         依 T 保留原本的值類別。move 用在明確的右值參考參數上（語意：我不要它
+//         了，拿去）；forward 用在 forwarding reference T&& 上（語意：原樣傳下
+//         去）。forward 必須顯式寫出 <T>，因為它的判斷依據就是 T，無法從實參推導。
+//     追問：std::move 真的搬了東西嗎？（沒有。它只是 static_cast 成 T&&，真正搬
+//           資源的是隨後被重載決議選中的移動建構子／移動賦值；若型別根本沒有移動
+//           操作，會靜默退回拷貝，一句警告都不會有）
+//
+// 🔥 Q3. 為什麼「具名的右值參考本身是左值」？
+//     答：值類別是「運算式」的性質，不是「型別」的性質。void f(Widget&& w) 中，
+//         w 的型別是右值參考，但運算式 w 有名字、可取址 → 它是左值。口訣就是
+//         「有名字就是左值」。所以在 f 內部要繼續轉傳時必須寫 g(std::move(w))，
+//         否則會呼叫到 g 的拷貝版本。
+//         （本機實測：f(int&& w) 中 &w 合法，且 decltype((w)) 為 int&）
+//
+// ⚠️ 陷阱. 對 const 物件呼叫 std::move 會發生什麼事？
+//     答：靜默拷貝，沒有任何警告。std::move(constObj) 的結果型別是 const T&&；
+//         移動建構子的參數是 T&&，綁不上 const T&&，但拷貝建構子的 const T& 可以
+//         綁右值 → 重載決議選中拷貝：
+//           const std::string s = "...";  std::string t = std::move(s);  // 實際是拷貝
+//         （本機以會印字的 copy/move ctor 實測：const 版印 COPY、非 const 版印 MOVE）
+//     為什麼會錯：把 std::move 當成「動詞」，以為寫了就一定會搬。它只是轉型，搬
+//         不搬完全由重載決議決定，而 const 讓它無聲地退回拷貝。連帶後果：把成員
+//         宣告成 const std::string，會讓整個類別的移動建構退化成拷貝。
+//
+// Q5. RVO、NRVO 與移動語義的優先順序？return std::move(x); 是好習慣嗎？
+//     答：優先序是 copy elision > move > copy。
+//         RVO（回傳 prvalue 臨時物件）：⚠️ C++17 起是「強制」的 guaranteed copy
+//         elision，連拷貝／移動建構子都不需要存在——本機實測把 copy 與 move 都
+//         = delete，-std=c++17 仍能編譯，-std=c++11 則報 use of deleted function。
+//         NRVO（回傳具名的區域變數）：至今仍是「可選」優化，標準只允許不強制，
+//         且即使實際不呼叫，仍要求拷貝／移動建構子可存取（本機 -std=c++17 與
+//         -std=c++20 對上述 deleted 版本皆編譯失敗）。
+//     追問：那 return std::move(x); 呢？（是反最佳化。它讓回傳運算式變成 xvalue、
+//           不再是「具名物件」，直接取消 NRVO 的資格，強迫多做一次移動。本機實測：
+//           return x; 一個建構訊息都不印〔零次〕，return std::move(x); 印出 MOVE。
+//           正確寫法就是 return x;——C++11 起回傳區域變數本來就會先當右值做重載
+//           決議，該選到移動的自然會選到）
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <cassert>
 #include <cstddef>
 #include <iostream>

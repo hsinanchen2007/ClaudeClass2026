@@ -149,6 +149,37 @@
   - thread 生命週期要明確 join 或 detach；std::jthread 以 RAII 方式在解構時 request_stop 並 join，較不容易漏掉。
   - 效能問題如 false sharing、contention、過度建立 thread，通常在正確性之後才調整；先寫對，再量測。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::async / future / promise / packaged_task
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. std::async 的 launch policy 有哪些？預設是什麼？
+//     答：std::launch::async 保證在新的執行緒上執行；std::launch::deferred 延遲到對
+//         future 呼叫 get()/wait() 時，才在「呼叫端 thread」同步跑（等於沒有並行）。
+//         預設是 async | deferred，由實作自行選擇——你可能以為開了執行緒，實際被延遲。
+//         需要並行就明確寫 std::launch::async。
+//     追問：如何檢測 future 是 deferred？（wait_for(0s) == future_status::deferred；
+//           對 deferred 做輪詢迴圈會是死迴圈，因為它永遠不會自己跑起來）
+//
+// 🔥 Q2. future / promise / packaged_task 三者關係？
+//     答：三者共用同一個 shared state。promise<T> 是生產端「手動」設值的通道
+//         （set_value / set_exception），配 get_future() 取得消費端。packaged_task<F>
+//         包裝一個 callable，被呼叫時自動把回傳值或例外存入 shared state，本身可 move，
+//         所以能丟進 thread pool 的 queue。async 則是「幫你建好並跑起來」的高階封裝。
+//         future<T>::get() 只能呼叫一次，需要多方讀取要用 shared_future。
+//     追問：例外如何跨執行緒傳遞？（存成 exception_ptr，get() 時重新拋出）promise 沒
+//           設值就解構？（future 端拋 std::future_error，錯誤碼 broken_promise）
+//
+// ⚠️ 陷阱. std::async(std::launch::async, f); std::async(std::launch::async, g);
+//     這兩行會並行嗎？
+//     答：不會，是序列執行。由 std::async 建立的 shared state 有特殊規定：其 future
+//         解構時若任務尚未完成會「阻塞等待」。上面兩行的 future 都是臨時物件，第一行
+//         結束時就阻塞到 f 完成，才輪到 g。必須把 future 存進具名變數才會真正並行。
+//     為什麼會錯：大家以為所有 future 的解構子都不阻塞。事實上只有 async 產生的
+//         future 有此行為；由 promise 或 packaged_task 取得的 future 解構「不」阻塞
+//         ——這個不一致是 C++ 著名的設計爭議。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <future>     // std::async, std::future, std::launch
 #include <thread>     // std::this_thread::sleep_for

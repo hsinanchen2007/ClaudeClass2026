@@ -161,6 +161,45 @@
   - 若只是傳入唯讀文字片段且不需要擁有資料，std::string_view 可避免複製；但它不能延長原字串生命週期。
   - 處理中文或 UTF-8 時，std::string 的 size() 回傳 byte 數，不是人眼看到的字元數。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::string_view
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. std::string、const char*、std::string_view 三者怎麼選?
+//     答：std::string 擁有資料、可修改、保證 null-terminated,要「存起來」
+//         (成員變數、回傳值) 就用它;const char* 不擁有、靠 '\0' 定界、
+//         strlen 是 O(n),只在 C API 邊界用;string_view (C++17) 是不擁有
+//         的「指標 + 長度」二元組,O(1) 建構,但不保證 null-terminated。
+//     追問：為什麼 string_view 參數比 const string& 快?
+//         → 傳字面量給 const string& 會隱式建構一個臨時 std::string
+//           (可能 heap 配置);string_view 不會。
+//
+// 🔥 Q2. 為什麼說 string_view 是 parameter-only type?
+//     答：它不擁有資料,生命週期完全依附來源。當「函式參數」與「區域中介」
+//         安全;當成員變數或回傳型別幾乎都是錯的 —— 來源一死就 dangling。
+//         要保存內容,成員就該存 std::string。
+//     追問：string_view 能直接傳給 printf("%s") 嗎?
+//         → 不行,非 null-terminated,必須先轉成 std::string 再取 c_str()。
+//
+// 🔥 Q3. string::substr 和 string_view::substr 成本差多少?
+//     答：string::substr 回傳一個新的 std::string,複製 len 個字元 → O(len),
+//         超過 SSO 門檻時還會多一次 heap 配置;string_view::substr 只調整
+//         指標與長度 → O(1)、零配置。
+//         解析迴圈 (切 token、切路徑) 用 string::substr 是常見效能地雷。
+//
+// ⚠️ 陷阱. std::string_view sv = std::string("temp"); 有什麼問題?
+//     答：臨時 std::string 在該完整表達式結束時就解構,sv 立刻 dangling。
+//         關鍵區辨:const std::string& r = std::string("x"); 是**合法**的 ——
+//         const reference 會延長臨時物件的生命週期;string_view **不會**
+//         延長任何東西,它只是抄走一組指標與長度。
+//     為什麼會錯：多數人把 string_view 當成「更輕量的 const string&」,
+//         以為 reference 綁定的生命週期延長規則也適用。但 string_view 是
+//         一個物件、不是 reference,沒有任何延長效果。
+//     追問：那什麼樣的初始化才安全?
+//         → "abc"sv (C++17, std::string_view_literals) 指向 static storage
+//           duration 的字面量,程式全程有效,所以安全。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <string_view>

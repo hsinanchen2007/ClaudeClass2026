@@ -136,6 +136,36 @@
   - 若只是傳入唯讀文字片段且不需要擁有資料，std::string_view 可避免複製；但它不能延長原字串生命週期。
   - 處理中文或 UTF-8 時，std::string 的 size() 回傳 byte 數，不是人眼看到的字元數。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::string::swap (成員版本)
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 為什麼成員 swap 是常數時間,而且 noexcept?
+//     答：它交換的是兩個物件的內部表示 (pointer / size / capacity 這些
+//         欄位),不搬動 heap 上的字元、也不配置記憶體,所以是常數時間且
+//         不需要拋例外。這正是老式 swap trick —— std::string(s).swap(s)
+//         —— 能用來嘗試把多餘 capacity 還回去的原理。
+//     追問：SSO 的短字串也還是常數時間嗎?
+//         → 內嵌 buffer 必須真的 memcpy,不是只搬指標;但 buffer 大小有
+//           固定上界 (libstdc++ 為 15 字元、libc++ 為 22,這是
+//           implementation-defined、標準未規定任何數字),所以仍是常數時間。
+//
+// 🔥 Q2. swap 之後,原本取得的 iterator / pointer 還能用嗎?
+//     答：不能當作還指向「原來那個物件的內容」來用。標準對 basic_string
+//         的 swap 規定是:所有 iterator、pointer、reference 都**可能失效**。
+//         安全做法是 swap 之後重新呼叫 begin() / data() / c_str() 取得。
+//
+// ⚠️ 陷阱. 到底哪些 string 操作會使 iterator / pointer / reference 失效?
+//     答：任何可能重新配置或改變長度的操作:operator+=、append、push_back、
+//         insert、erase、replace、resize、reserve、shrink_to_fit、assign、
+//         operator=、clear、swap。只讀操作 (size、find、compare、
+//         const operator[]、substr) 不會。
+//     為什麼會錯：多數人只記得「reserve 之後要重新取 iterator」,卻忘了
+//         c_str() / data() 回傳的 const char* 適用**完全相同**的規則。把
+//         c_str() 的結果存進區域變數、之後再 append,就是最常見的懸空指標
+//         來源 —— 而且短字串時往往「碰巧還能跑」,更難發現。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 

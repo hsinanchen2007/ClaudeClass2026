@@ -62,6 +62,48 @@
   - final 可用在 class 或 virtual function，明確禁止後續繼承或覆寫；這能表達設計邊界，也可能幫助最佳化。
   - 抽象介面應保持小而穩定；每增加一個 virtual function，所有 derived 實作都可能需要跟著變，這是 runtime polymorphism 的維護成本。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】virtual function 與執行期多型
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. vtable 與 vptr 是什麼？各自屬於 class 還是 object？
+//     答：只要 class 有 virtual 函式，編譯器就為「該 class」產生一張 vtable
+//         （函式指標表，同一 class 的所有物件共用）；並在「每個 object」裡塞一個
+//         隱藏的 vptr 指向它。呼叫時：由物件取 vptr → 查 vtable slot → 間接呼叫。
+//         也就是 vtable 屬 class、vptr 屬 object。
+//     追問：物件會因此變大嗎？（只要有 virtual 函式，物件就多一個 vptr，64-bit 上
+//           sizeof 通常變 8；再加更多 virtual 函式也不會再變大。但這是常見實作
+//           （Itanium ABI）的結果，vptr 的位置與大小標準並未規定）
+//
+// 🔥 Q2. 執行期多型的兩個必要條件是什麼？
+//     答：① base 的 virtual 函式被 derived override；② 透過 base 的 pointer 或
+//         reference 呼叫。兩者缺一不可 —— 本檔 makeNoise(const Animal&) 正是條件②。
+//         若用物件本身（by value）呼叫，是靜態綁定，不構成多型。
+//     追問：把 Derived 以值存進 Base 變數會怎樣？（object slicing —— derived 部分
+//           被切掉，vptr 也變回 Base 的，之後不再多型）
+//
+// 🔥 Q3. `override` 與 `final` 有什麼用？
+//     答：`override` 讓編譯器檢查「你確實覆寫了 base 的某個 virtual 函式」，簽名打錯
+//         （漏 const、參數型別不同）會編譯錯誤 —— 這是最常見的靜默 bug 來源。
+//         `final` 用在函式上禁止再被覆寫、用在 class 上禁止再被繼承，也給編譯器
+//         devirtualization 的優化機會。兩者都是 C++11 的 contextual keyword。
+//     追問：`override` 會改變執行期行為嗎？（不會，純編譯期檢查）
+//
+// Q4. virtual function 可以是 private 嗎？
+//     答：可以。存取控制（編譯期）與 virtual 分派（執行期）是正交的兩件事。經由
+//         base 的 public 非虛介面呼叫時，仍會正確分派到 derived 的 private override。
+//         這正是 NVI（Non-Virtual Interface）模式：public non-virtual 介面
+//         ＋ private virtual 實作點，讓 base 能在前後插入共用邏輯。
+//     追問：derived 覆寫時可以改變存取等級嗎？（可以；存取檢查依呼叫點的靜態型別）
+//
+// ⚠️ 陷阱. virtual function 的 default argument 是動態綁定還是靜態綁定？
+//     答：函式「本體」是動態綁定，但 default argument 是「靜態綁定」，依指標/參考的
+//         靜態型別決定。所以 `Base* p = new Derived; p->f();` 會執行 Derived 的函式
+//         本體，卻套用 Base 宣告的預設參數值。結論：不要在 virtual 函式上用預設參數。
+//     為什麼會錯：多數人腦中「virtual 一切都跟著實際型別走」；但預設參數是編譯期
+//         就填進呼叫端的，編譯器只看得到靜態型別，根本不經過 vtable。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <stack>
 #include <string>

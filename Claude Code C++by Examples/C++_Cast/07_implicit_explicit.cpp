@@ -65,6 +65,38 @@
   - explicit 可防止 copy-initialization 的自動轉換，例如 T x = value，但 direct-initialization T x(value) 仍可使用。
   - 轉換運算子 operator T() 也可加 explicit，避免物件在 bool、int、string 等情境被偷偷轉掉。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】隱式轉換與 explicit
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. C++ 有哪些隱式轉換？explicit 解決什麼問題？
+//     答：隱式轉換分兩類：【標準轉換】（整數提升、算術轉換、陣列/函式退化、指標
+//         轉換、轉 bool）與【使用者定義轉換】（單參數的非 explicit converting
+//         constructor、非 explicit 的 operator T()）。explicit 加在 constructor
+//         或轉換運算子上，【禁止它被隱式呼叫】，避免意外轉換。經典例子：
+//         std::vector 的 vector(size_t) 若非 explicit，v = 10; 這種荒謬寫法就會
+//         編譯過。
+//     追問：什麼建構子該加 explicit？（除非「像值字面量一樣可以合理隱式建構」
+//           — 例如從 const char* 建 std::string — 否則一律加；C++ Core
+//           Guidelines 的建議是 default explicit）
+//
+// Q2. 加了 explicit operator bool()，為什麼 if (x) 還能用？
+//     答：因為 if / while / for 的條件、!、&&、||、三元 ?: 這些位置屬於
+//         【contextual conversion to bool（語境轉換）】，標準明訂在這些情境中
+//         explicit 的轉換運算子【仍可被使用】。但一般的複製初始化就會被擋 —
+//         int e = x; 編譯錯誤，必須寫 static_cast<bool>(x)。這正是想要的：
+//         「當條件判斷」合法，「不小心被當成數值算術」不合法。
+//         explicit 可用在轉換運算子上是 C++11 起的能力。
+//
+// Q3. explicit 對多參數建構子有用嗎？C++20 的 explicit(bool) 又是什麼？
+//     答：對多參數建構子，explicit 影響的是【列表初始化】：struct P { P(int,int); };
+//         加了 explicit 之後 P x = {1, 2}; 這種 copy-list-initialization 會被禁，
+//         必須寫 P x{1, 2};。【explicit(bool) 是 C++20】 加入的「條件式 explicit」
+//         — 依編譯期布林運算式決定這個建構子/轉換運算子是不是 explicit，主要用在
+//         泛型 wrapper（標準庫的 pair、tuple、optional 內部就用它，讓 wrapper 的
+//         隱式性跟隨其元素型別）。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 

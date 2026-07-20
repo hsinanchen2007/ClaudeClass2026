@@ -53,6 +53,36 @@
   - 不要用 engine() % n 做均勻整數，當 engine 範圍不能被 n 整除時會有 modulo bias。
   - distribution 物件可重用；改範圍時可建立新 distribution 或使用 param_type。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】uniform_int_distribution
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. uniform_int_distribution<int> d(1, 6) 是開區間還是閉區間？
+//     答：閉區間 [1, 6]，兩端都包含。這與 C++ 其他地方普遍的半開區間慣例「相反」，
+//         是最常見的 off-by-one 來源。對比：uniform_real_distribution<double> d(0.0, 1.0)
+//         是半開區間 [0.0, 1.0)。記法：整數版閉、實數版半開。
+//     追問：要取隨機索引怎麼寫？（uniform_int_distribution<size_t>(0, v.size() - 1)，
+//           注意 v 為空時 size() - 1 會回繞成巨大值，必須先擋掉）
+//
+// 🔥 Q2. 為什麼 distribution 能避免 modulo bias？
+//     答：因為它內部用拒絕採樣（rejection sampling）：把 engine 的輸出範圍切成整數個
+//         等大區塊，落在「不完整的尾巴」上的值直接丟棄重抽，於是每個結果的機率完全
+//         相等。手寫 % n 之所以有偏差，正是因為把那段尾巴也算了進去。
+//     追問：拒絕採樣會不會跑很久？（期望重抽次數小於 2 次，是常數期望時間；但最壞
+//           情況沒有上界，這是機率演算法的正常性質）
+//
+// ⚠️ 陷阱. 為什麼這個函式每次呼叫都回傳同一個數？
+//     int roll() { std::mt19937 gen(12345);
+//                  return std::uniform_int_distribution<int>(1, 6)(gen); }
+//     答：engine 是函式的區域變數，每次呼叫都重新建立並重新 seed，所以永遠只取到序列
+//         的第一個數。就算改成用 random_device 取種子，也是每次都付出昂貴的
+//         random_device 成本、而且只用了序列的第一個輸出。正解是把 engine（與
+//         distribution）宣告成 static 或 thread_local，只建立一次、重複使用。
+//     為什麼會錯：把 engine 當成「一個產生亂數的函式」，其實它是「一台有狀態的機器」
+//         ——隨機性來自狀態的推進，重建等於把機器歸零。多執行緒下請用 thread_local
+//         而非 static，因為 engine 的 operator() 會修改狀態，共用就是 data race。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <iostream>
 #include <random>

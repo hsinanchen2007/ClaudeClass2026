@@ -107,6 +107,33 @@
   - std::nth_element 呼叫後元素位置可能改變；若其他資料結構保存索引或指向元素的 iterator，要重新檢查關聯是否仍正確。
   - std::nth_element 的選擇要看需求：完整排序用 sort/stable_sort，只要第 N 名用 nth_element，只要前 K 名用 partial_sort。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::nth_element
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. std::nth_element 是做什麼的?複雜度?
+//     答:部分排序 — 重排區間,使第 n 個位置放上「若整段完整排序後該位置應有
+//         的元素」,且左邊全部 <= 它、右邊全部 >= 它,但左右兩側內部不保證有序。
+//         標準規定平均複雜度為 linear O(n)。經典用途:第 k 大 / 第 k 小、
+//         中位數、Top-K,比完整排序的 O(n log n) 快。
+//         ⚠️ 典型實作是 introselect (quickselect 加上深度保護),但這是
+//            implementation-defined;標準只規定「平均線性」,未規定最壞複雜度。
+//     追問:nth_element 穩定嗎?(不穩定,和 std::sort 一樣靠 swap 搬移元素)
+//
+// 🔥 Q2. 求 Top-K 該用 nth_element 還是 partial_sort?
+//     答:看「那 K 個之間需不需要有序」。只要知道「是哪 K 個」→ nth_element,
+//         平均 O(n);還要求這 K 個彼此也排好 → partial_sort,約 O(n log k)。
+//         全部都要有序才用 sort,O(n log n)。求中位數只需 nth_element。
+//     追問:k 很接近 n 時呢?
+//           (此時部分排序失去優勢,直接 sort 即可)
+//
+// ⚠️ 陷阱. 呼叫後可以把 [first, nth) 當成「已排好的前 n 名」直接用嗎?
+//     答:不行。標準只保證分界性質 (左邊 <= *nth <= 右邊) 以及 *nth 就位,
+//         兩側內部的順序是未指定的。需要有序的前 K 名必須改用 partial_sort。
+//     為什麼會錯:很多人把 nth_element 想成「排序做到一半」,以為左半部至少
+//         大致有序;實際上 quickselect 只做 partition,從未排序左半部。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <functional>
 #include <iostream>

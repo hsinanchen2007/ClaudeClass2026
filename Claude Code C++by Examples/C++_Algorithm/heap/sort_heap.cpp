@@ -90,6 +90,43 @@
   - heap 只保證父節點和子節點的局部順序，不保證整個陣列排序；不要拿 heap 內部順序當 sorted list 使用。
   - sort_heap 會破壞 heap 結構並產生排序結果；排序後若還要繼續 push_heap，必須重新 make_heap。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::sort_heap
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. sort_heap 做什麼?它和 heapsort 的關係?
+//     答:把「已是合法 heap」的範圍轉成已排序的範圍,O(N log N)
+//     (標準保證比較次數最多 N * log(N) 次)、空間 O(1)。
+//     內部就是反覆「pop_heap 把當前極值換到當前範圍尾端,再把範圍縮小一格」。
+//     因此 make_heap + sort_heap 這兩行合起來就是完整的 heapsort:
+//         std::make_heap(first, last);   // O(N)
+//         std::sort_heap(first, last);   // O(N log N)
+//     追問:前置條件沒滿足會怎樣?(答:對非 heap 呼叫是 UB,不是「排出錯的
+//     順序」而已 — 要先 make_heap。)
+//
+// 🔥 Q2. 對 max-heap 呼叫 sort_heap,得到的是升序還是降序?為什麼?
+//     答:**升序**。因為每次取出的是「當前最大值」,而它被放到「當前範圍的
+//     尾端」,接著範圍縮小 — 於是最大的排在最後、次大的倒數第二……最終整段是
+//     由小到大。想要降序就全程改用 min-heap:make_heap 與 sort_heap 都傳
+//     std::greater<>{}(兩者的 comp 必須一致,否則 UB)。
+//
+// Q3. 既然 heapsort 是 O(N log N) 最壞情況保證,為什麼 std::sort 通常還更快?
+//     答:std::sort 主流實作是 introsort — quicksort 為主,遞迴過深才切換
+//     heapsort,小區間用 insertion sort。quicksort 的存取是循序、cache 友善,
+//     常數因子小;heapsort 的 sift-down 在陣列中大跨距跳躍,cache miss 多。
+//     heapsort 在 introsort 裡的角色是「防止 quicksort 退化成 O(N²) 的保險」。
+//     (C++11 起標準即要求 std::sort 為 O(N log N) 最壞情況。)
+//     追問:那什麼時候該用 sort_heap?(答:資料因為其他理由「本來就已經維護成
+//     heap」時,直接 sort_heap 比丟掉 heap 結構再 sort 划算。)
+//
+// ⚠️ 陷阱. sort_heap 之後還能繼續 push_heap / pop_heap 嗎?
+//     答:不能。排序後的序列**不再是 heap**(升序陣列的根是最小值,
+//     完全違反 max-heap property),要繼續 heap 操作必須重新 make_heap。
+//     為什麼會錯:直覺覺得「排好序是更強的性質,應該也滿足 heap」——
+//     方向剛好相反:**降序**陣列才會是合法的 max-heap,升序陣列是合法的
+//     min-heap。而 sort_heap 對 max-heap 產出的正是升序。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <functional>
 #include <iostream>

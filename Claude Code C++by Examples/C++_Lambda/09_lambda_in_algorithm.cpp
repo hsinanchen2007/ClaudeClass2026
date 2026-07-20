@@ -52,6 +52,31 @@
   - std::function 可保存不同 callable，但可能有型別抹除成本和配置成本；效能敏感處可優先用 template 接 callable。
   - lambda 放進 algorithm 時應讓 predicate 無副作用或副作用明確，否則演算法意圖會變難讀。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】lambda 與 STL 演算法
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 為什麼演算法的可呼叫物位置適合傳 lambda？
+//     答：sort／find_if／for_each／transform／accumulate／remove_if 等都以「模板參數」
+//     接收 callable，型別在編譯期確定，operator() 可以完全 inline，等同手寫迴圈。若改用
+//     std::function 當參數型別，就退化成型別擦除的間接呼叫，inline 機會大幅減少。
+//     追問：想確保 inline 該怎麼宣告自己的介面？（template<class F> void each(F&& cb)，
+//     不要把參數型別寫成 std::function）
+//
+// 🔥 Q2. std::sort 的比較器有什麼硬性要求？寫成 <= 會怎樣？
+//     答：必須是 strict weak ordering：等價元素要回傳 false（irreflexive）。寫成
+//     [](int a, int b){ return a <= b; } 違反此要求，introsort 內部可能越界存取，是 UB，
+//     實務上表現為隨機崩潰而不是「排序結果不對」。
+//     追問：怎麼寫多鍵排序？（return std::tie(a.x, a.y) < std::tie(b.x, b.y);）
+//
+// ⚠️ 陷阱. std::remove_if 之後容器的 size() 會變小嗎？
+//     答：不會。remove_if 只是把要保留的元素往前搬，回傳新的邏輯結尾，容器大小完全不變，
+//     尾端留下的是「有效但未指定」的元素。必須配合 erase 才真的刪除（erase-remove 慣用
+//     法）；C++20 起可用 std::erase_if 一步完成。
+//     為什麼會錯：名字叫 remove，就以為它會刪東西；但演算法只看得到迭代器，根本無從
+//     改變容器大小。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <iostream>
 #include <unordered_map>

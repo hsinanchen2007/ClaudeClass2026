@@ -140,6 +140,34 @@
   - gcd/lcm 對整數工作；lcm 可能溢位，即使最後型別是 long long 也要注意輸入大小。
   - 數值演算法最容易出錯的是型別和溢位，不是語法；工作程式應刻意選擇初始值型別。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::transform_reduce (C++17)
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. transform_reduce 解決什麼問題?比 transform + reduce 好在哪?
+//     答:把「先映射、再歸約」融合成一次走訪 (map-reduce)。好處是不必先 std::transform 出一個
+//         中間容器 —— 省下 O(N) 暫存空間與一次額外走訪。C++17 起,宣告在 <numeric>。
+//         兩種形式:一元版算 init 加上 Σ f(a[i]);二元版算 init 加上 Σ f(a[i], b[i])。
+//     追問:典型場景?(點積、平方和 / L2 norm、加權平均、字串總長度、count_if 的函式式寫法)
+//
+// 🔥 Q2. 二元版 transform_reduce 和 inner_product 是什麼關係?
+//     答:預設行為等價 (都是點積),差別在契約:inner_product 保證順序固定、沒有 policy 多載;
+//         transform_reduce 順序未定,但可搭配 execution policy 平行化。也因此
+//         transform_reduce 的 reduce_op 必須 associative + commutative,inner_product 則不必。
+//
+// ⚠️ 陷阱. transform_op 和 reduce_op 誰有結合律的要求?參數順序怎麼記?
+//     答:限制只落在 reduce_op (必須結合且可交換);transform_op 只是逐元素映射,沒有結合律
+//         要求,但同樣不該有副作用、也不能依賴呼叫次序。一元版的簽章是
+//         (first, last, init, reduce_op, unary_op) —— reduce 在前、transform 在後,
+//         和函式名稱的字面順序相反,很容易寫反。
+//     為什麼會錯:照著名字「transform 再 reduce」去猜參數順序,結果剛好顛倒。
+//
+// Q3. transform_inclusive_scan 與 transform_exclusive_scan 的 init 位置為什麼不同?
+//     答:exclusive 版的 out[0] 就是 init,所以 init 是必填,排在 d_first 之後、BinaryOp 之前;
+//         inclusive 版的 init 可省略,若要給則排在最後。這兩支輸出 N 個結果 (scan) 而非單一值,
+//         同樣可搭配執行策略。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <cmath>
 #include <functional>

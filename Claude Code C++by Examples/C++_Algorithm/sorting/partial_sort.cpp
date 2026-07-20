@@ -92,6 +92,34 @@
   - std::partial_sort 呼叫後元素位置可能改變；若其他資料結構保存索引或指向元素的 iterator，要重新檢查關聯是否仍正確。
   - std::partial_sort 的選擇要看需求：完整排序用 sort/stable_sort，只要第 N 名用 nth_element，只要前 K 名用 partial_sort。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::partial_sort
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. partial_sort 做什麼?為什麼複雜度約 O(n log k)?
+//     答:partial_sort(first, middle, last) 讓 [first, middle) 成為「整體最小
+//         的那 k 個元素且已排序」(k = middle - first),[middle, last) 的順序
+//         不保證。內部用 heap:先把前 k 個做成 heap,再掃描其餘元素,
+//         比 heap 頂「小」就替換並重整 (每次 O(log k)),最後 sort_heap 輸出,
+//         整體約 O(n log k)。需要 random access iterator,且不保證穩定。
+//     追問:k 接近 n 時哪個快?(k ≈ n 時 partial_sort 沒有優勢,直接 sort 即可)
+//
+// 🔥 Q2. sort / partial_sort / nth_element 三者怎麼選?
+//     答:全部都要有序 → sort,O(n log n)。要前 K 名「而且 K 個之間也有序」
+//         → partial_sort,約 O(n log k)。只要「是哪 K 個」或只要第 n 名 /
+//         中位數 → nth_element,平均 O(n),最快但左右兩側都不排序。
+//         來源不可修改 (const,或只有 input iterator) → partial_sort_copy。
+//     追問:先 nth_element 再對前 K 個 sort,和 partial_sort 比呢?
+//           (平均 O(n + k log k),k 很小時是常見且合理的替代寫法)
+//
+// ⚠️ 陷阱. partial_sort 之後,[middle, last) 是不是「剩下的元素、順序照舊」?
+//     答:不是。後段元素的順序是未指定的 (unspecified) — 演算法在替換 heap 頂
+//         的過程中已經把元素搬來搬去。只能保證後段不會有比前段更「小」的元素,
+//         不能假設它保留了原本的相對次序。
+//     為什麼會錯:直覺以為「只排前面,後面沒動到」;實際上整段都被掃過並搬移,
+//         partial 指的是「保證有序的範圍只有前段」,不是「只碰前段」。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <functional>
 #include <iostream>

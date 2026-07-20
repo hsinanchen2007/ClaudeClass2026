@@ -73,6 +73,35 @@
   - trailing return type 讓回傳型別可使用參數名稱，常見於 template 中依表達式推導回傳。
   - C++14 後 auto return 可簡化許多情況，但複雜泛型仍可能需要 -> decltype(expr)。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】trailing return type（C++11）
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. trailing return type 解決什麼問題？
+//     答：回傳型別若要依賴參數，寫在前面時參數還沒進入作用域：
+//           template<class T, class U> auto add(T a, U b) -> decltype(a+b);  // OK
+//           // decltype(a+b) add(T a, U b);      // ❌ a、b 此時尚未宣告
+//         把回傳型別移到參數列之後，就能在 decltype 裡使用參數名。
+//     追問：C++14 之後還需要嗎？（需求大減——C++14 可直接寫 auto add(T a, U b)
+//           讓編譯器推導。本機實測：該寫法在 -std=c++11 報 'add' function uses
+//           'auto' type specifier without trailing return type，-std=c++14 才過）
+//
+// 🔥 Q2. C++14 有了 auto 回傳型別推導，trailing return 就完全沒用了嗎？
+//     答：仍有幾處不可取代：(1) virtual 函式不能用推導的回傳型別（本機 g++
+//         -std=c++14 實測報 virtual function cannot have deduced return type）；
+//         (2) 想在回傳型別上做 SFINAE（-> decltype(t.foo())，讓不符合的候選被
+//         剔除）；(3) 宣告與定義分離時，標頭檔明寫回傳型別對呼叫端更清楚——
+//         auto 推導要求定義對呼叫端可見，不能只把宣告放 .h。
+//
+// Q3. 為什麼類別成員函式用 trailing return 寫起來比較短？
+//     答：-> 右側已經進入「類別作用域」，可以直接使用類別內的巢狀型別名；寫在
+//         前面則必須完整限定：
+//           auto C::begin() -> Iter { ... }      // ✅ Iter 不必限定
+//           C::Iter C::end() { ... }             // 前置寫法必須寫成 C::Iter
+//         （本機 g++ -std=c++11 -pedantic-errors 實測：前置寫法只寫 Iter 會報
+//         'Iter' does not name a type）
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <memory>
 #include <string>

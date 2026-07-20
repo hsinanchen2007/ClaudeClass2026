@@ -71,6 +71,36 @@
   - 不要在 template 內假設 T 一定有某函式，除非你用 concepts、static_assert 或清楚註釋表明需求。
   - template 讓抽象發生在編譯期，通常沒有 virtual dispatch 成本，但會增加編譯時間與錯誤訊息複雜度。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】class template
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 為什麼 template 的定義通常要放在 header？
+//     答：因為編譯器必須在「使用點」看到完整定義，才能依實際型別產生對應版本
+//         （template instantiation）。若把實作放在 .cpp，其他 translation unit
+//         只看到宣告 → 實例化不出來 → 連結錯誤（undefined reference）。
+//         慣例是宣告與定義都放同一個 .h／.hpp。
+//     追問：有例外嗎？（有 —— 若你能列舉所有用到的型別，可以用顯式實例化
+//           explicit instantiation 把定義留在 .cpp）
+//
+// 🔥 Q2. class template 與 function template 有何不同？何時需要 `typename`？
+//     答：function template 一直都能從引數推導型別（本檔 myMax(3, 5) 不必寫 <int>）；
+//         class template 在 C++17 之前必須顯式指定（`Stack<int> s;`），C++17 起
+//         有 CTAD（類別範本引數推導）才能省略。另外在 template 內使用「相依型別」時
+//         必須加 typename：`typename T::value_type x;` —— 否則編譯器無法判斷那是型別
+//         還是靜態成員。
+//     追問：在 class 外定義成員函式要寫什麼？（`template <typename T>` 加上
+//           `Stack<T>::`，兩段少任何一段都會編譯失敗，如本檔的 popOrThrow）
+//
+// Q3. template 的編譯期多型與 virtual 的執行期多型，怎麼選？
+//     答：template 在編譯期就把型別決定好，沒有 vptr、沒有間接呼叫，通常也能 inline
+//         —— 但會增加編譯時間與程式碼大小，錯誤訊息也難讀，且型別必須編譯期就已知。
+//         virtual 則能在執行期替換實作（如第 17 篇的 Strategy），代價是分派成本與
+//         介面耦合。判準是：需不需要在「執行期」才決定用哪個實作。
+//     追問：怎麼表達「T 必須支援某些操作」？（C++20 的 concepts 最清楚；
+//           C++20 之前用 static_assert 或註解約定）
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <vector>
 #include <string>

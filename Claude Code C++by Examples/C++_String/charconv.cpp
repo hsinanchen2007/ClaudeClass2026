@@ -150,6 +150,31 @@
   - 若只是傳入唯讀文字片段且不需要擁有資料，std::string_view 可避免複製；但它不能延長原字串生命週期。
   - 處理中文或 UTF-8 時，std::string 的 size() 回傳 byte 數，不是人眼看到的字元數。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】charconv (from_chars / to_chars)
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. std::from_chars 是哪個標準加入的？為什麼說它是最快的轉換方式？
+//     答：C++17 的 <charconv>。它不拋例外（用回傳的 from_chars_result 帶 errc）、
+//         不做記憶體配置、也完全不受 locale 影響，因此沒有 stringstream 的
+//         virtual dispatch 與 locale 查詢成本，也沒有例外機制的開銷。
+//     追問：失敗怎麼判斷？→ 檢查 result.ec：errc::invalid_argument 表示無法解析、
+//           errc::result_out_of_range 表示溢位；成功時 ec 是預設值 errc{}。
+//
+// 🔥 Q2. from_chars 怎麼做到「整串必須合法」的嚴格驗證？
+//     答：from_chars_result 除了 ec 還有 ptr，指向「解析停止的位置」。
+//         要同時檢查 ec == std::errc{} 且 ptr == last，才代表整個範圍都被消耗完。
+//         只看 ec 的話，"42abc" 一樣會成功回傳 42（與 stoi 的前綴語意相同）。
+//     追問：to_chars 失敗呢？→ buffer 不夠時 ec 為 errc::value_too_large，
+//           且此時 [first, last) 的內容是未指定的，不可拿來用。
+//
+// ⚠️ 陷阱. from_chars 會像 stoi 一樣跳過前導空白嗎？
+//     答：不會。from_chars 不接受任何前導空白，" 42" 直接回 errc::invalid_argument；
+//         整數版本連正號 "+42" 也不接受（只認負號）。
+//     為什麼會錯：把 from_chars 當成 stoi 的 drop-in 替代品，忘了它是刻意設計成
+//         「最小、無驚喜」的低階原語，所有寬鬆行為都要呼叫端自己補。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <string_view>

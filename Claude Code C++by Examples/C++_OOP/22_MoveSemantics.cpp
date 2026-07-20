@@ -67,6 +67,38 @@
   - 小型 trivially copyable 型別 move 和 copy 成本差不多；move 最有價值的是管理 heap memory、file handle、large buffer 的型別。
   - 寫 move 後要檢查 Rule of Five：destructor、copy constructor、copy assignment、move constructor、move assignment 是否語意一致。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】move semantics
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. `std::move` 會搬移東西嗎？move constructor 什麼時候才被呼叫？
+//     答：不會。`std::move(x)` 只是無條件轉型成 rvalue reference，真正的搬移由被
+//         選中的 move constructor / move assignment 完成。當來源是 rvalue（暫時物件、
+//         std::move 的結果）且該型別有可用的 move 操作時，才會選到 move 版本。
+//     追問：`std::move(constObj)` 會走 move 嗎？（不會 —— move 需要修改來源，
+//           const 物件綁不到 T&&，會靜默退回 copy constructor）
+//
+// 🔥 Q2. 被 move 過的物件還能用嗎？
+//     答：它處於「valid but unspecified state」—— 保證可以安全解構、可以重新賦值，
+//         但不保證還留著原本的內容。本檔範例 2 之後 a.size() 變成 0 就是這個道理。
+//         實務原則：move 過的物件，除了重新賦值或讓它解構，不要依賴其值。
+//     追問：標準庫容器被 move 之後一定是空的嗎？（`std::vector` 等實務上通常是空的，
+//           但那是實作行為；標準只保證 valid but unspecified，不要寫程式依賴它）
+//
+// 🔥 Q3. 為什麼自寫的 move 操作應該標 `noexcept`？
+//     答：因為 `std::vector` 擴容時要維持 strong exception guarantee —— 若元素的
+//         move constructor 可能拋例外，搬到一半失敗就無法還原，容器只好「退回用 copy」。
+//         標上 noexcept 才會真的走 move（本檔 Buffer 的 move ctor / move assign
+//         都標了 noexcept，範例 4 的 vector::push_back 才會選到 move）。
+//
+// ⚠️ 陷阱. 回傳區域變數時寫 `return std::move(local);` 是不是更快？
+//     答：反而更慢。回傳語句中的區域物件本來就會被當成 rvalue 處理（隱式 move），
+//         而且編譯器多半能做 NRVO 直接就地建構、連 move 都省掉；套上 std::move
+//         會讓回傳運算式變成 rvalue reference，反而「抑制 NRVO」、強迫做一次 move。
+//     為什麼會錯：多數人腦中是「std::move 等於加速」。實際上它只是轉型，能省的是
+//         「複製」；當編譯器本來就能省掉整個建構時，多寫它只會擋路。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <vector>
 #include <utility>      // std::move

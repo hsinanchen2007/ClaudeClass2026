@@ -190,6 +190,49 @@
   - thread 生命週期要明確 join 或 detach；std::jthread 以 RAII 方式在解構時 request_stop 並 join，較不容易漏掉。
   - 效能問題如 false sharing、contention、過度建立 thread，通常在正確性之後才調整；先寫對，再量測。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】condition_variable：predicate、lost wakeup、生產者/消費者
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 為什麼 wait() 一定要帶 predicate？
+//     答：兩個原因。(1) Spurious wakeup：標準允許 wait() 在沒有任何 notify 的情況下
+//         返回。(2) 搶跑：被喚醒後要重新競爭 mutex，等真正拿到鎖時條件可能已被另一個
+//         先醒的 thread 消費掉。wait(lk, pred) 等價於 while (!pred()) wait(lk); ——
+//         用迴圈而非 if，把兩者都變成無害的重試。
+//     追問：wait() 內部做了什麼？（原子地「解鎖 mutex + 進入等待」，返回前重新上鎖，
+//           這個原子性正是必須把 lock 傳進去的原因）
+//
+// 🔥 Q2. 什麼是 lost wakeup？如何避免？
+//     答：CV 沒有記憶——notify_one() 發出時若沒有任何 thread 在等待，這個通知就永久
+//         消失。典型錯誤：consumer 檢查條件為 false、還沒進入 wait，producer 就生產
+//         並 notify，consumer 才進 wait → 永遠等不到。避免方式：條件的修改與檢查都
+//         必須在同一把 mutex 保護下，使「檢查→等待」相對於「修改→通知」是原子的。
+//     追問：notify 該在鎖內還是鎖外？（都正確；鎖內較易推理，鎖外可避免被喚醒者立刻
+//           撞鎖，但要確保狀態已改完）
+//
+// 🔥 Q3. notify_one() 與 notify_all() 怎麼選？
+//     答：notify_one() 開銷小；notify_all() 可能造成 thundering herd（一堆 thread 醒來
+//         搶同一把鎖）。規則：等待者同質、且一次事件只能滿足一個等待者（單一 queue 的
+//         多個 consumer）用 notify_one()；等待者在等不同條件、或一次事件可滿足多個
+//         （廣播 shutdown、各自 predicate 不同）必須用 notify_all()，否則被喚醒的可能
+//         是 predicate 仍為 false 的那個，其他人餓死。
+//     追問：shutdown 旗標為什麼一律用 notify_all？（要叫醒全部等待者，一個都不能漏）
+//
+// 🔥 Q4. 手寫有界阻塞佇列的要點？
+//     答：mutex + 兩個 CV（not_full / not_empty）+ 緩衝區。Producer：wait 直到
+//         size < cap 或 stop → push → 解鎖 → notify not_empty；consumer 對稱。用兩個
+//         CV 而非一個，可避免 producer 喚醒 producer 的無效喚醒。stop 旗標必須納入
+//         每個 predicate，否則無法優雅關閉。
+//     追問：如何做 push 逾時放棄？（wait_for 帶 predicate，回傳值即 predicate 最終值）
+//
+// ⚠️ 陷阱. 把 while 換成 if：if (q.empty()) cv.wait(lk); 會怎樣？
+//     答：if 只檢查一次，被 spurious wakeup 或搶跑喚醒後就當作條件成立往下走，對空
+//         queue 呼叫 pop() → UB 或崩潰。必須寫 while (q.empty()) cv.wait(lk);，或
+//         直接用帶 predicate 的多載（內部就是 while）。
+//     為什麼會錯：直覺認為「被通知了就代表條件成立」，但 CV 通知的語意只是「狀態可能
+//         變了，你自己再去看一次」。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <thread>
 #include <mutex>

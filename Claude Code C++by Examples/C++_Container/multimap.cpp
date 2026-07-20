@@ -46,6 +46,27 @@
   - 容器元素型別若昂貴，優先理解 emplace、move 和 reference/iterator 有效性，不要盲目複製。
   - 所有容器都要考慮空容器邊界；front/back/top 在空容器上呼叫通常是未定義行為或前置條件違反。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::multimap
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. multimap 和 map 的差別？為什麼 multimap 沒有 operator[] 和 at()？
+//     答：multimap 允許重複 key，所以 insert 永遠成功（回傳 iterator 而非 pair<iterator,bool>）。
+//         因為一個 key 可能對應多個 value，`m[k]` 語意不明（要回哪一個？），
+//         因此標準干脆不提供 operator[] 與 at()，也沒有 insert_or_assign / try_emplace。
+//     追問：什麼時候改用 map<K, vector<V>> 更好？（需要把同 key 的 value 當一組整體操作時）
+//
+// 🔥 Q2. 如何取出 multimap 中某個 key 的所有 value？
+//     答：用 equal_range(key)，回傳 pair<iterator,iterator> 即該 key 的整個區間；
+//         也可用 lower_bound / upper_bound 自己組。count(key) 回傳個數，複雜度 O(log n + k)。
+//         C++11 起標準要求等值 key 的元素維持插入順序（相對順序穩定）。
+//
+// ⚠️ 陷阱. multimap::erase(key) 會刪掉幾個元素？
+//     答：全部等值元素，並回傳刪除個數。只想刪一個必須傳 iterator（例如 find(key) 的結果）。
+//     為什麼會錯：把它跟 map::erase(key)（最多只會刪 1 個）混為一談，
+//         實務上這會一次吹掉整組資料。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <map>            // multimap 與 map 共用 <map>
 #include <iostream>
 #include <string>

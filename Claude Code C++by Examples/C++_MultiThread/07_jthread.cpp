@@ -141,6 +141,34 @@
   - thread 生命週期要明確 join 或 detach；std::jthread 以 RAII 方式在解構時 request_stop 並 join，較不容易漏掉。
   - 效能問題如 false sharing、contention、過度建立 thread，通常在正確性之後才調整；先寫對，再量測。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::jthread 與 stop_token（C++20 協作式取消）
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. jthread 相比 std::thread 好在哪？
+//     答：兩個改進。(1) RAII 自動 join：解構子會先 request_stop() 再 join()，不再有
+//         「忘記 join 就 terminate()」的問題，且 stack unwinding 時自動等待，例外安全。
+//         (2) 內建協作式取消：jthread 自帶 stop_source；若執行緒函式的第一個參數是
+//         std::stop_token，jthread 會自動傳入，函式內可輪詢 stop_requested() 或註冊
+//         std::stop_callback。
+//     追問：condition_variable_any::wait 如何配合 stop_token？（有接受 stop_token 的
+//           多載，request_stop 會喚醒等待，這正是 condition_variable_any 存在的理由）
+//
+// 🔥 Q2. 為什麼 C++ 從不提供「強制終止執行緒」的 API？
+//     答：因為無法保證不變式與資源釋放。被強制殺掉的 thread 可能正持有 mutex（永久
+//         鎖死其他人）、正處於配置到一半的狀態（記憶體洩漏）、或讓共享資料停在破壞
+//         的中間狀態。取消因此必須是協作式的：被取消方自己選擇安全的退出點。
+//     追問：那卡在阻塞式 IO 的 worker 怎麼中斷？（stop_token 叫不醒 read()；需要
+//           eventfd/self-pipe、socket timeout 或 shutdown() 這類機制）
+//
+// ⚠️ 陷阱. jthread 的解構子順序是什麼？先 join 還是先 request_stop？
+//     答：先 request_stop()，再 join()。順序反過來就會死鎖——若 worker 正在迴圈等待
+//         stop 訊號，先 join 等於在等一個永遠不會結束的 thread。
+//     為什麼會錯：習慣 std::thread 的人會以為 jthread 只是「自動幫你 join」，於是寫出
+//         「無限迴圈但不檢查 stop_token」的 worker，結果解構時卡死。自動 join 只有在
+//         worker 真的會回應停止請求時才有意義。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <thread>             // std::thread, std::jthread, std::stop_token
 #include <chrono>

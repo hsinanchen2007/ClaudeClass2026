@@ -89,6 +89,48 @@
   - downcast 若沒有 polymorphic base 和 dynamic_cast 檢查，很容易把 base 指標當成錯誤 derived 使用。
   - 能用 virtual function、variant、visitor 或 overload 解決的問題，通常比到處 cast 更安全。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】Cast 常見陷阱
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 為什麼 C 風格轉型 (T)x 被視為不良實踐？
+//     答：因為它是【一個語法、多種語意】。C++ 標準規定 (T)x 會依序嘗試：
+//         const_cast → static_cast → static_cast + const_cast →
+//         reinterpret_cast → reinterpret_cast + const_cast，取【第一個能成立的】。
+//         也就是說，你以為自己在寫一個安全的數值或繼承轉換，當它編不過時，
+//         編譯器不會報錯，而是【靜默往下退化】，最後可能真的幫你做了
+//         reinterpret_cast。加上它語法上難以搜尋、意圖不明確，所以現代風格指南
+//         一律禁用。四種具名 cast 各自限縮了能力範圍，錯用會直接編譯失敗。
+//     追問：怎麼在既有專案中找出它們？（-Wold-style-cast，或 clang-tidy 的
+//           cppcoreguidelines-pro-type-cstyle-cast）
+//
+// 🔥 Q2. 什麼是 object slicing（物件切片）？怎麼避免？
+//     答：把 derived 物件【以值（by value）】指派或傳遞給 base 型別時，只有 base
+//         的部分被複製，derived 的成員與多型行為被「切掉」 — 得到的是一個純粹的
+//         base 物件，vptr 指向 Base 的 vtable，不再有多型。避免方式：base 一律用
+//         pointer 或 reference 傳遞；或把 base 的 copy constructor / copy
+//         assignment 設成 protected 或 delete；或讓 base 是 abstract class。
+//     追問：std::vector<Base> 塞 Derived 會怎樣？（每個元素都被 slice；正確做法是
+//           std::vector<std::unique_ptr<Base>>）
+//
+// Q3. 把成員函式指標 reinterpret_cast 成一般函式指標可以嗎？
+//     答：【不行，是 UB】。成員函式指標與一般函式指標的 ABI 根本不同 — 前者必須
+//         帶著 this、而且在有 virtual / 多重繼承時它甚至不是單一位址（實作上常是
+//         含偏移量的結構）。想把「物件 + 成員函式」變成可呼叫物件，正解是 lambda
+//         捕獲物件、std::bind，或 std::mem_fn。
+//
+// ⚠️ 陷阱. for (int i = 0; i < v.size(); ++i) 有什麼問題？
+//     答：v.size() 回傳 size_t（unsigned），比較時 int 會被【提升成 unsigned】。
+//         單看這個迴圈通常還跑得對，真正的坑是同類寫法中的 unsigned 減法：
+//         v.size() - 5 在 size() < 5 時不會得到負數，而是【環繞成一個超大正數】，
+//         於是 「< 0」 的判斷永遠為假。解法：迴圈用 size_t，或 C++20 的
+//         std::ssize(v) 取得有號長度，或明確 static_cast 成有號型別後再運算。
+//     為什麼會錯：多數人腦中的模型是「反正都是整數，比大小不會有問題」，忽略了
+//         【usual arithmetic conversions 會把有號的一方轉成無號】，而不是相反 —
+//         負數因此變成巨大正數，而且這一切【沒有任何執行期錯誤】，只有開了
+//         -Wsign-compare / -Wconversion 才看得到警告。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <vector>
 

@@ -32,6 +32,36 @@
   - C++_OOP/C++_OOP summary 的複習方式是把 API 依用途分組，再比較輸入條件、輸出語意、失敗狀態和複雜度。
   - 初學複習 summary 時，不要只背函式名稱；要能說出何時該用、何時不該用、和相近工具差在哪裡。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】C++ OOP 總覽
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 三大 OOP 特性（封裝／繼承／多型）在 C++ 分別怎麼落實？
+//     答：**封裝** —— 用 private / protected / public 控制存取，成員資料私有、
+//         以成員函式提供介面（本檔 Counter）。**繼承** —— `class D : public B`，
+//         public 表 is-a、private 表 implemented-in-terms-of。**多型** ——
+//         virtual 函式（執行期，本檔 Shape / Rect / Circle）與 template（編譯期）。
+//     追問：`struct` 與 `class` 的差別？（只有預設存取權：struct 是 public、
+//           class 是 private，繼承預設亦同；其餘完全相同）
+//
+// 🔥 Q2. 什麼是 object slicing？本檔為什麼用 `unique_ptr<Shape>` 而不是 `Shape`？
+//     答：把 derived 物件「以值」指派或傳遞給 base 型別時，只有 base 的部分被複製，
+//         derived 的成員與多型行為被切掉，得到一個純粹的 base 物件。所以多型一律
+//         要透過 pointer 或 reference —— 本檔 demo_polymorphism 用
+//         `unique_ptr<Shape>` 就是為此（何況 Shape 是抽象類別，根本無法以值存放）。
+//     追問：`std::vector<Base>` 塞 Derived 會怎樣？（每個元素都被 slice；
+//           正確做法是 `vector<unique_ptr<Base>>`）
+//
+// ⚠️ 陷阱. copy assignment 沒處理 self-assignment（`a = a`）會怎樣？
+//     答：典型的「先 delete 舊資源、再從來源複製」寫法遇到自我指派時，會先把來源
+//         自己刪掉再讀它 → 讀取已釋放記憶體。解法：① 開頭 `if (this == &other)
+//         return *this;` ② 更好的是 **copy-and-swap** —— 先複製一份再 swap，
+//         天然安全且順帶提供 strong exception guarantee（本檔 Buffer::operator=
+//         用的正是這招）。
+//     為什麼會錯：多數人覺得「誰會寫 a = a」而略過。但透過參考或容器元素間接發生的
+//         自我指派（`v[i] = v[j]` 剛好 i == j）非常常見，而且是靜默的記憶體錯誤。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <memory>
 #include <string>

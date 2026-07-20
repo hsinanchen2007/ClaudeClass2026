@@ -37,6 +37,31 @@
   - C++_Lambda/C++_Lambda summary 的複習方式是把 API 依用途分組，再比較輸入條件、輸出語意、失敗狀態和複雜度。
   - 初學複習 summary 時，不要只背函式名稱；要能說出何時該用、何時不該用、和相近工具差在哪裡。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】Lambda 總覽（標準版本與閉包性質）
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. lambda 相關特性各是哪個標準加入的？
+//     答：lambda 基本語法 C++11；generic lambda（auto 參數）與 init-capture
+//     [x = expr] 是 C++14；constexpr lambda 與 [*this] 捕獲是 C++17；模板化 lambda
+//     []<class T>(...) 是 C++20，同一版起 [=] 隱式捕獲 this 被棄用、無捕獲 lambda 可
+//     預設建構與賦值。答錯版本在面試中很扣分，尤其 generic lambda 常被誤答成 C++11。
+//     追問：C++23 又加了什麼？（deducing this：[](this auto&& self, ...){}，讓 lambda
+//     可以直接遞迴呼叫自己）
+//
+// 🔥 Q2. lambda 可以遞迴嗎？
+//     答：不能直接遞迴——在本體內 auto f = [](int n){ return f(n-1); } 的 f 尚未完成型別
+//     推導。三種解法：① std::function<int(int)> f = [&f](int n){...};（有型別擦除成本，
+//     且 [&f] 參考自身，f 一離開作用域即懸垂）；② Y-combinator 風格
+//     auto f = [](auto&& self, int n) -> int { ... }; f(f, 5);；③ C++23 的 deducing this。
+//
+// Q3. 閉包型別有哪些特殊性質？
+//     答：有捕獲者不可賦值；C++20 前無預設建構子；有隱式複製／移動建構子；參考捕獲的
+//     成員在複製後由兩個閉包共享同一被參考物；無捕獲者可隱式轉成函式指標；每個 lambda
+//     型別唯一，所以 C++20 前要把 lambda 當 std::map 的比較器必須傳入實體：
+//     auto cmp = ...; std::map<K, V, decltype(cmp)> m(cmp);
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <functional>
 #include <iostream>

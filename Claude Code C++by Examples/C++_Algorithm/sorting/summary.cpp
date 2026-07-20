@@ -58,7 +58,8 @@
 --------------------------------------------------------------------------------
 三、迭代器需求 (Iterator Requirements)
 --------------------------------------------------------------------------------
-  全部需要 RandomAccessIterator (能 +n、-n、it1-it2)。
+  sort / stable_sort / partial_sort / nth_element 需要 RandomAccessIterator (能 +n、-n、it1-it2)；
+  但 is_sorted / is_sorted_until 只需要 ForwardIterator（forward_list 也能用）。
   - 適用容器:std::vector / std::deque / std::array / 原生陣列 / std::string
   - 不適用:std::list / std::forward_list (它們提供成員函式 .sort())
   - std::set/std::map 已天然有序,不需排序演算法
@@ -148,6 +149,48 @@
   - 確認 log 已按時間遞增 → is_sorted (大致驗證資料完整性)。
 ================================================================================
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】排序家族總覽 (sorting family)
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 排序家族怎麼選?請給一張決策表。
+//     答:全部都要有序 → sort,O(n log n),不穩定、不配置額外記憶體。
+//         全部有序又要保留等價元素原順序 → stable_sort,有額外記憶體時
+//         O(n log n),配置不到時退化為 O(n log² n)。
+//         要前 K 名且 K 個之間也有序 → partial_sort,約 O(n log k)。
+//         同上但來源不可修改 / 只有 input iterator → partial_sort_copy,
+//         k = min(來源大小, 目的區間大小)。
+//         只要「是哪 K 個」、第 k 大或中位數 → nth_element,標準保證平均 O(n)。
+//         只是要檢查有沒有排序 → is_sorted / is_sorted_until,O(n)。
+//     追問:k 接近 n 時呢?(部分排序失去優勢,直接 sort)
+//
+// 🔥 Q2. 這一家人裡誰保證穩定?
+//     答:只有 stable_sort。sort、partial_sort、partial_sort_copy、nth_element
+//         都不保證 — 它們都靠 swap / partition 搬移元素。需要多鍵語意時,
+//         要嘛用 stable_sort,要嘛把 tie-breaker 直接寫進 comparator
+//         (std::tie(a.k1, a.k2) < std::tie(b.k1, b.k2))。
+//     追問:「穩定」是否代表 iterator 會跟著元素走?
+//           (不代表 — 值一樣整批搬移,穩定只描述等價元素之間的先後關係)
+//
+// 🔥 Q3. 這一家人共同的前置條件是什麼?
+//     答:comparator 必須構成 strict weak ordering:irreflexive、asymmetric、
+//         transitive,且 equivalence 本身也要有傳遞性。最常見的違反是寫
+//         return a <= b;,後果是 undefined behavior (可能 crash,而不只是
+//         順序錯)。另一個常被忽略的例子是含 NaN 的浮點資料 — NaN 與任何值的
+//         比較都為 false,std::less 因此不構成 strict weak ordering。
+//     追問:怎麼 debug?(-D_GLIBCXX_DEBUG 會檢查 comparator 的 irreflexivity)
+//
+// Q4. 哪些成員需要 random access iterator?
+//     答:sort、stable_sort、partial_sort、nth_element 都要求 random access
+//         iterator,所以 std::list / std::forward_list 不能用 (它們改用成員
+//         函式 .sort())。兩個例外:is_sorted / is_sorted_until 只需要 forward
+//         iterator;partial_sort_copy 的「來源端」只需要 input iterator,
+//         但「目的端」仍需 random access iterator。
+//     追問:std::map / std::set 為什麼也不行?
+//           (除了 iterator 只是 bidirectional,元素型別是 pair<const Key, T> /
+//            const key,不可賦值,而排序必須搬移元素)
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <iostream>
 #include <vector>

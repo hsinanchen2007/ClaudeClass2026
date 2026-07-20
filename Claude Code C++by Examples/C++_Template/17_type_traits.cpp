@@ -84,6 +84,35 @@
   - perfect forwarding 需要 T&& 搭配 std::forward<T>，不要把所有 && 都誤認為 move。
   - template 可提升零成本抽象，但也可能造成編譯時間上升和二進位膨脹；共通實作可用非 template helper 收斂。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】<type_traits>
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. trait 的 ::value / ::type 與 _v / _t 後綴各屬哪個標準？
+//     答：C++11 只有 std::is_integral<T>::value 與 std::remove_const<T>::type
+//         兩種寫法。C++14 補上 _t 別名（remove_const_t，用 alias template 實作），
+//         C++17 才補上 _v 變數模板（is_integral_v，用 C++14 的變數模板機制實作）。
+//         所以「_t 比 _v 早三年」是可以拿來區辨深度的細節。
+//     追問：_t 為什麼特別有價值？（省掉 dependent name 前面必須寫的 typename，
+//         忘了寫 typename 是新手最常見的編譯錯誤之一）
+//
+// 🔥 Q2. std::decay_t<T> 做了什麼？典型用途是什麼？
+//     答：模擬「by value 傳參」會發生的型別轉換：剝掉 reference 與 cv 限定、
+//         陣列退化為指標、函式退化為函式指標（本機實測 decay_t<const int&> 得 int、
+//         decay_t<const char[6]> 得 const char*）。典型用途：make_pair/make_tuple、
+//         把推導出的型別拿來宣告成員變數、以及在 forwarding reference 上做型別
+//         比較（is_same_v<decay_t<T>, Foo>）。
+//
+// ⚠️ 陷阱. std::remove_const_t<const int*> 會得到什麼？
+//     答：還是 const int*，const 一點都沒被拿掉（本機以 static_assert 實測確認）。
+//         因為 remove_const 只剝「top-level const」，而 const int* 的 const 屬於
+//         被指物（low-level），指標本身並不是 const。反過來 remove_const_t<int* const>
+//         才會得到 int*。同理 remove_const_t<const int&> 也不動，要先
+//         remove_reference 再 remove_const，或直接用 decay_t 一次處理掉。
+//     為什麼會錯：腦中把 remove_const 想成「把這個型別裡的 const 字樣通通刪掉」。
+//         它其實是有精確定義的：只處理最外層那一個 cv 限定。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <limits>
 #include <string>
@@ -92,9 +121,12 @@
 
 // ─── 1. always_false：static_assert 中製造「永遠 false」的 trait ─────────
 //   為什麼要這個？
-//     直接寫 static_assert(false, "...") 會讓「primary template」立刻失敗。
-//     必須讓 false 依賴某個 template 參數，編譯器才會「實際 instantiate
-//     時才報錯」。常見錯誤訊息來源就是它。
+//     直接寫 static_assert(false, "...") 在【未實例化】的 template 裡，標準規定是
+//     ill-formed, no diagnostic required (IFNDR)——也就是「編譯器可以報錯，也可以
+//     不報」，各家行為不一致（本機 g++ 15.2 實測：接受、不報錯）。
+//     不能依賴這種不確定行為，所以要讓 false 依賴某個 template 參數，
+//     把錯誤明確推遲到「真的 instantiate 時」才觸發。這才是可攜的寫法。
+//     （C++26 的 P2593 已允許直接寫 static_assert(false)，但在此之前一律用這招。）
 template <typename...>
 inline constexpr bool always_false_v = false;
 

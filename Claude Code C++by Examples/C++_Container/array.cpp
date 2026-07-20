@@ -55,6 +55,26 @@
   - 容器元素型別若昂貴，優先理解 emplace、move 和 reference/iterator 有效性，不要盲目複製。
   - 所有容器都要考慮空容器邊界；front/back/top 在空容器上呼叫通常是未定義行為或前置條件違反。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::array
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. std::array、C 陣列、std::vector 三者的差別？
+//     答：std::array<T,N> 是固定大小的 aggregate，N 是 compile-time 常數，元素就在物件內部，
+//         完全沒有動態配置；具備 size()/at()/iterator 等 STL 介面，可 copy/assign，傳參不會 decay 成指標。
+//         C 陣列沒有這些介面、傳參會 decay、無法直接 copy。vector 大小可執行期改變、元素在 heap。
+//     追問：std::array 的 size() 是 constexpr 嗎？（是）
+//
+// 🔥 Q2. std::array<int, 0> 合法嗎？
+//     答：合法。empty() 回傳 true、size() 為 0、begin() == end()；
+//         但對它呼叫 front() / back() 是 undefined behavior。
+//
+// ⚠️ 陷阱. std::array 的元素一定在 stack 上嗎？
+//     答：不一定。元素是「嵌在 array 物件內部」，所以它跟著 array 物件本身的儲存期走：
+//         局部變數就在 stack、global 就在靜態儲存區、new 出來的就在 heap。
+//     為什麼會錯：把「不做動態配置」誤讀成「一定在 stack」，兩者不是同一件事。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <array>
 #include <iostream>
 #include <algorithm>

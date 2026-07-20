@@ -70,6 +70,34 @@
   - 容器元素型別若昂貴，優先理解 emplace、move 和 reference/iterator 有效性，不要盲目複製。
   - 所有容器都要考慮空容器邊界；front/back/top 在空容器上呼叫通常是未定義行為或前置條件違反。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::unordered_set
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. unordered_set 的元素為什麼不能修改？
+//     答：因為元素本身就是雜湊的依據，修改它會讓元素落在錯的 bucket，使容器內部結構不一致
+//         （之後就可能永遠查不到它）。因此 iterator 與 const_iterator 都指向 const 元素。
+//         要改就 erase 舊值再 insert 新值，或 C++17 起用 extract() 取出 node handle、
+//         改完 value() 再 insert 回去（不需重新配置記憶體）。
+//
+// 🔥 Q2. load_factor / max_load_factor / rehash / reserve 各是什麼？
+//     答：load_factor() = size() / bucket_count()。max_load_factor()（預設 1.0）是觸發 rehash 的門檻——
+//         插入後若將超過它，容器自動增加 bucket 數並重新分配所有元素。
+//         reserve(n) 等價於 rehash(ceil(n / max_load_factor()))，事先呼叫可避免多次 rehash。
+//
+// Q3. unordered_set 的 iterator 為什麼不能 `--`？
+//     答：因為它是 forward iterator。libstdc++ 把所有元素串在一條 singly linked list 上，
+//         bucket array 只存指向該 bucket 前一節點的指標；singly linked list 天生無法反向走訪。
+//         所以 unordered 容器沒有 rbegin() / rend()，也不能用需要 bidirectional 的演算法。
+//
+// ⚠️ 陷阱. rehash 之後，舊的 iterator 和 reference 還能用嗎？
+//     答：**所有 iterator 失效，但 reference / pointer 永遠不會失效**。
+//         因為 separate chaining 的元素住在獨立配置的節點上，rehash 只重接 bucket array 與 next 指標，
+//         節點本體完全沒搬家。erase 則只使被刪元素的 iterator / reference 失效。
+//     為什麼會錯：拿 vector 擴容「整塊搬家、iterator 與 reference 一起失效」的模型套到 hash table；
+//         但只有 open addressing 才會搬動元素本體。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <unordered_set>
 #include <iostream>
 #include <string>

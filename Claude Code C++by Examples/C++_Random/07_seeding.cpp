@@ -58,6 +58,39 @@
   - random_device 不一定是真硬體亂數，部分平台可能是 deterministic；安全需求要查平台保證。
   - seed_seq 可用多個整數初始化大型引擎狀態，比單一 time 值更完整。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】種子（seeding）與可重現性
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. std::mt19937 gen(rd()) 的 seeding 為什麼「不夠好」？正確做法是？
+//     答：mt19937 的內部狀態有 19937 bit（624 個 32-bit word），但 rd() 只回傳 32 bit
+//         ——等於最多只能到達 2^32 種不同的初始狀態，遠少於狀態空間。對一般應用夠用，
+//         但大規模平行模擬會有序列重疊的風險。較完整的做法是用 std::seed_seq 餵多個
+//         熵值：std::seed_seq seq{rd(), rd(), ...}; std::mt19937 gen(seq);
+//     追問：為什麼不能寫 std::mt19937 gen(std::random_device{});？（那是 most vexing
+//           parse 的近親——少了後面那對括號，會被解析成函式宣告而不是變數定義）
+//
+// 🔥 Q2. 相同 seed 能保證跨平台重現嗎？
+//     答：要分兩半回答。Engine 可以：mt19937 等標準 engine 的演算法由標準完整規定，
+//         同一個 seed 在任何符合標準的實作上都產生相同序列。Distribution 不行：標準
+//         只規定「分布」，不規定「演算法」，各家的 uniform_int_distribution 與
+//         normal_distribution 實作不同，同 engine 同 seed 會得到不同數值。需要跨平台
+//         重現（遊戲 replay、科學模擬、測試）時，請用標準 engine，但自己實作
+//         distribution，或使用固定的第三方實作。
+//     追問：怎麼存檔重現？（engine 有定義 operator<< / operator>>，可以序列化它的
+//           完整內部狀態，比只存 seed 更精確——因為還原了「已經抽到第幾個」）
+//
+// 🔥 Q3. 多執行緒下 <random> 該怎麼用？
+//     答：engine 與 distribution 都不是 thread-safe——operator() 會修改內部狀態，多個
+//         thread 同時呼叫同一個物件就是 data race（UB）。正解優先用 thread_local：
+//         thread_local std::mt19937 gen{std::random_device{}()}; 每個 thread 一份、
+//         零競爭、無鎖。次選是每個 thread 明確持有自己的 engine 並用不同 seed。加鎖
+//         共用一個 engine 雖然正確，但會成為瓶頸。注意只寫 static 是不夠的，那仍是 race。
+//     追問：用 base_seed + thread_id 當種子有風險嗎？（相鄰的 seed 對某些 engine 可能
+//           產生短期相關的序列，較嚴謹的做法是用 seed_seq 混合，或用支援多 stream
+//           的 engine）
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <random>
 #include <string>

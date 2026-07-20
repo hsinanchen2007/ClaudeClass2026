@@ -35,6 +35,33 @@
   - C++_Iterator/C++_Iterator summary 的複習方式是把 API 依用途分組，再比較輸入條件、輸出語意、失敗狀態和複雜度。
   - 初學複習 summary 時，不要只背函式名稱；要能說出何時該用、何時不該用、和相近工具差在哪裡。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】iterator 綜合總結
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. const_iterator 和 const iterator 有什麼差別？
+//     答：const_iterator 是「指向 const 元素的 iterator」——iterator 本身可以移動（++it
+//         OK），但不能透過它修改元素（*it = x 編譯錯誤）。const iterator（等同 T* const）
+//         是「iterator 本身是 const」——不能移動（++it 編譯錯誤），但可以修改元素。
+//         C++11 起要明確表達唯讀意圖請用 cbegin() / cend()。
+//     追問：為什麼 C++11 要新增 cbegin / cend？（在 auto 時代，對 non-const 容器呼叫
+//         begin() 得到的是 non-const iterator）／const_iterator 可以和 iterator 比較嗎？
+//         （可以，iterator 會隱含轉換成 const_iterator）
+//
+// 🔥 Q2. C++20 的 ranges 對 iterator 帶來什麼改變？
+//     答：(1) sentinel——end() 不必和 begin() 同型別，可以是輕量的哨兵，讓 C 字串這類
+//         「遇到終止符才停」的序列零成本適配；(2) iterator concepts（std::input_iterator、
+//         std::forward_iterator…）取代 tag 的非正式約定，錯誤訊息大幅改善；(3) views 惰性
+//         求值且可組合，中間不產生暫存容器；(4) 演算法可直接吃 range，如 std::ranges::sort(v)。
+//     追問：views 有什麼 dangling 風險？（view 不擁有元素，底層若是暫存物件就會懸空，
+//         因此有 borrowed_range 這個概念）
+//
+// Q3. 一句話說清楚：為什麼 STL 要把 iterator 分成這麼多 category？
+//     答：為了讓「同一個泛型演算法」能在能力不同的容器上取得各自最佳的實作，同時在能力
+//         不足時於編譯期就擋下來。distance 對 random access 是 O(1)、對 list 是 O(n)；
+//         sort 要求 random access，所以 std::sort(list...) 直接編譯失敗而不是慢慢跑。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <iostream>
 #include <iterator>

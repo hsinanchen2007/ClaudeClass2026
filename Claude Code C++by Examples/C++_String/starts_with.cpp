@@ -123,6 +123,26 @@
   - 若只是傳入唯讀文字片段且不需要擁有資料，std::string_view 可避免複製；但它不能延長原字串生命週期。
   - 處理中文或 UTF-8 時，std::string 的 size() 回傳 byte 數，不是人眼看到的字元數。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::string::starts_with
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. starts_with 是哪個標準?為什麼比 s.substr(0, n) == prefix 好?
+//     答：C++20。substr(0, n) 會建立一個新的 std::string——複製 n 個字元,
+//         長度超過 SSO 門檻時還會 heap 配置(SSO 門檻是 implementation-defined,
+//         標準未規定)。starts_with 只做比較,零配置。
+//     追問：C++20 之前的零配置寫法?→ s.compare(0, n, prefix) == 0。
+//
+// 🔥 Q2. 參數可以傳什麼?
+//     答：三個多載——std::string_view(C++17,所以 std::string、字串字面量都能
+//         隱式轉進去)、單一 char、以及 const char*。三者都是 constexpr。
+//
+// ⚠️ 陷阱. prefix 比 s 還長時會怎樣?
+//     答：回傳 false。不是 UB,也不會拋例外——長度不足就直接判定不相符。
+//     為什麼會錯：拿 substr 的直覺去套。substr 是「pos > size() 才拋 out_of_range」,
+//         而 starts_with 連比都不用比就回 false,兩者的失敗模式不同。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <vector>

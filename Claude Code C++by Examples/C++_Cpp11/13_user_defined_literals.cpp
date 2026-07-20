@@ -65,6 +65,37 @@
   - user-defined literal 可讓數值或字串帶上單位語意，例如 10_km 或 "abc"_sv。
   - literal operator 應保持簡單清楚，過度使用會讓語法像魔法，降低可讀性。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】user-defined literals（C++11）
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. UDL 怎麼寫？後綴命名有什麼硬性規則？
+//     答：定義一個 literal operator 即可：
+//           constexpr long double operator""_km(long double v) { return v*1000.0L; }
+//           auto d = 3.5_km;
+//         ⚠️ 使用者自訂的後綴「必須以底線 _ 開頭」；不以底線開頭的後綴一律保留
+//         給標準庫。本機 g++ 對無底線後綴只給 -Wliteral-suffix 警告（reserved
+//         for future standardization）而非硬錯，但那是保留名稱，不該用。
+//     追問：UDL 可以定義在函式裡嗎？（不行，literal operator 只能在 namespace
+//           scope 宣告；本機實測寫在 main 內會報 a function-definition is not
+//           allowed here。本檔的 _KB / _MB 定義在檔案上方就是這個原因）
+//
+// 🔥 Q2. literal operator 的參數型別為什麼不能隨便選？
+//     答：標準只允許固定幾種形式：整數字面值一律用 unsigned long long 接、浮點
+//         字面值一律用 long double 接，字串是 (const char*, std::size_t)，另有
+//         char 系列與 raw 形式 (const char*) / template<char...>。寫成
+//         operator""_x(int) 會直接編譯錯（本機 g++ 實測：has invalid argument
+//         list）。
+//     追問：為什麼要用最寬的型別接？（讓同一個 operator 收下所有大小的字面值，
+//           要不要縮窄、要不要檢查溢位，交給你自己在函式體裡決定）
+//
+// Q3. 100ms、"abc"s 這些標準庫後綴屬於哪個標準？
+//     答：⚠️ C++14，不是 C++11。C++11 只提供了 UDL 這個「語言機制」，標準庫本身
+//         的 s / ms / h（<string> 的 string_literals、<chrono> 的 chrono_literals）
+//         要到 C++14 才加入。本機 g++ -pedantic-errors 實測："abc"s 與 100ms 在
+//         -std=c++11 編譯失敗，-std=c++14 才通過。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 

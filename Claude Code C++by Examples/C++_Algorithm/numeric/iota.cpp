@@ -88,6 +88,36 @@
   - gcd/lcm 對整數工作；lcm 可能溢位，即使最後型別是 long long 也要注意輸入大小。
   - 數值演算法最容易出錯的是型別和溢位，不是語法；工作程式應刻意選擇初始值型別。
 */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】std::iota
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. std::iota 做什麼?有什麼前置條件?
+//     答:把 value, value+1, value+2, ... 依序寫入 [first, last),每步用 ++value。
+//         C++11 加入、放在 <numeric>,C++20 起 constexpr,複雜度 O(n)。前置條件是
+//         「容器要先有大小」—— 它只寫入既有元素,不會 push_back,也不會 resize。
+//     追問:名字為什麼叫 iota?(取自 APL 語言的 ι 運算子,意思是「產生索引序列」)
+//
+// 🔥 Q2. iota 最經典的用途 —— 間接排序 (argsort) 怎麼寫?
+//     答:先建索引、再排索引,原始資料完全不動:
+//           std::vector<int> idx(v.size());
+//           std::iota(idx.begin(), idx.end(), 0);
+//           std::sort(idx.begin(), idx.end(), [&](int a, int b){ return v[a] < v[b]; });
+//         用在「排序後還要知道原始位置」的題目:排名、依時間戳排序但要保留事件 ID。
+//     追問:為什麼不直接排 pair?(排索引不搬移原資料,元素很大時省下大量 move)
+//
+// ⚠️ 陷阱. 對空 vector 呼叫 iota、或改用 std::back_inserter 來「產生 n 個數」,行不行?
+//     答:都不行。空 vector 的 [begin(), end()) 是空區間,iota 一個元素也不會寫入;
+//         而 iota 需要一對 ForwardIterator 界定範圍,back_insert_iterator 是 output iterator、
+//         無法和 last 比較,連編譯都過不了。必須先 resize 或建構出大小。
+//     為什麼會錯:把 iota 想成「產生器」,但它其實是「填充器」。
+//
+// Q3. std::iota 和 std::views::iota 是同一個東西嗎?
+//     答:不是。std::iota (C++11, <numeric>) 立刻把值寫進既有範圍;std::views::iota
+//         (C++20, <ranges>) 是惰性產生的 view,不需要預先配置空間,可直接寫成
+//         for (int i : std::views::iota(0, n))。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <algorithm>
 #include <iostream>
 #include <numeric>
