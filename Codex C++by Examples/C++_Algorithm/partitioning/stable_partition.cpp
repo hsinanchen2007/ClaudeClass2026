@@ -1,0 +1,71 @@
+/*
+ * std::stable_partition：原地分區且保留各群組原始相對順序
+ * ==========================================================
+ * 回傳第一個 false。時間複雜度依額外記憶體：有足夠 buffer 通常 O(N)，配置失敗
+ * 時可退化到 O(N log N) 次 swap；標準不保證固定記憶體成本。
+ *
+ * 相較 partition，穩定性是明確業務需求才支付的成本，例如 FIFO、時間序與 UI 排列。
+ */
+
+#include <algorithm>
+#include <cassert>
+#include <iostream>
+#include <string>
+#include <vector>
+
+// LeetCode 283：Move Zeroes；必須保留非零元素相對順序。
+void leetcode_move_zeroes(std::vector<int>& nums) {
+    std::stable_partition(nums.begin(), nums.end(),
+                          [](int value) { return value != 0; });
+}
+
+struct Ticket {
+    std::string name;
+    bool vip;
+};
+
+// 實務：VIP 先處理，但 VIP/普通群組內維持到達順序。
+std::size_t practical_prioritize_vip(std::vector<Ticket>& tickets) {
+    const auto point = std::stable_partition(
+        tickets.begin(), tickets.end(),
+        [](const Ticket& ticket) { return ticket.vip; });
+    return static_cast<std::size_t>(std::distance(tickets.begin(), point));
+}
+
+int main() {
+    std::vector<int> values{5, 2, 7, 4, 9, 6};
+    const auto point = std::stable_partition(
+        values.begin(), values.end(), [](int value) { return value % 2 == 0; });
+    assert((values == std::vector<int>{2, 4, 6, 5, 7, 9}));
+    assert(point == values.begin() + 3);
+
+    std::vector<int> nums{0, 1, 0, 3, 12};
+    leetcode_move_zeroes(nums);
+    assert((nums == std::vector<int>{1, 3, 12, 0, 0}));
+
+    std::vector<Ticket> tickets{{"A", false}, {"B", true}, {"C", false},
+                                 {"D", true}};
+    assert(practical_prioritize_vip(tickets) == 2U);
+    assert(tickets[0].name == "B" && tickets[1].name == "D");
+    assert(tickets[2].name == "A" && tickets[3].name == "C");
+
+    std::cout << "stable_partition：穩定分區、LC283 與 FIFO 優先權測試通過\n";
+}
+
+/*
+ * 易錯陷阱：
+ * - stable 指「相同群組內相對次序」，不是整體排序，也不是 thread-safe。
+ * - 演算法可能配置暫存記憶體；hard real-time 或 no-allocation 區段不能想當然使用。
+ * - 移動元素後，舊 position/iterator 所代表的業務項目可能改變，應以 stable id 查找。
+ * - LC283 只要求 O(1) 額外空間；標準 stable_partition 的實作可能配置，因此面試
+ *   最佳解通常手寫雙指標，而本例用它展示語意與穩定性。
+ *
+ * 面試：如果只需把 0 移後且保留非零，remove + fill 也可 O(N) 且語意清楚；
+ * stable_partition 更一般，但未必滿足題目的空間限制。要主動說出這個取捨。
+ *
+ * 例外安全也取決於元素 move/swap 與 predicate；若其中拋例外，容器仍有效，但排列
+ * 未必維持原狀。需要交易語意時先在副本操作，成功後再 swap 發布。
+ *
+ * 練習：以 rotate 寫無額外配置的穩定分區，分析最壞 O(N log N)；再 benchmark
+ * 大型 movable object，觀察 partition 與 stable_partition 的搬移差異。
+ */

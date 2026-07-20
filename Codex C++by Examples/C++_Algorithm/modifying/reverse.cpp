@@ -1,0 +1,70 @@
+/*
+ * std::reverse / reverse_copy：反轉範圍
+ * ====================================
+ * reverse 原地交換首尾，需 bidirectional iterator，做 floor(N/2) 次 swap，O(N)。
+ * reverse_copy 不改來源，目的端需足夠空間/使用 inserter；來源與目的不可危險重疊。
+ * reverse 不改 size，但元素位置改變；vector iterator 通常仍指同一位置而非原物件，
+ * 所以不要誤以為 iterator 會「跟著元素走」。
+ */
+
+#include <algorithm>
+#include <cassert>
+#include <iostream>
+#include <iterator>
+#include <string>
+#include <vector>
+
+// LeetCode 344：Reverse String。
+void leetcode_reverse_string(std::vector<char>& text) {
+    std::reverse(text.begin(), text.end());
+}
+
+// 實務：breadcrumb 由 root->leaf 儲存，錯誤訊息要 leaf->root 顯示。
+std::vector<std::string> practical_reverse_breadcrumb(
+    const std::vector<std::string>& path) {
+    std::vector<std::string> result;
+    result.reserve(path.size());
+    std::reverse_copy(path.begin(), path.end(), std::back_inserter(result));
+    return result;
+}
+
+int main() {
+    std::vector<int> values{1, 2, 3, 4};
+    std::reverse(values.begin() + 1, values.end());
+    assert((values == std::vector<int>{1, 4, 3, 2}));
+
+    std::vector<char> text{'h', 'e', 'l', 'l', 'o'};
+    leetcode_reverse_string(text);
+    assert((text == std::vector<char>{'o', 'l', 'l', 'e', 'h'}));
+
+    const std::vector<std::string> path{"service", "parser", "token"};
+    assert((practical_reverse_breadcrumb(path) ==
+            std::vector<std::string>{"token", "parser", "service"}));
+    assert(path.front() == "service");
+    std::cout << "reverse：子範圍、LC344、breadcrumb 測試通過\n";
+}
+
+/*
+ * Unicode 陷阱：反轉 UTF-8 std::string 的 byte 會破壞多 byte code point；需要先
+ * 解碼為 Unicode code points/grapheme clusters。面試：forward_list 為何不能
+ * reverse 演算法？它沒有 --iterator；但有 member reverse()。
+ * 練習：用 reverse 三次法手寫 rotate right。
+ *
+ * 【LeetCode 不變量】
+ * LC344 也可雙指標 while(left<right)；std::reverse 已封裝同樣交換。空範圍與
+ * 單元素範圍自然不做事，不需特判。
+ *
+ * 【實務選擇】
+ * reverse_breadcrumb 使用 reverse_copy，明確保留原始 path 供後續診斷；若原資料
+ * 不再使用，原地 reverse 可省配置。輸出數量已知時先 reserve，可避免成長重配。
+ * 反轉只是視圖需求時，也可考慮 reverse_iterator/ranges::reverse_view 避免複製。
+ *
+ * 面試複雜度：時間 O(N)，交換 floor(N/2) 次，額外空間 O(1)；reverse_copy 輸出
+ * 需 O(N) storage。易錯陷阱是把 end 當最後元素解參考，end 是尾後位置。
+ *
+ * LeetCode 也要測偶數/奇數、空與單字元。實務 path 若包含 symlink/`..`，單純反轉
+ * 不是路徑正規化；顯示需求與檔案系統語意要分開。
+ * 練習：用 reverse 三次實作 rotate，並與 std::rotate 的結果逐項比較。
+ * 進階：用 reverse_iterator 產生唯讀輸出，確認沒有複製元素。
+ * 測試：UTF-8 範例應刻意展示 byte reverse 為何錯，再交由 Unicode library 處理。
+ */

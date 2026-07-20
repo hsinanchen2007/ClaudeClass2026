@@ -1,0 +1,78 @@
+// ============================================================================
+// 課題 4：sync_with_stdio、cin.tie 與 fast I/O
+// ============================================================================
+//
+// `ios::sync_with_stdio(false)` 允許 C++ streams 不與 stdio 同步，通常加速大量 I/O；
+// `cin.tie(nullptr)` 取消每次 input 前自動 flush cout。兩者應在任何 I/O 前設定。
+// 取消同步後混用 cout/printf 或 cin/scanf 的相對順序/行為不可再依賴。
+//
+// 效能瓶頸也可能是 endl 每行 flush、逐 token allocation、演算法本身。先 benchmark；
+// online judge 常用 fast I/O，但一般 interactive CLI 需要 prompt flush/tie。
+// ============================================================================
+
+#include <algorithm>
+#include <cassert>
+#include <iostream>
+#include <sstream>
+#include <vector>
+
+void configure_fast_io()
+{
+    std::ios::sync_with_stdio(false);
+    std::cin.tie(nullptr);
+}
+
+void basic_example()
+{
+    // 真正 global 設定只在 main 一開始做；此教材先用 stringstream 示範解析正確性。
+    std::istringstream input("3 10 20 30");
+    int count = 0;
+    input >> count;
+    int sum = 0;
+    for (int index = 0; index < count; ++index) { int value = 0; input >> value; sum += value; }
+    assert(sum == 60);
+    std::cout << "[基礎] fast-I/O flags change buffering, not parsing semantics\n";
+}
+
+// LeetCode 1672：Richest Customer Wealth，模擬大量整數輸入。
+int maximum_wealth(const std::vector<std::vector<int>>& accounts)
+{
+    int maximum = 0;
+    for (const auto& customer : accounts) {
+        int total = 0;
+        for (const int value : customer) total += value;
+        maximum = std::max(maximum, total);
+    }
+    return maximum;
+}
+
+void leetcode_1672_example()
+{
+    assert(maximum_wealth({{1, 2, 3}, {3, 2, 1}}) == 6);
+    assert(maximum_wealth({{1, 5}, {7, 3}, {3, 5}}) == 10);
+    std::cout << "[LeetCode 1672] pure algorithm independent of global I/O mode\n";
+}
+
+// 實務：batch main 可設定 fast I/O；library/header 不應偷偷改 global process state。
+void practical_example()
+{
+    configure_fast_io();
+    assert(std::cin.tie() == nullptr);
+    std::cout << "[實務] fast I/O configured once at application entry\n";
+}
+
+int main()
+{
+    basic_example();
+    leetcode_1672_example();
+    practical_example();
+}
+
+// 易錯與面試：
+//   * 這兩個設定是 process-wide standard-stream policy，應在第一次 standard I/O 前決定。
+//   * `cin.tie(nullptr)` 後 interactive prompt 要自行 flush，例如 `cout << "> " << flush`。
+//   * 關閉同步不是演算法優化，也不會讓 stringstream/file stream 自動變成非同步 I/O。
+//   * 取消同步後別交錯 C stdio 與 C++ iostream 並期待固定順序。
+// 複雜度仍由讀寫 token/字元數決定；設定本身近似 O(1)，只改 buffering/synchronization。
+// 生命週期：global stream 設定持續到 process 結束，library 不應暗中改變 caller 的政策。
+// 練習：benchmark `\n` 與 std::endl 寫 100k 行到 ostringstream/file 的差異。

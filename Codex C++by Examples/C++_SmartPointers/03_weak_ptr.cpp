@@ -1,0 +1,134 @@
+// ============================================================================
+// 課題 3：std::weak_ptr - 不延長生命的 observer 與 cycle breaker
+// ============================================================================
+//
+// weak_ptr 指向 shared control block但不增加 strong count。`lock()` 成功回 shared_ptr，
+// object 已死則回 empty；不可先 `expired()` 再假設 lock 必成功，兩步間可能有 race，
+// 直接 `if (auto owner=weak.lock())`。
+//
+// 雙向 parent/child 或 graph edges 全是 shared_ptr 會 cycle。決定主要 ownership direction：
+// parent strong-owns child，child weak-observes parent。Cache 可 weakly index objects，讓
+// cache 本身不阻止回收。
+// ============================================================================
+
+#include <cassert>
+#include <iostream>
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
+class Node {
+public:
+    explicit Node(std::string name) : name_(std::move(name)) {}
+    void add_child(const std::shared_ptr<Node>& child)
+    {
+        child->parent_ = shared_from_this();
+        children_.push_back(child);
+    }
+    std::string parent_name() const
+    {
+        const auto parent = parent_.lock();
+        return parent == nullptr ? "none" : parent->name_;
+    }
+    const std::string& name() const { return name_; }
+
+private:
+    // 為縮小範例，手動用內部 weak self；第 4 課改用 enable_shared_from_this 正規 API。
+    std::shared_ptr<Node> shared_from_this()
+    {
+        return self_.lock();
+    }
+    void bind_self(const std::shared_ptr<Node>& self) { self_ = self; }
+    std::string name_;
+    std::vector<std::shared_ptr<Node>> children_;
+    std::weak_ptr<Node> parent_;
+    std::weak_ptr<Node> self_;
+
+public:
+    static std::shared_ptr<Node> create_bound(std::string name)
+    {
+        auto node = std::shared_ptr<Node>(new Node(std::move(name)));
+        node->bind_self(node);
+        return node;
+    }
+};
+
+void basic_example()
+{
+    auto parent = Node::create_bound("root");
+    auto child = Node::create_bound("leaf");
+    parent->add_child(child);
+    assert(child->parent_name() == "root");
+    parent.reset(); // child 的 weak parent 不延長 root 生命。
+    assert(child->parent_name() == "none");
+    std::cout << "[基礎] weak parent expires after root owner reset\n";
+}
+
+// LeetCode 138：Copy List with Random Pointer。next 強擁有下一節點；random 只是 observer，
+// 用 weak_ptr 不決定生命週期。第一趟建立 clone nodes，第二趟接 next/random，時間/空間 O(N)。
+struct RandomNode {
+    explicit RandomNode(int node_value) : value(node_value) {}
+    int value;
+    std::shared_ptr<RandomNode> next;
+    std::weak_ptr<RandomNode> random;
+};
+
+std::shared_ptr<RandomNode> copy_random_list(const std::shared_ptr<RandomNode>& head)
+{
+    if (head == nullptr) return nullptr;
+    std::unordered_map<const RandomNode*, std::shared_ptr<RandomNode>> clones;
+    for (auto current = head; current != nullptr; current = current->next) {
+        clones.emplace(current.get(), std::make_shared<RandomNode>(current->value));
+    }
+    for (auto current = head; current != nullptr; current = current->next) {
+        auto& clone = clones.at(current.get());
+        if (current->next != nullptr) clone->next = clones.at(current->next.get());
+        if (const auto random = current->random.lock()) clone->random = clones.at(random.get());
+    }
+    return clones.at(head.get());
+}
+
+void leetcode_138_example()
+{
+    auto first = std::make_shared<RandomNode>(7);
+    auto second = std::make_shared<RandomNode>(13);
+    first->next = second;
+    second->random = first;
+    const auto copy = copy_random_list(first);
+    assert(copy.get() != first.get());
+    assert(copy->value == 7 && copy->next->value == 13);
+    assert(copy->next.get() != second.get());
+    assert(copy->next->random.lock().get() == copy.get());
+
+    first->value = 99;
+    assert(copy->value == 7); // deep copy 不受來源修改影響。
+    std::cout << "[LeetCode 138] next/random 關係與 deep-copy independence 均驗證\n";
+}
+
+// 實務：weak cache；外部沒有 owner 時 entry 自然失效。
+class Asset { public: explicit Asset(int id) : id_(id) {} int id() const { return id_; } private: int id_; };
+
+void practical_example()
+{
+    std::weak_ptr<Asset> cache_entry;
+    {
+        auto asset = std::make_shared<Asset>(42);
+        cache_entry = asset;
+        assert(cache_entry.lock()->id() == 42);
+    }
+    assert(cache_entry.expired());
+    std::cout << "[實務] weak cache entry expires when callers release asset\n";
+}
+
+int main()
+{
+    basic_example();
+    leetcode_138_example();
+    practical_example();
+}
+
+// 練習：移除 self_ workaround，使用下一課的 enable_shared_from_this。
+// 複雜度：lock/expired/reset 通常 O(1)，但 lock 涉及同步的 control-block 狀態轉換。
+// 生命週期：weak_ptr 本身可比 pointee 活更久；只有 lock 成功得到的 shared_ptr 才延長存活。

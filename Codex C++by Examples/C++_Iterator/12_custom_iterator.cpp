@@ -1,0 +1,160 @@
+// ============================================================================
+// 課題 12：自訂 Forward Iterator 與 Range
+// ============================================================================
+//
+// 自訂 iterator 的核心不是「塞滿 operators」，而是誠實宣告 semantic contract。
+// 本例 CountingIterator 表示 [current, end) 的整數序列，符合 forward iterator：
+//   value_type / difference_type / iterator_category / iterator_concept
+//   operator*、pre/post ++、==
+//
+// C++20 algorithm 會看 concepts；舊 algorithm 仍可能透過 iterator_traits 看 typedef。
+// 若 operator* 回 temporary，reference 可是 value_type；若回容器元素才通常是 T&。
+// 不要宣稱 random_access 卻用 O(N) 實作 +n，否則 algorithm 的複雜度承諾會說謊。
+// ============================================================================
+
+#include <algorithm>
+#include <concepts>
+#include <cstddef>
+#include <iostream>
+#include <iterator>
+#include <limits>
+#include <numeric>
+#include <stdexcept>
+#include <vector>
+
+namespace {
+
+// 測試在 -DNDEBUG 下也必須保留。
+void expect(bool condition, const char* message)
+{
+    if (!condition) throw std::runtime_error(message);
+}
+
+}  // namespace
+
+class CountingIterator {
+public:
+    using value_type = int;
+    using difference_type = std::ptrdiff_t;
+    using reference = int;
+    using pointer = void;
+    using iterator_category = std::forward_iterator_tag;
+    using iterator_concept = std::forward_iterator_tag;
+
+    constexpr explicit CountingIterator(int value = 0) noexcept : value_(value) {}
+
+    [[nodiscard]] constexpr int operator*() const noexcept { return value_; }
+
+    constexpr CountingIterator& operator++() noexcept
+    {
+        ++value_;
+        return *this;
+    }
+
+    constexpr CountingIterator operator++(int) noexcept
+    {
+        CountingIterator old = *this;
+        ++(*this);
+        return old;
+    }
+
+    friend constexpr bool operator==(CountingIterator, CountingIterator) = default;
+
+private:
+    int value_{};
+};
+
+static_assert(std::forward_iterator<CountingIterator>);
+
+class CountingRange {
+public:
+    // 【契約】只接受半開區間 [first, last) 且 first <= last。反向區間在 runtime
+    // 丟 invalid_argument，避免 iterator 永遠追不到 end，最後對 int 做 signed overflow。
+    constexpr CountingRange(int first, int last) : first_(first), last_(last)
+    {
+        if (first > last) throw std::invalid_argument("CountingRange 要求 first <= last");
+    }
+    [[nodiscard]] constexpr CountingIterator begin() const noexcept
+    {
+        return CountingIterator(first_);
+    }
+    [[nodiscard]] constexpr CountingIterator end() const noexcept
+    {
+        return CountingIterator(last_);
+    }
+
+private:
+    int first_{};
+    int last_{};
+};
+
+void basic_example()
+{
+    const CountingRange range(1, 5); // 半開區間 [1, 5)。
+    expect(std::accumulate(range.begin(), range.end(), 0) == 10,
+           "[1, 5) 的總和應為 10");
+    expect(std::distance(range.begin(), range.end()) == 4,
+           "[1, 5) 的距離應為 4");
+
+    const CountingRange empty(5, 5);
+    expect(empty.begin() == empty.end(), "first == last 應形成合法空區間");
+    std::cout << "[基礎] custom forward range generated 1,2,3,4\n";
+}
+
+// LeetCode 1480：Running Sum。輸入改由自訂 range 產生，再用標準 algorithm。
+std::vector<int> running_sum(int first, int last)
+{
+    const CountingRange range(first, last);
+    std::vector<int> result(range.begin(), range.end());
+    std::partial_sum(result.begin(), result.end(), result.begin());
+    return result;
+}
+
+void leetcode_1480_example()
+{
+    expect((running_sum(1, 5) == std::vector<int>{1, 3, 6, 10}),
+           "running sum 結果錯誤");
+    expect(running_sum(3, 3).empty(), "空區間的 running sum 應為空");
+    std::cout << "[LeetCode 1480] standard partial_sum accepted custom iterators\n";
+}
+
+// 實務：產生連續工單 ID，不必先配置一個只為存數字的 vector。
+void practical_example()
+{
+    const CountingRange order_ids(1000, 1004);
+    const auto found = std::find(order_ids.begin(), order_ids.end(), 1002);
+    expect(found != order_ids.end() && *found == 1002, "應找到工單 1002");
+    expect(std::find(order_ids.begin(), order_ids.end(), 9999) == order_ids.end(),
+           "不存在的工單不應被找到");
+    std::cout << "[實務] lazy order-id range works with std::find\n";
+}
+
+void boundary_example()
+{
+    bool reversed_rejected = false;
+    try {
+        const CountingRange reversed(5, 4);
+        static_cast<void>(reversed);
+    } catch (const std::invalid_argument&) {
+        reversed_rejected = true;
+    }
+    expect(reversed_rejected, "first > last 的區間必須在 runtime 被拒絕");
+
+    const int maximum = std::numeric_limits<int>::max();
+    const CountingRange near_maximum(maximum - 2, maximum);
+    const std::vector<int> values(near_maximum.begin(), near_maximum.end());
+    expect((values == std::vector<int>{maximum - 2, maximum - 1}),
+           "接近 INT_MAX 的合法區間不可 overflow");
+}
+
+int main()
+{
+    basic_example();
+    leetcode_1480_example();
+    practical_example();
+    boundary_example();
+}
+
+// 易錯：宣告比實作更強的 category 會讓 algorithm 的正確性或複雜度假設失真。
+// 面試自問：iterator_category 與 iterator_concept 為何可能不同？
+// 練習：加入 sentinel type，讓 end 不必與 iterator 同型別（C++20 ranges 模型）。
