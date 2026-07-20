@@ -4,5 +4,8 @@
     "workbench.colorTheme": "Visual Studio 2017 Dark - C++",
     "git.autofetch": true,
     "git.confirmSync": false,
-    "editor.fontSize": 18
+    "editor.fontSize": 18,
+    "editor.inlayHints.enabled": "off",
+    "editor.inlayHints.parameterNames.enabled": "none",
+    "C_Cpp.inlayHints.parameterNames.enabled": false
 }
