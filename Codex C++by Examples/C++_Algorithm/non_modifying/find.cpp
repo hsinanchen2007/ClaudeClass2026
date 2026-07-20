@@ -13,8 +13,16 @@
 #include <string>
 #include <vector>
 
-// LeetCode 217：Contains Duplicate。教學版在每個前綴 find，O(N^2)。
-// 正式大資料用 unordered_set 平均 O(N)。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 217. Contains Duplicate（存在重複元素）
+// 題目：若 nums 中任一值至少出現兩次回 true，全部唯一則 false；例如 [1,2,3,1]
+// 回 true。
+// 為何使用本章主題：本教學版用 find 在每個元素的已處理前綴尋找同值；行為正確但
+// 最壞 O(N^2)，正式大資料應用 unordered_set 平均 O(N)。
+// 思路：1. 逐位置掃描；2. 在 [begin,it) 尋找 *it；3. 命中立即 true；4. 掃完 false。
+// 複雜度：時間 O(N^2)、額外空間 O(1)，N 為 nums 的元素數。
+// 易錯點：搜尋終點必須是目前 it 才不會找到自己；不可把教學版帶入大輸入熱路徑。
+// -----------------------------------------------------------------------------
 bool leetcode_contains_duplicate(const std::vector<int>& nums) {
     for (auto it = nums.begin(); it != nums.end(); ++it) {
         if (std::find(nums.begin(), it, *it) != it) {
@@ -29,7 +37,16 @@ struct Command {
     bool enabled;
 };
 
-// 實務：依名稱找第一個 enabled command，回 index sentinel=size。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】已啟用命令名稱查詢
+// 情境：Command 清單同名項可能停用；呼叫端要找第一個 name 相同且 enabled 的索引，
+// 沒有時回 commands.size()。
+// 為何使用本章主題：find_if 可把複合條件封裝在 predicate，對小型未排序命令表比
+// 建索引簡單，並在首個命中處短路。
+// 設計：1. 捕捉查詢 name；2. 同時檢查 enabled 與字串相等；3. 將結果 iterator 距離轉 index。
+// 成本：時間 O(N*L)、額外空間 O(1)，N 為命令數、L 為最壞名稱比較長度。
+// 上線注意：size sentinel 不可解參考；名稱大小寫與 Unicode 規則要明定，高頻查詢應維護 hash index。
+// -----------------------------------------------------------------------------
 std::size_t practical_find_enabled_command(
     const std::vector<Command>& commands, const std::string& name) {
     const auto it = std::find_if(

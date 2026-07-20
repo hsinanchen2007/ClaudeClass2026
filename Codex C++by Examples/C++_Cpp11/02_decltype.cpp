@@ -43,8 +43,14 @@ auto add(Left left, Right right) -> decltype(left + right) {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 303：Range Sum Query - Immutable 的精簡版本。
-// decltype(prefix_[0]) 精確是 long long&；對外仍明確回傳 long long，避免洩漏參考。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 303. Range Sum Query - Immutable（不可變陣列區間和）
+// 題目：先接收整數陣列，再多次查詢 left 到 right 的總和；例如 [-2,0,3,-5,2,-1] 的 [0,2] 為 1。
+// 為何使用本章主題：decltype 精確驗證 prefix_[0] 是 long long&；查詢仍回傳值，避免把內部儲存參考洩漏出去。
+// 思路：1. 建立前綴和 prefix[i+1]；2. 查詢時以 prefix[right+1]-prefix[left] 消去區間外元素。
+// 複雜度：N 為陣列長度；建構時間 O(N)、每次查詢 O(1)，額外空間 O(N)。
+// 易錯點：右端要取 right+1；left/right 越界時 at 會丟例外，且大量總和需用 long long 避免 int 溢位。
+// -----------------------------------------------------------------------------
 class NumArray {
 public:
     explicit NumArray(const std::vector<int>& nums) : prefix_(nums.size() + 1U, 0) {
@@ -70,13 +76,19 @@ void test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】設定欄位 accessor：用 decltype 保留 map::operator[] 的可寫 reference。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】可寫設定欄位存取器
+// 情境：管理工具要依字串 key 取得 Record 欄位，並直接修改 map 中的整數值。
+// 為何使用本章主題：trailing return 搭配 decltype 保留 operator[] 的 int&，容器實作變更時簽章也會跟著運算式更新。
+// 設計：1. 接收仍存活的 Record；2. 以 key 呼叫 fields[key]；3. 將實際 reference 回傳給呼叫端賦值。
+// 成本：M 為欄位數；std::map 查找或插入時間 O(log M)，額外空間在缺 key 時為一個新節點。
+// 上線注意：operator[] 會默默建立不存在的 key；回傳參考受 Record 與該元素生命週期約束，元素被 erase 後即失效。
+// -----------------------------------------------------------------------------
 struct Record {
     std::map<std::string, int> fields;
 };
 
-// 實務：回傳 map::operator[] 的實際 reference；若容器型別日後改變，簽名仍跟著更新。
 auto field(Record& record, const std::string& key)
     -> decltype(record.fields[key]) {
     return record.fields[key];

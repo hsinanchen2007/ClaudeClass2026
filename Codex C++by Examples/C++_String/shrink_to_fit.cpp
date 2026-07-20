@@ -22,7 +22,15 @@ void basic_demo() {
     static_cast<void>(before);
 }
 
-// LeetCode 2390（Removing Stars From a String）。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 2390. Removing Stars From a String（移除星號）
+// 題目：每個星號刪除自己與左側最近未刪字元；"leet**cod*e" 最後得到 "lecoe"。
+// 為何使用本章主題：演算法完成後呼叫 shrink_to_fit 只是可選的縮容請求，不影響答案；
+//       它展示 API 契約，但競賽提交通常應省略，避免多一次可能的配置與搬移。
+// 思路：1. 用 string 當 stack；2. 非星號 push；3. 星號 pop；4. 可選提出縮容後回傳。
+// 複雜度：演算法時間 O(N)，shrink 若重配再 O(N)；額外空間 O(N)，N 是 input 長度。
+// 易錯點：不能 assert capacity==size；星號前需有字元，且 shrink 後所有舊 pointer/view 要重取。
+// -----------------------------------------------------------------------------
 std::string leetcode_remove_stars(const std::string& input) {
     std::string stack;
     stack.reserve(input.size());
@@ -38,7 +46,15 @@ std::string leetcode_remove_stars(const std::string& input) {
     return stack;
 }
 
-// 實務：完成一次大型匯入後，長期保存的小摘要可提出縮減請求。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】大型匯入後保留短摘要
+// 情境：buffer 曾容納數千 bytes，匯入完成只需長期保存前 keep 個字元，希望降低閒置容量。
+// 為何使用本章主題：先 resize 刪除不需內容，再以 shrink_to_fit 提出釋放多餘配置的請求；
+//       相較每輪都縮容，此做法只放在工作階段邊界。
+// 設計：1. size 大於 keep 才縮內容；2. 呼叫 shrink_to_fit；3. 正確性只檢查 size/內容。
+// 成本：最壞時間 O(N)、可能配置與搬移 O(keep)，額外配置成本由實作決定；N 是舊長度。
+// 上線注意：縮容非強制且可能增加延遲；呼叫後重取所有 handle，敏感資料也不因縮容而保證抹除。
+// -----------------------------------------------------------------------------
 void practical_retain_summary(std::string& buffer, const std::size_t keep) {
     if (buffer.size() > keep) {
         buffer.resize(keep);

@@ -20,7 +20,15 @@ void basic_demo() {
     assert(text.rfind('x') == std::string::npos);
 }
 
-// LeetCode 58（Length of Last Word）：rfind 找最後一個非空白後，再找前一個空白。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 58. Length of Last Word（最後一個單字的長度）
+// 題目：忽略尾端空格後計算最後一個單字長度；"Hello World" 回 5，全空白回 0。
+// 為何使用本章主題：先以 find_last_not_of 找 end，再用 rfind(' ', end) 找最後一字前的空格，
+//       不需要建立倒序或 trim 副本。
+// 思路：1. 定位最後非空格；2. npos 回 0；3. 由 end 向左找空格；4. 以邊界差算長度。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 是 text 長度。
+// 易錯點：rfind 的 pos 是正向索引上界，不是倒數位移；npos 分支處理前不可做 +1。
+// -----------------------------------------------------------------------------
 int leetcode_length_of_last_word(const std::string& text) {
     const std::size_t end = text.find_last_not_of(' ');
     if (end == std::string::npos) return 0;
@@ -29,7 +37,15 @@ int leetcode_length_of_last_word(const std::string& text) {
     return static_cast<int>(end - begin + 1U);
 }
 
-// 實務：只認最後一個 path component 中的點；`.bashrc` 視為沒有副檔名。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】路徑最後 component 副檔名擷取
+// 情境：`/tmp/archive.tar.gz` 要得到 gz，但 `/home/user/.bashrc` 與 `name.` 視為沒有副檔名。
+// 為何使用本章主題：兩次 rfind 分別定位最後 slash 與最後 dot，直接確認點是否位於檔名內；
+//       相較切完整 basename 後再搜尋少一份中間配置。
+// 設計：1. 找 slash 並算 name_begin；2. 找最後 dot；3. 拒絕缺點、hidden file、尾點；4. 複製尾段。
+// 成本：時間 O(N)、額外空間 O(E)，N 是 path 長度，E 是副檔名長度。
+// 上線注意：只支援 `/`，未處理 Windows 分隔符、複合副檔名或 Unicode/大小寫政策；正式用途用 filesystem。
+// -----------------------------------------------------------------------------
 std::string practical_extension(const std::string_view path) {
     const std::size_t slash = path.rfind('/');
     const std::size_t dot = path.rfind('.');

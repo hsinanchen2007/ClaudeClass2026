@@ -28,7 +28,15 @@ constexpr T power(T base, unsigned exponent) {
     return result;
 }
 
-// LeetCode 70：Climbing Stairs。N 是編譯期參數，回傳可用於 static_assert。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 70. Climbing Stairs（爬樓梯）
+// 題目：每次走 1 或 2 階，計算到第 n 階的方法數；n=5 時有 8 種。
+// 為何使用本章主題：N 是 NTTP，consteval 強制在編譯期計算並讓結果可進 static_assert；
+// 原題 n 是 runtime 參數，這是只接受編譯期階數的教學改寫。
+// 思路：N<=1 回 1；由 step=2 起迭代 Fibonacci 狀態 previous/current；最後回 current。
+// 複雜度：編譯期時間 O(N)、額外空間 O(1)，runtime 沒有這段迴圈成本，但會增加編譯工作。
+// 易錯點：uint64_t 僅能正確容納到 N=92；N=0 回 1 是泛化定義，原題從 n=1 開始。
+// -----------------------------------------------------------------------------
 template <std::size_t N>
 consteval std::uint64_t leetcode_climb_stairs() {
     if constexpr (N <= 1U) {
@@ -45,6 +53,15 @@ consteval std::uint64_t leetcode_climb_stairs() {
     }
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】協定 Magic Checksum 驗收
+// 情境：協定固定 magic `CUDA` 的 checksum 要在編譯時鎖定，runtime 收到封包後再用同演算法驗證。
+// 為何使用本章主題：checksum 是 constexpr function template，可同時處理編譯期 array 測試向量與
+// runtime received 資料；static_assert 能立即發現常數或演算法被誤改。
+// 設計：逐 byte 執行 FNV-1a xor/乘法；編譯期產生 expected；runtime 重算 received 並比較。
+// 成本：時間 O(N)、額外空間 O(1)，N 是 magic byte 數；固定測試向量的計算由編譯器負擔。
+// 上線注意：這不是密碼學完整性保護；Character 會截為 byte，真正封包還需長度、版本與認證驗證。
+// -----------------------------------------------------------------------------
 template <typename Character, std::size_t N>
 constexpr std::uint32_t checksum(const std::array<Character, N>& bytes) {
     std::uint32_t hash = 2166136261U;
@@ -55,7 +72,6 @@ constexpr std::uint32_t checksum(const std::array<Character, N>& bytes) {
     return hash;
 }
 
-// 【實務情境】協定 magic 的 checksum 在編譯期建立固定測試向量，runtime 再驗收封包。
 void practical_protocol_test() {
     constexpr std::array<char, 4> magic{'C', 'U', 'D', 'A'};
     constexpr std::uint32_t expected = checksum(magic);

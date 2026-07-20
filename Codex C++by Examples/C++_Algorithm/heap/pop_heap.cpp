@@ -23,7 +23,17 @@ int pop_max(std::vector<int>& heap) {
     return result;
 }
 
-// LeetCode 1046：Last Stone Weight。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1046. Last Stone Weight（最後一塊石頭的重量）
+// 題目：反覆取兩塊最重石頭 x<=y；相等則都消失，否則放回 y-x，最後回剩餘重量
+// 或 0，例如 [2,7,4,1,8,1] 回 1。
+// 為何使用本章主題：max-heap 讓每輪兩次 pop_heap 取得最大值，差值再以 push_heap
+// 放回；pop_max 封裝 pop_heap 後必須 pop_back 的二階段契約。
+// 思路：1. 建 max-heap；2. 每輪取出最大與次大；3. 不相等時插入差值並恢復 heap；
+// 4. 回傳空 heap 的 0 或唯一 front。
+// 複雜度：時間 O(N log N)、額外空間 O(N)，N 為初始石頭數；空間包含按值輸入 heap。
+// 易錯點：兩石相等不可放回 0；pop_heap 本身不刪元素；僅在 size>1 時取兩次。
+// -----------------------------------------------------------------------------
 int leetcode_last_stone_weight(std::vector<int> stones) {
     std::make_heap(stones.begin(), stones.end());
     while (stones.size() > 1U) {
@@ -37,7 +47,16 @@ int leetcode_last_stone_weight(std::vector<int> stones) {
     return stones.empty() ? 0 : stones.front();
 }
 
-// 實務：priority 數字越大越先執行，依序排出處理順序。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】批次工作優先權派送順序
+// 情境：收到一批整數 priority，數值越大越早派送；要輸出完整處理順序且不修改
+// 呼叫端原陣列。
+// 為何使用本章主題：建 heap 後反覆 pop 最大值可模擬 priority queue 的消費流程，
+// 也直接示範 pop_heap 與容器刪除必須成對。
+// 設計：1. 對 priorities 建 max-heap；2. 反覆呼叫 pop_max；3. 依派送次序 append 到 result。
+// 成本：時間 O(N log N)、額外空間 O(N)，N 為 priority 數；result 另保存 N 筆輸出。
+// 上線注意：相同 priority 的先後沒有穩定保證；若需 FIFO，元素須加入到達序號並納入 comparator。
+// -----------------------------------------------------------------------------
 std::vector<int> practical_dispatch_order(std::vector<int> priorities) {
     std::make_heap(priorities.begin(), priorities.end());
     std::vector<int> result;

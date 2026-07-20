@@ -36,8 +36,15 @@ struct Point : Printable<Point> {
     }
 };
 
-// LeetCode 303：Range Sum Query。CRTP base 提供一致的 query 驗證外殼，
-// Derived 提供資料結構特有的 query_impl。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 303. Range Sum Query - Immutable（區域和檢索：不可變）
+// 題目：由陣列預處理後，多次回傳閉區間 [left,right] 總和；[-2,0,3] 的 [0,2] 為 1。
+// 為何使用本章主題：RangeQuery<Derived> 以 CRTP 提供共用 query 外殼，PrefixSum<N> 實作 query_impl；
+// 原題只有一種 NumArray，這是靜態多型介面的教學改寫。
+// 思路：建構 PrefixSum 時累加 N+1 個前綴槽；query 經 base 轉回 Derived；以兩前綴值相減。
+// 複雜度：建構 O(N) 時間與空間，每次查詢 O(1)，N 是固定陣列長度。
+// 易錯點：assert 只驗 left<=right 且 release 會移除；仍須驗 right<N，int 前綴和也可能溢位。
+// -----------------------------------------------------------------------------
 template <typename Derived>
 class RangeQuery {
 public:
@@ -68,6 +75,15 @@ int leetcode_range_sum(const PrefixSum<6>& sums, std::size_t left, std::size_t r
     return sums.query(left, right);
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】具共用計數的文字處理服務
+// 情境：多種服務要共用 execute 呼叫計數，但各自實作不同轉換；此例把 ASCII 小寫轉大寫。
+// 為何使用本章主題：Service<Derived> 以 CRTP 在編譯期呼叫 execute_impl，集中計數且無 virtual dispatch；
+// 相較 virtual，適合型別在編譯期已知的封閉服務，但不能直接形成異質 base 容器。
+// 設計：base 每次 execute 先加 calls_；static_cast 到 Derived；UppercaseService 原地轉換輸入副本。
+// 成本：每次處理 O(L) 時間與 O(L) 輸入/輸出字串空間，L 是文字長度；分派本身通常 inline。
+// 上線注意：只處理 ASCII a-z，不是 Unicode 大小寫；calls_ 非 atomic，並行呼叫會資料競爭。
+// -----------------------------------------------------------------------------
 template <typename Derived>
 class Service {
 public:
@@ -93,7 +109,6 @@ public:
     }
 };
 
-// 【實務情境】服務共用呼叫計數，但每種服務以 CRTP 提供不同核心處理。
 void practical_service_test() {
     UppercaseService service;
     assert(service.execute("gpu") == "GPU");

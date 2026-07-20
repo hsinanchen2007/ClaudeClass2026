@@ -28,8 +28,15 @@ const T& better_of(const T& left, const T& right) {
     return (left < right) ? right : left;
 }
 
-// LeetCode 217：Contains Duplicate。
-// 模板讓同一演算法可處理 int、string 等可雜湊型別。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 217. Contains Duplicate（存在重複元素）
+// 題目：判斷陣列中是否有任一值至少出現兩次；[1,2,3,1] 為 true，[1,2,3,4] 為 false。
+// 為何使用本章主題：函式模板把原題的 vector<int> 泛化為 vector<T>，同一套雜湊流程可處理
+// int 與 string；這是教學擴充，前提是 T 可供 unordered_set 雜湊與相等比較。
+// 思路：依輸入大小 reserve seen；逐項插入；第一次插入失敗立即回 true，走完則回 false。
+// 複雜度：平均時間 O(N)、額外空間 O(N)，N 是 values 長度；嚴重碰撞時時間可退化。
+// 易錯點：空輸入應回 false；模板簽名未明寫 Hash/Equal constraint，不合格 T 會在實體化時報錯。
+// -----------------------------------------------------------------------------
 template <typename T>
 bool leetcode_contains_duplicate(const std::vector<T>& values) {
     std::unordered_set<T> seen;
@@ -42,6 +49,15 @@ bool leetcode_contains_duplicate(const std::vector<T>& values) {
     return false;
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】挑選較緊急的工作報價
+// 情境：排程器收到兩筆含 sku 與 priority 的 Quote，要借用並回傳優先級較高的一筆。
+// 為何使用本章主題：better_of<T> 只依賴 operator<，Quote 提供比較後即可重用同一模板；
+// 相較為每個領域型別複製 max 函式，修正比較流程只需維護一處。
+// 設計：Quote 將 `<` 定義為 priority 比較；practical_select_urgent 把兩筆交給 better_of；同值保留左側。
+// 成本：時間與額外空間 O(1)，回傳 const reference 不複製 sku 字串。
+// 上線注意：回傳參考不得活過兩個輸入；還需定義 priority 相同時的 tie-break 與空候選集合行為。
+// -----------------------------------------------------------------------------
 struct Quote {
     std::string sku;
     int priority{};
@@ -51,8 +67,6 @@ struct Quote {
     }
 };
 
-// 實務：從兩筆工作中選優先級較高者。演算法不知道 Quote 的內部細節，
-// 只要求它支援 operator<；這正是模板的「需求式介面」。
 const Quote& practical_select_urgent(const Quote& a, const Quote& b) {
     return better_of(a, b);
 }

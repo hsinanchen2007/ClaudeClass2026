@@ -12,7 +12,16 @@
 #include <iostream>
 #include <vector>
 
-// LeetCode 896：Monotonic Array；檢查遞增或遞減其中之一。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 896. Monotonic Array（單調陣列）
+// 題目：判斷 nums 是否全程非遞減或非遞增；例如 [1,2,2,3] 與 [6,5,4,4] 為 true，
+// [1,3,2] 為 false。
+// 為何使用本章主題：is_sorted 以預設 less 驗非遞減，再以 greater 驗非遞增；任一
+// sorted invariant 成立即可，不需修改輸入。
+// 思路：1. 檢查升冪非遞減；2. 若不成立，再檢查降冪非遞增；3. 回兩者 OR。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 為 nums 的元素數，兩次檢查都可早退。
+// 易錯點：相等鄰居合法；descending 必須傳 greater，而不是沿用預設 comparator。
+// -----------------------------------------------------------------------------
 bool leetcode_is_monotonic(const std::vector<int>& nums) {
     return std::is_sorted(nums.begin(), nums.end()) ||
            std::is_sorted(nums.begin(), nums.end(), std::greater<>{});
@@ -23,7 +32,16 @@ struct Sample {
     double value;
 };
 
-// 實務：匯入 time series 前找第一個時間倒退的位置；回 size 表示合法。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】Time Series 第一個時間倒退位置
+// 情境：匯入 Sample 前要驗 timestamp 非遞減，並回第一筆小於前一筆的索引；完全
+// 合法時回 samples.size() 供診斷報表使用。
+// 為何使用本章主題：is_sorted_until 不只回 bool，還直接指出第一個破壞排序的後元素，
+// 比再次掃描定位錯誤更有效率。
+// 設計：1. comparator 只比 timestamp；2. 找 sorted prefix 尾端；3. 將 iterator 轉 index。
+// 成本：時間 O(N)、額外空間 O(1)，N 為 Sample 數，可在首個逆序早退。
+// 上線注意：相同 timestamp 目前合法；若要求唯一需另做 duplicate 檢查，size sentinel 不可解參考。
+// -----------------------------------------------------------------------------
 std::size_t practical_first_time_regression(const std::vector<Sample>& samples) {
     const auto point = std::is_sorted_until(
         samples.begin(), samples.end(),

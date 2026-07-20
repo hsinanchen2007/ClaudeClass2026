@@ -32,7 +32,15 @@ void basic_demo() {
     assert(count_ascii_digits(owned) == 4U);
 }
 
-// LeetCode 125（Valid Palindrome）：view 避免複製輸入；僅處理題目要求的 ASCII。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 125. Valid Palindrome（驗證回文）
+// 題目：忽略非英數與大小寫後判斷字串是否回文；Panama 句為 true，race a car 為 false。
+// 為何使用本章主題：string 可隱式轉成 string_view，函式以零拷貝 view 接收 string、literal 等來源；
+//       雙索引只讀原 buffer，不需要 owning 副本。
+// 思路：1. 左右索引夾住 view；2. 跳過非英數；3. 將兩端轉小寫比較；4. 相同就向內縮。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 是 text 的 byte 數。
+// 易錯點：cctype 前先轉 unsigned char；此解法只承諾 ASCII，且 view 不能比來源活得更久。
+// -----------------------------------------------------------------------------
 bool leetcode_is_ascii_palindrome(const std::string_view text) {
     std::size_t left = 0U;
     std::size_t right = text.size();
@@ -57,7 +65,16 @@ bool leetcode_is_ascii_palindrome(const std::string_view text) {
     return true;
 }
 
-// 實務：切出 HTTP header 的名稱，不配置；回傳 view 仍依賴 line 的生命週期。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】HTTP header 名稱零拷貝切片
+// 情境：從 `Content-Type: text/plain` 取得冒號前的名稱，找不到冒號時回空 view。
+// 為何使用本章主題：string_view::substr 只回 pointer+length，相較 std::string substr 不配置，
+//       適合在同一 request buffer 生命週期內做解析。
+// 設計：1. find 第一個冒號；2. npos 回空；3. 否則回 [0, colon) 借用片段。
+// 成本：搜尋時間 O(N)、額外空間 O(1)，N 是 line 長度。
+// 上線注意：回傳空 view 無法區分缺冒號與空 header 名；還要驗 token grammar、trim 規則，
+//       且不得保存 temporary string 所產生的結果。
+// -----------------------------------------------------------------------------
 std::string_view practical_header_name(const std::string_view line) {
     const std::size_t colon = line.find(':');
     return colon == std::string_view::npos ? std::string_view{} : line.substr(0U, colon);

@@ -17,6 +17,14 @@
 #include <utility>
 #include <vector>
 
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 384. Shuffle an Array（打亂陣列）
+// 題目：建構時保存 nums，reset 回復原始內容，shuffle 回傳所有排列等機率的結果；例如 [1,2,3] 每次仍須是同一 multiset。
+// 為何使用本章主題：std::shuffle 搭配長期保存的 mt19937 提供 Fisher-Yates 類排列；seed overload 是測試用改寫，原題介面不提供 seed。
+// 思路：1. constructor 保存不可變 original 與 engine state。2. reset 回傳 original 副本。3. shuffle 複製 original。4. 洗牌副本後回傳。
+// 複雜度：reset 與 shuffle 的時間、回傳空間皆為 O(N)，N 為原陣列長度；物件本身另保存 O(N) 原資料。
+// 易錯點：shuffle 必須從 original 複製且不可破壞 reset 狀態；不能測試結果一定不同，reset 也不應暗中重設 RNG state。
+// -----------------------------------------------------------------------------
 class Solution {
 public:
     Solution(std::vector<int> nums, unsigned seed)
@@ -65,7 +73,14 @@ void leetcode_example()
     std::cout << "[LeetCode 384] shuffle/reset preserve permutation and original\n";
 }
 
-// 實務：同 seed 的兩 instances 應重播同一連串 shuffle calls（同 library/version）。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】重播隨機測試資料排列
+// 情境：測試失敗後，以 seed=7 建立另一個相同資料集，重播連續兩次 shuffle 的確切順序。
+// 為何使用本章主題：engine 是有狀態物件；相同 seed、資料、標準庫版本與呼叫次序才能逐輪重現，比只保存最後排列更容易診斷。
+// 設計：1. 建立原執行與 replay 兩個 instance。2. 各做第一輪 shuffle 並比較。3. 各做第二輪。4. 再比較序列位置。
+// 成本：每輪兩邊各複製並洗牌 N 個元素，時間 O(N)、每個回傳值空間 O(N)。
+// 上線注意：必須記錄 seed、輸入與 library/version；並行呼叫同一 instance 會競爭 engine state，需外部同步或獨立 instance。
+// -----------------------------------------------------------------------------
 void practical_example()
 {
     Solution first({1, 2, 3, 4}, 7U);

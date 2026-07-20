@@ -266,7 +266,15 @@ void pair_tuple_optional_demo()
     assert(!*disabled);
 }
 
-// LeetCode 1：找不到時用 optional 表達，而不是 magic pair。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1. Two Sum（兩數之和）
+// 題目：輸入 values 與 target，找兩個相異索引使其值相加等於 target；[2,7,11,15]、9 得 [0,1]。
+// 為何使用本章主題：pair 組合兩個索引，optional 表達可能找不到，unordered_map 提供平均 O(1)
+// 互補值查找；這個泛化介面比原題「保證有答案」多保留一條正常缺值路徑。
+// 思路：用 long long 安全計算互補值；只在 int 範圍內查 seen；命中回 engaged pair，否則插入。
+// 複雜度：平均時間 O(N)、額外空間 O(N)，N 是 values 長度；碰撞嚴重時時間可退化。
+// 易錯點：先查再插避免重用同一位置；提升型別防減法溢位，無解必回 nullopt 而非假索引。
+// -----------------------------------------------------------------------------
 std::optional<Indices> leetcode_two_sum(const std::vector<int>& values, int target) {
     std::unordered_map<int, std::size_t> seen;
     seen.reserve(values.size());
@@ -285,6 +293,15 @@ std::optional<Indices> leetcode_two_sum(const std::vector<int>& values, int targ
     return std::nullopt;
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】具權限守衛的事件處理管線
+// 情境：服務驗證固定權限，將 Metric/Alert 排入 FIFO，安全取出並顯示，再讀取開放式 metadata。
+// 為何使用本章主題：bitset 表示權限、variant 封閉事件型別、forward/move 降低排隊複製、optional
+// 表達空佇列、any 隔離外部 metadata；各 utility type 各自承擔明確資料契約。
+// 設計：授予並檢查權限；推入 lvalue/rvalue 事件；逐筆 take_front 後 visit；最後解析 metadata 與交換狀態。
+// 成本：固定權限 O(1)，queue push/pop 攤銷 O(1)，metadata 平均 O(1)；字串與 type erasure 可能配置。
+// 上線注意：需加入權限拒絕分支、佇列容量與同步、事件處理失敗重試、metadata 白名單及可觀測性。
+// -----------------------------------------------------------------------------
 enum class Permission : std::size_t { read, write, deploy, admin };
 
 class PermissionSet {
@@ -366,7 +383,6 @@ std::string metadata_string(const Metadata& metadata, const std::string& key) {
     return "unsupported";
 }
 
-// 【實務整合】權限守衛 + variant 事件 + any metadata + move/forward FIFO queue。
 void practical_event_pipeline_test() {
     PermissionSet permissions;
     permissions.grant(Permission::read);

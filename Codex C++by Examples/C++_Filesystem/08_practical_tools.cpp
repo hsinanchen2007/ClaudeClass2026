@@ -35,6 +35,14 @@ public:
 private: fs::path path_;
 };
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】可重現的原始碼 manifest
+// 情境：遞迴掃描 root，只列 `.cpp`/`.h`，以 root-relative generic path 排序後供兩台機器比較。
+// 為何使用本章主題：recursive_directory_iterator 走樹，extension 過濾，lexically_relative 移除機器專屬 absolute root。
+// 設計：1. 遞迴保留 regular source files；2. 轉成 relative generic string；3. sort 產生穩定順序。
+// 成本：E 為 entries、K 為來源檔；走訪 O(E)、排序 O(K log K)，結果字串空間 O(total path bytes)。
+// 上線注意：manifest 只證明名稱，不證明內容；要明訂 symlink/permission policy，重要比較另加 size/hash。
+// -----------------------------------------------------------------------------
 std::vector<std::string> source_manifest(const fs::path& root)
 {
     std::vector<std::string> paths;
@@ -58,8 +66,14 @@ void basic_example()
     std::cout << "[基礎] manifest filters source and stores relative path\n";
 }
 
-// LeetCode 609：Find Duplicate File in System。題目輸入是 path+content 字串；實務工具
-// 可改成 hash 真檔案。本例實作題目 parsing，並保持 groups 只回重複內容。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 609. Find Duplicate File in System（尋找重複檔案）
+// 題目：解析 `dir name(content)` 描述，依相同 content 分組，只回傳至少兩個 path 的群組。
+// 為何使用本章主題：fs::path/operator/ 組合 directory 與 filename；題目資料是字串，不會讀取真實檔案。
+// 思路：1. 每行先讀 directory；2. 拆出 filename 與括號 content；3. 依 content 分組並保留 size>1 的 groups。
+// 複雜度：T 為輸入總字元數、F 為檔案數；平均時間 O(T)，額外空間 O(T)。
+// 易錯點：本實作依賴格式保證，production 必須驗括號與 npos；真檔 duplicate 應用 size prefilter 加內容 hash。
+// -----------------------------------------------------------------------------
 std::vector<std::vector<std::string>> find_duplicate(const std::vector<std::string>& descriptions)
 {
     std::unordered_map<std::string, std::vector<std::string>> by_content;
@@ -86,7 +100,14 @@ void leetcode_609_example()
     std::cout << "[LeetCode 609] grouped two paths with content x\n";
 }
 
-// 實務：copy_file 回 bool 表是否真的 copy；先檢查 source regular，明確 overwrite policy。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】單檔備份與大小核對
+// 情境：將 source.txt 複製為不存在的 backup.txt，並確認 copy 確實執行且目的大小相同。
+// 為何使用本章主題：fs::copy_file 搭配 copy_options::none 明訂不覆寫政策，回傳 bool 表示是否真的複製。
+// 設計：1. 建立來源；2. 執行 copy_file 並消費 bool；3. 比較 source/destination file_size。
+// 成本：B 為檔案大小；複製 I/O O(B)、額外目的儲存 O(B)，metadata 驗證另有查詢成本。
+// 上線注意：同 size 不代表內容相同；重要備份要 hash/check、保留來源到驗證完成，並處理 partial copy 與 close 錯誤。
+// -----------------------------------------------------------------------------
 void practical_example()
 {
     TempDir temp;

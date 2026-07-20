@@ -32,8 +32,14 @@ void basic_example()
     std::cout << "[基礎] Bernoulli/normal samples pass broad sanity checks\n";
 }
 
-// LeetCode 528：Random Pick with Weight。discrete_distribution 直接依 weights 回傳 index，
-// 因此功能契約完整；第 9 課再手寫 prefix-sum + binary search，方便面試說明複雜度。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 528. Random Pick with Weight（按權重隨機選取）
+// 題目：給定正整數權重 w，pickIndex 回傳 i 的機率為 w[i]/sum(w)；例如 [1,3] 的第二項約為第一項三倍。
+// 為何使用本章主題：discrete_distribution 已直接表達離散權重契約；這是標準庫解法，第 9 課才手寫 prefix sum 以展示查詢結構。
+// 思路：1. 以 weights 建立 distribution。2. 物件保存 engine。3. 每次將 engine 傳給 distribution。4. 回傳產生的 index。
+// 複雜度：建構、抽樣與儲存成本依標準庫實作；通常需保存與 K 個權重相關的狀態，K 為選項數。
+// 易錯點：實務 wrapper 必須拒絕空集合、負值、NaN、Infinity 與全零權重；有限樣本不能要求精確 1:3。
+// -----------------------------------------------------------------------------
 class WeightedPicker {
 public:
     WeightedPicker(const std::vector<double>& weights, unsigned seed)
@@ -53,7 +59,14 @@ void leetcode_528_example()
     std::cout << "[LeetCode 528] pickIndex 依 1:3 權重抽樣\n";
 }
 
-// 實務：每天平均 4 incidents 的 Poisson simulation；只驗非負與合理 sample mean。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】每日事故量的容量規劃模擬
+// 情境：假設每天事故數服從平均值 4 的 Poisson 分布，模擬 10000 天以檢查監控與值班容量模型。
+// 為何使用本章主題：poisson_distribution 專門描述固定期間內的非負事件計數，比均勻或常態分布更符合此建模假設。
+// 設計：1. 建立 lambda=4 的分布。2. 每天抽一個事件數。3. 驗證非負並累加。4. 用寬鬆區間檢查樣本平均。
+// 成本：D 天需要 D 次抽樣，時間 O(D)、額外空間 O(1)；單次分布演算法成本由實作與 lambda 決定。
+// 上線注意：先以真實資料驗證獨立且固定 rate 的假設；統計測試會有波動，seed、樣本數與模型版本都要可觀測。
+// -----------------------------------------------------------------------------
 void practical_example()
 {
     std::mt19937 engine(88U);

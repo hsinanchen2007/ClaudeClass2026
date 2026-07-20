@@ -14,12 +14,29 @@
 #include <string>
 #include <vector>
 
-// LeetCode 344：Reverse String。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 344. Reverse String（反轉字串）
+// 題目：以字元陣列 s 輸入，必須原地反轉並使用 O(1) 額外空間；例如
+// ['h','e','l','l','o'] 變 ['o','l','l','e','h']。
+// 為何使用本章主題：std::reverse 封裝首尾交換，直接滿足原地與常數額外空間要求。
+// 思路：1. 將 begin/end 傳給 reverse；2. 演算法交換對稱位置直到中點。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 為字元數，執行 floor(N/2) 次交換。
+// 易錯點：end 是尾後 iterator；此處 vector<char> 以字元為單位，不涉及 UTF-8 byte 字串切割問題。
+// -----------------------------------------------------------------------------
 void leetcode_reverse_string(std::vector<char>& text) {
     std::reverse(text.begin(), text.end());
 }
 
-// 實務：breadcrumb 由 root->leaf 儲存，錯誤訊息要 leaf->root 顯示。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】錯誤 Breadcrumb 反向顯示
+// 情境：診斷路徑以 root 到 leaf 儲存，例如 service/parser/token；錯誤訊息要由最具體
+// 的 token 往外顯示，同時保留原 path 供其他分析。
+// 為何使用本章主題：reverse_copy 直接反向複製到新容器，不修改來源；相較先 copy
+// 再 reverse 少一個獨立步驟並清楚表達保留原資料。
+// 設計：1. 依 path 大小 reserve；2. 由 reverse_copy 透過 back_inserter 寫出 leaf->root。
+// 成本：時間 O(N)、額外空間 O(N)，N 為 breadcrumb 層數。
+// 上線注意：這只是顯示順序，不是檔案路徑 canonicalization；輸出配置失敗時來源仍保持不變。
+// -----------------------------------------------------------------------------
 std::vector<std::string> practical_reverse_breadcrumb(
     const std::vector<std::string>& path) {
     std::vector<std::string> result;

@@ -25,7 +25,16 @@ void basic_demo() {
     assert(std::regex_replace("a1b22", digits, "#") == "a#b#");
 }
 
-// LeetCode 2042（Check if Numbers Are Ascending in a Sentence）。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 2042. Check if Numbers Are Ascending in a Sentence（句中數字是否遞增）
+// 題目：sentence 中的十進位整數必須依出現順序嚴格遞增；`1 box has 3 ... 12` 為 true，`5 x 5` 為 false。
+// 為何使用本章主題：sregex_iterator 逐一列舉 `\d+` 匹配，避免手寫 token 邊界；再把每個 capture
+//       轉成 int 比前值，但對此固定題目手寫掃描通常更快且更可控。
+// 思路：1. 建立數字 regex；2. 逐 match 轉整數；3. 小於等於 previous 即失敗；4. 更新 previous。
+// 複雜度：此簡單 pattern 直觀時間 O(N)、額外空間 O(K)，N 是句長、K 是單次 match 資料；
+//       標準 regex 不承諾所有實作/模式皆有線性最壞時間。
+// 易錯點：stoi 可能丟 out_of_range；不可信輸入要限長，且 regex 的 `\d`/grammar 語意應與題目一致。
+// -----------------------------------------------------------------------------
 bool leetcode_numbers_ascending(const std::string& sentence) {
     const std::regex number(R"(\d+)");
     int previous = -1;
@@ -37,7 +46,16 @@ bool leetcode_numbers_ascending(const std::string& sentence) {
     return true;
 }
 
-// 實務：驗證非常簡化的 `LEVEL: message`；真正 log 格式應有明確 parser/schema。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】簡化 log 紀錄驗證與擷取
+// 情境：只接受 `INFO|WARN|ERROR: message`，message 不得含 CR/LF，並要拆成 level 與 message。
+// 為何使用本章主題：regex_match 同時驗證整行 grammar 並以 capture 取兩欄，相較多次 find
+//       對這個短固定模式較集中；static regex 避免每次重建。
+// 設計：1. 整行 match 固定 pattern；2. 不符直接 false；3. 將兩個 capture 複製進 candidate output。
+// 成本：此 pattern 直觀時間 O(N)、結果空間 O(N)，N 是 line 長度；標準 regex 最壞成本依實作。
+// 上線注意：固定 regex 初始化可能丟 regex_error；先寫 output 的指派若配置失敗，跨欄位交易語意
+//       要明定，正式 log schema 還應處理 timestamp、escaping 與長度限制。
+// -----------------------------------------------------------------------------
 struct ParsedLog {
     std::string level;
     std::string message;

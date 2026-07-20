@@ -25,7 +25,14 @@ void basic_example()
     std::cout << "[基礎] vector iterator supports indexing and O(1) distance\n";
 }
 
-// LeetCode 704：binary search 用 iterator arithmetic，O(log N)。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 704. Binary Search（二分搜尋）
+// 題目：在升冪唯一整數陣列尋找 target；例如 [-1,0,3,5,9,12] 中 9 的索引為 4。
+// 為何使用本章主題：random-access iterator 可 O(1) 算距離與跳到 middle，維持真正 O(log N) 搜尋。
+// 思路：維持 [first,last)；計算中點；小於 target 就縮左界，否則縮右界；最後驗值並算索引。
+// 複雜度：時間 O(log N)、額外空間 O(1)，N 為 nums 長度。
+// 易錯點：輸入必須排序；用 first+(last-first)/2 避免索引加法溢位；first==end 時不可解參考。
+// -----------------------------------------------------------------------------
 int search(const std::vector<int>& nums, int target)
 {
     auto first = nums.begin();
@@ -45,7 +52,14 @@ void leetcode_704_example()
     std::cout << "[LeetCode 704] iterator binary search returns 4/-1\n";
 }
 
-// 實務：partition sorted records at lower_bound insertion point。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】在排序識別碼中插入新紀錄
+// 情境：已排序的 id 為 [10,20,40]，插入 30 後仍需維持 [10,20,30,40]。
+// 為何使用本章主題：vector random-access iterator 讓 lower_bound 以對數次比較定位插入點。
+// 設計：以 lower_bound 找第一個不小於 30 的位置；在該 iterator 前 insert；驗證排序結果。
+// 成本：定位 O(log N)，vector 插入搬移 O(N)，額外空間通常 O(1) 但可能重新配置 O(N)。
+// 上線注意：輸入必須已排序；insert 後 position 與其他 iterator 可能失效，不能繼續沿用。
+// -----------------------------------------------------------------------------
 void practical_example()
 {
     std::vector<int> ids{10, 20, 40};

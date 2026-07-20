@@ -33,8 +33,14 @@ void basic_example()
     std::cout << "[基礎] absolute deadline expires exactly at 1250ms\n";
 }
 
-// LeetCode 636：Exclusive Time of Functions。
-// 題目 timestamp 是 discrete seconds；用 duration 讓 `end` log 的 inclusive +1 清楚。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 636. Exclusive Time of Functions（函式的獨佔時間）
+// 題目：輸入單執行緒巢狀 start/end 日誌，求每個函式扣除子呼叫後的執行秒數；範例 0/1 巢狀呼叫得到 [3,4]。
+// 為何使用本章主題：seconds duration 清楚表達離散時間點差，並讓 end 記錄所涵蓋的 inclusive 1 秒寫成 `+1s`。
+// 思路：1. 用 stack 保存目前函式。2. 遇 start 時把前一段計入 stack top。3. 遇 end 時加 inclusive 區間並 pop。4. 推進 previous。
+// 複雜度：N 筆 log 的時間 O(N)、結果與呼叫堆疊空間 O(F+D)，F 為函式數、D 為最大巢狀深度。
+// 易錯點：end timestamp 是 inclusive，處理後 previous 必須設成 end+1s；輸入若不平衡，stack.back() 會失去前置條件。
+// -----------------------------------------------------------------------------
 struct LogRecord {
     int function_id;
     bool start;
@@ -73,7 +79,14 @@ void leetcode_636_example()
     std::cout << "[LeetCode 636] exclusive times=3,4 seconds\n";
 }
 
-// 實務：testable deadline API 接收 now，不在邏輯深處硬呼叫 clock::now()。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】可測試的租約到期判斷
+// 情境：服務在 issued 時刻核發 30 秒租約，任何呼叫都要判斷指定 now 是否仍早於期限。
+// 為何使用本章主題：steady_clock::time_point 適合單調 deadline；把 now 當參數比在方法內直接呼叫 now() 更容易測試邊界。
+// 設計：1. 建構時以 issued+lifetime 固定期限。2. 按值保存 deadline。3. valid_at 以 now<expires_at 判斷。
+// 成本：建構與每次判斷皆為 O(1)，物件只儲存一個 time_point。
+// 上線注意：應拒絕負 lifetime 並檢查 time_point 加法溢位；steady deadline 不可跨重開機、程序或主機傳送。
+// -----------------------------------------------------------------------------
 class Lease {
 public:
     Lease(std::chrono::steady_clock::time_point issued,

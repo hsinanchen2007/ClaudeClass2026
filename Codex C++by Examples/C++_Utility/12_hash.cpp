@@ -34,7 +34,15 @@ struct CacheKeyHash {
     }
 };
 
-// LeetCode 1：Two Sum。平均 O(n)；先查 complement 再 insert，避免同一元素重用。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1. Two Sum（兩數之和）
+// 題目：從整數陣列找出兩個相異索引，使其值相加為 target；[3,2,4]、6 回傳 [1,2]。
+// 為何使用本章主題：unordered_map 以 std::hash<int> 建立值到索引的平均常數時間查詢，
+// 避免暴力枚舉所有 O(N^2) 配對。
+// 思路：先 reserve；逐項查找 target-value；命中回互補值索引與目前索引，否則插入目前值。
+// 複雜度：平均時間 O(N)、額外空間 O(N)，N 是 values 長度；碰撞嚴重時時間最壞 O(N^2)。
+// 易錯點：先查後插才不會重用同一位置；減法可能 signed overflow，無解以 {N,N} 表示。
+// -----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t>
 leetcode_two_sum(const std::vector<int>& values, int target) {
     std::unordered_map<int, std::size_t> index;
@@ -48,7 +56,15 @@ leetcode_two_sum(const std::vector<int>& values, int target) {
     return {values.size(), values.size()};
 }
 
-// 【實務情境】以 service+version 複合 key 查部署 artifact cache。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】部署 artifact 複合鍵快取
+// 情境：部署系統以 service 名稱與 version 共同識別 artifact，兩欄任一不同都必須是不同 cache entry。
+// 為何使用本章主題：自訂 CacheKeyHash 組合兩欄 hash，配合預設 equality 滿足相等鍵必同 hash；
+// 相較串接成字串，不需設計分隔與逃脫規則，也保留欄位型別。
+// 設計：CacheKey 定義 equality；hash functor 混合 service/version；lookup 命中回 artifact，否則回 miss。
+// 成本：平均查找 O(1)、最壞 O(N)，N 是 cache 筆數；hash 字串另需 O(S)，S 是 service 長度。
+// 上線注意：hash 值不可持久化或當安全摘要；應限制惡意 key、監控 load factor，並同步併發更新。
+// -----------------------------------------------------------------------------
 using Cache = std::unordered_map<CacheKey, std::string, CacheKeyHash>;
 
 std::string practical_cache_lookup(const Cache& cache, const CacheKey& key) {

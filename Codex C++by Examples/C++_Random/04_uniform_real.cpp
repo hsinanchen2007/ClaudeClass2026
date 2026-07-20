@@ -27,7 +27,14 @@ void basic_example()
     std::cout << "[基礎] 1000 real samples stayed in [0,1)\n";
 }
 
-// LeetCode 478：Generate Random Point in a Circle。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 478. Generate Random Point in a Circle（在圓內產生隨機點）
+// 題目：給定圓心與半徑，反覆回傳圓面積內均勻分布的點；本例驗證半徑 2、圓心 (1,-1) 的 1000 個樣本。
+// 為何使用本章主題：兩個 [0,1) 均勻實數分別產生角度與面積比例；半徑用 sqrt(U)*R 才不會讓點集中在圓心。
+// 思路：1. 抽 U 計算 sqrt(U)*R。2. 再抽 U 轉成 [0,2pi) 角度。3. 用 cos/sin 轉笛卡兒座標。4. 平移到圓心。
+// 複雜度：每點固定兩次 draw 與常數次數學運算，時間 O(1)、額外空間 O(1)。
+// 易錯點：直接用 U*R 只會讓半徑均勻而非面積均勻；production 建構器還應拒絕負半徑與非有限座標。
+// -----------------------------------------------------------------------------
 class CircleSampler {
 public:
     CircleSampler(double radius, double center_x, double center_y, unsigned seed)
@@ -58,7 +65,14 @@ void leetcode_478_example()
     std::cout << "[LeetCode 478] all points are inside radius-2 circle\n";
 }
 
-// 實務：jitter 避免大量 clients 同時 retry（thundering herd）。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】分散大量客戶端的重試時間
+// 情境：基準重試延遲是 10 秒，為避免服務恢復瞬間所有 client 同步重送，要在 80% 到 120% 間加入 jitter。
+// 為何使用本章主題：uniform_real_distribution 直接產生連續倍率，比固定延遲或少量整數槽更能攤開重試時間。
+// 設計：1. 接收基準秒數與持久 engine。2. 抽 [0.8,1.2) 倍率。3. 相乘得到本次 delay。4. 呼叫端負責等待。
+// 成本：每次一次分布抽樣與乘法，期望時間 O(1)、空間 O(1)。
+// 上線注意：應拒絕負值、NaN、Infinity，並與最大 backoff、總 deadline、取消機制結合；mt19937 不可用於安全用途。
+// -----------------------------------------------------------------------------
 double jittered_delay(double base_seconds, std::mt19937& engine)
 {
     return base_seconds * std::uniform_real_distribution<double>(0.8, 1.2)(engine);

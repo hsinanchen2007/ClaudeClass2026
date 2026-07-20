@@ -14,7 +14,16 @@
 #include <string>
 #include <vector>
 
-// LeetCode 88：Merge Sorted Array；這版先把第二段放入同一 vector，再 inplace_merge。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 88. Merge Sorted Array（合併兩個有序陣列）
+// 題目：原題要求把 nums2 合併進 nums1；例如 [1,2,4]+[1,3,4] 得 [1,1,2,3,4,4]。
+// 本版先 append second 再 inplace_merge，未使用原題從尾端 O(1) 額外空間技巧。
+// 為何使用本章主題：append 後同一 vector 形成兩段相鄰 sorted runs，正是
+// inplace_merge 的前置形狀，且等價值保持左段先出。
+// 思路：1. 保存原 first.size 作 middle；2. append second；3. 以 middle 分隔兩段並穩定合併。
+// 複雜度：常見時間 O(N+M)、額外空間 O(N+M)，N/M 為兩輸入大小；無 buffer merge 可更昂貴。
+// 易錯點：兩段必須各自升冪；insert 後舊 iterator 可能失效，所以保存 index 而非 iterator。
+// -----------------------------------------------------------------------------
 std::vector<int> leetcode_merge_sorted(std::vector<int> first,
                                        const std::vector<int>& second) {
     const std::size_t middle_index = first.size();
@@ -30,7 +39,16 @@ struct Event {
     std::string source;
 };
 
-// 實務：buffer 前半是昨日已排序事件，後半是今日已排序事件；穩定合併同時戳。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】昨日與今日事件 Run 原地合併
+// 情境：同一 events buffer 的 [0,middle) 是昨日已排序事件，後半是今日已排序事件；
+// 要依 timestamp 合成一條時間線，相同時間讓昨日事件先出。
+// 為何使用本章主題：inplace_merge 專為相鄰 sorted runs 設計，穩定 tie 規則符合舊資料
+// 先於新資料，且不改容器大小。
+// 設計：1. 驗 middle 合法；2. 以同一 less_time 驗證兩半；3. 對完整 buffer 穩定合併。
+// 成本：有 buffer 時間 O(N)、額外空間可 O(N)，N 為事件總數；無 buffer 時可 O(N log N)。
+// 上線注意：timestamp 相同但需全域次序時應加入 sequence；演算法可能配置，不適合未評估的即時路徑。
+// -----------------------------------------------------------------------------
 void practical_merge_event_runs(std::vector<Event>& events, std::size_t middle) {
     assert(middle <= events.size());
     const auto less_time = [](const Event& lhs, const Event& rhs) {

@@ -23,13 +23,29 @@ void basic_demo() {
     assert(std::string(buffer.data()) == "cde");
 }
 
-// LeetCode 28（Find the Index of the First Occurrence）：找到後 copy 出片段驗證。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 28. Find the Index of the First Occurrence in a String（尋找首次出現位置）
+// 題目：輸入 haystack、needle，回傳 needle 首次出現的索引，找不到回 -1；"sadbutsad"、"sad" 回 0。
+// 為何使用本章主題：此題解實際只用 find，沒有呼叫 string::copy；它是章內對照案例，
+//       copy 適合已知位置後寫入外部 buffer，而不是取得搜尋索引，真正用途在下方固定欄位。
+// 思路：1. 尋找 needle；2. npos 映射成 -1；3. 命中則回傳起始索引。
+// 複雜度：直觀最壞時間 O(N*K)、額外空間 O(1)，N、K 是 haystack、needle 長度。
+// 易錯點：不可把 npos 先轉 int；一般資料若位置可能超過 INT_MAX，窄化前要檢查。
+// -----------------------------------------------------------------------------
 int leetcode_find_first(const std::string& haystack, const std::string& needle) {
     const std::size_t position = haystack.find(needle);
     return position == std::string::npos ? -1 : static_cast<int>(position);
 }
 
-// 實務：寫入固定 8-byte 欄位，剩餘 bytes 填空白；不需要 NUL 結尾。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】固定八位元文字欄位編碼
+// 情境：舊式檔案格式要求恰好 8 bytes，短值右側補空格，過長值目前截到 8 bytes，且不使用 NUL。
+// 為何使用本章主題：string::copy 可直接寫入 caller-owned array 並回實際量，相較 substr
+//       不建立中間字串，也不會誤加第九個終止字元。
+// 設計：1. 先把整個欄位填空格；2. 計算 min(value.size, 8)；3. 從位置 0 複製該數量。
+// 成本：欄寬固定時時間與空間皆 O(1)；一般寬度 W 則填充與複製為 O(W)。
+// 上線注意：靜默截斷可能破壞識別碼，正式 encoder 應回報錯誤；copy 不補 NUL，consumer 必須按寬度讀。
+// -----------------------------------------------------------------------------
 std::array<char, 8U> practical_fixed_width_field(const std::string& value) {
     std::array<char, 8U> field{};
     field.fill(' ');

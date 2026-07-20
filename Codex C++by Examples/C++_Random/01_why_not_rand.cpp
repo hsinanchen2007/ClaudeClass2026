@@ -27,8 +27,14 @@ void basic_example()
     std::cout << "[基礎] mt19937 + uniform_int_distribution produced valid dice\n";
 }
 
-// LeetCode 470：Implement Rand10() Using Rand7()。
-// 兩次 rand7 形成 [0,48] 的 49 個等機率值；只接受前 40 個，mod 10 才無 bias。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 470. Implement Rand10() Using Rand7()（用 Rand7 實作 Rand10）
+// 題目：只能呼叫均勻的 rand7()，產生 1..10 的均勻整數；本例抽 10000 次檢查範圍與寬鬆桶數。
+// 為何使用本章主題：uniform_int_distribution 模擬題目給定的 rand7；rejection sampling 避免直接取模造成缺值或偏差。
+// 思路：1. 兩次 rand7 組成 0..48 的 49 個等機率狀態。2. 拒絕 40..48。3. 對 0..39 取 mod 10。4. 加 1。
+// 複雜度：每輪時間 O(1)、接受率 40/49，期望時間 O(1)、空間 O(1)；隨機拒絕使理論最壞時間無上界。
+// 易錯點：不能直接由一個 rand7 產生 8..10，也不能保留 49 個狀態再 mod 10；mt19937 僅是測試用 rand7 後端。
+// -----------------------------------------------------------------------------
 class Rand10 {
 public:
     explicit Rand10(unsigned seed) : engine_(seed) {}
@@ -60,7 +66,14 @@ void leetcode_470_example()
     std::cout << "[LeetCode 470] rejection sampling avoids modulo bias\n";
 }
 
-// 實務：A/B bucket 用 deterministic hash 比 runtime PRNG 更穩定，使用者重啟後不換組。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】A/B 測試的穩定使用者分桶
+// 情境：同一 user_id 在重啟與重試後都必須落入相同的 100 個實驗桶，不能每次呼叫 PRNG 重新換組。
+// 為何使用本章主題：此需求其實是 deterministic mapping，不是隨機抽樣；固定 mixer 加 modulo 比共享 rand 狀態更符合黏著分組。
+// 設計：1. 以固定常數混合 user_id。2. 對 bucket 數取餘數。3. 回傳穩定 index。4. 以相同輸入驗證可重現。
+// 成本：每次分桶時間 O(1)、空間 O(1)，沒有 engine state 或同步成本。
+// 上線注意：release 版必須明確拒絕 buckets<=0；跨平台要固定 uint64_t、版本化 hash，且 modulo 可能造成些微桶偏差。
+// -----------------------------------------------------------------------------
 int stable_bucket(unsigned long user_id, int buckets)
 {
     assert(buckets > 0);

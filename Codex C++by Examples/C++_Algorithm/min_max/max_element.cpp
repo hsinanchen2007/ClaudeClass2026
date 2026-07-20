@@ -12,7 +12,17 @@
 #include <iostream>
 #include <vector>
 
-// LeetCode 747：Largest Number At Least Twice of Others。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 747. Largest Number At Least Twice of Others（至少是其他數兩倍的最大數）
+// 題目：輸入非負整數陣列 nums；若最大值至少為每個其他值兩倍，回其索引，否則回
+// -1，例如 [3,6,1,0] 回 1。
+// 為何使用本章主題：max_element 同時給最大值與其第一個索引，之後只需驗證其他
+// 元素是否符合兩倍條件，無需排序。
+// 思路：1. 找最大值 iterator；2. 掃描除最大位置外的元素；3. 任一不符立即回 -1；
+// 4. 否則回 iterator 距離。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 為 nums 的元素數。
+// 易錯點：輸入不可空；2*value 可能 int 溢位；重複最大值通常會使兩倍條件失敗。
+// -----------------------------------------------------------------------------
 int leetcode_dominant_index(const std::vector<int>& nums) {
     assert(!nums.empty());
     const auto max_it = std::max_element(nums.begin(), nums.end());
@@ -30,7 +40,17 @@ struct Endpoint {
     double success_rate;
 };
 
-// 實務：選成功率最高 endpoint；空表用 -1 明確表示沒有候選。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】服務端點成功率選優
+// 情境：路由器取得 endpoint id 與 success_rate 快照，要挑成功率最高的一台；沒有
+// 候選時回 -1。
+// 為何使用本章主題：max_element 只做一次線性掃描並直接回原資料位置，無需為單一
+// 最佳端點支付完整排序 O(N log N)。
+// 設計：1. comparator 只比較 success_rate；2. 找第一個最高成功率；3. 空表回 -1，
+// 否則回 endpoint id。
+// 成本：時間 O(N)、額外空間 O(1)，N 為 endpoint 數。
+// 上線注意：先排除不健康或樣本不足端點；成功率相同目前取第一筆，輸入順序需穩定或加入 tie-break。
+// -----------------------------------------------------------------------------
 int practical_best_endpoint(const std::vector<Endpoint>& endpoints) {
     const auto it = std::max_element(
         endpoints.begin(), endpoints.end(),

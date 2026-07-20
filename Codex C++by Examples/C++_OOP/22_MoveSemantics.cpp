@@ -46,9 +46,14 @@ void basic_example()
     std::cout << "[基礎] resource move 後來源重新賦值使用\n";
 }
 
-// LeetCode 49：Group Anagrams。
-// 對每個 word 建排序 key；結果組裝時把 map 裡的 vector move 到 result，避免再 copy
-// 每一個字串。演算法核心仍是 sorted-key grouping。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 49. Group Anagrams（字母異位詞分組）
+// 題目：將字母組成相同的字串分組；例如 eat、tea、ate 同組，tan、nat 同組。
+// 為何使用本章主題：排序 signature 是解題核心；本例按值取得 words，再 move 字串與群組以避免結果組裝時重複 copy。
+// 思路：複製 word 作排序 key；將原 word move 進對應 map group；最後把每個 group vector move 到 result。
+// 複雜度：時間 O(N*K log K + N log G)、額外空間 O(N*K)，G 為群組數、K 為最長字長。
+// 易錯點：move 後不可讀原 word 值；群組順序由 map key 決定但題目不要求；return local 不需 std::move。
+// -----------------------------------------------------------------------------
 std::vector<std::vector<std::string>> group_anagrams(std::vector<std::string> words)
 {
     std::map<std::string, std::vector<std::string>> groups;
@@ -75,7 +80,14 @@ void leetcode_49_example()
     std::cout << "[LeetCode 49] 6 words move into 3 anagram groups\n";
 }
 
-// 實務案例：JobQueue::submit by value，可同時接受 copy 與 move；內部永遠 move 儲存。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】同時接受可重用訊息與一次性訊息的工作佇列
+// 情境：caller 有時提交仍需保留的 reusable Message，有時提交 temporary；queue 都要取得自己的 payload。
+// 為何使用本章主題：submit 按值統一 copy/move 入口，再 move 進 vector；lvalue copy，rvalue 可直接轉移資源。
+// 設計：參數建立獨立 Message；push_back(std::move(message)) 交給 jobs_；front 只借出 const reference。
+// 成本：lvalue 路徑含 O(P) copy，rvalue 通常 O(1) move；vector 成長可能搬移既有 J 筆。
+// 上線注意：front 在空 queue 或 vector 修改後不可用；Message move 應 noexcept，並行 submit/read 需同步。
+// -----------------------------------------------------------------------------
 class JobQueue {
 public:
     void submit(Message message) { jobs_.push_back(std::move(message)); }

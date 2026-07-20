@@ -37,8 +37,14 @@ void basic_example()
     std::cout << "[基礎] expected lookup miss uses optional, not throw/catch\n";
 }
 
-// LeetCode 1：Two Sum。題目保證一解；通用版本用 optional 表示無解，不以 exception
-// 當正常 search result。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1. Two Sum（兩數之和）
+// 題目：找出兩個不同 index，使 nums[i]+nums[j]=target；例如 [2,7,11,15] 與 9 回 (0,1)，原題保證恰有一解。
+// 為何使用本章主題：通用版本不採原題保證，找不到時回 optional empty，避免用 exception 表示正常搜尋結果。
+// 思路：1. 從左到右掃描。2. 在 hash map 尋找 target-current。3. 命中就回舊 index 與 current。4. 否則記錄 current。
+// 複雜度：N 個元素平均時間 O(N)、額外空間 O(N)；hash table 最壞情況可能退化。
+// 易錯點：要先查 complement 再插入以避免同元素重用；target-current 可能 signed overflow，production 版需先做 checked arithmetic。
+// -----------------------------------------------------------------------------
 std::optional<std::pair<int, int>> two_sum(const std::vector<int>& nums, int target)
 {
     if (nums.size() > static_cast<std::size_t>(std::numeric_limits<int>::max())) {
@@ -60,7 +66,14 @@ void leetcode_1_example()
     std::cout << "[LeetCode 1] no solution is optional empty\n";
 }
 
-// 實務：C callback boundary 絕不讓 exception 穿過；保留 error code 給 C caller。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】C ABI callback 的例外防火牆
+// 情境：C library 呼叫 C++ callback，負輸入要回穩定錯誤碼 -1，任何 C++ exception 都不能穿越語言 ABI。
+// 為何使用本章主題：extern "C" noexcept boundary 在內部 catch-all 並轉狀態碼，是 catch(...) 合理的最後防線用途。
+// 設計：1. 在 try 內驗證輸入。2. 合法值乘 2 回傳。3. 任一 exception 在邊界捕捉。4. 統一回 -1。
+// 成本：正常路徑 O(1)；失敗另有 throw/unwind，實際 logging 若加入則有 I/O 成本。
+// 上線注意：value*2 仍須在運算前檢查 overflow，因 UB 無法被 catch；錯誤碼契約也需避免與合法結果衝突並提供診斷通道。
+// -----------------------------------------------------------------------------
 extern "C" int safe_callback(int value) noexcept
 {
     try {

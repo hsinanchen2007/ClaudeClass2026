@@ -29,7 +29,15 @@ void basic_example()
     std::cout << "[基礎] ignore consumed leftover newline before getline\n";
 }
 
-// LeetCode 58：Length of Last Word。getline 保留整句空格，純函式由尾端略空白後計數。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 58. Length of Last Word（最後一個單字的長度）
+// 題目：忽略句尾空格後回傳最後一個單字長度；`Hello World` 回 5，moon 例回 4。
+// 為何使用本章主題：example 先以 getline 保留整句及其中空格，再交給純函式由尾端計數；
+//       相較 operator>>，不會在 transport 階段丟失行的原始空白結構。
+// 思路：1. getline 讀完整一行；2. end 向左略過空格；3. begin 向左走過最後一字；4. 回邊界差。
+// 複雜度：讀取與計算時間 O(N)、額外空間 O(N)，N 是行長，空間來自 line 字串。
+// 易錯點：空字串不可從 size()-1 起算；`at` 仍需先以 end>0 保護，getline 失敗也要檢查。
+// -----------------------------------------------------------------------------
 int length_of_last_word(const std::string& text)
 {
     std::size_t end = text.size();
@@ -49,7 +57,15 @@ void leetcode_58_example()
     std::cout << "[LeetCode 58] getline preserves sentence; last lengths 5/4\n";
 }
 
-// 實務：讀 blank-line-separated paragraphs；空行是資料，不可用 `line.empty()` 當 EOF。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】保留空白行的逐行匯入
+// 情境：讀取 `first\n\nthird\n` 時，中間空行是段落資料，結果必須是 first、空字串、third。
+// 為何使用本章主題：以 getline 本身作迴圈條件可區分「成功讀到空行」與「沒有下一行」；
+//       相較檢查 line.empty() 或 `!eof()` 不會誤丟資料或重複舊值。
+// 設計：1. 每輪建立 line；2. getline 成功就 push，包括 empty；3. 讀取失敗時結束。
+// 成本：時間 O(T)、額外空間 O(T)，T 是所有行內容總 bytes，vector 擁有每行副本。
+// 上線注意：結束後應分辨 clean EOF 與 badbit；還要設定總大小/單行上限並明定 CRLF 正規化。
+// -----------------------------------------------------------------------------
 std::vector<std::string> read_lines(std::istream& input)
 {
     std::vector<std::string> lines;

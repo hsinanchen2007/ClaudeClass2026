@@ -53,8 +53,14 @@ void basic_example()
     std::cout << "[基礎] unspecified iterator order normalized by sort\n";
 }
 
-// LeetCode 1166：Design File System。這是 logical path-value store，不是 OS filesystem；
-// createPath 只有在 parent 已存在且 target 不存在時成功，get 不存在回 -1。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1166. Design File System（設計邏輯檔案系統）
+// 題目：維護 path 到 int 的映射，只有 parent 已存在且 target 未存在時 createPath 才成功。
+// 為何使用本章主題：此題其實不需 directory_iterator；VirtualFileSystem 用 unordered_map 誠實呈現 logical store，與 OS 目錄列舉作對照。
+// 思路：1. 驗 absolute-like logical path 與 duplicate；2. 由最後斜線求 parent；3. parent 合法才 emplace，get 則查 map。
+// 複雜度：L 為 path 長度；平均 create/get 時間 O(L)，雜湊最壞 O(N*L)，儲存空間 O(N*L)。
+// 易錯點：root parent 以空字串特判；本 parser 未正規化重複斜線、`.`、`..`，依賴題目輸入契約。
+// -----------------------------------------------------------------------------
 class VirtualFileSystem {
 public:
     bool createPath(const std::string& path, int value)
@@ -92,7 +98,14 @@ void leetcode_1166_example()
     std::cout << "[LeetCode 1166] parent、duplicate 與 get 契約均驗證\n";
 }
 
-// 實務：只選 regular .log files；directory entries 仍可能在下一步被替換，open 要再驗。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】單層 log 檔案清單
+// 情境：從指定目錄只列出直接 children 中的 regular `.log` files，輸出需穩定排序供報表比較。
+// 為何使用本章主題：directory_iterator 恰好只走一層；directory_entry 分類檔案，path::extension 過濾副檔名。
+// 設計：1. 逐 entry 走訪；2. 保留 regular 且 extension==.log；3. 收集後 sort。
+// 成本：E 為 entries；走訪 O(E) 加排序 O(K log K)，結果空間 O(K)，metadata 另有 I/O 成本。
+// 上線注意：iterator 順序未指定且 metadata 會過期；稍後 open 要重新處理錯誤，並明訂 symlink/permission policy。
+// -----------------------------------------------------------------------------
 std::vector<fs::path> log_files(const fs::path& directory)
 {
     std::vector<fs::path> result;

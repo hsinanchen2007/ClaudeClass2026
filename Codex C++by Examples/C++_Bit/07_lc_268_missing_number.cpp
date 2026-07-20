@@ -17,6 +17,14 @@
 #include <stdexcept>
 #include <vector>
 
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 268. Missing Number（缺失的數字）
+// 題目：長度 N 的陣列含 [0,N] 中互異的 N 個值，找缺少者；[3,0,1] 回傳 2。
+// 為何使用本章主題：把完整索引集合與觀測值全部 XOR，成對值消失，且避免等差總和的乘法溢位。
+// 思路：1. answer 先放入 N；2. 每輪 XOR index；3. 再 XOR nums[index]，最後留下缺值。
+// 複雜度：N 為元素數；時間 O(N)、額外空間 O(1)。
+// 易錯點：初值必須包含 N；XOR 不會驗 duplicate 或 out-of-range，production 輸入需另做 O(N) 驗證。
+// -----------------------------------------------------------------------------
 int missing_number(const std::vector<int>& nums)
 {
     int answer = static_cast<int>(nums.size());
@@ -49,7 +57,14 @@ void leetcode_example()
     std::cout << "[LeetCode 268] answers 2, 2, 8, 1\n";
 }
 
-// 實務：shard IDs 預期從 0..N，找唯一未回報的 shard。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】分片回報缺號檢查
+// 情境：N+1 個 shards 編號 0..N，監控批次收到 N 個互異回報，要找唯一未回報的 shard。
+// 為何使用本章主題：在已驗證的連續編號契約下，index/value XOR 不需額外 seen table。
+// 設計：1. 將回報列表交給 missing_number；2. 以 index 補完整集合；3. 回傳剩餘 shard ID。
+// 成本：N 為回報數；時間 O(N)、額外空間 O(1)。
+// 上線注意：重複、越界與缺多片會破壞答案；真實監控應先驗證來源、批次版本與完整頻次。
+// -----------------------------------------------------------------------------
 int missing_shard(const std::vector<int>& reported_shards)
 {
     return missing_number(reported_shards);

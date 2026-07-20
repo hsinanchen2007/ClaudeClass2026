@@ -42,8 +42,14 @@ void basic_example()
     std::cout << "[基礎] legacy read-only boundary + mutable original example\n";
 }
 
-// LeetCode 344：Reverse String 要求 in-place 修改 vector<char>。
-// 正確 API 直接接 non-const reference；不要把 const input const_cast 後修改。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 344. Reverse String（反轉字元陣列）
+// 題目：原地反轉 vector<char>；['h','e','l','l','o'] 變成 ['o','l','l','e','h']。
+// 為何使用本章主題：此題是 const_cast 反例；需求明確修改輸入，正確簽章應直接接 non-const reference。
+// 思路：1. 接收可寫 vector；2. 以 std::reverse 交換兩端；3. 不配置另一份結果。
+// 複雜度：N 為字元數；時間 O(N)、額外空間 O(1)。
+// 易錯點：不可把真正 const 的輸入去 const 後修改；API 的 mutability 應在型別上誠實呈現。
+// -----------------------------------------------------------------------------
 void reverse_string(std::vector<char>& text)
 {
     std::reverse(text.begin(), text.end());
@@ -57,7 +63,14 @@ void leetcode_344_example()
     std::cout << "[LeetCode 344] mutable API clearly performs in-place reverse\n";
 }
 
-// 實務：若 legacy API 可能修改，就複製一份，不可 const_cast 原字串。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】可修改 legacy C API 安全轉接
+// 情境：舊 uppercase API 接 char* 並會原地修改，但現代呼叫端要保留 const 原字串。
+// 為何使用本章主題：因 callee 真的會寫入，不能 const_cast input；先建立 mutable std::string copy 才符合物件契約。
+// 設計：1. 複製 input；2. 將 C++17 可寫 data() 交給 legacy_uppercase；3. 回傳修改後副本。
+// 成本：L 為字串長度；複製與轉大寫時間 O(L)、額外空間 O(L)。
+// 上線注意：legacy API 必須遵守 NUL 結尾與 buffer 容量；字元編碼若非 ASCII，手寫大小寫轉換不適用。
+// -----------------------------------------------------------------------------
 void legacy_uppercase(char* text)
 {
     for (; *text != '\0'; ++text) {

@@ -27,11 +27,14 @@ void basic_demo()
     assert(changed && next_id.load() == 200);
 }
 
-// ----------------------------------------------------------------------------
-// LeetCode 136：Single Number（平行 XOR 教學版）
-// ----------------------------------------------------------------------------
-// XOR 具結合/交換律，兩分片先算 thread-local，再以 atomic fetch_xor 合併。
-// O(n) 時間、O(1) 共享狀態。實務上小輸入 thread overhead 會比單執行緒慢。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 136. Single Number（只出現一次的數字）
+// 題目：陣列中除一個數只出現一次外，其餘都恰出現兩次，要求找出單獨值；例如 [4,1,2,1,2] 得 4。
+// 為何使用本章主題：XOR 可交換且可結合，兩個 thread 先做 local reduction，再以 relaxed atomic fetch_xor 無遺失地合併。
+// 思路：1. 將陣列切兩半。2. 每個 worker 在 local int XOR。3. 各自對共享 atomic 做一次 fetch_xor。4. join 後 load。
+// 複雜度：總時間 O(N)、額外演算法空間 O(1)，另有兩個 thread 與兩次 atomic RMW 成本。
+// 易錯點：relaxed 只適用於此獨立 reduction；join 提供完成同步，小輸入不會比單執行緒 XOR 快，題目資料也須符合配對契約。
+// -----------------------------------------------------------------------------
 int single_number(const std::vector<int>& numbers)
 {
     const std::size_t middle = numbers.size() / 2U;
@@ -55,9 +58,14 @@ void leetcode_demo()
     assert(single_number({4, 1, 2, 1, 2}) == 4);
 }
 
-// ----------------------------------------------------------------------------
-// 實務：無重複流水號產生器
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【日常實務範例】程序內無重複流水號
+// 情境：多個 worker 同時為工作配置從 1000 起的流水號，要求每次取得唯一舊值，不要求號碼反映 thread 執行順序。
+// 為何使用本章主題：fetch_add 是單一 atomic read-modify-write，比 mutex 保護單一 counter 更直接；不發布其他資料所以可用 relaxed。
+// 設計：1. constructor 設定 next。2. acquire 執行 fetch_add(1)。3. 各 thread 保存回傳舊值。4. join 後驗證唯一連續集合。
+// 成本：每次配置 O(1) 但所有 thread 爭用同一 cache line；物件空間 O(1)。
+// 上線注意：unsigned counter 回繞會重新產生舊 ID，必須定義耗盡策略；跨程序/重啟唯一性需資料庫、租號段或持久化機制。
+// -----------------------------------------------------------------------------
 class Sequence {
 public:
     explicit Sequence(unsigned long long first) : next_(first) {}

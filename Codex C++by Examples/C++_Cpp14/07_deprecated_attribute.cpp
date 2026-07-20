@@ -59,7 +59,14 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 278：First Bad Version。binary search O(log n)，API replacement 保留清楚 contract。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 278. First Bad Version（第一個錯誤版本）
+// 題目：版本 1..n 從某一版起全為 bad，找第一個 bad；n=5、first_bad=4 時回傳 4。
+// 為何使用本章主題：binary search 是替代 API；線性 legacy 實作標 deprecated，示範以警告導向較快版本而非直接刪除。
+// 思路：1. 維持包含答案的 [left,right]；2. middle 為 bad 就收縮右界；3. 否則把左界移到 middle+1。
+// 複雜度：N 為版本數；新 API 時間 O(log N)、額外空間 O(1)；legacy 時間 O(N)。
+// 易錯點：middle 用 left+(right-left)/2 避免加法溢位；deprecated 只發診斷，不會阻止舊函式被呼叫。
+// -----------------------------------------------------------------------------
 int leetcode_first_bad_version(int versions, int first_bad) {
     int left = 1;
     int right = versions;
@@ -85,8 +92,15 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】API 遷移：舊 send 產生編譯警告，新 API 以結果值明確回報成功或失敗。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】事件傳送 API 漸進遷移
+// 情境：舊 send_legacy 無法回報失敗，要讓呼叫端逐步改用會回傳成功狀態的新 practical_send。
+// 為何使用本章主題：[[deprecated]] 保留相容期並在編譯時指出替代函式，比突然移除 API 更利於分批遷移。
+// 設計：1. 保留舊函式並附替代訊息；2. 新函式驗 payload 非空；3. 呼叫端消費 bool 結果。
+// 成本：本教材驗證 payload.empty() 為 O(1)；真正傳送成本取決於網路與重試，attribute 無 runtime 成本。
+// 上線注意：需透過 telemetry 確認舊呼叫歸零並排 removal 版本；bool 太弱時應回傳帶原因的 result。
+// -----------------------------------------------------------------------------
 struct Request {
     std::string payload;
 };

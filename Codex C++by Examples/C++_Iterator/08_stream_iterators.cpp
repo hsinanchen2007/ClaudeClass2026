@@ -39,7 +39,14 @@ void basic_example()
     std::cout << "[基礎] typed stream iterators parsed and emitted three ints\n";
 }
 
-// LeetCode 217：Contains Duplicate。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 217. Contains Duplicate（存在重複元素）
+// 題目：輸入整數序列，任兩個位置值相同即回 true；例如串流 "1 2 3 1" 為 true。
+// 為何使用本章主題：本例把原陣列改成 istream_iterator 的 single-pass 輸入，讀到重複即可提早停止。
+// 思路：建立空 seen；逐次解參考 stream iterator；insert 失敗即回 true；走到 sentinel 回 false。
+// 複雜度：平均時間 O(N)、最壞 O(N^2)，額外空間 O(U)，N 為解析值數、U 為不同值數。
+// 易錯點：提早回傳會留下未讀 stream；格式錯誤也會抵達 end；必須另查 stream state 才能區分 EOF。
+// -----------------------------------------------------------------------------
 bool contains_duplicate(std::istream& input)
 {
     std::unordered_set<int> seen;
@@ -58,7 +65,14 @@ void leetcode_217_example()
     std::cout << "[LeetCode 217] duplicate detected during one-pass parsing\n";
 }
 
-// 實務：從監控工具 stdout 讀 latency，算平均後輸出可被下一個工具讀的序列。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】監控命令延遲資料的匯入與匯出
+// 情境：工具 stdout 提供空白分隔 latency，程式計算平均，並轉成每行一筆供下一個工具讀取。
+// 為何使用本章主題：istream_iterator/ostream_iterator 讓簡單 typed pipeline 直接接標準演算法與 stream。
+// 設計：讀取所有整數；accumulate 後除以筆數；用換行 delimiter 將原值逐筆輸出。
+// 成本：解析與輸出 O(N) 加 I/O，保存值空間 O(N)，N 為 latency 筆數。
+// 上線注意：空輸入會除以零；總和可能溢位；需檢查輸入 failbit、輸出錯誤與不可信資料量。
+// -----------------------------------------------------------------------------
 void practical_example()
 {
     std::istringstream command_output("12 18 15 11");

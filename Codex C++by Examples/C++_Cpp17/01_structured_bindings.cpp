@@ -46,8 +46,14 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 1：Two Sum。structured binding 拆出 map 中的 value/index（測試也拆答案）。
-// 平均 O(n) time / O(n) space。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1. Two Sum（兩數之和）
+// 題目：在 nums 中找兩個不同索引使其值相加為 target；[2,7,11,15] 與 9 回傳 (0,1)。
+// 為何使用本章主題：structured binding 將雜湊表 entry 拆成 value/index，也將回傳 pair 拆成兩個測試值。
+// 思路：1. 逐項計算所需補數；2. 在已看過的值中查找；3. 命中就回舊索引與目前索引，否則插入目前值。
+// 複雜度：N 為元素數；平均時間 O(N)、雜湊最壞 O(N^2)，額外空間 O(N)。
+// 易錯點：const auto& 避免複製 map entry；先查後插可防同一元素配自己，失敗 pair 需有明確契約。
+// -----------------------------------------------------------------------------
 std::pair<int, int> leetcode_two_sum(const std::vector<int>& nums, int target) {
     std::unordered_map<int, int> index_by_value;
     for (std::size_t i = 0; i < nums.size(); ++i) {
@@ -68,10 +74,17 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】service-owner 索引：結構化綁定直接命名 pair 的 service 與 owner。
 namespace practical {
 using ServiceOwner = std::pair<std::string, std::string>;
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】服務負責人索引建置
+// 情境：輸入多筆 (service, owner) 清單，建立可依 service 查 owner 的排序索引。
+// 為何使用本章主題：`const auto& [service, owner]` 直接命名 pair 欄位，避免 first/second 語意不清與字串複製。
+// 設計：1. 逐筆解構 service/owner；2. emplace 到 map；3. 回傳自行擁有字串的索引。
+// 成本：N 為資料筆數；時間 O(N log N)，結果空間 O(N)。
+// 上線注意：重複 service 的 emplace 會保留第一筆且靜默忽略後者；需明訂衝突、空值與大小寫政策。
+// -----------------------------------------------------------------------------
 std::map<std::string, std::string> practical_index(const std::vector<ServiceOwner>& rows) {
     std::map<std::string, std::string> result;
     for (const auto& [service, owner] : rows) {

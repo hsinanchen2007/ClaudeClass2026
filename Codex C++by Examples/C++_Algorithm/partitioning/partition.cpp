@@ -13,7 +13,15 @@
 #include <iostream>
 #include <vector>
 
-// LeetCode 905：Sort Array By Parity；題目不要求群組內順序，partition 正適合。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 905. Sort Array By Parity（按奇偶排序陣列）
+// 題目：重排 nums，使全部偶數位於全部奇數之前；例如 [3,1,2,4] 可變成 [4,2,3,1]。
+// 為何使用本章主題：std::partition 原地建立 predicate=true/false 兩區，且原題不要求
+// 群組內順序，因此不需支付 stable_partition 或完整排序成本。
+// 思路：1. 將 value%2==0 定義為 true；2. 對整段原地 partition；3. 回傳重排副本。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 為 nums 的元素數；演算法原地，空間來自按值輸入副本。
+// 易錯點：結果不是唯一，測試應驗 is_partitioned 而非固定排列；負奇數取模仍不等於 0。
+// -----------------------------------------------------------------------------
 std::vector<int> leetcode_sort_array_by_parity(std::vector<int> nums) {
     std::partition(nums.begin(), nums.end(),
                    [](int value) { return value % 2 == 0; });
@@ -25,7 +33,16 @@ struct Task {
     bool ready;
 };
 
-// 實務：把 ready task 移到前半，回傳可立即 dispatch 的數量。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】可派送 Task 原地分組
+// 情境：Task queue 含 ready 狀態，要把可立即執行項目移到前半並回數量；群組內原始
+// 順序不屬於排程契約。
+// 為何使用本章主題：partition 一趟原地分組並直接回 boundary，相較完整 sort 成本低，
+// 也不需另建 ready/deferred 容器。
+// 設計：1. predicate 讀 task.ready；2. partition 整個 queue；3. 以 distance 計算前半數量。
+// 成本：時間 O(N)、額外空間 O(1)，N 為 task 數；元素可能被 swap/move。
+// 上線注意：舊位置不再代表同一 Task；若同群組需 FIFO，必須改 stable_partition。
+// -----------------------------------------------------------------------------
 std::size_t practical_group_ready_tasks(std::vector<Task>& tasks) {
     const auto boundary = std::partition(
         tasks.begin(), tasks.end(),

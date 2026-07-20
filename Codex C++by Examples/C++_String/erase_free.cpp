@@ -19,13 +19,31 @@ void basic_demo() {
     assert(text == "bnn");
 }
 
-// LeetCode 27（Remove Element）的 string 對應版。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 27. Remove Element（移除元素，string 教學改寫）
+// 題目：原題在 vector<int> 原地移除所有等於 val 的元素並回傳新長度；本例改成 char 字串，
+//       移除 unwanted 後直接回傳新字串，例如 "leetcode" 刪 'e' 得 "ltcod"。
+// 為何使用本章主題：C++20 std::erase 把 erase-remove 慣用法包成一次呼叫；這是容器與回傳介面
+//       都經改寫的示範，不能直接當原題提交。
+// 思路：1. 按值取得可修改副本；2. std::erase 刪除所有目標 char；3. 回傳縮短後字串。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 是 text 長度，空間來自輸入副本／回傳值。
+// 易錯點：原題要求回新長度且不在意尾端內容；本版回 string，語意不同，且 iterator 全部要重取。
+// -----------------------------------------------------------------------------
 std::string leetcode_remove_character(std::string text, const char unwanted) {
     static_cast<void>(std::erase(text, unwanted));
     return text;
 }
 
-// 實務：log 單行協定拒絕 ASCII control chars，但保留 tab。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】單行 log 控制字元清理
+// 情境：紀錄欄位不可含換行等 ASCII control bytes，但允許 tab 作為欄位間隔，並需回報刪除數量。
+// 為何使用本章主題：std::erase_if 以 predicate 線性壓縮字串並直接回刪除數，相較手寫
+//       erase-remove 較不會忘記真正縮短容器。
+// 設計：1. 每個 char 轉 unsigned byte；2. 判定 `<0x20` 且不是 tab；3. 一次刪除並回 count。
+// 成本：時間 O(N)、額外空間 O(1)，N 是 text 長度；保留字元可能在同一 buffer 內搬移。
+// 上線注意：這不是完整 log escaping，DEL、ANSI escape、Unicode line separator 與欄位注入政策
+//       仍需定義；修改後所有舊 view／pointer 都不得沿用。
+// -----------------------------------------------------------------------------
 std::size_t practical_sanitize_log_line(std::string& text) {
     return std::erase_if(text, [](const char ch) {
         const unsigned char byte = static_cast<unsigned char>(ch);

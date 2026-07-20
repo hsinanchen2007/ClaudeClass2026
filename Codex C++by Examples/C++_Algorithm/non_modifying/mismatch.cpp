@@ -12,7 +12,17 @@
 #include <string>
 #include <vector>
 
-// LeetCode 859：Buddy Strings。恰兩個 mismatch 且交叉相等；完全相同時需有重複字。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 859. Buddy Strings（親密字串）
+// 題目：能否在 first 中恰交換兩個不同索引，使其等於 second；例如 ab/ba 為 true，
+// ab/ab 為 false，而 aa/aa 因可交換兩個 a 為 true。
+// 為何使用本章主題：mismatch 依序定位前兩個差異，equal 驗證其後沒有第三個；
+// 完全相同時則排序後以 adjacent_find 檢查是否有可互換的重複字元。
+// 思路：1. 長度不同 false；2. 完全相同時檢查 duplicate；3. 找前兩個 mismatch；
+// 4. 驗證兩差異交叉相等且剩餘 suffix 全同。
+// 複雜度：最壞時間 O(N log N)、額外空間 O(N)，N 為字串長度；排序分支決定最壞成本。
+// 易錯點：完全相同不一定 true；必須恰有兩個可交換索引，不能接受只有一個或超過兩個差異。
+// -----------------------------------------------------------------------------
 bool leetcode_buddy_strings(const std::string& first, const std::string& second) {
     if (first.size() != second.size()) {
         return false;
@@ -40,7 +50,16 @@ bool leetcode_buddy_strings(const std::string& first, const std::string& second)
     return swapped && std::equal(after_second_first, first.end(), after_second_second);
 }
 
-// 實務：找兩份 schema 第一個不同欄位；完全相同回 size。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】Schema 第一個差異 Offset
+// 情境：expected 與 actual 是欄位名稱序列，要回共同前綴結束位置；值不同或任一側
+// 先結束都停在該 index，完全相同則回 expected.size()。
+// 為何使用本章主題：四 iterator mismatch 同時保護兩個不同長度範圍，直接提供首對
+// 不同或先抵達 end 的位置。
+// 設計：1. 比較兩個完整範圍；2. 取得 expected 側 iterator；3. 計算與 begin 的距離。
+// 成本：時間 O(min(N,M))、額外空間 O(1)，N/M 為兩份 schema 欄位數。
+// 上線注意：單一 index 無法區分完全相同、expected 較短或 actual 較短；完整 API 應回差異類型與兩側值。
+// -----------------------------------------------------------------------------
 std::size_t practical_first_schema_difference(
     const std::vector<std::string>& expected,
     const std::vector<std::string>& actual) {

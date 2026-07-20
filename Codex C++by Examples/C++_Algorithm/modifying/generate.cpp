@@ -13,7 +13,17 @@
 #include <string>
 #include <vector>
 
-// LeetCode 412：Fizz Buzz，以遞增 closure 產生答案。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 412. Fizz Buzz（Fizz Buzz）
+// 題目：輸入正整數 n，產生 1..n；3 的倍數改為 Fizz、5 的倍數改為 Buzz、兩者
+// 公倍數改為 FizzBuzz，例如 n=5 得 ["1","2","Fizz","4","Buzz"]。
+// 為何使用本章主題：generate 對每個已配置輸出位置呼叫具狀態 closure；current
+// 依序遞增並決定該位置字串。一般迴圈更直觀，本例是 API 教學改寫。
+// 思路：1. 建立 n 格輸出；2. generator 每次先遞增 current；3. 依 15、3、5 倍數
+// 順序回字串；4. 其他值轉十進位文字。
+// 複雜度：時間 O(N)、額外空間 O(N)，N=n，字串轉換成本包含在輸出規模內。
+// 易錯點：n 必須非負，否則轉 size_t 會產生巨大配置；15 的判斷必須先於 3 與 5。
+// -----------------------------------------------------------------------------
 std::vector<std::string> leetcode_fizz_buzz(int n) {
     std::vector<std::string> result(static_cast<std::size_t>(n));
     int current = 0;
@@ -33,7 +43,16 @@ std::vector<std::string> leetcode_fizz_buzz(int n) {
     return result;
 }
 
-// 實務：產生單調 request id。單執行緒範例；多執行緒需 atomic/集中服務。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】單執行緒批次 Request ID 配發
+// 情境：單一程序要從 first_id 起產生 count 個連續測試或批次 request id，例如
+// 100 起三筆得到 [100,101,102]。
+// 為何使用本章主題：generate 讓具狀態 next closure 對每格產生不同值；相較 fill，
+// 每次輸出會隨 generator 狀態遞增。
+// 設計：1. 建立 count 格 ids；2. next 從 first_id 初始化；3. 每次回目前值後遞增。
+// 成本：時間 O(C)、額外空間 O(C)，C=count。
+// 上線注意：int 遞增可能溢位；跨執行緒或程序不能靠區域變數保唯一，需 atomic、資料庫 sequence 或 ID 服務。
+// -----------------------------------------------------------------------------
 std::vector<int> practical_allocate_ids(int first_id, std::size_t count) {
     std::vector<int> ids(count);
     int next = first_id;

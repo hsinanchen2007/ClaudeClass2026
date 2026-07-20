@@ -167,6 +167,15 @@ shared_ptr，但若 callback 被 object 保存可能形成 cycle，改 weak_ptr 
 #include <vector>
 
 namespace review {
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 56. Merge Intervals（合併區間）
+// 題目：輸入多個區間並合併所有重疊部分；[[1,3],[2,6],[8,10]] 回傳 [[1,6],[8,10]]。
+// 為何使用本章主題：排序 comparator 以無捕獲 lambda 表達 start/end 的嚴格順序，直接配合
+// std::sort；這也總結 lambda 在 STL algorithm 中最常見的使用方式。
+// 思路：依 start 後 end 排序；逐項檢查與 output 尾端是否分離；重疊時擴張尾端的 end。
+// 複雜度：時間 O(N log N)、額外空間 O(N)，N 是 intervals 數量；輸入副本會被原地排序。
+// 易錯點：comparator 必須用 < 而非 <=；空輸入回空結果，端點相接在此視為重疊。
+// -----------------------------------------------------------------------------
 using Interval = std::pair<int, int>;
 
 std::vector<Interval> leetcode_merge(std::vector<Interval> intervals) {
@@ -186,6 +195,15 @@ std::vector<Interval> leetcode_merge(std::vector<Interval> intervals) {
     return output;
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】可拒絕重複註冊的請求路由器
+// 情境：服務在執行期依 path 註冊不同 lambda handler，dispatch 時回傳處理結果或缺少路由。
+// 為何使用本章主題：std::function 擦除不同 closure 型別並保存捕獲狀態，std::invoke 統一呼叫；
+// 相較函式指標，可直接儲存帶 prefix 等狀態的 handler。
+// 設計：add 以 emplace 拒絕重複 path 並回報結果；dispatch 查表；命中後 invoke，否則回 nullopt。
+// 成本：註冊與查找 O(log R)，R 是路由數；handler 呼叫有間接成本且大型 closure 可能配置。
+// 上線注意：需定義 handler 例外與逾時策略；註冊和 dispatch 若併發必須保護 map，並驗證 path。
+// -----------------------------------------------------------------------------
 class Router {
 public:
     using Handler = std::function<std::string(const std::string&)>;
@@ -208,6 +226,15 @@ private:
     std::map<std::string, Handler> handlers_;
 };
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】Session 失效感知 callback
+// 情境：排程中的 callback 不應延長 Session 壽命，Session 關閉後呼叫必須明確表示沒有結果。
+// 為何使用本章主題：lambda 以值捕獲 weak_ptr，避免 `[this]` 懸空與 shared_ptr 循環；
+// 回傳 optional 又比特殊整數 sentinel 更能表達失效狀態。
+// 設計：Session 保存 id；factory 建立 weak_ptr 快照；callback 每次 lock，成功回 id、失敗回 nullopt。
+// 成本：建立與呼叫皆為 O(1)，每次 lock 有原子引用計數成本，closure 保存一個 weak_ptr。
+// 上線注意：lock 只保證該次取得的物件存活，不保證其欄位免於資料競爭；排程取消仍需獨立機制。
+// -----------------------------------------------------------------------------
 class Session {
 public:
     explicit Session(int initial_id) : id_(initial_id) {}

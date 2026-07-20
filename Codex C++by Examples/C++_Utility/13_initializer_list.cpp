@@ -23,7 +23,15 @@ int basic_sum(std::initializer_list<int> values) {
     return total;
 }
 
-// LeetCode 217：Contains Duplicate。initializer_list 讓短測資呼叫自然。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 217. Contains Duplicate（存在重複元素）
+// 題目：判斷陣列是否有任一值出現至少兩次；{1,2,3,1} 為 true，{1,2,3,4} 為 false。
+// 為何使用本章主題：initializer_list 讓短測資以 braces 傳入，template 又泛化到 string；
+// 正式 LeetCode 介面接收 vector<int>，因此這是 API 語法教學改寫，不適合執行期容器。
+// 思路：依輸入大小 reserve set；逐項插入；首次插入失敗便回 true，走完則回 false。
+// 複雜度：平均時間 O(N)、額外空間 O(N)，N 是 values 元素數；雜湊碰撞時可退化。
+// 易錯點：元素是 const，不能從 list 搬移；T 必須可雜湊且可比較相等，空輸入回 false。
+// -----------------------------------------------------------------------------
 template <typename T>
 bool leetcode_contains_duplicate(std::initializer_list<T> values) {
     std::unordered_set<T> seen;
@@ -36,7 +44,15 @@ bool leetcode_contains_duplicate(std::initializer_list<T> values) {
     return false;
 }
 
-// 【實務情境】短小固定 endpoint 清單用 braces 建立，再複製到 owned vector。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】靜態資料庫叢集端點設定
+// 情境：程式啟動時以短小 braces 清單設定主要與備援資料庫 endpoint，設定物件需長期擁有資料。
+// 為何使用本章主題：initializer_list 提供可讀的宣告語法，但只是 temporary const array 的 view；
+// ClusterConfig 立即複製到 vector，相較保存 begin 指標可避免建構式結束後懸空。
+// 設計：每個 Endpoint 保存 host/port；constructor 複製整份 list；factory 建立兩個固定端點。
+// 成本：建構時間與 owned 空間 O(N)，N 是 endpoint 數；每個字串也會複製或配置。
+// 上線注意：空清單呼叫 primary 會有未定義行為；需驗證 host、port、重複端點並保護機密設定。
+// -----------------------------------------------------------------------------
 struct Endpoint {
     std::string host;
     int port{};

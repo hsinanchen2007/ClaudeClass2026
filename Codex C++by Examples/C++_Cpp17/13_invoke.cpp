@@ -37,7 +37,14 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 94：Binary Tree Inorder Traversal。visitor 可是任意 callable，透過 invoke 呼叫。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 94. Binary Tree Inorder Traversal（二元樹中序走訪）
+// 題目：依左子樹、根、右子樹順序回傳節點值；樹 [1,null,2,3] 回傳 [1,3,2]。
+// 為何使用本章主題：泛型 inorder 以 std::invoke 呼叫任意 visitor，lambda、函式物件或相容 callable 共用同一走訪器。
+// 思路：1. nullptr 直接返回；2. 遞迴走左側；3. invoke 根節點 visitor，再遞迴右側。
+// 複雜度：N 為節點數、H 為樹高；時間 O(N)、遞迴堆疊 O(H)，結果另占 O(N)。
+// 易錯點：樹必須無環且節點活過走訪；偏斜樹可能耗盡 stack，visitor 的例外會直接向外傳播。
+// -----------------------------------------------------------------------------
 struct TreeNode {
     int value;
     TreeNode* left;
@@ -66,8 +73,15 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】通用 job runner：同一入口處理 lambda/member pointer，並保留 reference 與 noexcept。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】通用工作 callable runner
+// 情境：執行器要以同一入口呼叫 lambda、一般 callable 或 Job member pointer，並保留回傳 reference 與 noexcept。
+// 為何使用本章主題：std::invoke 統一 member pointer 與一般呼叫；decltype(auto) 和 perfect forwarding 保留底層呼叫契約。
+// 設計：1. 接收 Callable 與參數 forwarding references；2. 以 is_nothrow_invocable 推導 noexcept；3. invoke 並原樣回傳。
+// 成本：抽象本身通常 O(1) 且可 inline；總成本等同 callable，無 std::function type-erasure 配置。
+// 上線注意：forwarded reference 與回傳 reference 都受原物件生命週期約束；overloaded member pointer 要先指定簽章。
+// -----------------------------------------------------------------------------
 struct Job {
     int value;
     int scale(int factor) const { return value * factor; }

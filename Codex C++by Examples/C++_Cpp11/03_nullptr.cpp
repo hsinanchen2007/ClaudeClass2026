@@ -30,8 +30,14 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 206：Reverse Linked List，時間 O(n)、額外空間 O(1)。
-// prev/current/next 都是 observer，不負責 delete；本例節點由 stack 管理。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 206. Reverse Linked List（反轉單向鏈結串列）
+// 題目：輸入串列頭節點，原地反轉 next 方向並回傳新頭；例如 1->2->3 變成 3->2->1。
+// 為何使用本章主題：nullptr 同時表示空串列、走訪終點與新尾節點的 next，清楚取代整數 0 空指標。
+// 思路：1. previous 從 nullptr 開始；2. 暫存目前 next；3. 反向連結後將 previous/head 各前進一節點。
+// 複雜度：N 為節點數；時間 O(N)、額外空間 O(1)。
+// 易錯點：改寫 head->next 前一定先保存 next；這些 raw pointer 不擁有節點，也不能解參考 nullptr。
+// -----------------------------------------------------------------------------
 struct ListNode {
     int value;
     ListNode* next;
@@ -60,14 +66,20 @@ void test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】C 風格 optional callback：nullptr 明確表示呼叫者不要求完成通知。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】可選的 C 風格完成回呼
+// 情境：工作完成後可通知呼叫端，但未註冊 callback 時應合法略過通知。
+// 為何使用本章主題：nullptr 對 function pointer 明確表示「沒有回呼」，不會像 0/NULL 參與錯誤的整數 overload。
+// 設計：1. 接收結果與 Callback；2. 先比較 callback 是否為 nullptr；3. 只有存在時才以結果呼叫。
+// 成本：檢查本身時間與空間皆 O(1)；真正成本及副作用取決於 callback 實作。
+// 上線注意：函式指標必須仍有效；回呼可能拋例外、重入或跨執行緒觸碰共享狀態，API 需另訂契約。
+// -----------------------------------------------------------------------------
 using Callback = void (*)(int);
 int observed = 0;
 
 void remember(int value) { observed = value; }
 
-// 實務：模擬 C API 的 optional callback。nullptr 代表呼叫者不需要通知。
 void complete_job(int result, Callback callback) {
     if (callback != nullptr) {
         callback(result);

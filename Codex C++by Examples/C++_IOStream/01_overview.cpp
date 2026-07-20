@@ -35,7 +35,15 @@ void basic_example()
     std::cout << "[基礎] same stream API works with in-memory buffers\n";
 }
 
-// LeetCode 2235：Add Two Integers，將 transport/parsing 與純演算法分離。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 2235. Add Two Integers（兩整數相加）
+// 題目：輸入兩個整數 num1、num2 並回傳總和；例如 12 與 -5 得 7。
+// 為何使用本章主題：sum 本身保持純函式，example 才用 istringstream 模擬輸入 transport；
+//       這是刻意分離 parsing 與演算法，iostream 並非加法所需資料結構。
+// 思路：1. stream 抽取兩個 int；2. 檢查 stream 狀態；3. 將值交給純 sum；4. 驗證答案。
+// 複雜度：加法時間與空間 O(1)；十進位解析成本為 O(D)，D 是兩個 token 的總位數。
+// 易錯點：正式程式不可忽略 extraction 失敗或 signed overflow；純函式也不應偷偷讀 global cin。
+// -----------------------------------------------------------------------------
 int sum(int num1, int num2) { return num1 + num2; }
 
 void leetcode_2235_example()
@@ -47,7 +55,16 @@ void leetcode_2235_example()
     std::cout << "[LeetCode 2235] parsed inputs, pure sum answer=7\n";
 }
 
-// 實務：dependency injection 讓 parser 同時可讀檔、stdin、socket adapter 或測試字串。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】可注入 stream 的 key=value parser
+// 情境：同一 parser 要能讀 stdin、檔案或測試用 istringstream，輸入 `threads=8\n` 得 `threads:8`。
+// 為何使用本章主題：接收 std::istream& 抽象掉 transport，兩次 getline 又能保留 value 中的空白；
+//       相較直接綁 cin，函式可測且可重用。
+// 設計：1. 讀到第一個 `=` 作 key；2. 讀剩餘行作 value；3. 任一步失敗就丟格式錯誤；4. 組結果。
+// 成本：時間 O(N)、額外空間 O(N)，N 是該行總字元數，key/value/result 都可能配置。
+// 上線注意：要限制行長、拒空 key、定義多個 `=` 與 CRLF；借用的 stream 必須在呼叫期間有效，
+//       並區分格式錯誤與底層 badbit。
+// -----------------------------------------------------------------------------
 std::string read_key_value(std::istream& input)
 {
     std::string key;

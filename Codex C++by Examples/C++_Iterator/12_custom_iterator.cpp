@@ -101,7 +101,14 @@ void basic_example()
     std::cout << "[基礎] custom forward range generated 1,2,3,4\n";
 }
 
-// LeetCode 1480：Running Sum。輸入改由自訂 range 產生，再用標準 algorithm。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1480. Running Sum of 1d Array（一維陣列的動態和）
+// 題目：將 nums 轉成前綴和；本例用 [1,5) 產生 [1,2,3,4]，結果為 [1,3,6,10]。
+// 為何使用本章主題：這是自訂 iterator 教學改寫，CountingRange 取代題目現成陣列，證明標準 algorithm 可消費該 range。
+// 思路：建立合法半開計數範圍；由 iterators materialize vector；partial_sum 原地計算前綴和。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 為 last-first；輸出本身即占 O(N)。
+// 易錯點：first>last 必須拒絕；接近 INT_MAX 不可遞增越界；iterator category 必須誠實維持 multi-pass 契約。
+// -----------------------------------------------------------------------------
 std::vector<int> running_sum(int first, int last)
 {
     const CountingRange range(first, last);
@@ -118,7 +125,14 @@ void leetcode_1480_example()
     std::cout << "[LeetCode 1480] standard partial_sum accepted custom iterators\n";
 }
 
-// 實務：產生連續工單 ID，不必先配置一個只為存數字的 vector。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】惰性產生連續工單識別碼
+// 情境：要搜尋 1000 到 1003 的工單 id，但不想先配置只為保存連號整數的 vector。
+// 為何使用本章主題：CountingRange 以兩個小 iterator 表示序列，標準 find 可直接消費，不需 materialize 全部 id。
+// 設計：建立 [1000,1004)；find 1002 並驗命中；再搜尋不存在值並驗 end sentinel。
+// 成本：搜尋時間 O(N)、range 額外空間 O(1)，N 為 id 範圍長度。
+// 上線注意：range 不應跨越 int 上限；不同 range 的 iterators 不可混比；大量查存在性可直接做範圍算術而非線性 find。
+// -----------------------------------------------------------------------------
 void practical_example()
 {
     const CountingRange order_ids(1000, 1004);

@@ -58,7 +58,15 @@ std::string_view category_of() {
     }
 }
 
-// LeetCode 125：Valid Palindrome。以 traits 接受 string/string_view，忽略非英數與大小寫。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 125. Valid Palindrome（驗證回文串）
+// 題目：忽略非英數與大小寫後判斷回文；"A man, a plan, a canal: Panama" 為 true。
+// 為何使用本章主題：is_text_v 組合 remove_cvref_t 與 is_same_v，在編譯期只接受 string/string_view；
+// trait 管型別契約，雙指標才負責執行期字元掃描。
+// 思路：維護半開 [left,right)；兩端略過非英數；轉小寫比較，不同即失敗，相同則向內移。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 是 text 長度，不建立正規化副本。
+// 易錯點：cctype 前必須轉 unsigned char；它受 C locale 影響，不是完整 Unicode 正規化。
+// -----------------------------------------------------------------------------
 template <typename Text>
 bool leetcode_is_palindrome(const Text& text) {
     static_assert(is_text_v<Text>);
@@ -84,7 +92,15 @@ bool leetcode_is_palindrome(const Text& text) {
     return true;
 }
 
-// 實務：避免 bool 被當作一般整數指標輸出；bool 在型別系統中確實是 integral。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】監控指標值格式化
+// 情境：監控輸出要讓 bool 顯示 true/false、其他算術值顯示數字，不支援型別明確標記。
+// 為何使用本章主題：remove_cvref_t 正規化輸入，is_same_v<bool> 必須先於 is_arithmetic_v；
+// 否則 bool 會因標準分類為 integral 而被 to_string 輸出成 0/1。
+// 設計：編譯期先分 bool；再分其他 arithmetic；剩餘型別回 unsupported。
+// 成本：分類無 runtime 分支，格式化時間與空間 O(D)，D 是輸出字元數。
+// 上線注意：to_string 的浮點精度固定且不適合所有指標；unsupported 應回結構化錯誤而非混入資料。
+// -----------------------------------------------------------------------------
 template <typename T>
 std::string practical_metric_value(const T& value) {
     using Raw = std::remove_cvref_t<T>;

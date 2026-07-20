@@ -46,11 +46,14 @@ void basic_demo()
            "worker 應至少完成十次迭代");
 }
 
-// ----------------------------------------------------------------------------
-// LeetCode 1480：Running Sum（jthread 作為 RAII worker）
-// ----------------------------------------------------------------------------
-// prefix sum 本身有前後依賴，這裡不硬做假平行化；以 jthread 安全承接工作並在 scope
-// 內 join。演算法 O(n) 時間、O(n) 輸出。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1480. Running Sum of 1d Array（一維陣列的動態和）
+// 題目：回傳 result[i]=nums[0]+...+nums[i]；例如 [1,2,3,4] 得 [1,3,6,10]。
+// 為何使用本章主題：prefix sum 有前後依賴，本例不宣稱平行加速，只把整段工作交給 jthread，示範 RAII ownership 與 join 可見性。
+// 思路：1. 配置輸出。2. worker 由左至右累加 total。3. 每步寫唯一 result index。4. join 後回傳完整結果。
+// 複雜度：時間 O(N)、輸出空間 O(N)，另有一次 thread 建立與 join 成本。
+// 易錯點：本 worker 未接 stop_token，所以 request_stop 不會中斷計算；累加可能 signed overflow，輸入與輸出也必須活到 join。
+// -----------------------------------------------------------------------------
 std::vector<int> running_sum(const std::vector<int>& numbers)
 {
     std::vector<int> result(numbers.size());
@@ -72,9 +75,14 @@ void leetcode_demo()
     expect(running_sum({}).empty(), "空輸入應產生空輸出");
 }
 
-// ----------------------------------------------------------------------------
-// 實務：可取消搜尋；找到目標後共享 stop_source 通知其他分片
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【日常實務範例】找到任一命中即取消其他分片的搜尋
+// 情境：大型唯讀陣列分成兩段搜尋 target；任一 worker 命中後發布 index，並請另一段停止不必要掃描。
+// 為何使用本章主題：共享 stop_source 提供合作式取消，jthread 保證 worker 被 join；atomic CAS 只讓第一個命中者寫入 found。
+// 設計：1. 建立 token 與 found=-1。2. 兩 worker 掃各自區間並檢查 token。3. 命中時 CAS index 並 request_stop。4. join 後 load。
+// 成本：最壞總工作 O(N)、額外空間 O(1)，取消反應延遲最多到下一次迴圈檢查；另有 thread/atomic 成本。
+// 上線注意：若 target 重複，結果是競賽勝出的任一 index而非最小 index；blocking I/O 不會被 token 自動喚醒，index 轉 int 需檢查範圍。
+// -----------------------------------------------------------------------------
 int cancellable_find(const std::vector<int>& values, int target)
 {
     std::stop_source cancellation;

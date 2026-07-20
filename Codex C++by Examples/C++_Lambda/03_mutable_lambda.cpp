@@ -32,7 +32,15 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 202：Happy Number。mutable lambda 封裝「平方各位數」的 running total。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 202. Happy Number（快樂數）
+// 題目：反覆把正整數改成各位數平方和，判斷最後是否到 1；19 會到 1，2 則進入循環。
+// 為何使用本章主題：內層 mutable lambda 在一次 next 計算中保存平方和；這是狀態 closure 的
+// 教學改寫，直接在 while 內累加通常更簡單，也不需要複製 callable。
+// 思路：用 next 算出各位數平方和；用 seen 記錄每輪 number；到 1 成功，重複值則判定循環。
+// 複雜度：時間 O(T log M)、額外空間 O(T)，M 是輸入值、T 是到達 1 或循環前的狀態數。
+// 易錯點：mutable 修改的是 closure 內的 total 副本；題目輸入為正整數，0 不屬標準契約。
+// -----------------------------------------------------------------------------
 bool leetcode_is_happy(int number) {
     std::unordered_set<int> seen;
     const auto next = [](int value) {
@@ -57,8 +65,16 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】退避序列：mutable closure 保存每次呼叫後更新的 delay 狀態。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】重試工作的倍增退避序列
+// 情境：網路請求失敗後依序取得 100、200、400 毫秒等等待時間，避免立即密集重試。
+// 為何使用本章主題：mutable lambda 把下一次 delay 封裝在 callable 內，相較外部全域計數器
+// 更容易讓每個重試工作擁有獨立狀態。
+// 設計：factory 捕獲初始 delay 與 factor；每次先回傳目前值；再把 closure 內 delay 乘上 factor。
+// 成本：每次呼叫時間 O(1)、closure 空間 O(1)，不含實際 sleep 或網路 I/O。
+// 上線注意：需驗證 initial_ms 與 factor 為正，並設定最大延遲及溢位保護；共享同一 closure 要同步。
+// -----------------------------------------------------------------------------
 auto practical_backoff(int initial_ms, int factor) {
     return [delay = initial_ms, factor]() mutable {
         const int current = delay;

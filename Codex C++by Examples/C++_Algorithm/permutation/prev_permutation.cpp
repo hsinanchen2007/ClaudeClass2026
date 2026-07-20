@@ -13,14 +13,32 @@
 #include <string>
 #include <vector>
 
-// LeetCode 1053：Previous Permutation With One Swap 的基準版。
-// 題目限制只能一次 swap；prev_permutation 可能反轉 suffix，故僅作正確前序 oracle。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1053. Previous Permutation With One Swap（交換一次的先前排列）
+// 題目：只允許一次 swap，求嚴格小於原陣列的最大字典序排列，例如 [3,2,1] 回
+// [3,1,2]；本函式呼叫
+// prev_permutation，可能反轉整個 suffix，因此只是「不限一次 swap」的 oracle。
+// 為何使用本章主題：prev_permutation 可提供真正前一個字典序排列，適合小資料驗證
+// 手寫 LC1053 解，但不符合原題操作次數限制，不能直接提交。
+// 思路：1. 複製 nums；2. 產生前一個排列或在最小值時 wrap；3. 回傳 oracle 結果。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 為 nums 的元素數，空間來自按值副本。
+// 易錯點：必須明說不是 LC1053 解法；回 false 時仍會把最小排列改成最大排列。
+// -----------------------------------------------------------------------------
 std::vector<int> leetcode_previous_permutation_oracle(std::vector<int> nums) {
     static_cast<void>(std::prev_permutation(nums.begin(), nums.end()));
     return nums;
 }
 
-// 實務：從最高優先的 rollout 順序逐步回退，列出 deterministic fallback 順序。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】Rollout 節點回退順序窮舉
+// 情境：少量節點要從最高字典序開始列出所有 fallback 順序，供故障注入測試依固定
+// 次序執行。
+// 為何使用本章主題：descending 起點配 prev_permutation 可完整反向枚舉到最小排列，
+// 並保證 deterministic；這只適合很小的測試集合。
+// 設計：1. 將 nodes 排成最大排列；2. 記錄目前值；3. 反覆 prev_permutation 到 false。
+// 成本：時間與空間 O(P*N)，N 為節點數、P 為不同排列數。
+// 上線注意：不可對真實大叢集 materialize N! 排列；排程搜尋應邊生成邊剪枝並限制輸出。
+// -----------------------------------------------------------------------------
 std::vector<std::string> practical_fallback_orders(std::string nodes) {
     std::sort(nodes.begin(), nodes.end(), std::greater<>{});
     std::vector<std::string> result;

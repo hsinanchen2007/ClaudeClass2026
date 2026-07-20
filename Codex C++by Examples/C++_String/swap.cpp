@@ -31,7 +31,15 @@ void basic_demo() {
     expect(active == "v2" && staging == "v1");
 }
 
-// LeetCode 1790（Check if One String Swap Can Make Strings Equal）。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1790. Check if One String Swap Can Make Strings Equal（一次交換後字串相等）
+// 題目：判斷能否在 first 中交換恰好至多兩個位置，使其等於 second；bank/kanb 為 true。
+// 為何使用本章主題：題解交換的是同一 string 內兩個 char，並未使用 string::swap；本例是對照，
+//       member swap 適合交換兩個完整字串，真正用途在下方 staging 發佈。
+// 思路：1. 長度不同失敗；2. 記錄最多兩個不符索引；3. 零個不符成功、一個失敗；4. 交換兩字再比較。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 是字串長度，first 按值建立工作副本。
+// 易錯點：超過兩處差異要立即失敗；相同字串依原題允許回 true，字元交換不涉及 allocator。
+// -----------------------------------------------------------------------------
 bool leetcode_one_swap_equal(std::string first, const std::string& second) {
     if (first.size() != second.size()) return false;
     std::size_t left = first.size();
@@ -51,7 +59,16 @@ bool leetcode_one_swap_equal(std::string first, const std::string& second) {
     return first == second;
 }
 
-// 實務：先完整建 staging，驗證後才 swap 發佈，提供強烈的狀態切換邊界。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】設定內容 staging 發佈
+// 情境：active 設定持續供讀取，新內容先在 staging 完整建立並驗證，合法時才一次切換。
+// 為何使用本章主題：string::swap 在 allocator 前置條件成立時 O(1) 交換完整內容；相較逐字指派，
+//       驗證失敗不碰 active，成功切換邊界清楚。
+// 設計：1. staging 按值取得 ownership；2. 拒絕空值或含 INVALID；3. 合法時 active.swap(staging)。
+// 成本：驗證時間 O(N)，swap O(1)，額外空間 O(N)，N 是 staging 長度。
+// 上線注意：此字串檢查只是示例；真實設定需完整 parse/schema，並發讀者需鎖或原子快照，
+//       自訂 allocator 不相等時也不得呼叫 swap。
+// -----------------------------------------------------------------------------
 bool practical_publish_if_valid(std::string& active, std::string staging) {
     if (staging.empty() || staging.find("INVALID") != std::string::npos) return false;
     active.swap(staging);

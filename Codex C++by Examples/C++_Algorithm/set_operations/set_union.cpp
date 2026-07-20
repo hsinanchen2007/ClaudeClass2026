@@ -11,7 +11,16 @@
 #include <iterator>
 #include <vector>
 
-// LeetCode 349 延伸：兩陣列 distinct union，先 sort+unique 再 set_union。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 349. Intersection of Two Arrays（兩個陣列的交集）
+// 題目：原題要求兩陣列的 distinct 交集；本 helper 改求 distinct union，例如
+// [1,2,2] 與 [2,3,3] 回 [1,2,3]，是集合操作對照而非 LC349 解法。
+// 為何使用本章主題：兩邊 sort+unique 後，set_union 取每個值一次；用來和原題應用的
+// set_intersection 比較 union/intersection 選型。
+// 思路：1. 各自排序去重；2. set_union 合併兩個 distinct ranges；3. 回升冪結果。
+// 複雜度：時間 O(N log N+M log M)、額外空間 O(N+M)，N/M 為兩輸入大小。
+// 易錯點：不得把 union 當 LC349 提交結果；若不先 unique，單側 duplicate 仍會保留。
+// -----------------------------------------------------------------------------
 std::vector<int> leetcode_distinct_union(std::vector<int> first,
                                          std::vector<int> second) {
     std::sort(first.begin(), first.end());
@@ -24,7 +33,16 @@ std::vector<int> leetcode_distinct_union(std::vector<int> first,
     return output;
 }
 
-// 實務：合併兩個 feature rollout audience，使用者 ID 理論上 unique sorted。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】Blue/Green Rollout Audience 合併
+// 情境：blue 與 green 都是升冪且理論上 unique 的 user IDs；發布系統要取得至少在
+// 任一 audience 的完整名單，共同使用者只出現一次。
+// 為何使用本章主題：set_union 以線性雙指標合併兩個 sorted set，重疊 ID 只輸出一份，
+// 並保持結果升冪。
+// 設計：1. 驗兩邊排序；2. 預留 N+M 上界；3. union 到 combined。
+// 成本：時間 O(N+M)、額外空間 O(K)，K 為聯集大小，最壞 N+M。
+// 上線注意：若單側含 duplicate，set_union 會保留該側 multiplicity；載入時應驗證 unique invariant。
+// -----------------------------------------------------------------------------
 std::vector<int> practical_combined_audience(const std::vector<int>& blue,
                                              const std::vector<int>& green) {
     assert(std::is_sorted(blue.begin(), blue.end()));

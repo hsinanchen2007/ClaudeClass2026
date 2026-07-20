@@ -19,7 +19,15 @@ void basic_demo() {
     assert(message == "hello alice!");
 }
 
-// LeetCode 67（Add Binary）：由低位相加，再反轉。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 67. Add Binary（二進位字串相加）
+// 題目：輸入兩個非空二進位字串，回傳其和；"1010" 加 "1011" 得 "10101"。
+// 為何使用本章主題：核心迴圈實際用 += char 建 reversed，沒有使用 operator+ 連接大字串；
+//       這是刻意對照，因熱迴圈用可重用 builder 比連鎖 `a+b+c` 更合適。
+// 思路：1. 從兩輸入尾端逐位相加；2. 加入 carry；3. 把結果低位附加到 reversed；4. 反轉。
+// 複雜度：時間 O(max(N,M))、額外空間 O(max(N,M))，N、M 是兩輸入位數。
+// 易錯點：迴圈條件要包含最後 carry；輸入必須只含 0/1，且倒序索引用 size_t 時要防下溢。
+// -----------------------------------------------------------------------------
 std::string leetcode_add_binary(const std::string& a, const std::string& b) {
     std::string reversed;
     reversed.reserve(std::max(a.size(), b.size()) + 1U);
@@ -41,7 +49,15 @@ std::string leetcode_add_binary(const std::string& a, const std::string& b) {
     return reversed;
 }
 
-// 實務：產生可讀的資源鍵。少量欄位用 + 清楚；大量迴圈不要如此串接。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】物件儲存資源鍵組裝
+// 情境：把 tenant 與 object id 組成 `tenant/<tenant>/objects/<id>`，欄位數固定且很少。
+// 為何使用本章主題：operator+ 讓固定少量片段的結構一眼可讀；相較 stream/format 較輕量，
+//       但大量迴圈或長片段應改用 reserve+append 以控制中間配置。
+// 設計：1. 先以 std::string literal 啟動字串加法；2. 依固定順序加入 tenant、路徑與 id。
+// 成本：總輸出長度 L 的時間至少 O(L)，額外空間 O(L)；連鎖加法可能建立中間結果。
+// 上線注意：tenant/id 若來自外部要驗空值與 `/` 等保留字元；此鍵組裝不等於路徑安全或 URL encoding。
+// -----------------------------------------------------------------------------
 std::string practical_make_object_key(const std::string& tenant, const std::string& id) {
     return std::string("tenant/") + tenant + "/objects/" + id;
 }

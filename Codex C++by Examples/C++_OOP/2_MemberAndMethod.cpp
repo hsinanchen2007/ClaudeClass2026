@@ -51,7 +51,14 @@ void basic_example()
     std::cout << "[基礎] " << read_only.owner() << " balance=150\n";
 }
 
-// LeetCode 1929：method 對 class 保存的 vector 產生兩份串接結果。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1929. Concatenation of Array（陣列串接）
+// 題目：輸出長度 2N 的 answer，前後兩半都等於 nums；例如 [1,2,1] 得 [1,2,1,1,2,1]。
+// 為何使用本章主題：題目不要求 class state；本例教學改寫成 const member function，讀取物件保存的 vector。
+// 思路：建立結果並 reserve 2N；插入 values_ 一次；再插入同一範圍一次；回傳新 vector。
+// 複雜度：時間 O(N)、必要輸出空間 O(N)，N 為輸入元素數。
+// 易錯點：reserve 不改 size；2*N 的容量計算可能溢位；concatenate 標 const 才能由唯讀物件呼叫。
+// -----------------------------------------------------------------------------
 class ArrayDuplicator {
 public:
     explicit ArrayDuplicator(std::vector<int> values) : values_(std::move(values)) {}
@@ -76,7 +83,14 @@ void leetcode_1929_example()
     std::cout << "[LeetCode 1929] class method 回傳 2n 陣列\n";
 }
 
-// 工作案例：BatchStats 讓 count/total/average 一律由同一份資料計算。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】批次樣本統計物件
+// 情境：依序加入量測樣本，查詢 count 與 average 時必須永遠來自同一份資料，避免外部計數不同步。
+// 為何使用本章主題：member functions 封裝 samples_ 的修改與唯讀查詢，const average 不會改變批次內容。
+// 設計：add 追加樣本；count 讀 size；average 累加全部樣本後除以筆數。
+// 成本：add 攤銷 O(1)，count O(1)，average O(N) 時間與 O(1) 額外空間。
+// 上線注意：空批次不可求平均；int total 可能溢位；高頻查詢可同步維護寬型別總和，但要守住 invariant。
+// -----------------------------------------------------------------------------
 class BatchStats {
 public:
     void add(int sample) { samples_.push_back(sample); }

@@ -41,7 +41,14 @@ void basic_example()
     std::cout << "[基礎] 2024-02-29 + 1 day = 2024-03-01\n";
 }
 
-// LeetCode 1360：Number of Days Between Two Dates。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1360. Number of Days Between Two Dates（兩個日期之間的天數）
+// 題目：輸入兩個 YYYY-MM-DD 日期，回傳相隔天數的絕對值；例如 2019-06-29 與 2019-06-30 相差 1 天。
+// 為何使用本章主題：C++20 year_month_day 驗證民用日期，轉 sys_days 後可直接相減，無須手刻閏年與各月天數。
+// 思路：1. 解析並以 ok() 驗證兩日期。2. 轉成 sys_days。3. 以較晚減較早。4. 回傳 days count。
+// 複雜度：固定欄位解析與 calendar 轉換皆為 O(1)，額外空間 O(1)。
+// 易錯點：year_month_day 建構不代表日期有效，必須呼叫 ok()；題目是曆日差，不是受 DST 影響的本地小時差。
+// -----------------------------------------------------------------------------
 int days_between_dates(const std::string& first, const std::string& second)
 {
     const sys_days left{parse_date(first)};
@@ -57,8 +64,14 @@ void leetcode_1360_example()
     std::cout << "[LeetCode 1360] date gaps=1 and 15 days\n";
 }
 
-// 實務：月底 billing。year_month_day + months 對 1/31 + 1 month 可能產生 invalid 2/31；
-// policy 必須明定。此函式選「clamp 到目標月份最後一天」。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】月底帳單的下一個扣款日
+// 情境：1 月 31 日的月繳訂閱要安排 2 月扣款；直接加一個月會形成無效的 2 月 31 日。
+// 為何使用本章主題：year_month 可正確跨月與跨年，year_month_day_last 能明確實作「不足日數就夾到月底」的帳務政策。
+// 設計：1. 取得下一個 year_month。2. 嘗試保留原 day。3. candidate 有效便回傳。4. 否則改用目標月最後一天。
+// 成本：固定次數的 calendar 值運算，時間 O(1)、空間 O(1)。
+// 上線注意：clamp 只是其中一種商業規則，必須與 reject/roll-over 明確區分；輸入日期也應先確認 ok()。
+// -----------------------------------------------------------------------------
 year_month_day add_month_clamped(year_month_day date)
 {
     const year_month target = date.year() / date.month() + months{1};

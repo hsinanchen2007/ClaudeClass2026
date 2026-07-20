@@ -218,13 +218,14 @@ void basic_demo()
     expect(!popped_after_drain, "closed and drained queue produced an item");
 }
 
-// ----------------------------------------------------------------------------
-// LeetCode 217：Contains Duplicate。
-// 題目契約是輸入唯讀、若任兩索引值相同即回 true；這裡以兩個 task 平行掃描。
-// 每個 bucket 的 unordered_set 有獨立鎖，預期總時間 O(n)、最差 O(n^2)、空間 O(n)。
-// duplicate 是早停訊號；cancelled 只處理例外，不能把配置失敗誤報成「有重複」。
-// future.get 會傳遞 worker 例外，也保證函式返回前 worker 已結束、values 仍然存活。
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 217. Contains Duplicate（存在重複元素）
+// 題目：任兩個不同 index 值相同即回 true；例如 [1,2,3,1] 為 true，[1,2,3,4] 為 false。
+// 為何使用本章主題：ShardedSet 依 hash 分桶各自加鎖，兩個掃描 task 可同時處理不同 bucket；atomic flags 提供早停與例外取消。
+// 思路：1. 將 input 切兩段。2. 每值插入對應 locked bucket。3. insert 失敗發布 duplicate。4. 收集兩側例外後回傳旗標。
+// 複雜度：平均總時間 O(N)、最壞 hash 時間 O(N^2)、空間 O(N)，另有 task 與 bucket-lock 成本。
+// 易錯點：allocation failure 必須重拋，不能誤報 duplicate；future.get 前 values/seen 要存活，早停也不保證另一 worker 立即停止。
+// -----------------------------------------------------------------------------
 template <std::size_t BucketCount>
 class ShardedSet {
     static_assert(BucketCount > 0U, "ShardedSet needs at least one bucket");
@@ -305,11 +306,14 @@ void leetcode_demo()
     expect(!empty, "contains_duplicate mishandled empty input");
 }
 
-// ----------------------------------------------------------------------------
-// 實務：producer 與 consumer 真正重疊執行；最後驗證每個 job exactly once。
-// owner 只在所有 producer join 後 close，因此 accepted job 不會被取消或遺失。
-// 每個 consumer 只寫自己的 vector；join 後 main 才合併，沒有共享 vector 的 data race。
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【日常實務範例】多 Producer/Consumer 的工作排空驗證
+// 情境：4 個 producer 各送 250 個唯一 job，3 個 consumer 重疊處理；所有 producer 完成後 close，1000 筆都必須 exactly once。
+// 為何使用本章主題：8 個 shard 分散 deque lock，close 採 drain 語意；consumer 各寫自己的 vector，避免共享輸出 data race。
+// 設計：1. 先啟動 wait_pop consumers。2. producers push 不重疊 ID。3. join producers 後 close。4. join consumers 並計數每個 ID。
+// 成本：N 筆 push 平均 O(1)，每次 pop 最多掃 S 個 shard 為 O(S)，queue 空間 O(N+S)。
+// 上線注意：raw thread 例外須經 exception_ptr relay；析構前必須 close/join，且此結構不保證跨 shard global FIFO。
+// -----------------------------------------------------------------------------
 void practical_demo()
 {
     constexpr int producer_count = 4;
@@ -388,8 +392,14 @@ void practical_demo()
     expect(queue.size() == 0U, "practical queue was not fully drained");
 }
 
-// close 與 push 刻意競跑：只把 push 回 true 的 job 納入承諾，最後逐筆核對。
-// 這直接測試 lifecycle gate 的線性化邊界，而不是靠 sleep 猜排程先後。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】Close 與 Push 競跑的線性化稽核
+// 情境：4 個 producer 持續嘗試送件，同時 closer 關閉 queue；只承諾 push 回 true 的工作必須可在關閉後完整 drain。
+// 為何使用本章主題：lifecycle shared/exclusive gate 讓 push 與 close 有明確先後；以 accepted/observed 集合核對比 sleep 猜 interleaving 可靠。
+// 設計：1. 各 producer 記錄成功 push 的 ID。2. 全員開始後 closer 呼叫 close。3. join 後 drain queue。4. 排序比較 accepted 與 observed。
+// 成本：A 次嘗試平均入列 O(1)，drain 每筆 O(S) 掃描，驗證排序 O(K log K)，K 為已接受筆數。
+// 上線注意：close 後的新 push 必須穩定回 false且 close 應冪等；測試仍需傳遞 worker 例外，不能把未接受工作算成遺失。
+// -----------------------------------------------------------------------------
 void close_race_demo()
 {
     constexpr int producer_count = 4;

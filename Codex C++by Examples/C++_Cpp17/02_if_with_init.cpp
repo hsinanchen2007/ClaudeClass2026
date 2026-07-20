@@ -33,7 +33,14 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 1：Two Sum；if-init 把 found iterator 限在成功/失敗判斷內。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1. Two Sum（兩數之和）
+// 題目：輸入 nums 與 target，回傳兩個相加等於 target 的索引；[3,2,4] 與 6 回傳 (1,2)。
+// 為何使用本章主題：if-init 將 found iterator 限定在查找分支，查一次 map 就能判斷與讀取索引。
+// 思路：1. 逐項計算 target-nums[i]；2. 在 seen 中查補數；3. 命中即回傳，否則記錄目前值。
+// 複雜度：N 為元素數；平均時間 O(N)、雜湊最壞 O(N^2)，額外空間 O(N)。
+// 易錯點：found 在整個 if/else 才有效；不要在 condition 重做 find，且必須先查後插。
+// -----------------------------------------------------------------------------
 std::pair<int, int> leetcode_two_sum(const std::vector<int>& nums, int target) {
     std::unordered_map<int, int> seen;
     for (std::size_t i = 0; i < nums.size(); ++i) {
@@ -51,10 +58,17 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】cache lookup：iterator 只存在於 if/else 範圍，避免後續誤用或命名污染。
 namespace practical {
 using Cache = std::unordered_map<std::string, std::string>;
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】應用程式快取查詢
+// 情境：依 key 讀取字串快取，命中時回傳值副本，miss 時回傳 std::nullopt。
+// 為何使用本章主題：if-init 讓 iterator 只涵蓋命中判斷，避免離開查詢後誤用或污染外層名稱。
+// 設計：1. 只呼叫一次 cache.find；2. 命中就複製 found->second 到 optional；3. 否則回 nullopt。
+// 成本：平均查找 O(1)、雜湊最壞 O(N)；命中另複製 L 個字元，回傳空間 O(L)。
+// 上線注意：副本適合跨 lock 使用；若改回 view/reference，rehash、erase 與 cache 生命週期都可能使其失效。
+// -----------------------------------------------------------------------------
 std::optional<std::string> practical_lookup(const Cache& cache, const std::string& key) {
     if (const auto found = cache.find(key); found != cache.end()) {
         return found->second;

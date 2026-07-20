@@ -18,8 +18,15 @@ T square(T value) {
     return value * value;
 }
 
-// LeetCode 704：Binary Search。
-// Compare 預設為 less<>；只要資料依相同規則排序，就能替換成 greater<>。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 704. Binary Search（二分搜尋）
+// 題目：在已排序陣列中找 target 索引，找不到回 -1；[-1,0,3,5,9,12] 查 9 得 4。
+// 為何使用本章主題：函式模板讓元素型別 T 與 Compare 由呼叫端決定，預設 less<> 處理升冪，
+// 也能以 greater<> 搜尋依相同規則降冪排列的資料；原題只要求升冪 int。
+// 思路：維護半開區間 [left,right)；比較 middle 與 target；縮小其中一半，命中時回索引。
+// 複雜度：時間 O(log N)、額外空間 O(1)，N 是 values 長度。
+// 易錯點：資料排序規則必須和 Compare 一致；Compare 應形成嚴格弱序，巨大索引轉 int 可能溢位。
+// -----------------------------------------------------------------------------
 template <typename T, typename Compare = std::less<>>
 int leetcode_binary_search_index(const std::vector<T>& values,
                                  const T& target,
@@ -39,12 +46,20 @@ int leetcode_binary_search_index(const std::vector<T>& values,
     return -1;
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】依投影選出最高監控指標
+// 情境：監控列包含名稱與數值，呼叫端要選擇比較欄位並取得最大值的原始資料列。
+// 為何使用本章主題：Range 與 Projection 都是模板參數，lambda 的具體型別可直接 inline；
+// 相較 std::function 沒有固定 type-erasure 邊界，也不必替每種 Metric 欄位寫新函式。
+// 設計：以第一列初始化 best；逐列比較投影值；較大時更新指標，最後回傳容器內參考。
+// 成本：時間 O(N)、額外空間 O(1)，N 是 values 數量，每筆呼叫 projection 至多兩次。
+// 上線注意：Range 必須非空且在回傳參考使用期間存活；projection 應穩定且不可改動比較欄位。
+// -----------------------------------------------------------------------------
 struct Metric {
     std::string name;
     double value{};
 };
 
-// 實務：以投影函式找最大值；資料型別與取值方式都由呼叫端決定。
 template <typename Range, typename Projection>
 const typename Range::value_type& practical_max_by(const Range& values, Projection project) {
     assert(!values.empty());

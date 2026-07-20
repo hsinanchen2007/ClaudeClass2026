@@ -15,7 +15,16 @@
 #include <string>
 #include <vector>
 
-// LeetCode 34 的另一種寫法：equal_range 同時取得左右邊界。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 34. Find First and Last Position of Element in Sorted Array（在排序陣列中找元素的第一與最後位置）
+// 題目：輸入升冪陣列 nums 與 target，回傳 target 的首尾索引；不存在時回
+// [-1,-1]，例如 [5,7,7,8,8,10] 查 8 得 [3,4]。
+// 為何使用本章主題：std::equal_range 一次表達 target 的完整等價半開區間，等同
+// lower_bound 與 upper_bound 的組合，正好對應左右邊界。
+// 思路：1. 取得 [first,last)；2. 空區間表示不存在；3. first 為左界，last-1 為右界。
+// 複雜度：時間 O(log N)、額外空間 O(1)，N 為 nums 的元素數。
+// 易錯點：輸入必須升冪；last 是尾後 iterator；空區間不可做 last-1 或解參考。
+// -----------------------------------------------------------------------------
 std::vector<int> leetcode_search_range_equal(const std::vector<int>& nums,
                                               int target) {
     const auto [first, last] = std::equal_range(nums.begin(), nums.end(), target);
@@ -40,7 +49,17 @@ struct EventUserLess {
     }
 };
 
-// 實務：事件已按 user_id 排序，擷取單一使用者的所有 action。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】依使用者擷取事件動作清單
+// 情境：事件快照已按 user_id 升冪，同一使用者可有多筆 login/view 等動作；查詢要
+// 複製指定 user_id 的全部 action，不存在時回空清單。
+// 為何使用本章主題：equal_range 可直接定位連續同鍵區段；相較掃描整份事件表，只需
+// 對數搜尋加上實際輸出筆數的線性複製。
+// 設計：1. EventUserLess 支援 Event 與 int 異質比較；2. 找出 [first,last)；3. 依
+// distance 預留容量並按原事件順序複製 action。
+// 成本：時間 O(log N + K)、額外空間 O(K)，N 為事件數、K 為該使用者事件數。
+// 上線注意：事件必須維持 user_id 排序；回傳值只含 action，若需時間順序要確保同鍵區段已按時間建立。
+// -----------------------------------------------------------------------------
 std::vector<std::string> practical_actions_for(
     const std::vector<Event>& events, int user_id) {
     const auto [first, last] = std::equal_range(

@@ -21,6 +21,14 @@ struct Node {
     Node* next;
 };
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】單 Reader/Retirer 的 Hazard Pointer 回收示意
+// 情境：reader 可能正讀 shared head，retirer 移除節點後不能立刻 delete；本教材以一個 hazard slot 示範延後回收協定。
+// 為何使用本章主題：reader 先發布候選 pointer 再重查 head，retirer 只有確認 hazard 不指向 retired node 時才 delete，避免 use-after-free。
+// 設計：1. reader load/publish/revalidate。2. 安全讀值後清 hazard。3. retirer exchange head 到 retired。4. scan hazard 並在安全時 CAS 後 delete。
+// 成本：正常讀取/退休為期望 O(1) atomic 操作；完整多 thread hazard system 的 scan 通常與 hazard slots 數量成正比。
+// 上線注意：本類只允許單 reader/retirer，demo 更先 join reader 才 retire，未測真實競態；production 應使用成熟 library 並處理 ABA、註冊與 batch reclaim。
+// -----------------------------------------------------------------------------
 class SingleHazardList {
 public:
     explicit SingleHazardList(int value) : head_(new Node{value, nullptr}) {}
@@ -94,11 +102,14 @@ void basic_demo()
     assert(!list.protected_read().has_value());
 }
 
-// ----------------------------------------------------------------------------
-// LeetCode 206：Reverse Linked List（ownership 基礎）
-// ----------------------------------------------------------------------------
-// hazard pointer 是回收協定，不取代一般 pointer 操作。先能正確寫單執行緒鏈結反轉：
-// 每步保存 next，再改 current->next。O(n) 時間、O(1) 空間。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 206. Reverse Linked List（反轉鏈結串列）
+// 題目：將單向串列原地反轉並回傳新 head；例如 1->2->3 變成 3->2->1。
+// 為何使用本章主題：反轉本身是單執行緒 ownership 基礎，不需要 hazard pointer；本例用來區分 pointer 重接與併發 memory reclamation 是兩件事。
+// 思路：1. previous 初值 null。2. 保存 current->next。3. 將 current->next 指回 previous。4. 前進兩個 pointer 直到 null。
+// 複雜度：N 個節點的時間 O(N)、額外空間 O(1)。
+// 易錯點：必須先保存 next 才能覆寫連結；若其他 thread 同時存取/刪除節點，此單執行緒演算法沒有任何同步或回收保證。
+// -----------------------------------------------------------------------------
 Node* reverse_list(Node* head)
 {
     Node* previous = nullptr;
@@ -121,9 +132,6 @@ void leetcode_demo()
     assert(second.next == &first && first.next == nullptr);
 }
 
-// ----------------------------------------------------------------------------
-// 實務：reader/retirer 都透過封裝 API；不直接 delete shared node
-// ----------------------------------------------------------------------------
 void practical_demo()
 {
     SingleHazardList list(7);

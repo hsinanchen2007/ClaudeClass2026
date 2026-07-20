@@ -48,8 +48,14 @@ void basic_example()
     std::cout << "[基礎] static counter 由所有 Ticket 共用\n";
 }
 
-// LeetCode 535：Encode and Decode TinyURL。
-// 不同 Codec instance 共用 static storage，模擬同一服務的 process-wide URL registry。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 535. Encode and Decode TinyURL（TinyURL 的加密與解密）
+// 題目：encode 將長網址轉短網址，decode 必須還原；例如某題目 URL 編碼後可由另一 Codec 解回。
+// 為何使用本章主題：inline static key/map 讓不同 Codec instances 共用 process 內 registry；這只是題目服務的教學模型。
+// 思路：以遞增 key 建短碼；保存 key->long URL；decode 取最後 path segment；由 static map 查回。
+// 複雜度：encode/decode 平均 O(L) 字串成本與平均 O(1) hash 查找，空間 O(U)，U 為已編碼 URL 總長。
+// 易錯點：static state 非執行緒安全且不持久；短網址格式與缺 key 要驗證；真實系統需碰撞、配額與資料庫策略。
+// -----------------------------------------------------------------------------
 class Codec {
 public:
     std::string encode(const std::string& long_url)
@@ -80,7 +86,14 @@ void leetcode_535_example()
     std::cout << "[LeetCode 535] " << short_url << " 可由另一 instance decode\n";
 }
 
-// 實務案例：factory 名稱用 static function，因建立物件前根本沒有 this 可用。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】互動式與批次重試策略的命名工廠
+// 情境：互動請求使用 3 次/100ms，批次工作使用 10 次/1000ms，呼叫端應以語意名稱選設定。
+// 為何使用本章主題：static factory 在物件建立前即可呼叫且不需要 this，比暴露兩個裸 int 的 constructor 更不易傳反。
+// 設計：interactive/batch 各呼叫 private constructor；物件保存 attempts/delay；提供唯讀 observers。
+// 成本：建立與查詢皆 O(1)，無動態配置。
+// 上線注意：delay 單位要進入型別或名稱；參數需依服務 SLA 設定，若可熱更新則不宜硬編碼 static factory。
+// -----------------------------------------------------------------------------
 class RetryPolicy {
 public:
     static RetryPolicy interactive() { return RetryPolicy(3, 100); }

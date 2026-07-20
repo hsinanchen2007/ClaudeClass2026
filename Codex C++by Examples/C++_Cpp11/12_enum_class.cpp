@@ -39,7 +39,14 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 682：Baseball Game。先把字串 token 分類成 enum，再處理狀態。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 682. Baseball Game（棒球比賽計分）
+// 題目：依序處理整數、+、D、C 操作並回傳有效分數總和；["5","2","C","D","+"] 得 30。
+// 為何使用本章主題：先將 token 分類成 scoped Operation，讓 switch 分支不與其他整數或列舉狀態混用。
+// 思路：1. 將 token 映射為四種操作；2. 依操作新增、加總、加倍或取消分數；3. 最後累加有效記錄。
+// 複雜度：N 為操作數；時間 O(N)、額外空間 O(N)。
+// 易錯點：+ 需要至少兩筆、D/C 需要至少一筆；本程式依賴題目保證操作有效，數字解析仍可能丟例外。
+// -----------------------------------------------------------------------------
 enum class Operation { score, add_last_two, double_last, cancel_last };
 
 int cal_points(const std::vector<std::string>& operations) {
@@ -73,8 +80,15 @@ int cal_points(const std::vector<std::string>& operations) {
 void test() { assert(cal_points({"5", "2", "C", "D", "+"}) == 30); }
 }  // namespace leetcode
 
-// 【實務案例】工作狀態機：scoped enum 防止不同狀態域混用，transition 函式集中合法邊。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】背景工作狀態轉移驗證
+// 情境：排程工作只能由 queued 進 running，再由 running 結束為 succeeded 或 failed。
+// 為何使用本章主題：enum class 將 JobState 限定在自己的 scope，避免與其他整數狀態或列舉隱式混用。
+// 設計：1. 列出 queued->running；2. 列出 running->兩種終態；3. 其餘組合一律拒絕。
+// 成本：每次檢查時間與空間皆 O(1)。
+// 上線注意：新增 cancelled 等狀態時要同步更新所有轉移；並行 worker 仍需以交易或 compare-and-swap 保護狀態。
+// -----------------------------------------------------------------------------
 enum class JobState { queued, running, succeeded, failed };
 
 bool may_transition(JobState from, JobState to) {

@@ -14,7 +14,16 @@
 #include <numeric>
 #include <vector>
 
-// LeetCode 1572：Matrix Diagonal Sum；用 inner_product 搭配索引序列。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1572. Matrix Diagonal Sum（矩陣對角線元素的和）
+// 題目：輸入 n*n 矩陣，回主對角線與副對角線總和，中央重疊格只算一次；例如
+// 1..9 的 3*3 矩陣回 25。
+// 為何使用本章主題：先以 iota 建 row index，再用 inner_product 的自訂 pair-op 把
+// 每列兩個對角值映射後依序加總；第二個 index 範圍僅為符合二元 API，值未使用。
+// 思路：1. 產生 0..N-1；2. 每列加 matrix[row][row] 與副對角值；3. N 為奇數時扣掉中央重複。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 為矩陣邊長，index vector 佔主要額外空間。
+// 易錯點：輸入必須每列至少 N 格；奇數矩陣中央只能算一次；一般迴圈可省 index 配置。
+// -----------------------------------------------------------------------------
 int leetcode_diagonal_sum(const std::vector<std::vector<int>>& matrix) {
     const std::size_t n = matrix.size();
     std::vector<std::size_t> index(n);
@@ -27,7 +36,16 @@ int leetcode_diagonal_sum(const std::vector<std::vector<int>>& matrix) {
     return (n % 2U == 0U) ? both : both - matrix[n / 2U][n / 2U];
 }
 
-// 實務：單價（分）與數量點積得到訂單總額。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】訂單單價與數量點積
+// 情境：unit_cents 與 quantities 以相同索引描述品項，需計算 sum(unit_cents[i]*quantity[i])
+// 作訂單整數分幣總額。
+// 為何使用本章主題：inner_product 直接表達兩個等長序列的逐項乘法再加總；0LL 初值
+// 將 accumulator 與乘積結果提升為 long long。
+// 設計：1. 驗證兩範圍等長；2. 以 quantities.begin 作第二序列起點；3. 使用預設乘加。
+// 成本：時間 O(N)、額外空間 O(1)，N 為品項數。
+// 上線注意：assert 不能驗證外部訂單；數量負值、幣別、乘法與總和溢位都需 runtime 檢查。
+// -----------------------------------------------------------------------------
 long long practical_order_total(const std::vector<long long>& unit_cents,
                                 const std::vector<int>& quantities) {
     assert(unit_cents.size() == quantities.size());

@@ -59,9 +59,14 @@ void basic_example()
     std::cout << "[基礎] enum class flags 保留 read+audit\n";
 }
 
-// LeetCode 401：Binary Watch。
-// 10 個 LEDs 可視為 bitmask：高 4 bits 表 hour、低 6 bits 表 minute；set bits 總數等於
-// turnedOn。這裡直接枚舉合法時間，避免生成非法 hour/minute。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 401. Binary Watch（二進位手錶）
+// 題目：10 顆 LED 中恰亮 turnedOn 顆，列出所有合法時間；turnedOn=1 共有 10 組。
+// 為何使用本章主題：hour 與 minute 的 set bit 數就是亮燈數；std::popcount 直接判斷每個合法時間。
+// 思路：1. 枚舉 hour 0..11；2. 枚舉 minute 0..59；3. 兩者 popcount 總和相符就格式化加入結果。
+// 複雜度：固定枚舉 12*60 組，時間與輸出上界皆 O(1)；一般化可寫 O(H*M)。
+// 易錯點：先限制 turnedOn 於 0..10；minute<10 要補零，直接枚舉 10-bit mask 時還需過濾非法時間。
+// -----------------------------------------------------------------------------
 std::vector<std::string> read_binary_watch(int turned_on)
 {
     std::vector<std::string> result;
@@ -87,7 +92,14 @@ void leetcode_401_example()
     std::cout << "[LeetCode 401] one LED yields 10 valid times\n";
 }
 
-// 實務：API authorization 一次要求 read+audit；has 比逐一 bool 判斷更集中。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】稽核紀錄複合授權
+// 情境：讀取 audit log 的 API 必須同時具備 read 與 audit，只有其中一項不能通過。
+// 為何使用本章主題：enum class flags 保持名稱型別安全，has 以 `(flags&requested)==requested` 集中 all-of 判斷。
+// 設計：1. OR 組合必要權限；2. 將 capabilities 與必要 mask 做 AND；3. 完全相等才授權。
+// 成本：單次授權檢查時間與空間皆 O(1)。
+// 上線注意：反序列化 mask 要拒絕未知 bits；授權決策仍需記錄主體、資源、政策版本與拒絕原因。
+// -----------------------------------------------------------------------------
 bool may_read_audit_log(Capability capabilities)
 {
     return has(capabilities, Capability::read | Capability::audit);

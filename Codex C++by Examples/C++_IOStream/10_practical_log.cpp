@@ -17,6 +17,16 @@
 #include <syncstream>
 #include <unordered_map>
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】可注入 sink 的單筆同步 log
+// 情境：將 level/message 組成一行，換行、CR、quote 先 escape；測試接 ostringstream，production 可接檔案或 cout。
+// 為何使用本章主題：write_log 接 ostream& 以抽象 sink，osyncstream 在 local buffer 組完後一次提交，
+//       相較多次直接 `destination <<` 可避免同程序多執行緒把一筆紀錄交錯。
+// 設計：1. escape message 的危險字元；2. 以 osyncstream 包 sink；3. 組完整欄位與 newline；4. scope 結束提交。
+// 成本：時間與暫存空間 O(N)，N 是 message bytes；提交還有 sink lock、格式化與實際 I/O 延遲。
+// 上線注意：目前 escaping 未涵蓋反斜線、tab 與全部 control bytes；sink 生命週期需涵蓋呼叫，
+//       osyncstream 不提供跨程序原子性、rotation 或 durability，flush policy 必須另訂。
+// -----------------------------------------------------------------------------
 std::string escape_log(const std::string& input)
 {
     std::string output;
@@ -43,7 +53,15 @@ void basic_example()
     std::cout << "[基礎] one escaped log record emitted atomically\n";
 }
 
-// LeetCode 359：Logger Rate Limiter；只有 shouldPrint=true 時才交給 logging transport。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 359. Logger Rate Limiter（紀錄器速率限制）
+// 題目：相同 message 在前次允許輸出後 10 秒內不得再次輸出；foo 在 t=1、t=2、t=11 的結果為 true/false/true。
+// 為何使用本章主題：演算法以 unordered_map 保存每個 message 的下一次允許時間，只有 true
+//       才應交給 ostream logging transport；iostream 本身不負責 rate limit。
+// 思路：1. 查 message；2. timestamp 小於 next 時拒絕；3. 否則更新 next=timestamp+10；4. 允許輸出。
+// 複雜度：每次平均時間 O(1)、最壞 O(U)，空間 O(U)，U 是不同 message 數。
+// 易錯點：長期程序 map 會持續成長，需淘汰舊 key；timestamp+10 要防 overflow，並發呼叫也需同步。
+// -----------------------------------------------------------------------------
 class Logger {
 public:
     bool shouldPrintMessage(int timestamp, const std::string& message)
@@ -66,7 +84,6 @@ void leetcode_359_example()
     std::cout << "[LeetCode 359] rate limiter emits at t=1 and t=11\n";
 }
 
-// 實務：logger 接 ostream，unit test 可 capture，production 可接 file/cout。
 void practical_example()
 {
     std::ostringstream capture;

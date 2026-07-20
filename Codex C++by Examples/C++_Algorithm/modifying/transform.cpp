@@ -16,8 +16,16 @@
 #include <numeric>
 #include <vector>
 
-// LeetCode 977：Squares of a Sorted Array。
-// 此教學版 transform 後 sort：O(N log N)；最佳雙指標可做到 O(N)。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 977. Squares of a Sorted Array（有序陣列的平方）
+// 題目：輸入非遞減 nums，回傳每個值平方後的非遞減陣列；例如
+// [-4,-1,0,3,10] 回 [0,1,9,16,100]。
+// 為何使用本章主題：transform 獨立計算每項平方，再 sort 修復負數平方造成的順序；
+// 這是 O(N log N) 教學版，正式最佳解應用雙指標做到 O(N)。
+// 思路：1. 建立等長輸出；2. transform 每值為 value*value；3. 完整排序平方結果。
+// 複雜度：時間 O(N log N)、額外空間 O(N)，N 為 nums 的元素數。
+// 易錯點：平方可能 int 溢位；不能假設原升冪順序經平方後仍升冪。
+// -----------------------------------------------------------------------------
 std::vector<int> leetcode_sorted_squares(const std::vector<int>& nums) {
     std::vector<int> result(nums.size());
     std::transform(nums.begin(), nums.end(), result.begin(),
@@ -26,7 +34,16 @@ std::vector<int> leetcode_sorted_squares(const std::vector<int>& nums) {
     return result;
 }
 
-// 實務：將未稅價格轉成 cents 後的含稅價格，四捨五入避免直接截斷。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】批次含稅顯示價格換算
+// 情境：輸入以 cents 表示的未稅價格及 tax_rate，要逐項乘上稅率並四捨五入成整數
+// cents，來源價目表保持不變。
+// 為何使用本章主題：transform 對每筆價格執行同一個無相依 mapping，目的大小已知，
+// 比帶外部索引的手寫迴圈更直接。
+// 設計：1. 建立等長 result；2. 將 cents 升為 double 後乘 1+tax_rate；3. lround 後轉回 int。
+// 成本：時間 O(N)、額外空間 O(N)，N 為價格筆數。
+// 上線注意：權威會計不可依賴 binary floating point；需整數比例/decimal、明確 rounding 與溢位檢查。
+// -----------------------------------------------------------------------------
 std::vector<int> practical_prices_with_tax(const std::vector<int>& cents,
                                            double tax_rate) {
     std::vector<int> result(cents.size());

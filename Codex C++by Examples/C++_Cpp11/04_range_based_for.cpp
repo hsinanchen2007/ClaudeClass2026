@@ -41,7 +41,14 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 1672：Richest Customer Wealth。時間 O(rows*cols)，額外空間 O(1)。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1672. Richest Customer Wealth（最富有客戶的資產總和）
+// 題目：accounts 每列是一位客戶在各銀行的餘額，回傳最大的列總和；例如 [[1,5],[7,3],[3,5]] 回傳 10。
+// 為何使用本章主題：外層 range-for 以 const auto& 借用每列，避免複製整個 vector<int> 後再累加。
+// 思路：1. 逐列走訪客戶；2. accumulate 該列所有帳戶；3. 持續更新目前最大資產。
+// 複雜度：R 為客戶數、C 為每列平均帳戶數；時間 O(R*C)、額外空間 O(1)。
+// 易錯點：漏寫 & 會逐列複製；若餘額或欄數很大，int 累加初值可能溢位，需改較寬型別。
+// -----------------------------------------------------------------------------
 int maximum_wealth(const std::vector<std::vector<int>>& accounts) {
     int best = 0;
     for (const auto& customer : accounts) {
@@ -57,14 +64,20 @@ void test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】部署設定正規化：用 auto& 修改原 Service，而不是誤改迴圈副本。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】部署服務重試次數正規化
+// 情境：部署清單中的 retry_count 可能來自錯誤設定，要統一限制在 0 到 5 次。
+// 為何使用本章主題：range-for 的 auto& 直接綁定原 Service；若用 auto，修正只會落在暫時副本。
+// 設計：1. 逐一取得可寫 Service reference；2. 先套上限 5；3. 再套下限 0 並寫回原容器。
+// 成本：N 為服務數；時間 O(N)、額外空間 O(1)。
+// 上線注意：迴圈期間不可造成 vector reallocation；實際系統還應記錄被修正的非法設定以利觀測。
+// -----------------------------------------------------------------------------
 struct Service {
     std::string name;
     int retry_count;
 };
 
-// 實務：部署前把負值重試次數正規化。需要改元素，所以使用 auto&。
 void normalize(std::vector<Service>& services) {
     for (auto& service : services) {
         service.retry_count = std::max(0, std::min(service.retry_count, 5));

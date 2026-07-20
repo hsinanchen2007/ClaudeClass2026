@@ -33,7 +33,14 @@ void basic_example()
               << " us\n";
 }
 
-// LeetCode 359：Logger Rate Limiter 不該真的 sleep；用邏輯 timestamp 才 deterministic。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 359. Logger Rate Limiter（日誌速率限制器）
+// 題目：依單調遞增 timestamp 判斷同一訊息是否距上次輸出至少 10 秒；例如 foo 在 1、2、11 秒依序為允許、拒絕、允許。
+// 為何使用本章主題：這是反例式教學，解題應推進題目提供的邏輯時間，不應真的 sleep 10 秒，否則測試緩慢且不具決定性。
+// 思路：1. 查訊息下一次可印時間。2. timestamp 未達門檻就拒絕。3. 允許時將新門檻設為 timestamp+10。
+// 複雜度：unordered_map 平均單次時間 O(1)、空間 O(M)，M 為不同訊息數。
+// 易錯點：等於門檻時可輸出；sleep 不是資料狀態，也不能取代每個 message 各自保存的期限。
+// -----------------------------------------------------------------------------
 class Logger {
 public:
     bool should_print(int timestamp, const std::string& message)
@@ -56,7 +63,14 @@ void leetcode_359_example()
     std::cout << "[LeetCode 359] tests simulate time; no 10-second sleep\n";
 }
 
-// 實務：計算 periodic absolute deadlines；演示 schedule，不真的等待三個長 periods。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】避免漂移的週期工作期限表
+// 情境：監控工作從固定起點每 100ms 執行一次，需要得到 100、200、300ms 的絕對期限，而不是把工作時間累加進週期。
+// 為何使用本章主題：以 steady time_point 反覆加 period，可交給 sleep_until；相較每輪 sleep_for，更不會累積處理時間造成的 drift。
+// 設計：1. 從 start 建立 next。2. 每輪加固定 period。3. 保存 absolute deadline。4. 呼叫端依期限等待或測試。
+// 成本：產生 C 個期限需時間 O(C)、額外空間 O(C)；真正 sleep 會受 scheduler 延遲，本例未執行等待。
+// 上線注意：需拒絕負 count/非正 period、檢查 time_point 溢位，並明訂工作落後時要補跑、跳過或施加 backpressure。
+// -----------------------------------------------------------------------------
 std::vector<std::chrono::steady_clock::time_point> schedule(
     std::chrono::steady_clock::time_point start,
     std::chrono::milliseconds period,

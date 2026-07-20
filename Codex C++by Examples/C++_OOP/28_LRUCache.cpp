@@ -31,6 +31,14 @@ void expect(bool condition, const char* message)
 
 }  // namespace
 
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 146. LRU Cache（LRU 快取）
+// 題目：以固定容量支援平均 O(1) get/put，命中與更新都刷新最近使用；官方容量 2 序列會依次淘汰 2、1。
+// 為何使用本章主題：class 封裝 list+unordered_map 的跨容器 invariant，並以 constructor 保證容量為正。
+// 思路：map 定位 list node；get/更新用 splice 移至前端；新 key 插前端並建索引；超量刪尾端與 map key。
+// 複雜度：平均 get/put O(1)、hash 最壞 O(N)，空間 O(C)，C 為容量。
+// 易錯點：get 也會改 recency；miss 用 optional 而非 -1；map 配置失敗時需回滾新 list node，並行操作需鎖。
+// -----------------------------------------------------------------------------
 class LRUCache {
 public:
     explicit LRUCache(int capacity) : capacity_(validate(capacity)) {}
@@ -101,7 +109,6 @@ void basic_example()
     std::cout << "[基礎] get 會 touch，put 超量淘汰 LRU\n";
 }
 
-// LeetCode 146 官方範例的完整 operation sequence。
 void leetcode_146_example()
 {
     LRUCache cache(2);
@@ -118,7 +125,14 @@ void leetcode_146_example()
     std::cout << "[LeetCode 146] official sequence 全部通過\n";
 }
 
-// 實務案例：包成可表達 miss 的 cache API。真實 value 可能是 -1，optional 比 sentinel 好。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】模型參數量 metadata 快取
+// 情境：按 model id 快取 parameter_millions；合法值可能是 -1，因此 miss 必須與資料值分開表達。
+// 為何使用本章主題：ModelMetadataCache composition 重用 LRU 行為，optional<int> 比 sentinel API 保留完整 value domain。
+// 設計：remember 委派 put；lookup 委派 get 並刷新 recency；容量滿時由核心 cache 淘汰最舊模型。
+// 成本：平均查詢/寫入 O(1)、空間 O(C)，C 為模型快取容量；最壞 hash O(C)。
+// 上線注意：真實容量常按 bytes 而非筆數；需 TTL、命中率 metrics、stampede 防護與 thread safety。
+// -----------------------------------------------------------------------------
 class ModelMetadataCache {
 public:
     explicit ModelMetadataCache(int capacity) : cache_(capacity) {}

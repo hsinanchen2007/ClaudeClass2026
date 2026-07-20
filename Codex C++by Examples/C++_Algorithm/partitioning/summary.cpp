@@ -86,7 +86,17 @@ std::size_t basic_prioritize(std::vector<WorkItem>& items) {
     return static_cast<std::size_t>(std::distance(items.begin(), boundary));
 }
 
-// LeetCode 922：Sort Array By Parity II；先分流，再交錯合併。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 922. Sort Array By Parity II（按奇偶排序陣列 II）
+// 題目：nums 中偶數與奇數各半，重排使偶數索引放偶數、奇數索引放奇數；例如
+// [4,2,5,7] 可回 [4,5,2,7]。
+// 為何使用本章主題：partition_copy 先穩定分出 even/odd，之後交錯合併；這比原地
+// 雙指標多 O(N) 空間，但清楚展示雙輸出分流。
+// 思路：1. 分別 reserve；2. partition_copy 奇偶；3. runtime 驗證數量相等；4. 依
+// even[i]、odd[i] 寫入 2i、2i+1。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 為 nums 的元素數。
+// 易錯點：一般 library 函式不能只信題目保證；奇偶數量不等時必須在索引前拒絕。
+// -----------------------------------------------------------------------------
 std::vector<int> leetcode_sort_array_by_parity_ii(const std::vector<int>& nums) {
     std::vector<int> even;
     std::vector<int> odd;
@@ -109,7 +119,16 @@ std::vector<int> leetcode_sort_array_by_parity_ii(const std::vector<int>& nums) 
     return answer;
 }
 
-// 實務：把 actionable 與 deferred 複製分流，來源快照保持不變。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】工作快照 Actionable/Deferred 分流
+// 情境：WorkItem 依 score>=50 決定可立即處理，輸出兩個保持原順序的佇列，輸入快照
+// 必須留給 audit 使用。
+// 為何使用本章主題：partition_copy 一趟將相同 predicate 的 true/false 項目寫入獨立
+// vector，不修改來源，也保留兩群內順序。
+// 設計：1. 兩個輸出各 reserve 上界；2. 重用 is_actionable；3. back_inserter 分別寫入。
+// 成本：時間 O(N)、額外空間 O(N)，N 為工作數，輸出合計複製 N 筆。
+// 上線注意：score 規則在路由期間必須固定；若輸出發布要求原子性，配置或 copy 失敗需丟棄 staging。
+// -----------------------------------------------------------------------------
 struct RoutedWork {
     std::vector<WorkItem> actionable;
     std::vector<WorkItem> deferred;

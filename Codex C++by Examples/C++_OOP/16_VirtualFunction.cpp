@@ -43,9 +43,14 @@ void basic_example()
     std::cout << "[基礎] virtual dispatch final price=900\n";
 }
 
-// LeetCode 70：Climbing Stairs。
-// 題目本身只需一個演算法；這裡用同一介面提供 iterative/memoized 兩種可替換策略，
-// 實際執行並核對答案。面試時不必硬套 class hierarchy，這是教學上的策略示範。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 70. Climbing Stairs（爬樓梯）
+// 題目：每次走 1 或 2 階，求到第 n 階的方法數；例如 n=5 回傳 8。
+// 為何使用本章主題：題目本身不需 hierarchy；本例是策略教學改寫，以 virtual interface 切換 iterative/memoized 實作。
+// 思路：兩策略都依 f(n)=f(n-1)+f(n-2)；迭代版滾動兩值；memo 版遞迴並快取；經 base pointer 呼叫。
+// 複雜度：兩者時間 O(N)；迭代額外空間 O(1)，memo 版 O(N)，N 為階數。
+// 易錯點：steps 必須符合題目正數範圍；結果 int 可能溢位；base destructor 要 virtual，override 簽章須一致。
+// -----------------------------------------------------------------------------
 class StairSolver {
 public:
     virtual ~StairSolver() = default;
@@ -99,7 +104,14 @@ void leetcode_70_example()
     std::cout << "[LeetCode 70] 兩個 virtual strategies 都得到 8\n";
 }
 
-// 實務案例：通知管線不需知道 Email/Console 的具體型別。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】可替換的通知輸出管線
+// 情境：上層只要求送出 build passed，實際可由 console、email 等 backend 格式化與傳送。
+// 為何使用本章主題：Notifier virtual interface 讓呼叫端依賴穩定契約，不需知道 ConsoleNotifier 具體型別。
+// 設計：介面定義 const send；concrete override 加入 console 前綴；透過 Notifier& 動態派發。
+// 成本：派發本身為常數間接呼叫，字串組合 O(M)；真實 backend 還有網路/I/O 延遲。
+// 上線注意：介面需定義失敗、重試與 timeout；borrowed base reference 不得超過 concrete object 生命週期。
+// -----------------------------------------------------------------------------
 class Notifier {
 public:
     virtual ~Notifier() = default;

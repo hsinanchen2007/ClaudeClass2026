@@ -14,7 +14,16 @@
 #include <string>
 #include <vector>
 
-// LeetCode 2160 延伸：把偶數/奇數 digit 分流，供後續組合最小數字。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 2160. Minimum Sum of Four Digit Number After Splitting Digits（拆分四位數字後的最小和）
+// 題目：原題將四個 digit 重組為兩數並最小化總和，例如 2932 回 52；本 helper 只把
+// 任意 digits 穩定分成偶數與奇數兩流，因此不是完整 LC2160 解法。
+// 為何使用本章主題：partition_copy 展示一次 predicate 掃描產生兩個輸出；它可作
+// 後續教學管線的分流步驟，但 parity 並非原題最佳組合的核心規則。
+// 思路：1. 建立 even/odd 輸出；2. digit%2==0 進 true 流；3. 其餘進 false 流。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 為 digit 數，兩個輸出合計 N 項。
+// 易錯點：不得宣稱此函式解完 LC2160；完整題解需排序四個 digit 並平衡十位權重。
+// -----------------------------------------------------------------------------
 std::pair<std::vector<int>, std::vector<int>> leetcode_split_digits(
     const std::vector<int>& digits) {
     std::vector<int> even;
@@ -30,7 +39,16 @@ struct LogEntry {
     bool error;
 };
 
-// 實務：保留原 log，另建 error 與 normal channel，兩邊順序皆穩定。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】錯誤與一般日誌雙路 Routing
+// 情境：LogEntry 快照要同時送往 error 與 normal channel，來源供 audit 保留，兩條
+// channel 內都要維持原到達順序。
+// 為何使用本章主題：partition_copy 一次分類並穩定寫入兩個獨立輸出，比複製後各自
+// erase 更省掃描與更清楚。
+// 設計：1. 兩個輸出先 reserve 上界；2. 以 entry.error 分類；3. back_inserter 分別 append。
+// 成本：時間 O(N)、額外空間 O(N)，N 為 log 數，輸出合計複製 N 筆。
+// 上線注意：predicate 或配置丟例外會留下部分輸出；需要交易語意時應 staging 後一次發布。
+// -----------------------------------------------------------------------------
 std::pair<std::vector<LogEntry>, std::vector<LogEntry>> practical_route_logs(
     const std::vector<LogEntry>& logs) {
     std::vector<LogEntry> errors;

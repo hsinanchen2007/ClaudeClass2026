@@ -13,7 +13,15 @@
 #include <string>
 #include <vector>
 
-// LeetCode 912：Sort an Array；標準 introspective sort 作可靠基準解。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 912. Sort an Array（排序陣列）
+// 題目：回傳 nums 的非遞減排列；例如 [5,2,3,1] 回 [1,2,3,5]。
+// 為何使用本章主題：std::sort 直接提供標準保證的 O(N log N) 比較排序，可作題目的
+// 可靠 library baseline；標準不保證具體實作一定是 introsort。
+// 思路：1. 對按值輸入副本的完整範圍 sort；2. 回傳排序結果。
+// 複雜度：時間 O(N log N)、額外空間 O(N)，N 為 nums 數量；空間包含輸入副本。
+// 易錯點：sort 不穩定；若題目禁止直接使用 library sort，仍需實作符合複雜度的演算法。
+// -----------------------------------------------------------------------------
 std::vector<int> leetcode_sort_array(std::vector<int> nums) {
     std::sort(nums.begin(), nums.end());
     return nums;
@@ -25,7 +33,16 @@ struct Employee {
     int score;
 };
 
-// 實務：多鍵排序；score 降冪、team 升冪、id 升冪，讓結果 deterministic。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】員工評分 Deterministic 多鍵排名
+// 情境：Employee 要先按 score 降冪，同分按 team 升冪，再按唯一 id 升冪，讓分散式
+// 報表與重跑輸出一致。
+// 為何使用本章主題：std::sort 配完整 tie-break comparator 一次建立全序；相較依賴
+// 不穩定 sort 的偶然輸入次序，結果可重現。
+// 設計：1. score 不同時高者先；2. 同分比較 team；3. 再同時以 id 決勝；4. 原地排序。
+// 成本：時間 O(N log N)、額外空間依實作通常 O(log N)，N 為員工數。
+// 上線注意：comparator 不可用 >=；team 的 locale/Unicode 排序政策需固定，排序期間資料不可併發修改。
+// -----------------------------------------------------------------------------
 void practical_rank_employees(std::vector<Employee>& employees) {
     std::sort(employees.begin(), employees.end(),
               [](const Employee& lhs, const Employee& rhs) {

@@ -60,9 +60,14 @@ void basic_demo()
     expect(counter == 2'000, "atomic_flag mutex counter mismatch");
 }
 
-// ----------------------------------------------------------------------------
-// LeetCode 136：Single Number，atomic_ref 合併 thread-local XOR
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 136. Single Number（只出現一次的數字）
+// 題目：其餘值都恰出現兩次，找出唯一值；例如 [2,2,1] 得 1，[4,1,2,1,2] 得 4。
+// 為何使用本章主題：兩分片先做 local XOR，再用 atomic_ref 將既有對齊 int 當 atomic RMW 合併，展示不改變儲存型別的原子 view。
+// 思路：1. 建立符合 required_alignment 的 shared int。2. 分割輸入。3. 各 worker local XOR 後 fetch_xor。4. join 後 atomic load。
+// 複雜度：總工作 O(N)、額外空間 O(1)，另有兩個 thread 與兩次共享 cache-line RMW。
+// 易錯點：atomic_ref 不擁有 object且生命期/對齊要有效；ref 存活期間不可混用普通併發存取，relaxed 也不發布旁邊資料。
+// -----------------------------------------------------------------------------
 int single_number(const std::vector<int>& numbers)
 {
     alignas(std::atomic_ref<int>::required_alignment) int shared_result = 0;
@@ -87,9 +92,14 @@ void leetcode_demo()
     expect(first == 1 && second == 4, "parallel XOR reduction mismatch");
 }
 
-// ----------------------------------------------------------------------------
-// 實務：release fence + relaxed flag 發布普通資料（教學 fence pattern）
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【日常實務範例】以 Fence 發布普通 Payload 的低階模式
+// 情境：producer 寫入字串 payload 後以 relaxed ready flag 通知 consumer；consumer 看到 true 時必須安全讀到 "ready"。
+// 為何使用本章主題：release/acquire fences 透過中間 atomic 的 reads-from 關係建立同步；此模式比直接 release-store/acquire-load 難審查，只作教學。
+// 設計：1. producer 寫普通 payload。2. release fence 後 relaxed-store true。3. consumer relaxed-load 到該值。4. acquire fence 後讀 payload。
+// 成本：發布/接收 O(1)，但 consumer busy-yield 的 CPU 與延遲無上界。
+// 上線注意：consumer load 必須讀到 producer 的 store 才成立；優先改用 flag 上的 release/acquire，並加 wait/notify、生命週期與單 writer 契約。
+// -----------------------------------------------------------------------------
 void practical_demo()
 {
     std::string payload;

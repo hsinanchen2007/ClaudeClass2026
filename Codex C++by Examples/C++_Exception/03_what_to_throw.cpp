@@ -45,7 +45,14 @@ void basic_example()
     std::cout << "[基礎] custom ParseError preserves position=4\n";
 }
 
-// LeetCode 704：Binary Search。找不到是題目正常結果，回 -1，不丟 exception。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 704. Binary Search（二分搜尋）
+// 題目：在升冪且元素不重複的陣列尋找 target，存在則回 index，否則回 -1；例如找 9 得 4、找 2 得 -1。
+// 為何使用本章主題：找不到是此 API 的預期結果，不應 throw；題目指定的 -1 sentinel 比 unwinding 更直接表達普通分支。
+// 思路：1. 維持 [left,right) 搜尋區間。2. 比較 middle。3. 將不可能的一半排除。4. 驗證最後候選或回 -1。
+// 複雜度：N 個元素的時間 O(log N)、額外空間 O(1)。
+// 易錯點：輸入必須升冪；用 left+(right-left)/2 避免 index 加法溢位，並區分「找不到」與輸入契約失效。
+// -----------------------------------------------------------------------------
 int search(const std::vector<int>& nums, int target)
 {
     std::size_t left = 0U;
@@ -65,7 +72,14 @@ void leetcode_704_example()
     std::cout << "[LeetCode 704] not found is -1, not exception\n";
 }
 
-// 實務：cache miss 是預期狀態，用 optional；corrupt cache format 才 throw ParseError。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】記憶體快取查詢的普通 miss
+// 情境：從少量 key/value entries 查 model 設定；key 不存在很常見，caller 要能不靠例外分支處理。
+// 為何使用本章主題：optional<int> 把「有值或 miss」放進回傳型別；只有資料格式損壞等無法履約狀況才適合 ParseError。
+// 設計：1. 逐筆比較 key。2. 命中時按值回傳 int。3. 掃描完未命中回 nullopt。4. caller 用 has_value 分支。
+// 成本：E 筆 entries 的最壞時間 O(E)、額外空間 O(1)；本例是 vector 線性查找而非 hash cache。
+// 上線注意：optional 不含 miss 原因；若需區分過期、權限或後端故障，應使用 expected/result，且回傳值不得引用已失效 entry。
+// -----------------------------------------------------------------------------
 std::optional<int> lookup(const std::vector<std::pair<std::string, int>>& entries,
                           const std::string& key)
 {

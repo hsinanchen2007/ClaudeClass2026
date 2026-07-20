@@ -47,8 +47,14 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 1：Two Sum。unordered_map 的 key/value 型別由容器清楚表達，
-// 迴圈中的 auto 只消除冗長型別。平均 O(n)，最壞情況 O(n^2)，空間 O(n)。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1. Two Sum（兩數之和）
+// 題目：輸入整數陣列 nums 與 target，找出和為 target 的兩個索引；例如 [2,7,11,15] 與 9 回傳 (0,1)。
+// 為何使用本章主題：auto 讓補數與 unordered_map iterator 由初始化式推導，省去冗長型別但不改變雜湊解法。
+// 思路：1. 逐項計算 target-nums[i]；2. 在已看過的值中查補數；3. 命中就回索引，否則記錄目前值。
+// 複雜度：N 為元素數；平均時間 O(N)、雜湊最壞 O(N^2)，額外空間 O(N)。
+// 易錯點：必須先查再插入才能避免同一元素配自己；索引轉 int 前也要符合題目範圍契約。
+// -----------------------------------------------------------------------------
 std::pair<int, int> two_sum(const std::vector<int>& nums, int target) {
     std::unordered_map<int, int> index_by_value;
     for (std::size_t i = 0; i < nums.size(); ++i) {
@@ -68,14 +74,20 @@ void test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】監控樣本平均值：以 const auto& 走訪，避免逐筆複製含 string 的 Measurement。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】監控樣本平均值彙整
+// 情境：一批感測資料同時帶 sensor 字串與數值，要計算本批平均值並拒絕空批次。
+// 為何使用本章主題：const auto& 走訪可由容器元素推導型別，且不複製每筆 Measurement 內的 string。
+// 設計：1. 先驗證 rows 非空；2. 以 const auto& 累加 value；3. 用筆數換成 double 計算平均。
+// 成本：N 為樣本數；時間 O(N)、額外空間 O(1)，並避免 N 次結構與字串複製。
+// 上線注意：要定義 NaN/無限值與總和溢位政策；rows 只在呼叫期間借用，不能保存元素參考。
+// -----------------------------------------------------------------------------
 struct Measurement {
     std::string sensor;
     double value;
 };
 
-// 實務：監控資料通常不希望逐筆複製含 string 的結構，因此用 const auto&。
 double average(const std::vector<Measurement>& rows) {
     if (rows.empty()) {
         throw std::invalid_argument("資料不可為空");

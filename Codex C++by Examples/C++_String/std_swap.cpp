@@ -22,7 +22,15 @@ void basic_demo() {
     assert(first == "right" && second == "left");
 }
 
-// LeetCode 344（Reverse String）：std::swap 交換兩端字元。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 344. Reverse String（反轉字串）
+// 題目：原地反轉字元序列且只使用常數額外空間；hello 變成 olleh。
+// 為何使用本章主題：std::swap 對兩個 char reference 交換兩端元素，讓泛型交換意圖比手動 temporary 清楚；
+//       本檔把原題 vector<char> 改為 string，演算法相同。
+// 思路：1. left 從 0、right 從 size；2. 先遞減 right；3. 尚未交錯就 swap；4. left 前進。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 是 text 長度。
+// 易錯點：空字串不可先算 size()-1；此處 swap 的是 char，不涉及兩個 string allocator 契約。
+// -----------------------------------------------------------------------------
 void leetcode_reverse_string(std::string& text) {
     for (std::size_t left = 0U, right = text.size(); left < right; ++left) {
         --right;
@@ -31,7 +39,16 @@ void leetcode_reverse_string(std::string& text) {
     }
 }
 
-// 實務：確保 pair 的 key 依字典序在前，便於建立無向邊 canonical key。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】無向邊 canonical key
+// 情境：nodeA-nodeB 與 nodeB-nodeA 必須產生同一 cache key，因此較小字串固定放在左側。
+// 為何使用本章主題：條件成立時 std::swap 交換兩個 owning string，較另做兩份複製直接；
+//       固定排序後再串接可讓 hash/cache lookup 穩定。
+// 設計：1. 以字典序比較兩端；2. second 較小就 swap；3. 依固定箭頭格式串接。
+// 成本：比較與輸出時間 O(A+B)、額外空間 O(A+B)，A、B 是兩端字串長度；合法 string swap 為 O(1)。
+// 上線注意：字典序是 byte/code-unit 規則；節點名稱含 delimiter 時需 escaping，且自訂 allocator
+//       不相等時必須先確認 swap 前置條件。
+// -----------------------------------------------------------------------------
 std::string practical_canonical_edge(std::string first, std::string second) {
     if (second < first) std::swap(first, second);
     return first + "->" + second;

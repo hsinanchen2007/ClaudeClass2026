@@ -66,8 +66,14 @@ void basic_example()
     std::cout << "[基礎] weak parent expires after root owner reset\n";
 }
 
-// LeetCode 138：Copy List with Random Pointer。next 強擁有下一節點；random 只是 observer，
-// 用 weak_ptr 不決定生命週期。第一趟建立 clone nodes，第二趟接 next/random，時間/空間 O(N)。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 138. Copy List with Random Pointer（複製帶隨機指標的鏈結串列）
+// 題目：深複製 next/random 指標；例如第二節點 random 指回第一節點時，副本也要指回副本第一節點。
+// 為何使用本章主題：next 以 shared_ptr 維持主 ownership chain，random 用 weak_ptr 表示 observer，避免反向 cycle。
+// 思路：第一趟為每個來源節點建 clone map；第二趟重接 clone next；lock random 後映射到 clone；回 clone head。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 為 next chain 節點數。
+// 易錯點：random 必須為 null 或指向同一 chain；lock 可能失敗；副本 random 不可仍指來源節點。
+// -----------------------------------------------------------------------------
 struct RandomNode {
     explicit RandomNode(int node_value) : value(node_value) {}
     int value;
@@ -107,7 +113,14 @@ void leetcode_138_example()
     std::cout << "[LeetCode 138] next/random 關係與 deep-copy independence 均驗證\n";
 }
 
-// 實務：weak cache；外部沒有 owner 時 entry 自然失效。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】不阻止資產回收的 weak cache entry
+// 情境：cache 想快速觀察 Asset 42，但 caller 釋放最後 owner 後，cache 不應獨自延長大型資產生命。
+// 為何使用本章主題：weak_ptr 可保存 control-block observer 而不增加 strong count，比 shared_ptr cache 更符合可回收語意。
+// 設計：caller 建 shared Asset；cache_entry 接 weak observer；使用時 lock；caller scope 結束後 entry 變 expired。
+// 成本：指定/expired/lock 為常數 control-block 操作，真正載入資產成本另計。
+// 上線注意：不要先 expired 再 lock；多執行緒下只能以 lock 結果判斷，cache 還需清理 expired keys 與防重複載入。
+// -----------------------------------------------------------------------------
 class Asset { public: explicit Asset(int id) : id_(id) {} int id() const { return id_; } private: int id_; };
 
 void practical_example()

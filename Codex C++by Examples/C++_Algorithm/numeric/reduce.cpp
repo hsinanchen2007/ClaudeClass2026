@@ -12,7 +12,16 @@
 #include <string>
 #include <vector>
 
-// LeetCode 1832：Check if the Sentence Is Pangram；以 bit mask reduce。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1832. Check if the Sentence Is Pangram（判斷句子是否為全字母句）
+// 題目：sentence 只含小寫英文字母，判斷 a..z 是否都至少出現一次；例如
+// "thequickbrownfoxjumpsoverthelazydog" 回 true。
+// 為何使用本章主題：每個字元先映成單一 bit mask，再由 reduce 以具結合/交換律的
+// bitwise OR 合併；中間 vector 是教學用，手寫單趟可省空間。
+// 思路：1. 每字元產生 1<<(ch-'a')；2. 以 OR reduce 全部 mask；3. 與低 26 bit 全 1 比較。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 為 sentence 長度，空間來自 masks。
+// 易錯點：只接受 'a'..'z'；未驗證字元可能造成非法 shift count；OR 才適合任意重排。
+// -----------------------------------------------------------------------------
 bool leetcode_check_pangram(const std::string& sentence) {
     std::vector<unsigned int> masks;
     masks.reserve(sentence.size());
@@ -26,7 +35,16 @@ bool leetcode_check_pangram(const std::string& sentence) {
     return all == ((1U << 26U) - 1U);
 }
 
-// 實務：分片統計可安全合併的整數計數；加法具結合/交換律（不考慮 overflow）。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】分片事件計數歸約
+// 情境：每個 shard 已輸出 long long event count，中央報表只需合併成總事件數，輸入
+// 次序沒有業務意義。
+// 為何使用本章主題：整數加法在不溢位前提下可安全分組，符合 reduce 容許重排與未來
+// 向量化/平行化的模型；若要求固定順序則 accumulate 更保守。
+// 設計：1. 以 0LL 為 identity；2. 使用 plus 合併所有 shard_counts。
+// 成本：時間 O(N)、額外資源依 reduce 實作，N 為 shard 數；本無 policy 版本通常為常數空間。
+// 上線注意：有號 overflow 是 UB；需 checked/saturating 計數，平行版本 callback 不可有共享副作用。
+// -----------------------------------------------------------------------------
 long long practical_total_events(const std::vector<long long>& shard_counts) {
     return std::reduce(shard_counts.begin(), shard_counts.end(), 0LL,
                        std::plus<>{});

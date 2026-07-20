@@ -21,7 +21,15 @@ void basic_demo() {
     static_cast<void>(old_capacity);  // 是否保留精確容量不是本例正確性條件。
 }
 
-// LeetCode 1047（Remove All Adjacent Duplicates In String）。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1047. Remove All Adjacent Duplicates In String（移除相鄰重複字元）
+// 題目：反覆刪除相鄰且相同的一對字元，直到不能再刪；例如 "abbaca" 最後得到 "ca"。
+// 為何使用本章主題：單次求解不需要 clear，因為 stack 從空字串建立；本例用來對照
+//       「建立新工作區」與下方多筆處理時用 clear 重用工作區的差別。
+// 思路：1. 字串當 stack；2. 新字元等於 stack 尾端就 pop；3. 否則 push；4. stack 即答案。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 是 input 長度。
+// 易錯點：讀 stack.back() 前必須先判空；clear 不會安全抹除敏感 bytes，也不是此演算法的刪對操作。
+// -----------------------------------------------------------------------------
 std::string leetcode_remove_adjacent_duplicates(const std::string& input) {
     std::string stack;
     for (const char ch : input) {
@@ -34,7 +42,16 @@ std::string leetcode_remove_adjacent_duplicates(const std::string& input) {
     return stack;
 }
 
-// 實務：parser 每處理一筆就 clear 工作區，保留可能已配置的容量。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】逗號欄位工作區重用
+// 情境：逐 byte 解析一列逗號資料，每完成一欄便輸出方括號格式並重用同一 field buffer。
+// 為何使用本章主題：clear() 讓 field 的 size 歸零且通常可重用容量，相較每欄重新建字串，
+//       能降低長列資料中的配置抖動。
+// 設計：1. 一般字元累積到 field；2. 遇逗號就提交 `[field]`；3. clear field；4. 迴圈後提交末欄。
+// 成本：時間 O(N)，答案與工作空間合計 O(N)；clear 本身不承諾釋放容量。
+// 上線注意：本例沒有 CSV quoting/escaping；超大單欄會讓工作區長期保留大 capacity，需配合上限
+//       或在批次邊界決定是否縮容。
+// -----------------------------------------------------------------------------
 std::string practical_normalize_lines(const std::string& input) {
     std::string result;
     std::string field;

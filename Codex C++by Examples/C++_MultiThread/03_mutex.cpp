@@ -39,13 +39,16 @@ void basic_demo()
     expect(counter == 2'000, "mutex counter mismatch");
 }
 
-// ----------------------------------------------------------------------------
-// LeetCode 1114：Print in Order（mutex 保護 state 的教學版）
-// ----------------------------------------------------------------------------
-// 真題三函式可能由不同 thread 任意呼叫。這裡以 mutex+condition_variable 等待 stage；
-// wait 使用 predicate，避免 spurious wakeup。每一步完成後更新 stage 再 notify_all。
 #include <condition_variable>
 
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1114. Print in Order（按序列印）
+// 題目：first、second、third 可能由三個 thread 任意先後呼叫，但輸出必須固定為 firstsecondthird。
+// 為何使用本章主題：mutex 同時保護 stage 與 output，condition_variable 依 stage predicate 阻塞後續步驟，避免 busy wait。
+// 思路：1. first 持鎖寫入並設 stage=1。2. second 等 stage>=1 後寫入並設 2。3. third 等 stage>=2。4. 每次轉換後通知 waiter。
+// 複雜度：每步的字串追加另計，控制流程時間與共享狀態空間皆 O(1)，等待延遲取決於排程。
+// 易錯點：wait 必須帶 predicate 以處理 spurious wakeup；題目假設各方法只呼叫一次，output 也只能在鎖下或全部 join 後讀。
+// -----------------------------------------------------------------------------
 class Foo {
 public:
     void first(const std::string& text)
@@ -98,9 +101,14 @@ void leetcode_demo()
     expect(foo.output() == "firstsecondthird", "Foo execution order mismatch");
 }
 
-// ----------------------------------------------------------------------------
-// 實務：兩帳戶轉帳，scoped_lock 同時鎖兩把且避免 AB/BA deadlock
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【日常實務範例】雙帳戶的無死鎖轉帳
+// 情境：兩個 thread 可同時進行 A->B 與 B->A 轉帳，必須保持總餘額不變且避免相反鎖順序造成 deadlock。
+// 為何使用本章主題：scoped_lock 以標準死鎖避免演算法同時取得兩把 mutex，比手寫先鎖 from 再鎖 to 更安全。
+// 設計：1. 先拒絕 alias 與負金額。2. 同時鎖兩帳戶。3. 鎖內檢查餘額。4. 以同一 critical section 扣款與入帳。
+// 成本：每筆轉帳資料操作 O(1)，同步成本取決於 contention；兩帳戶在整段更新期間皆被獨占。
+// 上線注意：同一 mutex 不可傳兩次；餘額加減要防 overflow，真實系統還需持久交易、idempotency 與鎖內禁做遠端 I/O。
+// -----------------------------------------------------------------------------
 struct Account {
     mutable std::mutex mutex;
     int balance;

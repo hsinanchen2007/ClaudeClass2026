@@ -37,7 +37,14 @@ void basic_example()
     std::cout << "[基礎] stable index was reacquired after vector growth\n";
 }
 
-// LeetCode 27：Remove Element。erase-remove idiom 將 logical remove 接 physical erase。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 27. Remove Element（移除元素）
+// 題目：原地移除所有 target 並回傳新長度，前 k 項是保留值；例如 [3,2,2,3] 移除 3 後 k=2。
+// 為何使用本章主題：remove 回 logical end，erase 再實際縮短 vector；兩步也展示修改後 iterator 的失效邊界。
+// 思路：std::remove 將非 target 穩定搬到前方；接住 new_end；erase [new_end,end)；回傳 size。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 為元素數。
+// 易錯點：remove 本身不改 size；erase 後 new_end 與後方 iterator 均失效；回傳 int 前應驗證長度範圍。
+// -----------------------------------------------------------------------------
 int remove_element(std::vector<int>& values, int target)
 {
     const auto new_end = std::remove(values.begin(), values.end(), target);
@@ -53,7 +60,14 @@ void leetcode_27_example()
     std::cout << "[LeetCode 27] remove followed by erase removed the tail\n";
 }
 
-// 實務：遍歷時刪除過期 session。erase 回傳下一個有效 iterator，不能再 ++ 舊 iterator。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】走訪時清理過期 session
+// 情境：session 表保存剩餘 TTL；已為 0 的項目要刪除，其餘項目每輪遞減一次。
+// 為何使用本章主題：unordered_map::erase(iterator) 回傳下一個有效位置，可避免刪除後遞增 stale iterator。
+// 設計：以不自動 ++ 的迴圈走訪；過期時接住 erase 回傳值；存活時減 TTL 並前進。
+// 成本：平均時間 O(S)、最壞 O(S^2)，額外空間 O(1)，S 為 session 數。
+// 上線注意：TTL 單位與下界要定義；同時插入造成 rehash 會使 iterator 失效；共享表需要鎖或單執行緒 ownership。
+// -----------------------------------------------------------------------------
 void remove_expired(std::unordered_map<std::string, int>& ttl)
 {
     for (auto it = ttl.begin(); it != ttl.end();) {

@@ -117,8 +117,17 @@ A10｜stable 與不 stable 的修改為何是工程問題？
 #include <string>
 #include <vector>
 
-// LeetCode 2460：Apply Operations to an Array。
-// 先合併相鄰相同值並設 0，再用 stable remove/填零完成 move-zeroes。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 2460. Apply Operations to an Array（對陣列執行操作）
+// 題目：由左至右，若相鄰值相同就將左值加倍、右值設 0，最後把所有 0 穩定移到
+// 尾端；例如 [1,2,2,1,1,0] 得 [1,4,2,0,0,0]。
+// 為何使用本章主題：前段依題意原地修改；後段用 remove 穩定壓縮非零值，再以 fill
+// 將 logical end 到尾端補 0，串起兩個 modifying algorithm 契約。
+// 思路：1. 掃描並合併相鄰相同值；2. 以寬型別檢查加倍溢位；3. remove 所有 0；
+// 4. fill 尾段為 0。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 為 nums 的元素數；空間來自按值輸入副本。
+// 易錯點：每個 index 只處理一次；remove 不縮 size；本教材對題目約束外溢位會丟例外。
+// -----------------------------------------------------------------------------
 std::vector<int> leetcode_apply_operations(std::vector<int> nums) {
     for (std::size_t i = 0; i + 1U < nums.size(); ++i) {
         if (nums[i] == nums[i + 1U]) {
@@ -141,7 +150,17 @@ struct RawEvent {
     bool internal;
 };
 
-// 實務整合：過濾內部事件、正規化字串、壓縮相鄰重複；保留輸入不變。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】公開事件匯出管線
+// 情境：RawEvent 含 type 與 internal 標記；公開輸出要排除內部事件、將 ASCII 大寫
+// type 正規化為小寫，再壓縮相鄰重複名稱，且不可修改 audit 來源。
+// 為何使用本章主題：copy_if、transform、unique 分別表達過濾、映射與相鄰去重；
+// 以分階段容器換取清楚契約與來源不變性。
+// 設計：1. copy_if 保留公開事件；2. transform 抽出並 ASCII lowercase 名稱；3. unique
+// 壓縮相鄰同名事件並 erase 尾段。
+// 成本：時間 O(N+C)、額外空間 O(N+C)，N 為事件數、C 為公開 type 的總字元量。
+// 上線注意：ASCII 轉換不等於 Unicode case folding；任一階段例外都沒有跨階段 transaction，需 staging 後發布。
+// -----------------------------------------------------------------------------
 std::vector<std::string> practical_public_event_pipeline(
     const std::vector<RawEvent>& input) {
     std::vector<RawEvent> public_events;

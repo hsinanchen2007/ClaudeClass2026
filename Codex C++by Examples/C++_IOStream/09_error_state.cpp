@@ -38,8 +38,16 @@ void basic_example()
     std::cout << "[基礎] clear resets state; caller must also consume bad token\n";
 }
 
-// LeetCode 65：Valid Number。不能只交給 `operator>> double`，因為標準浮點 parser 可能
-// 接受題目排除的 `nan`/`inf`。以下明確追蹤 digit、decimal point 與 exponent 狀態。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 65. Valid Number（有效數字）
+// 題目：判斷字串是否符合十進位/小數與可選 exponent grammar；2、-0.1、2e10 合法，
+//       1a、99e2.5、--6、inf 不合法。
+// 為何使用本章主題：不能只依 `operator>> double` 的 failbit，因標準 parser 可能接受題目排除的
+//       nan/inf；本例改用明確狀態變數，展示 stream 狀態與領域 grammar 是兩層責任。
+// 思路：1. 去除兩端 ASCII space；2. 追蹤 digit/dot/exponent；3. 驗證 sign 位置；4. 要求有效數字及 exponent 後有 digit。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 是 text 長度。
+// 易錯點：小數點不能在 exponent 後，e 前後都需數字；不要把能被 double extraction 接受等同原題合法。
+// -----------------------------------------------------------------------------
 bool is_number(const std::string& text)
 {
     std::size_t begin = 0U;
@@ -91,7 +99,15 @@ void leetcode_65_example()
     std::cout << "[LeetCode 65] decimal/exponent grammar 與非法表示均完整驗證\n";
 }
 
-// 實務：完整讀取後，只有 clean EOF 可接受；bad/fail before EOF 要回報 truncated/corrupt。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】整數資料流 clean-EOF 驗證
+// 情境：批次輸入 `1 2 3` 應成功；`1 x 3` 不可只回部分 vector，而要回報 malformed stream。
+// 為何使用本章主題：formatted extraction 驅動讀取，迴圈結束後以 eof() 區分正常耗盡與格式失敗；
+//       相較 `while(!eof())` 不會多處理一次 stale value。
+// 設計：1. 每次成功抽取才 push；2. extraction 失敗離開；3. 非 EOF 代表壞 token/I/O，丟錯誤。
+// 成本：時間 O(T)、額外空間 O(N)，T 是 token 總字元數，N 是成功整數數量。
+// 上線注意：eofbit/failbit/badbit 可同時存在；錯誤 API 應保留位置與原因，並限制元素數避免記憶體耗盡。
+// -----------------------------------------------------------------------------
 std::vector<int> read_numbers(std::istream& input)
 {
     std::vector<int> values;

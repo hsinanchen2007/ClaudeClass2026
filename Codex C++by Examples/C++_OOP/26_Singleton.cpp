@@ -60,9 +60,14 @@ void basic_example()
     std::cout << "[基礎] 所有呼叫取得同一 Settings instance\n";
 }
 
-// LeetCode 535：Encode and Decode TinyURL。
-// 題目 Codec instances 共享後端 registry；Singleton 模擬 process 內唯一資料庫。
-// 真實分散式服務不能靠 process singleton，需外部 durable database 與 collision policy。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 535. Encode and Decode TinyURL（TinyURL 的加密與解密）
+// 題目：encode 產生可 decode 回原網址的短網址；不同 Codec instance 也要讀到相同映射。
+// 為何使用本章主題：UrlRegistry Singleton 模擬 process 內唯一後端；這只是教學模型，分散式服務不能靠單程序 instance。
+// 思路：local static 建唯一 registry；store 用遞增 key 保存 URL；Codec 組短網址；decode 擷取 key 並 load。
+// 複雜度：map store/load O(log U) 加 O(L) 字串成本，空間 O(U*L)，U 為網址數、L 為平均長度。
+// 易錯點：目前 registry 非 thread-safe、不持久且 key 可預測；需驗短網址格式，production 要資料庫與碰撞/濫用防護。
+// -----------------------------------------------------------------------------
 class UrlRegistry {
 public:
     static UrlRegistry& instance()
@@ -108,7 +113,14 @@ void leetcode_535_example()
     std::cout << "[LeetCode 535] shared singleton registry decode 成功\n";
 }
 
-// 實務案例：telemetry process counter。這類需求才較接近合理 Singleton。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】程序級工作完成計數
+// 情境：同一程序各處要累加 jobs，最後讀取統一 telemetry 數值，且生命週期與程序相同。
+// 為何使用本章主題：真正 process-wide 的 telemetry 較接近 Singleton 適用情境，但顯式依賴注入仍較易測試。
+// 設計：function-local static 提供唯一 instance；increment_jobs 更新 counter；jobs 回目前值。
+// 成本：instance access、遞增與查詢皆 O(1)，同步成本目前未包含。
+// 上線注意：目前 int 非 thread-safe 且會溢位；應用 atomic/metrics backend，測試也需能 reset 或隔離全域 state。
+// -----------------------------------------------------------------------------
 class Telemetry {
 public:
     static Telemetry& instance()

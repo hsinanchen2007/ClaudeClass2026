@@ -22,13 +22,28 @@ void basic_demo() {
     assert(text.find("") == 0U);  // 空 needle 在合法 pos 立即匹配。
 }
 
-// LeetCode 28（Find the Index of the First Occurrence in a String）。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 28. Find the Index of the First Occurrence in a String（尋找首次出現位置）
+// 題目：輸入 haystack 與 needle，回傳第一次完整匹配的起始索引，找不到回 -1；空 needle 回 0。
+// 為何使用本章主題：string::find 直接提供題目需要的第一個位置與 npos sentinel，不必手寫雙層比較。
+// 思路：1. 呼叫 find 搜完整 pattern；2. 先判斷是否為 npos；3. 依題目介面轉成 -1 或 int 索引。
+// 複雜度：直觀最壞時間 O(N*K)、額外空間 O(1)，N、K 是 haystack、needle 長度。
+// 易錯點：不可寫 `if (find(...))`，位置 0 與 npos 會被顛倒解讀；窄化成 int 前一般程式要驗範圍。
+// -----------------------------------------------------------------------------
 int leetcode_str_str(const std::string& haystack, const std::string& needle) {
     const std::size_t position = haystack.find(needle);
     return position == std::string::npos ? -1 : static_cast<int>(position);
 }
 
-// 實務：解析第一個 key=value；value 可以再含 '='，所以只切第一個。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】單行 key=value 設定切割
+// 情境：解析第一個等號，key 不得為空，而 value 可以繼續包含 `=`；`token=a=b` 應得到 token 與 a=b。
+// 為何使用本章主題：find('=') 只定位第一個分隔點，較 split-all 或 regex 更符合此格式，
+//       且搜尋本身不配置。
+// 設計：1. 找第一個等號；2. 拒絕找不到或空 key；3. 以該位置切出 owning key/value。
+// 成本：時間 O(N)、額外空間 O(N)，N 是 line 長度，兩個 substr 合計複製輸入內容。
+// 上線注意：要再決定空 value、空白、escape、重複 key 與最大行長；npos 未檢查前不可做 +1。
+// -----------------------------------------------------------------------------
 std::optional<std::pair<std::string, std::string>>
 practical_parse_assignment(const std::string& line) {
     const std::size_t equal = line.find('=');

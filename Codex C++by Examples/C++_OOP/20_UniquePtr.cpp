@@ -61,8 +61,14 @@ void basic_example()
     std::cout << "[基礎] ownership 已由 caller move 給 consumer\n";
 }
 
-// LeetCode 707：Design Linked List。
-// 每個 node 獨占 next；刪節點只需 move ownership，整條 list 由 head_ 自動清理。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 707. Design Linked List（設計鏈結串列）
+// 題目：支援 get、頭尾插入、指定索引插入/刪除；例如 1->3 中索引 1 插 2，再刪 2 復原 1->3。
+// 為何使用本章主題：每個 Node 以 unique_ptr 獨占 next，link_at 可藉移動 ownership 安全插刪且自動釋放節點。
+// 思路：head 操作改第一個 owning link；尾/索引操作走到 link pointer；插入重接兩段；刪除以 next 取代目前 owner。
+// 複雜度：頭插 O(1)，get/尾插/索引操作 O(N)，空間 O(N)，N 為節點數。
+// 易錯點：負插入索引視為 0、越界依題意忽略；size_ 轉 int 可能超範圍；移動 link 後不可再用舊 owner。
+// -----------------------------------------------------------------------------
 class MyLinkedList {
 public:
     int get(int index) const
@@ -144,7 +150,14 @@ void leetcode_707_example()
     std::cout << "[LeetCode 707] unique_ptr linked list: 1->3\n";
 }
 
-// 實務案例：Service owns Repository；Repository 不可意外被另一 Service 共享。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】服務獨占資料儲存庫
+// 情境：每個 Service 接管一個指向 db-primary 的 Repository，不允許另一服務意外共享同一可變連線物件。
+// 為何使用本章主題：constructor 按值接 unique_ptr，型別明確表示 ownership transfer，Service 生命結束時自動清理 repository。
+// 設計：caller 以 make_unique 建 owner；move 進 Service；原 pointer 變 null；health 透過唯一 owner 查 endpoint。
+// 成本：ownership move O(1)，health 字串組合 O(E)，E 為 endpoint 長度；資源清理成本由 Repository 決定。
+// 上線注意：Service constructor 應拒絕 null owner；不得保存 move 前的 raw borrow，跨執行緒使用仍需同步。
+// -----------------------------------------------------------------------------
 class Repository {
 public:
     explicit Repository(std::string endpoint) : endpoint_(std::move(endpoint)) {}

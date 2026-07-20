@@ -21,7 +21,15 @@ void basic_demo() {
     assert(!url.starts_with("http://"));
 }
 
-// LeetCode 1961（Check If String Is a Prefix of Array）。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1961. Check If String Is a Prefix of Array（字串是否為陣列前綴）
+// 題目：判斷 target 是否恰由 words 的前 k 個完整單字串接而成；iloveleetcode 對 i/love/leetcode... 為 true。
+// 為何使用本章主題：每加入一個 word 後以 target.starts_with(built) 及早拒絕已偏離 target 的前綴，
+//       避免繼續無效串接；命中完整 target 時立即成功。
+// 思路：1. built 從空開始；2. 逐 word 附加；3. 完全相等回 true；4. 不再是 target 前綴就回 false。
+// 複雜度：此實作最壞時間 O(T^2)、額外空間 O(T)，T 是累積字元數，反覆前綴比較造成平方上界。
+// 易錯點：只能在完整 word 邊界判成功；built 超過 target 時 starts_with 會失敗，空 target 規格需另訂。
+// -----------------------------------------------------------------------------
 bool leetcode_is_prefix_string(const std::string& target,
                                const std::vector<std::string>& words) {
     std::string built;
@@ -33,7 +41,14 @@ bool leetcode_is_prefix_string(const std::string& target,
     return false;
 }
 
-// 實務：路由分類；先比最具體前綴，避免一般 `/api/` 抢先匹配。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】HTTP 路徑前綴路由
+// 情境：`/api/admin/` 應送 admin，其他 `/api/` 送 api，`/static/` 送 static，剩餘 not-found。
+// 為何使用本章主題：starts_with 對固定 literal 做零配置前綴判斷；相較 regex 成本與語意更直接。
+// 設計：1. 先檢查最具體 admin 前綴；2. 再檢查一般 api；3. 再 static；4. 否則 fallback。
+// 成本：固定三規則下時間與空間 O(1)；一般 R 條平均前綴 P 時為 O(R*P)。
+// 上線注意：規則順序是契約；需處理 URL decode、大小寫、重複斜線與 path traversal，不能只看 raw prefix。
+// -----------------------------------------------------------------------------
 std::string_view practical_route(const std::string_view path) {
     if (path.starts_with("/api/admin/")) return "admin";
     if (path.starts_with("/api/")) return "api";

@@ -15,7 +15,17 @@
 #include <string>
 #include <vector>
 
-// LeetCode-style：回傳 pattern 最後一次出現 index；不存在回 -1。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 28. Find the Index of the First Occurrence in a String（找出字串中第一個匹配項的索引）
+// 題目：原題要求 needle 在 haystack 的第一個索引；本 helper 教學改成找最後一次
+// pattern，例如 mississippi/issi 回 4，不是 LC28 的正式輸出契約。
+// 為何使用本章主題：find_end 專門回最後一個子序列起點，藉由改寫 LC28 搜尋情境
+// 對照 std::search 的第一匹配語意。
+// 思路：1. 空 pattern 依此 helper 契約回 text.size()；2. find_end 找最後匹配；
+// 3. end 回 -1，否則轉成索引。
+// 複雜度：最壞時間 O(N*M)、額外空間 O(1)，N/M 為 text/pattern 長度。
+// 易錯點：此函式不是 LC28 提交解；空 pattern 的回值也刻意不同於原題要求的 0。
+// -----------------------------------------------------------------------------
 int leetcode_last_substring_index(const std::string& text,
                                   const std::string& pattern) {
     if (pattern.empty()) {
@@ -28,7 +38,17 @@ int leetcode_last_substring_index(const std::string& text,
                : static_cast<int>(std::distance(text.begin(), it));
 }
 
-// 實務：binary log 中找最後一個同步 marker，從其後開始恢復解析。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】Binary Log 最後同步點恢復
+// 情境：bytes 中可能有多個同步 marker；程序重啟後要找到最後一個完整 marker，從
+// 其尾後 offset 繼續解析，找不到或 marker 空時回 bytes.size()。
+// 為何使用本章主題：find_end 直接取得最後一次子序列匹配，不必反轉 byte stream，
+// 且保留原資料供後續 checksum/audit。
+// 設計：1. 拒絕空 marker 的恢復語意；2. 找最後匹配；3. 未命中回 size；4. 命中回
+// 起點距離加 marker 長度。
+// 成本：最壞時間 O(N*M)、額外空間 O(1)，N/M 為 bytes/marker 長度。
+// 上線注意：marker 可能自然出現在 payload，完整協定仍需 escaping、length framing 與 checksum。
+// -----------------------------------------------------------------------------
 std::size_t practical_resume_after_last_marker(
     const std::vector<int>& bytes, const std::vector<int>& marker) {
     if (marker.empty()) {

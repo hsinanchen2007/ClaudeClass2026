@@ -52,8 +52,14 @@ void basic_example()
     std::cout << "[基礎] Engineer is-an Employee: " << employee_view.name() << '\n';
 }
 
-// LeetCode 303：Range Sum Query - Immutable。
-// PrefixSum1D 是可重用的 base abstraction；NumArray 保留題目要求的名稱與 sumRange API。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 303. Range Sum Query - Immutable（區域和檢索：不可變）
+// 題目：預處理陣列後以 O(1) 回傳 [left,right] 總和；例如 [-2,0,3,-5,2,-1] 的 [2,5] 為 -1。
+// 為何使用本章主題：這是繼承教學改寫，PrefixSum1D 提供 protected 實作、NumArray 暴露題目 API；composition 通常更直白。
+// 思路：base constructor 建 prefix；derived 驗 left/right；轉 size_t 後呼叫 range_sum 做兩前綴相減。
+// 複雜度：建構時間/空間 O(N)，每次查詢 O(1)，N 為元素數。
+// 易錯點：需驗 left<=right 且 right<N；at 會擋越界但 int 前綴和仍可能溢位；繼承只為教學重用。
+// -----------------------------------------------------------------------------
 class PrefixSum1D {
 protected:
     explicit PrefixSum1D(const std::vector<int>& values) : prefix_(values.size() + 1U, 0)
@@ -92,7 +98,14 @@ void leetcode_303_example()
     std::cout << "[LeetCode 303] inherited prefix-sum implementation 正確\n";
 }
 
-// 實務案例：所有事件都有 immutable metadata，ErrorEvent 再增加 severity。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】帶嚴重度的錯誤事件
+// 情境：所有事件都有 sequence/message，錯誤事件再附 severity，監控端需同時讀共通 metadata 與錯誤欄位。
+// 為何使用本章主題：ErrorEvent 確實可視為 Event，public inheritance 重用共通唯讀 API 並加入 severity。
+// 設計：先建 Event base subobject；再初始化 severity；透過 inherited observers 與 derived observer 讀資料。
+// 成本：建構 O(M) 字串搬移，欄位查詢 O(1)，M 為 message 長度。
+// 上線注意：severity 需驗合法範圍；若需 runtime 多型行為，base 要設 virtual API/destructor，按值傳遞則會 slicing。
+// -----------------------------------------------------------------------------
 class Event {
 public:
     Event(unsigned long sequence, std::string message)

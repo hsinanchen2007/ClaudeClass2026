@@ -39,9 +39,14 @@ void basic_demo()
     assert(!acquired);
 }
 
-// ----------------------------------------------------------------------------
-// LeetCode 1114：unique_lock + condition_variable
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1114. Print in Order（按序列印）
+// 題目：first、second、third 由任意啟動順序的三個 thread 呼叫，輸出仍須是 firstsecondthird。
+// 為何使用本章主題：unique_lock 可供 condition_variable 在等待時原子 unlock/relock；stage predicate 與 output 由同一 mutex 保護。
+// 思路：1. 每方法傳入期望 stage。2. wait 到相等。3. 追加文字並遞增 stage。4. 解鎖後 notify_all。
+// 複雜度：控制操作/空間 O(1)，等待時間由前序方法與 scheduler 決定。
+// 易錯點：wait 必須用 predicate；result 只在 join 後讀，且方法重複或漏呼叫會使 stage protocol 永久阻塞。
+// -----------------------------------------------------------------------------
 class Ordered {
 public:
     void first() { advance(0, "first"); }
@@ -78,9 +83,14 @@ void leetcode_demo()
     assert(ordered.result() == "firstsecondthird");
 }
 
-// ----------------------------------------------------------------------------
-// 實務：striped counters，每個 key 對應一把 mutex，降低無關 key contention
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【日常實務範例】依 Key 分條帶的計數器
+// 情境：不同 key 的更新不應全部排在同一 mutex；本例將 key 0、1 各更新 100 次並由各自 stripe 保護。
+// 為何使用本章主題：4 把普通 mutex 將 contention 分散到 stripe，相較全域鎖可讓無關 key 並行，又比每 key 動態配置鎖簡單。
+// 設計：1. key%4 選 stripe。2. 鎖該 stripe。3. 更新對應 aggregate。4. value 以同一 stripe lock 讀取。
+// 成本：每次更新/讀取 O(1)，空間 O(S)；同 stripe key 仍序列化且相鄰 locks/counters 可能 false sharing。
+// 上線注意：此資料結構計的是 stripe aggregate 而非每個原始 key；counter 要防 overflow，hash/stripe 數也需依 workload 量測。
+// -----------------------------------------------------------------------------
 class StripedCounters {
 public:
     void increment(std::size_t key)

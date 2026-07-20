@@ -121,6 +121,14 @@ std::optional<int> checked_truncate(double value)
     return static_cast<int>(value);
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】異質事件的 click 能力查詢
+// 情境：事件佇列同時含 ClickEvent 與 CloseEvent，統計器只需讀取 click button，不應假設每筆都是 click。
+// 為何使用本章主題：polymorphic Event 允許 dynamic_cast checked downcast，失敗自然映射成 std::nullopt。
+// 設計：1. Event 提供 virtual base；2. clicked_button 嘗試 pointer cast；3. 成功回 button，其他事件回空。
+// 成本：每次 cast 成本依 ABI/繼承圖，標準不保證 O(1)；事件 vector 本身空間 O(N)。
+// 上線注意：cast 結果只借用原事件；若 click 行為普遍需要，應改 virtual operation/visitor 而非擴大 cast chain。
+// -----------------------------------------------------------------------------
 class Event {
 public:
     virtual ~Event() = default;
@@ -169,11 +177,14 @@ void basic_cast_demo()
     }
 }
 
-// ---------------------------------------------------------------------------
-// LeetCode 8：String to Integer (atoi)
-// 重點不是「最後 static_cast 一下」，而是在每次乘 10 前保證不越界。
-// 複雜度 O(n) time / O(1) space。
-// ---------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 8. String to Integer (atoi)（字串轉整數）
+// 題目：解析前導空白、正負號與數字，超出 int 時 clamp；"   -42 words" 回 -42。
+// 為何使用本章主題：每次乘 10 前先證明 int 範圍；重點是 checked arithmetic，不是用最後的 cast 隱藏溢位。
+// 思路：1. 略過空白並讀 sign；2. 逐 digit 先檢查 `(max-digit)/10`；3. 超界回端點，否則累加並套 sign。
+// 複雜度：N 為字串長度；時間 O(N)、額外空間 O(1)。
+// 易錯點：負端點的 magnitude 比 INT_MAX 多 1；本實作以正值累加的公式對負溢位提早回 INT_MIN。
+// -----------------------------------------------------------------------------
 int my_atoi(const std::string& text)
 {
     std::size_t index = 0U;
@@ -209,10 +220,14 @@ void leetcode_demo()
     assert(my_atoi("-91283472332") == std::numeric_limits<int>::min());
 }
 
-// ---------------------------------------------------------------------------
-// 實務：wire protocol 以明確整數寬度表示百分比（basis points）。
-// domain validation 與 rounding policy 都在 API 內；不讓呼叫端猜 cast 的截斷行為。
-// ---------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【日常實務範例】利用率 basis points 量化
+// 情境：將 0..1 的 double utilization 寫入 uint16_t basis points，並可還原為四位小數比例。
+// 為何使用本章主題：API 先驗 domain，再以 lround 明訂四捨五入，最後 static_cast 到已證明可表示的 uint16_t。
+// 設計：1. 拒絕非 finite 或超出 0..1；2. 乘 10,000 並 lround；3. 保存整數，讀取時轉 double 除回比例。
+// 成本：每次轉換時間與空間皆 O(1)。
+// 上線注意：量化會遺失精度；wire endian、版本與 NaN 政策需另訂，並避免 caller 誤認還原值等於原始 double。
+// -----------------------------------------------------------------------------
 class Utilization {
 public:
     static Utilization from_ratio(double ratio)

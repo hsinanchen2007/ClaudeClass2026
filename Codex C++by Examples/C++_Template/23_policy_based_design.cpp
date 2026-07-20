@@ -25,7 +25,15 @@ struct HighestFirst {
     bool operator()(const T& left, const T& right) const { return left > right; }
 };
 
-// LeetCode 215：Kth Largest Element。排序策略可替換；題目使用 HighestFirst。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 215. Kth Largest Element in an Array（陣列中的第 K 個最大元素）
+// 題目：找排序後第 k 大值；[3,2,1,5,6,4]、k=2 的答案是 5。
+// 為何使用本章主題：HighestFirst policy 讓 std::sort 產生降冪結果，k-1 即第 k 大；
+// LowestFirst 展示相同流程可改成第 k 小，但不是原題需求，也不是線性時間最佳解。
+// 思路：按值取得輸入副本；依 order policy 排序；回傳索引 k-1 的元素。
+// 複雜度：時間 O(N log N)、輸入副本空間 O(N)，N 是 values 長度；sort 另用實作定義堆疊空間。
+// 易錯點：必須有 1<=k<=N，release 移除 assert 後無保護；policy 方向決定第 k 大或小。
+// -----------------------------------------------------------------------------
 template <typename OrderPolicy>
 int leetcode_kth(std::vector<int> values, std::size_t k, OrderPolicy order = {}) {
     assert(k >= 1U && k <= values.size());
@@ -33,6 +41,15 @@ int leetcode_kth(std::vector<int> values, std::size_t k, OrderPolicy order = {})
     return values[k - 1U];
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】可組合的請求重試與記錄策略
+// 情境：網路操作要獨立選擇嘗試次數與觀測方式，測試中不實際 sleep 或連線。
+// 為何使用本章主題：RetryPolicy 與 LogPolicy 各封裝單一決策，RequestRunner 在編譯期組合；
+// 相較多個 bool/runtime if，型別名稱直接表達組態且空 logger 可受 EBO 最佳化。
+// 設計：每輪先通知 logger；呼叫 operation(attempt)；optional 有值立即回傳，耗盡則 nullopt。
+// 成本：最多 O(A) 次操作與記錄、額外空間 O(1)，A 是 policy 的 max_attempts；I/O 成本主導。
+// 上線注意：需加入 backoff、timeout、取消與冪等性；CountingLog 的裸指標必須有效且並行時需同步。
+// -----------------------------------------------------------------------------
 struct OneAttempt {
     static constexpr int max_attempts = 1;
 };
@@ -67,7 +84,6 @@ public:
     }
 };
 
-// 【實務情境】網路操作重試與觀測策略各自注入，測試不需真正等待或連線。
 void practical_retry_test() {
     int logged = 0;
     RequestRunner<ThreeAttempts, CountingLog> runner(CountingLog{&logged});

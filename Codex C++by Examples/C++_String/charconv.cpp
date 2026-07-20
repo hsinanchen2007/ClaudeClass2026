@@ -56,13 +56,30 @@ void basic_demo() {
     expect(int_to_string(-42) == "-42");
 }
 
-// LeetCode 8（String to Integer / atoi）的「嚴格 token」變形：不接受尾端垃圾。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 8. String to Integer (atoi)（字串轉整數，嚴格 token 變形）
+// 題目：原題要略過前導空白、讀可選正負號與數字並 clamp；本例只測完整十進位 token，
+//       "123" 得 123，而 "12x" 直接視為失敗並回 0，並非原題完整提交。
+// 為何使用本章主題：from_chars 可在 string_view 範圍內無配置、無 locale、無例外地解析；
+//       parse_int_exact 同時檢查 ec 與 ptr==end，刻意拒絕合法前綴後的垃圾。
+// 思路：1. 驗證非空與 base；2. 解析整段；3. 任一錯誤或未完整消耗回 nullopt；4. 映射為值或 0。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 是 token 長度。
+// 易錯點：這不實作原題空白與 clamp 規則；回 0 會混合合法 "0" 與錯誤，正式 API 應保留 optional。
+// -----------------------------------------------------------------------------
 int leetcode_strict_atoi(const std::string_view text) {
     const auto parsed = parse_int_exact(text);
     return parsed.value_or(0);
 }
 
-// 實務：解析 TCP port，先語法，再做 1..65535 的領域驗證。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】TCP 連接埠設定解析
+// 情境：設定值必須是完整十進位字串且位於 1..65535；"443" 合法，"0"、"80/tcp" 不合法。
+// 為何使用本章主題：from_chars 不受 locale 影響且直接回錯誤位置，比 stoi 的例外與部分解析
+//       更適合高頻設定驗證，也不需先建立 NUL 結尾副本。
+// 設計：1. 解析成較寬 unsigned int；2. 同時檢查 ec 與完整消耗；3. 驗證領域範圍後才窄化。
+// 成本：時間 O(N)、額外空間 O(1)，N 是 text 長度，沒有動態配置。
+// 上線注意：空白與 '+' 不會自動接受；錯誤訊息若需區分語法、溢位、範圍，不能只回 nullopt。
+// -----------------------------------------------------------------------------
 std::optional<unsigned short> practical_parse_port(const std::string_view text) {
     unsigned int value = 0U;
     const auto [end, error] = std::from_chars(text.data(), text.data() + text.size(), value);

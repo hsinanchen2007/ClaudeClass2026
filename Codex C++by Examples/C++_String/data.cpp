@@ -22,12 +22,29 @@ void basic_demo() {
     assert(text.data()[text.size()] == '\0');
 }
 
-// LeetCode 344（Reverse String）的 pointer 版本，展示 data() 與 size() 必須成對。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 344. Reverse String（反轉字串）
+// 題目：原地反轉字元序列，只能使用常數額外空間；例如 stressed 變成 desserts。
+// 為何使用本章主題：C++17 的 non-const data() 提供首元素 pointer，與 data()+size() 組成
+//       合法半開區間交給 std::reverse；本檔把原題 vector<char> 改成 string 展示連續儲存。
+// 思路：1. 取得可寫 data pointer；2. 以 size 算尾後位置；3. 標準演算法原地交換兩端。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 是 text 長度。
+// 易錯點：尾端必須是 data()+size()，不可把 capacity 當元素數；原題容器簽名與本教學版不同。
+// -----------------------------------------------------------------------------
 void leetcode_reverse_in_place(std::string& text) {
     std::reverse(text.data(), text.data() + static_cast<std::ptrdiff_t>(text.size()));
 }
 
-// 實務：模擬 C API 寫入 caller-provided buffer，回傳實際字元數（不含 NUL）。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】C API 主機名稱讀取
+// 情境：舊 API 由 caller 提供可寫 buffer，成功時寫入 NUL 結尾 hostname 並回傳不含 NUL 的長度。
+// 為何使用本章主題：先建立 64 個實際字元再傳 data()，可讓 C API 合法寫入；相較 reserve，
+//       resize/建構才真正擴大 [0,size()) 可寫範圍。
+// 設計：1. 建立固定大小 NUL buffer；2. API 驗證容量後寫入；3. 失敗回空；4. 成功 resize 到實際長度。
+// 成本：本例最多處理 64 bytes，視為 O(1)；一般容量 C 時初始化與縮整體為 O(C) 空間與時間。
+// 上線注意：要區分空 hostname 與容量不足，驗證 API 回傳長度不超過 buffer，且不能在 resize 後
+//       繼續使用先前取得的 data pointer。
+// -----------------------------------------------------------------------------
 std::size_t fake_read_hostname(char* output, const std::size_t capacity) {
     constexpr char hostname[] = "build-node";
     constexpr std::size_t length = sizeof(hostname) - 1U;

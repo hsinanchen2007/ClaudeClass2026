@@ -21,12 +21,28 @@ void basic_demo() {
     assert(std::distance(fixed.cbegin(), fixed.cend()) == 4);
 }
 
-// LeetCode 344（Reverse String）：iterator 讓標準演算法直接操作字串。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 344. Reverse String（反轉字串）
+// 題目：原地反轉字元序列且只用常數額外空間；例如 hello 變成 olleh。
+// 為何使用本章主題：begin()/end() 提供完整半開區間，讓 std::reverse 直接修改 string；
+//       本檔是把原題 vector<char> 容器等價改成 string 的教學版本。
+// 思路：1. 取得 [begin,end)；2. 由標準演算法成對交換首尾元素；3. 奇數中央字元保持不動。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 是 text 的字元數。
+// 易錯點：end() 是尾後哨兵不可解參考；原題簽名不同，但 iterator 解法可直接套回 vector。
+// -----------------------------------------------------------------------------
 void leetcode_reverse_string(std::string& text) {
     std::reverse(text.begin(), text.end());
 }
 
-// 實務：遮蔽 log 中的 ASCII 數字，不建立第二份字串。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】紀錄行數字遮蔽
+// 情境：在送出 log 前，把帳號或識別碼中的所有 ASCII 數字原地改成 '*'，避免輸出原值。
+// 為何使用本章主題：可寫的 begin()/end() 讓 std::replace_if 走訪同一 buffer，不必另建字串。
+// 設計：1. 以半開區間覆蓋全行；2. predicate 只辨認 '0' 到 '9'；3. 命中就原地替換。
+// 成本：時間 O(N)、額外空間 O(1)，N 是 log_line 的 byte 數。
+// 上線注意：這只遮 ASCII digits，不識別 Unicode 數字或欄位語意，也不是完整個資去識別；
+//       多執行緒不得同時讀寫同一字串。
+// -----------------------------------------------------------------------------
 void practical_redact_digits(std::string& log_line) {
     std::replace_if(log_line.begin(), log_line.end(),
                     [](const char ch) { return ch >= '0' && ch <= '9'; }, '*');

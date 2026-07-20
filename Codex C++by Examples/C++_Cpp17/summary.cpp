@@ -157,6 +157,14 @@ allocation function，delete 必須走相配的 aligned deallocation overload。
 #include <vector>
 
 namespace review {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】HTTP header 借用式解析
+// 情境：把單行 header 拆成名稱與值，避免在請求解析 hot path 配置兩個新字串。
+// 為何使用本章主題：string_view、if-init 與 structured binding 共同維持零配置切片與短作用域位置值。
+// 設計：1. 尋找冒號；2. 取冒號前後 substr；3. 略過一個前導空白並回傳兩個 view。
+// 成本：L 為行長；尋找時間 O(L)，額外空間 O(1)。
+// 上線注意：回傳 view 借用原 line；需在 owner 解構或 reallocation 前使用，並補齊 header 格式與大小驗證。
+// -----------------------------------------------------------------------------
 struct HeaderView {
     std::string_view name;
     std::string_view value;
@@ -171,6 +179,14 @@ HeaderView practical_parse_header(std::string_view line) {
     return {line, {}};
 }
 
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1. Two Sum（兩數之和）
+// 題目：找出 nums 中和為 target 的兩個索引；[2,7,11,15] 與 9 回傳 (0,1)。
+// 為何使用本章主題：if-init 限定 iterator，結果可用 structured binding；long long key 避免補數計算的 int overflow。
+// 思路：1. 以 long long 計算 needed；2. 在 seen 查補數；3. 命中即回索引，否則插入目前值。
+// 複雜度：N 為元素數；平均時間 O(N)、雜湊最壞 O(N^2)，額外空間 O(N)。
+// 易錯點：先查後插避免使用同一索引；回傳 int 索引依賴題目長度可表示，失敗用 (-1,-1)。
+// -----------------------------------------------------------------------------
 std::pair<int, int> leetcode_two_sum(const std::vector<int>& nums, int target) {
     std::unordered_map<long long, int> seen;
     for (std::size_t i = 0; i < nums.size(); ++i) {
@@ -183,6 +199,14 @@ std::pair<int, int> leetcode_two_sum(const std::vector<int>& nums, int target) {
     return {-1, -1};
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】遙測欄位型別編碼
+// 情境：整數欄位與文字欄位要共用一個轉字串 adapter，其他型別在編譯期不接受。
+// 為何使用本章主題：if constexpr 只實體化 integral 的 to_string 或字串建構分支，沒有 runtime type switch。
+// 設計：1. integral 走 to_string；2. 其他受支援輸入走 std::string(value)；3. 回傳 owning string。
+// 成本：輸出長度 L；時間與結果空間皆 O(L)。
+// 上線注意：else 並非任意型別都合法，錯誤型別會在實體化失敗；若輸出 JSON 還需 escape 與 schema。
+// -----------------------------------------------------------------------------
 template <class T>
 std::string practical_encode(const T& value) {
     if constexpr (std::is_integral<T>::value) {
@@ -192,11 +216,27 @@ std::string practical_encode(const T& value) {
     }
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】成員函式統一呼叫
+// 情境：工作框架拿到 Transformer member pointer，要與一般 callable 使用相同的呼叫介面。
+// 為何使用本章主題：std::invoke 能直接接 &Transformer::apply、物件與引數，不需手寫 member-pointer 特例。
+// 設計：1. Transformer 保存 factor；2. apply 執行倍率轉換；3. integrated_test 以 invoke 呼叫成員函式。
+// 成本：本例呼叫時間與空間皆 O(1)，抽象通常可被 inline。
+// 上線注意：物件必須活過 invoke；overload 取址需 static_cast 消歧義，乘法也要檢查溢位。
+// -----------------------------------------------------------------------------
 struct Transformer {
     int factor;
     int apply(int value) const { return factor * value; }
 };
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】16-bit big-endian 長度欄位
+// 情境：將 payload length 編成網路協定的兩個 byte，超過 65,535 時拒絕。
+// 為何使用本章主題：std::byte 表達 raw wire data，明確 shift 後逐 byte 建構，不依賴 host endian 或 struct layout。
+// 設計：1. 驗 length <=0xFFFF；2. 高 8 bits 放 bytes[0]；3. 低 8 bits 放 bytes[1]。
+// 成本：固定兩 byte，時間與輸出空間皆 O(1)。
+// 上線注意：仍需搭配 decode、訊息總長驗證與 I/O 完整讀寫；std::byte 不會自動處理協定版本。
+// -----------------------------------------------------------------------------
 std::array<std::byte, 2> practical_encode_length(unsigned length) {
     if (length > 0xFFFFU) {
         throw std::out_of_range("16-bit length overflow");

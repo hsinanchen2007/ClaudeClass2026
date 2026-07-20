@@ -16,6 +16,14 @@
 #include <stdexcept>
 #include <utility>
 
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 201. Bitwise AND of Numbers Range（整數範圍按位與）
+// 題目：回傳 left 到 right 所有整數的 bitwise AND；[5,7] 即 101&110&111，答案為 4。
+// 為何使用本章主題：區間內會變動的低 bits 必含 0，只有 left/right 的共同 binary prefix 能保留。
+// 思路：1. 將兩端轉 unsigned；2. 同時右移直到相等並記 shifts；3. 將共同 prefix 左移回原位。
+// 複雜度：W 為整數有效位數；時間 O(W)、額外空間 O(1)，不依賴區間長度。
+// 易錯點：一般 API 要驗 0<=left<=right；不可逐數 AND 到 INT_MAX，shift 也必須保持 unsigned。
+// -----------------------------------------------------------------------------
 int range_bitwise_and(int left, int right)
 {
     if (left < 0 || right < left) throw std::invalid_argument("invalid nonnegative range");
@@ -50,8 +58,14 @@ void leetcode_example()
     std::cout << "[LeetCode 201] [5,7] -> 4\n";
 }
 
-// 實務：找一段連續 IPv4 addresses 都固定不變的 prefix bits。
-// 這不是完整 CIDR 聚合（範圍可能需拆多個 CIDR），但可求兩端共同 prefix mask/value。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】IPv4 範圍共同前綴
+// 情境：給一段連續 IPv4 整數位址，求兩端都不變的 network bits 與 prefix length。
+// 為何使用本章主題：兩端同步右移可找共同高位，低位差異數就是 host bits，與 range AND 同一 invariant。
+// 設計：1. 先拒絕反向範圍；2. 右移直到 first==last；3. 左移還原 network 並回 32-host_bits。
+// 成本：最多處理 32 個 bits，時間 O(32)、額外空間 O(1)。
+// 上線注意：結果只是共同前綴，不一定精確表示原範圍的單一 CIDR；地址 byte order 也需在邊界明訂。
+// -----------------------------------------------------------------------------
 std::pair<std::uint32_t, unsigned> common_prefix(std::uint32_t first, std::uint32_t last)
 {
     if (last < first) throw std::invalid_argument("reversed address range");

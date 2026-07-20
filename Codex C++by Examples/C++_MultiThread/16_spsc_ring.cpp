@@ -17,6 +17,14 @@
 #include <thread>
 #include <vector>
 
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 622. Design Circular Queue（設計循環佇列）
+// 題目：固定容量 queue 要支援入列、出列、Front/Rear 與滿空判斷；本檔只借題驗證 FIFO、滿佇列及 wrap-around 核心，並非完整介面。
+// 為何使用本章主題：固定 ring 避免配置，單 producer/consumer 各自唯一寫 head/tail；release/acquire 在槽位交接時發布元素。
+// 思路：1. 保留一格區分滿空。2. push 寫槽後發布 head。3. pop 讀槽後發布 tail。4. index 以 modulo 回繞。
+// 複雜度：try_push/try_pop 時間 O(1)，固定空間 O(S)，可用容量為 S-1。
+// 易錯點：此實作只允許恰一 producer、一 consumer；滿/空回 false，泛型非 trivial T 還需建構、析構與例外協定。
+// -----------------------------------------------------------------------------
 template <std::size_t StorageSize>
 class SpscRing {
     static_assert(StorageSize >= 2U);
@@ -74,9 +82,6 @@ void basic_demo()
     assert(empty);
 }
 
-// ----------------------------------------------------------------------------
-// LeetCode 622：Design Circular Queue
-// ----------------------------------------------------------------------------
 void leetcode_demo()
 {
     SpscRing<4> queue;  // 可用容量 3。
@@ -97,9 +102,14 @@ void leetcode_demo()
     assert(popped_2 && value == 2);
 }
 
-// ----------------------------------------------------------------------------
-// 實務：telemetry producer/consumer；busy wait 只用於短小教材
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【日常實務範例】單來源 Telemetry 的有界傳輸管線
+// 情境：一個 producer 依序送出 1..100，一個 consumer 必須 FIFO 收完；ring 只有 7 個可用槽，滿/空時暫時讓出 CPU。
+// 為何使用本章主題：SPSC ring 無每筆 mutex/配置，適合固定單寫單讀的低延遲 telemetry；相較 unbounded queue 可限制記憶體。
+// 設計：1. producer 對每值重試 try_push。2. consumer 重試 try_pop。3. consumer 獨占寫 received。4. 雙方 join 後驗首尾。
+// 成本：成功傳送 N 筆總工作 O(N)，固定 queue 空間 O(S)、接收結果 O(N)；busy wait 的 CPU/延遲無上界。
+// 上線注意：應加 close/EOF 而非依賴固定筆數，並用 atomic wait/semaphore 或 backoff 取代長時間 spin；角色數量不可動態變成 MPMC。
+// -----------------------------------------------------------------------------
 void practical_demo()
 {
     SpscRing<8> ring;

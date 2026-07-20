@@ -12,7 +12,17 @@
 #include <string>
 #include <vector>
 
-// LeetCode 1122：Relative Sort Array 的簡化 rank comparator，stable 保留未知值順序。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1122. Relative Sort Array（陣列的相對排序）
+// 題目：arr1 中出現在 arr2 的值依 arr2 順序排列，其餘值升冪放尾端；範例輸出為
+// [2,2,2,1,4,3,3,9,6,7,19]。
+// 為何使用本章主題：stable_sort 依 rank comparator 排列；未知值另以數值升冪比較。
+// 本版 rank_of 每次線性找 order，行為正確但大 order 應預建 hash rank。
+// 思路：1. rank_of 回 arr2 index 或尾端 rank；2. rank 不同者按 rank；3. 兩者未知時
+// 按值升冪；4. stable_sort 全部 values。
+// 複雜度：時間 O(N log N*M)、額外空間 O(N)，N/M 為 values/order 大小。
+// 易錯點：未知值必須升冪，不是保留原順序；comparator 相等時 stable 才保留輸入次序。
+// -----------------------------------------------------------------------------
 std::vector<int> leetcode_relative_sort(std::vector<int> values,
                                         const std::vector<int>& order) {
     const auto rank_of = [&order](int value) {
@@ -37,7 +47,16 @@ struct Message {
     std::string text;
 };
 
-// 實務：只按 priority 排；同 priority 自動維持 FIFO arrival sequence。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】訊息優先權排序且同級 FIFO
+// 情境：messages 已按 arrival_sequence 到達，需讓高 priority 先處理，同 priority 保持
+// 原始到達順序。
+// 為何使用本章主題：stable_sort comparator 只比 priority，使同級訊息彼此等價並自動
+// 保留輸入 FIFO，不必把 sequence 再寫入 comparator。
+// 設計：1. comparator 以 priority 降冪；2. 穩定排序完整訊息列；3. 同級沿用原順序。
+// 成本：時間 O(N log N)、額外空間可 O(N)，N 為訊息數；配置失敗 fallback 比較成本較高。
+// 上線注意：輸入必須本來就是 arrival 順序；stable_sort 可能配置，且併發 queue 需同步。
+// -----------------------------------------------------------------------------
 void practical_priority_fifo(std::vector<Message>& messages) {
     std::stable_sort(messages.begin(), messages.end(),
                      [](const Message& lhs, const Message& rhs) {

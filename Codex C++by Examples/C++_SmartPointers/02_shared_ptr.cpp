@@ -37,9 +37,14 @@ void basic_example()
     std::cout << "[基礎] three owners share immutable model\n";
 }
 
-// LeetCode 133：Clone Graph。clones map 必須在遞迴 neighbors 前先登記新節點，否則遇到
-// cycle 會無限遞迴。為聚焦演算法，本例 edges 使用 shared_ptr；測試結尾會明確拆 cycle。
-// Production graph 通常由 arena/container 擁有 nodes，edges 用 raw/weak observer 避免環狀 ownership。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 133. Clone Graph（複製圖）
+// 題目：深複製含 cycle 的連通圖；例如節點 1、2 互連時，新圖關係相同但所有節點地址不同。
+// 為何使用本章主題：本教學版以 shared_ptr edges 簡化遞迴傳遞，會形成 ownership cycle，測試後必須拆除；實務宜 arena/weak edges。
+// 思路：null 回空；map 命中回既有 clone；先建立並登記；再遞迴複製每條 neighbor edge。
+// 複雜度：時間 O(V+E)、額外空間 O(V)，V/E 為節點與邊數，遞迴 stack 最壞 O(V)。
+// 易錯點：走鄰點前必須登記以終止 cycle；來源與 clone 不可共用節點；strong cycle 若不拆會永久洩漏。
+// -----------------------------------------------------------------------------
 struct GraphNode {
     explicit GraphNode(int node_value) : value(node_value) {}
     int value;
@@ -83,7 +88,14 @@ void leetcode_133_example()
     std::cout << "[LeetCode 133] 兩節點 cycle 完整複製且 clone 與來源獨立\n";
 }
 
-// 實務：多 requests 共用 read-only weights；const pointee 限制意外 mutation。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】推論請求共享唯讀模型權重
+// 情境：多個 Request 同時使用 llama 權重，模型載入昂貴且任一請求結束都不應提早釋放。
+// 為何使用本章主題：shared_ptr<const Model> 讓請求共同決定 lifetime，const pointee 也限制意外 mutation。
+// 設計：make_shared 建立單一模型；每個 Request copy owner；execute 透過共享物件讀 name。
+// 成本：owner copy/reset 為常數 refcount 成本，模型只存一份；execute 字串組合 O(M)。
+// 上線注意：refcount 安全不代表模型可變 cache thread-safe；避免 cycle，模型熱更新要以版本化 owner 原子發布。
+// -----------------------------------------------------------------------------
 class Request {
 public:
     explicit Request(std::shared_ptr<const Model> model) : model_(std::move(model)) {}

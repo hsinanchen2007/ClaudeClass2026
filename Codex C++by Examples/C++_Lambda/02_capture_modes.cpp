@@ -33,7 +33,15 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 1：Two Sum。target 以 value capture，seen/output 以 reference capture。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1. Two Sum（兩數之和）
+// 題目：輸入 nums 與 target，找出兩個相異位置使其值相加等於 target；[2,7,11,15]、9 回傳 [0,1]。
+// 為何使用本章主題：target 以值捕獲固定查詢條件，seen 與 answer 以參考捕獲累積掃描狀態；
+// lambda 是為展示捕獲模式的教學拆分，題目本身用一般迴圈即可完成。
+// 思路：逐項計算 target-value；先查雜湊表是否已有互補值；沒有才記錄目前值與索引。
+// 複雜度：平均時間 O(N)、額外空間 O(N)，N 是 nums 長度；雜湊碰撞最壞時間可退化。
+// 易錯點：必須先查再插入以免同一元素配對自己；題目保證唯一答案，本函式無解時回 {-1,-1}。
+// -----------------------------------------------------------------------------
 std::pair<int, int> leetcode_two_sum(const std::vector<int>& nums, int target) {
     std::unordered_map<int, int> seen;
     std::pair<int, int> answer{-1, -1};
@@ -55,8 +63,16 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】門檻篩選：minimum 以 value capture 固定成這次查詢的不可變快照。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】固定門檻的數值篩選
+// 情境：一批量測值需要依本次查詢的 minimum 留下合格項目，並維持原輸入順序。
+// 為何使用本章主題：以值捕獲 minimum 讓 predicate 擁有建立當下的門檻快照，避免外部變數改動
+// 影響執行中的篩選；相較參考捕獲也沒有跨作用域懸空風險。
+// 設計：建立空結果；copy_if 逐項呼叫 predicate；將大於等於門檻的值追加至 output。
+// 成本：時間 O(N)、結果空間 O(K)，N 是輸入數量、K 是通過篩選的數量，可能發生動態配置。
+// 上線注意：需先定義門檻是否含等號及 NaN 等型別規則；大量資料可先 reserve 或改串流處理。
+// -----------------------------------------------------------------------------
 std::vector<int> practical_filter(const std::vector<int>& values, int minimum) {
     std::vector<int> output;
     std::copy_if(values.begin(), values.end(), std::back_inserter(output),

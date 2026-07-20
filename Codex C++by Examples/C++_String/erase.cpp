@@ -20,7 +20,15 @@ void basic_demo() {
     assert(text == "145");
 }
 
-// LeetCode 1910（Remove All Occurrences of a Substring）。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1910. Remove All Occurrences of a Substring（移除所有子字串）
+// 題目：反覆刪除 s 中最左邊的 part，直到找不到；"daabcbaabcbc" 刪 "abc" 得 "dab"。
+// 為何使用本章主題：find 定位目前最左匹配，erase(position, part.size()) 原地縮短字串，
+//       並讓刪除後新相鄰的片段在下一輪重新被搜尋。
+// 思路：1. 空 part 直接返回；2. 找最左匹配；3. erase 該區段；4. 從頭重找直到 npos。
+// 複雜度：最壞時間 O(N^2)、額外空間 O(N)，N 是原字串長度；按值參數是輸出工作副本。
+// 易錯點：空 part 會讓搜尋游標不前進；每次中段 erase 搬移尾端，此版不是 stack/KMP 類最佳化解。
+// -----------------------------------------------------------------------------
 std::string leetcode_remove_occurrences(std::string text, const std::string& part) {
     if (part.empty()) return text;
     std::size_t position = text.find(part);
@@ -31,7 +39,16 @@ std::string leetcode_remove_occurrences(std::string text, const std::string& par
     return text;
 }
 
-// 實務：從 query string 移除 token 欄位；簡化假設每欄以 & 分隔。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】診斷 URL 移除 token 欄位
+// 情境：將 query 輸出到 log 前刪掉第一個 `token=...` 欄位，避免把憑證寫入紀錄。
+// 為何使用本章主題：找到欄位邊界後，erase 可一次刪除 key、value 與相鄰分隔符，
+//       比逐字元搬移更能表達修改意圖。
+// 設計：1. 找 `token=`；2. 找右側 `&` 或字串尾；3. 刪除完整區段；4. 清掉可能殘留的尾 `&`。
+// 成本：搜尋加搬移為 O(N)、額外空間 O(N)，N 是 query 長度，因參數按值建立副本。
+// 上線注意：此簡化 parser 會誤認 value 內文字、重複欄位與 percent-encoding；安全 log 應先用
+//       正式 query parser 解碼成欄位，再依 key 全數移除並測試 token 位於各位置。
+// -----------------------------------------------------------------------------
 std::string practical_remove_token_field(std::string query) {
     const std::string key = "token=";
     const std::size_t begin = query.find(key);

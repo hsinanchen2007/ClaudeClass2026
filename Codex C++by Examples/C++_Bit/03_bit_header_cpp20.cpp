@@ -34,7 +34,14 @@ void basic_example()
     std::cout << "[基礎] popcount=2 bit_width=6 ceil=64\n";
 }
 
-// LeetCode 191：Number of 1 Bits。C++20 直接表達題意。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 191. Number of 1 Bits（二進位中 1 的個數）
+// 題目：輸入 uint32_t，回傳其 bit pattern 中 1 的數量；...1011 回傳 3。
+// 為何使用本章主題：C++20 std::popcount 直接命名題意，避免手寫迴圈與 signed shift 邊界。
+// 思路：1. 保持輸入為 uint32_t；2. 交給 std::popcount；3. 將標準函式結果回傳為 int。
+// 複雜度：固定 32-bit 輸入可視為時間 O(1)、額外空間 O(1)，實際指令由實作決定。
+// 易錯點：std::popcount 只接受 unsigned integer type；不可假設所有目標 CPU 都必然用單一 POPCNT 指令。
+// -----------------------------------------------------------------------------
 int hamming_weight(std::uint32_t value)
 {
     return std::popcount(value);
@@ -47,7 +54,14 @@ void leetcode_191_example()
     std::cout << "[LeetCode 191] std::popcount answers 3 and 31\n";
 }
 
-// 實務案例：配置 hash table 容量為至少 requested 的 2 次冪。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】雜湊表容量取整
+// 情境：將 requested bucket 數向上取成至少同樣大的 2 次冪，超出 uint32_t 可表示結果時拒絕。
+// 為何使用本章主題：std::bit_ceil 清楚表達 power-of-two rounding，並以 has-single-bit 類契約取代 magic loop。
+// 設計：1. 0/1 請求回 1；2. 先驗不超過最高可表示的 2 次冪；3. 呼叫 bit_ceil。
+// 成本：單次容量計算時間與額外空間皆 O(1)。
+// 上線注意：bit_ceil 結果不可表示時沒有可用結果；實際配置還要乘 bucket 大小並再次檢查總 byte 溢位。
+// -----------------------------------------------------------------------------
 std::optional<std::uint32_t> hash_capacity(std::uint32_t requested)
 {
     if (requested <= 1U) return 1U;

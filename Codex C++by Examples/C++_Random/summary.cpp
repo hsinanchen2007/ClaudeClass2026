@@ -143,11 +143,14 @@ void basic_distribution_demo()
     assert((values == std::vector<int>{1, 2, 3, 4, 5})); // shuffle 保留 permutation
 }
 
-// ---------------------------------------------------------------------------
-// LeetCode 528：Random Pick with Weight
-// prefix=[1,4,6] 時，在整數 [1,6] 均勻抽 target，再 lower_bound 找第一個 >= target。
-// constructor O(n)，pick O(log n)，space O(n)。權重必須正值。
-// ---------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 528. Random Pick with Weight（按權重隨機選取）
+// 題目：依 w[i]/sum(w) 的機率回傳索引；摘要範例 [1,3,2] 建成 prefix [1,4,6]，各 index 佔 1、3、2 張票。
+// 為何使用本章主題：uniform_int_distribution<uint64_t> 無偏抽票，lower_bound 將票號映射回 prefix bucket，seed 讓測試可重播。
+// 思路：1. 驗證非空、正權重與加總範圍。2. 建 prefix。3. 抽 [1,total]。4. 二分第一個不小於票號的位置。
+// 複雜度：K 個權重的建表時間與空間 O(K)，每次抽樣時間 O(log K)。
+// 易錯點：加總前要檢查 uint64 溢位；有限樣本只驗 index/invariant，不可把桶數精確比例當 deterministic correctness。
+// -----------------------------------------------------------------------------
 class WeightedPicker {
 public:
     WeightedPicker(const std::vector<std::uint64_t>& weights, std::uint32_t seed)
@@ -194,10 +197,14 @@ void leetcode_528_demo()
     }));
 }
 
-// ---------------------------------------------------------------------------
-// 實務：可重播的服務故障注入。
-// production 測試失敗時記 seed；同 seed 會得到相同 latency/failure plan。
-// ---------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【日常實務範例】可重播的服務故障注入計畫
+// 情境：壓力測試要為 200 個 request 模擬 10% failure 與平均 40ms、標準差 5ms 的 latency，失敗時可完整重播。
+// 為何使用本章主題：bernoulli_distribution 建模離散失敗，normal_distribution 建模延遲；單一固定 seed 統一推進兩種分布。
+// 設計：1. 由 seed 建 engine 與兩個 distribution。2. 每請求先抽 failure。3. 抽 latency、四捨五入並夾到至少 1ms。4. 保存 outcome。
+// 成本：C 個請求需時間 O(C)、輸出空間 O(C)；normal distribution 可能保存 cached state，C 為 request 數。
+// 上線注意：精確重播還需固定呼叫順序與標準庫版本；常態模型可能不符真實長尾，且此 PRNG 不可產生任何安全憑證。
+// -----------------------------------------------------------------------------
 struct RequestOutcome {
     bool failed;
     int latency_ms;

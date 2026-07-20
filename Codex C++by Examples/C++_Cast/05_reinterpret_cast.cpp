@@ -33,8 +33,14 @@ void basic_example()
     std::cout << "[基礎] pointer round-trip and byte view size=" << bytes.size() << '\n';
 }
 
-// LeetCode 190：Reverse Bits。演算法只需 unsigned shifts，不需要 reinterpret_cast；
-// 這是刻意的反例：一般 bit algorithm 不應因「位元」兩字就使用低階 cast。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 190. Reverse Bits（反轉位元）
+// 題目：反轉 uint32_t 的 32 個 bits；指定輸入回傳 964,176,192。
+// 為何使用本章主題：此題刻意完全不用 reinterpret_cast；一般位元演算法只需 unsigned shift，不應因「bits」就重解釋指標。
+// 思路：1. output 從 0 開始；2. 左移 output 並接 input 最低 bit；3. input 右移，重複 32 次。
+// 複雜度：W=32；時間 O(W)、額外空間 O(1)。
+// 易錯點：使用 unsigned 才有清楚 shift 語意；reinterpret_cast 無法替你處理 bit 順序、endian 或 object lifetime。
+// -----------------------------------------------------------------------------
 std::uint32_t reverse_bits(std::uint32_t input)
 {
     std::uint32_t output = 0U;
@@ -51,8 +57,14 @@ void leetcode_190_example()
     std::cout << "[LeetCode 190] unsigned operations suffice; no reinterpret_cast\n";
 }
 
-// 實務：C callback 的 void* user_data。轉回的型別必須與註冊時完全相同，且 object
-// 必須仍存活；void* 不帶 ownership/lifetime 資訊。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】C callback 的 user_data context
+// 情境：C 介面只提供 void* context，callback 要取回 Counter 並累加呼叫次數。
+// 為何使用本章主題：這是低階 representation boundary，但 void* 還原原 object pointer 用較窄的 static_cast，不需要 reinterpret_cast。
+// 設計：1. 註冊 Counter 位址為 user_data；2. callback 轉回完全相同型別；3. 每次呼叫遞增 calls。
+// 成本：每次轉型與計數時間、空間皆 O(1)。
+// 上線注意：void* 不帶型別或 ownership；註冊型別必須一致，Counter 必須活過所有同步或非同步 callbacks。
+// -----------------------------------------------------------------------------
 using Callback = void (*)(void*);
 
 struct Counter {

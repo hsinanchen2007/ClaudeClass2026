@@ -40,7 +40,14 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 20：Valid Parentheses。stack 解法時間 O(n)、空間 O(n)。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 20. Valid Parentheses（有效括號）
+// 題目：判斷只含 ()[]{} 的字串是否依正確種類與順序成對；"()[]{}" 為 true，"([)]" 為 false。
+// 為何使用本章主題：題解本身不需要多型；本檔以 Validator 介面與 final 實作示範可替換驗證器的教學架構。
+// 思路：1. 左括號壓入 stack；2. 右括號比對 stack 頂端；3. 不符或缺左括號即失敗，最後要求 stack 為空。
+// 複雜度：N 為字串長度；時間 O(N)、額外空間 O(N)。
+// 易錯點：空 stack 不可取 top；本實作把任何非左括號都當右括號，依賴題目限定輸入字元。
+// -----------------------------------------------------------------------------
 class Validator {
 public:
     virtual ~Validator() = default;
@@ -78,8 +85,15 @@ void test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】結帳定價策略：介面允許 runtime 替換規則，final 實作避免意外再衍生。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】結帳折扣策略切換
+// 情境：結帳流程接收一組分價金額，部署時可在 runtime 注入不同 PriceRule 計價策略。
+// 為何使用本章主題：override 讓編譯器核對 apply 簽章，final 固定折扣實作，virtual destructor 保證經介面安全析構。
+// 設計：1. 定義 PriceRule 契約；2. 十趴折扣回傳 cents*90/100；3. checkout 逐價套規則並累加。
+// 成本：N 為價格筆數；時間 O(N) 且每筆一次 virtual dispatch，額外空間 O(1)。
+// 上線注意：整數除法會捨去小數分且總額可能溢位；策略物件須活過 checkout，金額也必須拒絕負值。
+// -----------------------------------------------------------------------------
 class PriceRule {
 public:
     virtual ~PriceRule() = default;

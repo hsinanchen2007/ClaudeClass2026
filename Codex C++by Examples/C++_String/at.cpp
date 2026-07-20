@@ -39,7 +39,16 @@ void basic_demo() {
     assert(caught);
 }
 
-// LeetCode 1678（Goal Parser Interpretation）的簡化解析；at 讓格式錯誤可被捕捉。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1678. Goal Parser Interpretation（Goal 指令解析）
+// 題目：command 只由 "G"、"()"、"(al)" 串成，分別轉為 "G"、"o"、"al"；
+//       例如 "G()(al)" 轉成 "Goal"。
+// 為何使用本章主題：at() 在依 token 前進時提供邊界檢查；本版還額外拒絕原題契約外格式，
+//       讓錯誤輸入成為 invalid_argument，而不是未檢查索引。
+// 思路：1. 從索引 0 掃描；2. 依序辨認 G、()、(al)；3. 附加翻譯並跳過完整 token。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 是 command 長度，答案最長與輸入同階。
+// 易錯點：呼叫 at(i+1) 前仍須先做剩餘長度檢查；at 的例外不能取代 token 文法驗證。
+// -----------------------------------------------------------------------------
 std::string leetcode_interpret_goal(const std::string& command) {
     std::string answer;
     for (std::size_t i = 0U; i < command.size();) {
@@ -60,7 +69,15 @@ std::string leetcode_interpret_goal(const std::string& command) {
     return answer;
 }
 
-// 實務：更新固定寬度狀態欄；先做領域驗證，例外只當最後防線。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】固定寬度功能旗標更新
+// 情境：字串每一格代表一個功能開關，只允許把既有索引設成字元 '0' 或 '1'。
+// 為何使用本章主題：at(index) 讓實際寫入仍帶標準邊界檢查；前置 if 則把可預期的外部錯誤
+//       轉成 bool，而不是依例外控制一般流程。
+// 設計：1. 同時驗證索引與值域；2. 任一不合法便回 false；3. 合法時以 at 原地寫入。
+// 成本：時間 O(1)、額外空間 O(1)，不改字串長度也不配置。
+// 上線注意：失敗時 flags 必須保持不變；若索引來自 signed 值，要在轉 size_t 前先拒絕負數。
+// -----------------------------------------------------------------------------
 bool practical_set_flag(std::string& flags, const std::size_t index, const char value) {
     if (index >= flags.size() || (value != '0' && value != '1')) {
         return false;

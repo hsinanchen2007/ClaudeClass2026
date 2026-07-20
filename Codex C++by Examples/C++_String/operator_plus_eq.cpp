@@ -30,7 +30,15 @@ void basic_demo() {
     assert(&same_object == &line && line == "status=ok!");
 }
 
-// LeetCode 1768（Merge Strings Alternately）。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1768. Merge Strings Alternately（交錯合併字串）
+// 題目：從 first 開始輪流取兩字串同索引字元，較長輸入剩餘部分接到尾端；"ab"、"pqrs" 得 "apbqrs"。
+// 為何使用本章主題：operator+= char 直接擴張同一答案字串，先 reserve N+M 後避免連鎖 operator+
+//       產生不必要的中間字串。
+// 思路：1. 預留總長；2. 走到兩者最大長度；3. 各自索引合法時依 first、second 順序 +=。
+// 複雜度：時間 O(N+M)、額外空間 O(N+M)，N、M 是兩輸入長度。
+// 易錯點：兩個長度 guard 必須分開；總長相加需考慮 size overflow，且 += 可能使舊 pointer 失效。
+// -----------------------------------------------------------------------------
 std::string leetcode_merge_alternately(const std::string& first, const std::string& second) {
     std::string answer;
     answer.reserve(first.size() + second.size());
@@ -46,7 +54,15 @@ std::string leetcode_merge_alternately(const std::string& first, const std::stri
     return answer;
 }
 
-// 實務：逐段建立 URL；此例假設輸入已做 URL encoding。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】查詢 URL 逐欄組裝
+// 情境：base 尚未含 query，fields 已完成 URL encoding，要產生 `/search?q=cpp&page=2`。
+// 為何使用本章主題：operator+= 可依欄位逐段附加 separator、key、`=`、value；相較每輪 operator+
+//       建立暫存字串，更適合長度逐步成長的 builder。
+// 設計：1. 複製 base；2. 首欄用 `?`、其後用 `&`；3. 依序附加 key/value；4. 空 fields 原樣回傳。
+// 成本：時間 O(L)、額外空間 O(L)，L 是最終 URL 長度；未預估容量時可能多次重新配置。
+// 上線注意：函式不做 URL encoding，也未處理 base 已有 `?`、空 key、重複欄位或長度上限。
+// -----------------------------------------------------------------------------
 std::string practical_make_query_url(const std::string& base,
                                      const std::vector<std::pair<std::string, std::string>>& fields) {
     std::string result = base;

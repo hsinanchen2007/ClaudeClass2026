@@ -57,9 +57,14 @@ void basic_demo()
     expect(total == 20, "transformed total mismatch");
 }
 
-// ----------------------------------------------------------------------------
-// LeetCode 977：Squares of a Sorted Array（policy transform + sort）
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 977. Squares of a Sorted Array（有序陣列的平方）
+// 題目：將升冪整數陣列各元素平方後仍以升冪回傳；例如 [-7,-3,2,3,11] 得 [4,9,9,49,121]。
+// 為何使用本章主題：各 index 的平方可獨立 transform，教學上可套 parallel policy；後續 sort 使本解 O(N log N)，非雙指標 O(N) 最佳解。
+// 思路：1. 預配置 result。2. policy_transform 各自平方。3. 依 build 選平行或順序 sort。4. 回傳排序結果。
+// 複雜度：時間 O(N log N)、輸出空間 O(N)，平行 backend 另有分割、排程與同步成本。
+// 易錯點：policy 不保證實際平行且可能需 TBB；callback 要無 data race/不拋，int 平方也須受輸入範圍限制。
+// -----------------------------------------------------------------------------
 std::vector<int> sorted_squares(const std::vector<int>& numbers)
 {
     std::vector<int> result(numbers.size());
@@ -80,9 +85,14 @@ void leetcode_demo()
            "sorted squares mismatch");
 }
 
-// ----------------------------------------------------------------------------
-// 實務：批次價格加稅；每個 output index 獨立，適合 transform
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【日常實務範例】商品價格的批次稅額轉換
+// 情境：每個價格獨立乘上 1+rate，例如 [10,20,40] 套 10% 後得到 [11,22,44]，輸出 index 必須對齊輸入。
+// 為何使用本章主題：純函式 transform 沒有跨元素依賴，適合 execution policy；預配置輸出避免 callback 競爭 push_back。
+// 設計：1. 配置同尺寸 result。2. lambda 按值捕獲 rate。3. policy_transform 各 index。4. 完成後回傳。
+// 成本：總工作與輸出空間 O(N)，平行化是否划算取決於 N、backend 與每元素運算量。
+// 上線注意：需驗證負值、NaN/Infinity、稅率範圍與貨幣 rounding；policy callback 若逸出例外可能直接 terminate。
+// -----------------------------------------------------------------------------
 std::vector<double> apply_tax(const std::vector<double>& prices, double rate)
 {
     std::vector<double> result(prices.size());

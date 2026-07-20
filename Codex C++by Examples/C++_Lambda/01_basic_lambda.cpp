@@ -35,7 +35,15 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 1480：Running Sum。lambda 作為 accumulate-like state update。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1480. Running Sum of 1d Array（一維陣列的動態和）
+// 題目：輸入整數陣列 nums，回傳每個位置的前綴和；例如 [1,2,3,4] 變成 [1,3,6,10]。
+// 為何使用本章主題：lambda 捕獲 output 與 total，將單次累加及寫入封裝成 for_each 的操作；
+// 這是基本 lambda 的教學改寫，直接 range-for 同樣清楚且不需要 closure。
+// 思路：先預留 N 個結果空間；依序把目前元素加到 total；再把新的 total 追加到 output。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 是 nums 的元素數，回傳陣列也計入空間。
+// 易錯點：total 與 output 必須以參考捕獲才能累積同一份狀態；空輸入應回傳空陣列。
+// -----------------------------------------------------------------------------
 std::vector<int> leetcode_running_sum(const std::vector<int>& nums) {
     std::vector<int> output;
     output.reserve(nums.size());
@@ -54,8 +62,16 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】批次使用者驗證：把只在呼叫點使用的規則寫成無副作用 predicate。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】批次使用者資料驗證
+// 情境：匯入一批含姓名與年齡的使用者資料，要求每筆姓名非空且年齡落在 0 到 130。
+// 為何使用本章主題：規則只服務這次 all_of 呼叫，無捕獲 lambda 比另建命名函式更貼近使用點，
+// 並保持 predicate 無外部副作用。
+// 設計：定義 User 資料模型；以 valid_user 檢查單筆欄位；all_of 遇到首筆無效資料即停止。
+// 成本：最壞時間 O(N)、額外空間 O(1)，N 是 users 筆數；短路時可能少於 N 次檢查。
+// 上線注意：真實系統還需限制姓名長度與字元正規化；130 是業務規則，空批次目前視為有效。
+// -----------------------------------------------------------------------------
 struct User {
     std::string name;
     int age;

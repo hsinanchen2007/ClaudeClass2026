@@ -14,7 +14,15 @@
 #include <utility>
 #include <vector>
 
-// LeetCode 278：First Bad Version。Predicate 的具體 lambda 型別被 std::function 擦除。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 278. First Bad Version（第一個錯誤的版本）
+// 題目：版本 1..n 從某版起全部為 bad，找第一個 bad；n=10 且 4 起為 bad 時答案 4。
+// 為何使用本章主題：std::function 擦除 lambda/functor 的具體型別，只暴露 bool(int) oracle；
+// 原題由平台提供固定 API，不需要 type erasure，這是 runtime predicate 注入的教學改寫。
+// 思路：在閉區間維護 left/right；middle 為 bad 就收右界，否則把左界移到 middle+1。
+// 複雜度：時間 O(log N)、額外空間 O(1)，N 是 count，每輪有一次 type-erased 間接呼叫。
+// 易錯點：count 必須至少 1、predicate 非空且單調；介面未驗最後候選，假設一定存在 bad 版本。
+// -----------------------------------------------------------------------------
 int leetcode_first_bad(int count, const std::function<bool(int)>& is_bad) {
     int left = 1;
     int right = count;
@@ -29,6 +37,15 @@ int leetcode_first_bad(int count, const std::function<bool(int)>& is_bad) {
     return left;
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】異質工作命令佇列
+// 情境：排程器要在同一 vector 保存 BackupJob 與捕獲狀態 lambda，之後以一致 execute 介面執行。
+// 為何使用本章主題：Command 內部以 Concept/Model 擦除來源 callable 型別，來源不需共同繼承；
+// 相較 std::function，本 wrapper 刻意為 move-only，仍保留型別安全的 string() 邊界。
+// 設計：constructor 配置 Model<Callable>；vector 保存 Command；execute 經 virtual Concept 呼叫具體 callable。
+// 成本：每個 Command 至少一次 heap allocation，每次執行一次 virtual call，另有結果字串成本。
+// 上線注意：moved-from Command 的 self_ 為空不可 execute；reference capture 仍可能懸空，例外也需隔離記錄。
+// -----------------------------------------------------------------------------
 class Command {
 public:
     template <typename Callable>
@@ -63,7 +80,6 @@ struct BackupJob {
     std::string operator()() const { return "backup:" + target; }
 };
 
-// 【實務情境】工作佇列同時保存 functor 與 lambda，而來源型別不必共同繼承。
 void practical_command_queue_test() {
     std::vector<Command> commands;
     commands.emplace_back(BackupJob{"db"});

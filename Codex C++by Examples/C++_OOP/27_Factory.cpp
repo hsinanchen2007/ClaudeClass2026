@@ -61,8 +61,14 @@ void basic_example()
     std::cout << "[基礎] factory 建立兩種 Parser implementations\n";
 }
 
-// LeetCode 70：Climbing Stairs。
-// Factory 依輸入規模選 iterative 或 recursive-memo solver；兩者實際答案一致。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 70. Climbing Stairs（爬樓梯）
+// 題目：每次爬 1 或 2 階，求到第 n 階方法數；例如 n=5 得 8，n=20 得 10946。
+// 為何使用本章主題：題目不需 Factory；本例教學改寫成依 n 選小型遞迴或迭代 solver 的建構邏輯。
+// 思路：factory 對 n<=10 建 recursive solver，否則建 iterative；兩者依 Fibonacci recurrence 求答案。
+// 複雜度：遞迴版 O(2^N) 時間/O(N) stack，迭代版 O(N) 時間/O(1) 空間。
+// 易錯點：steps 應符合題目正數限制；int 結果會溢位；factory 回 unique_ptr，interface destructor 必須 virtual。
+// -----------------------------------------------------------------------------
 class StairSolver {
 public:
     virtual ~StairSolver() = default;
@@ -105,7 +111,14 @@ void leetcode_70_example()
     std::cout << "[LeetCode 70] factory 選 solver，n=20 answer=10946\n";
 }
 
-// 實務案例：factory 依 deployment mode 建 retry policy value，不需要 virtual hierarchy。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】依部署模式建立重試策略值
+// 情境：interactive 要低延遲 3 次/100ms，batch 可容忍 10 次/1000ms，未知模式必須明確拒絕。
+// 為何使用本章主題：簡單 RetryPolicy 適合 factory 回 value，不需要 virtual hierarchy 或 heap allocation。
+// 設計：比較 mode；建立對應 attempts/delay；未知值丟 invalid_argument；caller 只讀策略欄位。
+// 成本：固定兩次字串比較，時間 O(M)、額外空間 O(1)，M 為 mode 長度。
+// 上線注意：應用 enum/validated config 避免拼字；delay 單位要明確，重試還需 jitter、上限與可取消性。
+// -----------------------------------------------------------------------------
 class RetryPolicy {
 public:
     RetryPolicy(int attempts, int delay_ms) : attempts_(attempts), delay_ms_(delay_ms) {}

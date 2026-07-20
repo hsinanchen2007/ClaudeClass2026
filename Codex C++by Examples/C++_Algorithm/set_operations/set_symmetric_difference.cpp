@@ -11,7 +11,16 @@
 #include <iterator>
 #include <vector>
 
-// LeetCode 2215：一次取得兩側差異後合併；此函式回不標來源的 symmetric diff。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 2215. Find the Difference of Two Arrays（找出兩陣列的不同）
+// 題目：原題要分開回只在 nums1 與只在 nums2 的 distinct 值；本 helper 將兩側合併
+// 成不標來源的 symmetric difference，例如 [1,2,3] 與 [2,4,6] 回 [1,3,4,6]。
+// 為何使用本章主題：sort+unique 後，set_symmetric_difference 一趟取得兩側 exclusive
+// 值；因輸出不帶來源，僅適合作為原題的合併衍生結果。
+// 思路：1. 兩邊排序去重；2. 求 symmetric difference；3. 依共同排序輸出。
+// 複雜度：時間 O(N log N+M log M)、額外空間 O(N+M)，N/M 為兩輸入大小。
+// 易錯點：不是原題要求的二維回傳；若需知道來源，必須分別做 A-B/B-A 或手寫 tagged merge。
+// -----------------------------------------------------------------------------
 std::vector<int> leetcode_symmetric_difference(std::vector<int> first,
                                                std::vector<int> second) {
     std::sort(first.begin(), first.end());
@@ -24,7 +33,16 @@ std::vector<int> leetcode_symmetric_difference(std::vector<int> first,
     return output;
 }
 
-// 實務：比較兩份 replication manifest 的 file IDs，找所有 drift。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】Replication Manifest ID Drift 偵測
+// 情境：primary 與 replica manifest 依 file ID 升冪；要列出只出現在其中一側的所有
+// ID，空結果表示兩份 ID multiset 一致。
+// 為何使用本章主題：set_symmetric_difference 一趟取得雙向差異，比各自掃描 membership
+// 更有效率，適合監控是否 drift。
+// 設計：1. 驗兩邊 sorted；2. 預留 N+M 上界；3. 輸出兩側 multiplicity 差的絕對值。
+// 成本：時間 O(N+M)、額外空間 O(K)，K 為 drift 輸出數，最壞 N+M。
+// 上線注意：結果不標來源且 comparator 只看 ID；checksum 改變不會被偵測，修復計畫需更完整 diff。
+// -----------------------------------------------------------------------------
 std::vector<int> practical_manifest_drift(const std::vector<int>& primary,
                                           const std::vector<int>& replica) {
     assert(std::is_sorted(primary.begin(), primary.end()));

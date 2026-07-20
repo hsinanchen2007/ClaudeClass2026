@@ -33,7 +33,14 @@ void basic_example()
     std::cout << "[基礎] iterator movement obeys category-specific complexity\n";
 }
 
-// LeetCode 876：Middle of the Linked List。slow/fast 只要求 forward iterator。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 876. Middle of the Linked List（鏈結串列的中間節點）
+// 題目：回傳串列中點，偶數節點時回後一個中點；例如 [1,2,3,4,5,6] 回傳值 4。
+// 為何使用本章主題：std::next 清楚表達 slow 每輪一步、fast 每輪兩步，且只要求 forward iterator。
+// 思路：兩 iterator 從 begin 開始；fast 前進一次並查 end；再前進一次；slow 同步前進一次。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 為節點數。
+// 易錯點：空串列會解參考 end；next 不會自動 clamp；fast 第二步前必須檢查邊界。
+// -----------------------------------------------------------------------------
 int middle_value(const std::forward_list<int>& values)
 {
     auto slow = values.begin();
@@ -54,7 +61,14 @@ void leetcode_876_example()
     std::cout << "[LeetCode 876] slow/fast iterators found the middle\n";
 }
 
-// 實務：從 vector 取一頁資料。先 clamp 範圍，避免 iterator 越界。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】有邊界保護的資料分頁
+// 情境：從 rows 依 offset/limit 取一頁；超出尾端回空，最後一頁不足 limit 時只回剩餘資料。
+// 為何使用本章主題：random-access iterator 搭配 next 可表達半開子範圍，先 clamp 才不會越過 end。
+// 設計：先拒絕 offset>=size；以 size-offset 算安全 count；建立 first/last；由 range 複製頁面。
+// 成本：定位 O(1)、複製 O(P)，額外空間 O(P)，P 為實際頁面筆數。
+// 上線注意：先做減法再 min 可避免 offset+limit 溢位；size_t 轉 ptrdiff_t 前需確認容器大小可表示。
+// -----------------------------------------------------------------------------
 std::vector<int> page(const std::vector<int>& rows, std::size_t offset, std::size_t limit)
 {
     if (offset >= rows.size()) return {};

@@ -163,7 +163,14 @@ auto add(Left left, Right right) -> decltype(left + right) {
     return left + right;
 }
 
-// LeetCode 1480 整合題：range-for + auto/decltype + brace initialization。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1480. Running Sum of 1d Array（一維陣列動態和）
+// 題目：對輸入序列產生逐項前綴和；例如 [1,2,3,4] 回傳 [1,3,6,10]。
+// 為何使用本章主題：整合 range-for、auto、using 與 trailing return，依容器 value_type 建立結果；屬泛型教學改寫。
+// 思路：1. 以 Value{} 建立累加器；2. const auto& 逐項讀取；3. 累加後依序 push 到預留容量的輸出。
+// 複雜度：N 為輸入元素數；時間 O(N)，輸出空間 O(N)、額外工作空間 O(1)。
+// 易錯點：累加型別由 value_type 決定，可能溢位；const auto& 對 scalar 雖非必要，但可泛化到較重元素。
+// -----------------------------------------------------------------------------
 template <class Container>
 auto leetcode_running_sum(const Container& input)
     -> std::vector<typename Container::value_type> {
@@ -178,13 +185,20 @@ auto leetcode_running_sum(const Container& input)
     return output;
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】背景工作執行摘要
+// 情境：將工作 owner、狀態與多段耗時組成單行摘要，並允許替換狀態輸出格式。
+// 為何使用本章主題：UserId alias、enum class、override/final、const auto 與 0LL 累加共同表達型別與多型契約。
+// 設計：1. Job 擁有 owner/state/durations；2. Reporter 將狀態格式化；3. accumulate 以 long long 加總後串成字串。
+// 成本：N 為耗時筆數；時間 O(N)，字串結果空間 O(L)，其中 L 為輸出長度。
+// 上線注意：Reporter 必須活過呼叫；仍需限制總和與輸出長度，且不得把敏感 owner 直接寫入未受控 log。
+// -----------------------------------------------------------------------------
 struct Job {
     UserId owner;
     JobState state;
     std::vector<int> durations_ms;
 };
 
-// 實務整合：const auto& 避免複製 Job/string/vector；polymorphic reporter 可替換輸出格式。
 std::string practical_summarize(const Job& job, const Reporter& reporter) {
     // accumulate 的累加型別由 init 決定；0 會讓合法的大型總和在 int 中溢位。
     const auto total = std::accumulate(job.durations_ms.begin(),

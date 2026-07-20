@@ -47,7 +47,15 @@ void basic_demo() {
     assert(owns_all_bytes.size() == 3U && owns_all_bytes[1] == '\0');
 }
 
-// LeetCode 58（Length of Last Word）：建構子將輸入複製進本地資料，接著倒序掃描。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 58. Length of Last Word（最後一個單字的長度）
+// 題目：忽略句尾空格後回傳最後一個單字長度；"fly me to the moon  " 回 4。
+// 為何使用本章主題：演算法接 const string&，本身不觸發建構或複製；它是對照「字串已由
+//       呼叫端建構完成後如何只讀使用」，真正 pointer+length 建構角色在下方 wire 欄位案例。
+// 思路：1. end 從 size 向左略過尾空格；2. begin 再向左走到空格或開頭；3. 回傳兩者差。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 是 text 長度。
+// 易錯點：空字串不可先算 size()-1；一般 API 轉 int 前要確認長度未超過 INT_MAX。
+// -----------------------------------------------------------------------------
 int leetcode_length_of_last_word(const std::string& text) {
     std::size_t end = text.size();
     while (end > 0U && text[end - 1U] == ' ') {
@@ -60,7 +68,15 @@ int leetcode_length_of_last_word(const std::string& text) {
     return static_cast<int>(end - begin);
 }
 
-// 實務：網路封包或檔案欄位不保證 NUL 結尾，必須用 pointer + length。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】固定長度 wire 欄位擁有化
+// 情境：網路封包提供 pointer 與明確 byte 長度，欄位可能含 NUL，結果需在封包 buffer 失效後保存。
+// 為何使用本章主題：string(bytes, length) 精確複製整段並取得 ownership，相較 C 字串建構，
+//       不會在第一個 NUL 截斷，也不把生命週期綁在來源 buffer。
+// 設計：1. null pointer 只接受零長度；2. 有資料時用 pointer+length 建構；3. 按值回傳副本。
+// 成本：時間 O(L)、額外空間 O(L)，L 是欄位 byte 數。
+// 上線注意：assert 不能當正式 null guard；讀取前要驗封包剩餘長度、設定欄位上限並處理配置例外。
+// -----------------------------------------------------------------------------
 std::string practical_copy_wire_field(const char* bytes, const std::size_t length) {
     if (bytes == nullptr) {
         assert(length == 0U);

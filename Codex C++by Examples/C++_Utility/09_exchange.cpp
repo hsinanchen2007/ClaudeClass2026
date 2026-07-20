@@ -16,8 +16,15 @@ struct Node {
     Node* next{};
 };
 
-// LeetCode 206：Reverse Linked List。
-// exchange 先把 current->next 換成 previous，並把舊 next 回傳給 current。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 206. Reverse Linked List（反轉鏈結串列）
+// 題目：原地反轉單向 linked list；1->2->3 要變成 3->2->1，空串列仍回空。
+// 為何使用本章主題：std::exchange 在把 current->next 改指 previous 的同時回傳舊 next，
+// 將「保存下一節點」與「重接指標」合成具明確回傳值的一步。
+// 思路：previous 從 null 開始；逐節點 exchange next；前移 previous/current，結束後回 previous。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 是節點數，所有指標都在原串列上重接。
+// 易錯點：必須保存 exchange 回傳的舊 next 才不會遺失後段；輸入若有 cycle，本迴圈不會終止。
+// -----------------------------------------------------------------------------
 Node* leetcode_reverse_list(Node* head) {
     Node* previous = nullptr;
     Node* current = head;
@@ -30,6 +37,15 @@ Node* leetcode_reverse_list(Node* head) {
     return previous;
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】工作狀態轉移與稽核
+// 情境：排程工作從 queued 轉為 running 時，要更新目前狀態並同時取得舊狀態供 audit log。
+// 為何使用本章主題：std::exchange 一次表達「以 next 取代 state 並回傳 before」；
+// 相較手動先複製再指定，較不容易漏掉其中一步，但它不負責驗證狀態機規則。
+// 設計：Job 保存 id 與 state；transition 以 exchange 更新；呼叫端使用回傳值記錄轉移前狀態。
+// 成本：每次轉移時間與額外空間 O(1)，本例沒有 I/O；真正 audit 寫入成本另計。
+// 上線注意：要拒絕非法轉移並持久化失敗原因；exchange 非 atomic，跨執行緒共享 Job 必須同步。
+// -----------------------------------------------------------------------------
 enum class JobState { queued, running, succeeded, failed };
 
 std::string state_name(JobState state) {
@@ -47,7 +63,6 @@ struct Job {
     JobState state{JobState::queued};
 };
 
-// 實務：回傳舊狀態便於寫 audit log，同時完成狀態更新。
 JobState practical_transition(Job& job, JobState next) {
     return std::exchange(job.state, next);
 }

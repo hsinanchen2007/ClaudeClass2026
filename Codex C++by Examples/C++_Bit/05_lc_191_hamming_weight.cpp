@@ -17,6 +17,14 @@
 #include <iostream>
 #include <vector>
 
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 191. Number of 1 Bits（二進位中 1 的個數）
+// 題目：計算 uint32_t 中 set bit 的數量；0b1011、0xFFFFFFFD、0 分別回傳 3、31、0。
+// 為何使用本章主題：同時展示 Kernighan 的 `n&=n-1` 與 C++20 std::popcount，後者是正式程式優先的具名 API。
+// 思路：1. 手寫版每輪清最低 set bit並計數；2. 標準版直接 popcount；3. 以相同測資核對兩者。
+// 複雜度：K 為 set bit 數；Kernighan 時間 O(K)，std::popcount 對固定寬度可視為 O(1)，空間皆 O(1)。
+// 易錯點：減一必須在 unsigned domain；不要對 signed 負值反覆右移，也不能保證 popcount 一定是一條硬體指令。
+// -----------------------------------------------------------------------------
 int hamming_weight_kernighan(std::uint32_t value)
 {
     int count = 0;
@@ -54,7 +62,14 @@ void leetcode_example()
     std::cout << "[LeetCode 191] examples: 3, 31, 0\n";
 }
 
-// 實務：權限/feature mask 的啟用功能數量，可用於方案限制或 diagnostics。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】功能開關數量與差異診斷
+// 情境：方案限制要計算啟用 feature 數，設定比較也要知道兩份 masks 有幾個 bit 不同。
+// 為何使用本章主題：popcount(mask) 計啟用數；popcount(old^new) 計算 Hamming distance，無需逐旗標分支。
+// 設計：1. 對 enabled mask 呼叫 popcount；2. XOR 兩份設定找差異 bits；3. 再 popcount 差異。
+// 成本：固定 32-bit masks，單次查詢時間與空間皆 O(1)。
+// 上線注意：mask schema 必須版本化並拒絕未知 bits；bit 差異只代表旗標狀態，不代表業務影響等價。
+// -----------------------------------------------------------------------------
 int enabled_feature_count(std::uint32_t feature_mask)
 {
     return std::popcount(feature_mask);

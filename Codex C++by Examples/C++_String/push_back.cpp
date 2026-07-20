@@ -17,7 +17,15 @@ void basic_demo() {
     assert(text == "C++");
 }
 
-// LeetCode 1047（Remove All Adjacent Duplicates In String）。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1047. Remove All Adjacent Duplicates In String（移除相鄰重複字元）
+// 題目：持續刪除相鄰相同的一對字元直到穩定；"abbaca" 最後得到 "ca"。
+// 為何使用本章主題：string 作為 stack，保留字元用 push_back，與尾端相同時改用 pop_back；
+//       預留 N 容量可降低 builder 成長配置。
+// 思路：1. 逐字元掃描；2. stack 非空且尾端相同就刪除；3. 否則 push；4. 回傳 stack。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 是 input 長度。
+// 易錯點：back 前必須判空；刪除可能形成新的相鄰對，stack 模型會自然在後續比較中處理。
+// -----------------------------------------------------------------------------
 std::string leetcode_remove_adjacent_duplicates(const std::string& input) {
     std::string stack;
     stack.reserve(input.size());
@@ -31,7 +39,15 @@ std::string leetcode_remove_adjacent_duplicates(const std::string& input) {
     return stack;
 }
 
-// 實務：CSV 欄位若含 quote，輸出時要把一個 quote 變兩個。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】CSV 欄位雙引號 escaping
+// 情境：把單一欄位包在雙引號中，內容每個 `"` 要輸出成兩個 `"`；Ada "A" 需安全編碼。
+// 為何使用本章主題：push_back 精確加入外層 quote 與每個 byte，遇 quote 再多推一次；
+//       相較反覆 replace，單向 builder 不需移動已輸出的尾段。
+// 設計：1. 推入開 quote；2. 掃欄位，quote 先額外推一次；3. 推原字元；4. 推閉 quote。
+// 成本：時間 O(N)、額外空間 O(N+Q)，N 是欄位長度，Q 是其中 quote 數。
+// 上線注意：完整 CSV 還涉及何時必須加引號、delimiter/newline、編碼與整筆 record 組裝；需限制輸出長度。
+// -----------------------------------------------------------------------------
 std::string practical_quote_csv_field(const std::string& field) {
     std::string result;
     result.reserve(field.size() + 2U);

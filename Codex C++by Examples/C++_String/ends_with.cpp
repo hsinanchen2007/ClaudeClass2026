@@ -21,7 +21,15 @@ void basic_demo() {
     assert(!filename.ends_with(".CSV"));
 }
 
-// LeetCode-style：計算有幾個單字以指定 suffix 結尾。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 2185. Counting Words With a Given Prefix（計算指定前綴單字，本檔改為後綴）
+// 題目：原題計算以 pref 開頭的 words 數量；本教學版把關係改成指定 suffix，
+//       例如 {"running","king","run"} 對 "ing" 回 2，因此不能直接提交原題。
+// 為何使用本章主題：改寫成後綴後，每個 word 以 ends_with 做零配置判斷，直接對照原題的 starts_with。
+// 思路：1. count 歸零；2. 逐一檢查 word 尾端；3. 命中就累加；4. 回傳總數。
+// 複雜度：時間 O(W*K)、額外空間 O(1)，W 是單字數，K 是 suffix 長度。
+// 易錯點：這是後綴教學改寫而非原題答案；空 suffix 對每個 word 都成立，需求若不同要先拒絕。
+// -----------------------------------------------------------------------------
 int leetcode_count_suffix(const std::vector<std::string>& words,
                           const std::string_view suffix) {
     int count = 0;
@@ -31,7 +39,15 @@ int leetcode_count_suffix(const std::vector<std::string>& words,
     return count;
 }
 
-// 實務：只允許明確白名單副檔名；真正安全檢查還要看內容與 MIME。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】上傳檔名副檔名白名單
+// 情境：介面第一層只接受 `.txt`、`.md`、`.csv` 的小寫檔名，其他尾綴先拒絕。
+// 為何使用本章主題：ends_with 直接表達「必須貼齊尾端」，比 rfind 後再核對位置更短且不配置。
+// 設計：1. 對三個明確尾綴做精確比較；2. 任一成立即接受；3. 全部不符便拒絕。
+// 成本：三個固定尾綴下時間與空間 O(1)；一般白名單 E、平均長度 K 時為 O(E*K)。
+// 上線注意：副檔名不是內容驗證；仍須處理大小寫政策、雙重副檔名、MIME/magic bytes、
+//       解碼器漏洞與檔案大小上限。
+// -----------------------------------------------------------------------------
 bool practical_allowed_upload(const std::string_view filename) {
     return filename.ends_with(".txt") || filename.ends_with(".md") ||
            filename.ends_with(".csv");

@@ -38,9 +38,14 @@ void basic_example()
     std::cout << "[基礎] checked size cast=3，floating average=20\n";
 }
 
-// LeetCode 1929：Concatenation of Array。
-// vector index 是 size_t；題目回 vector，不需要把 size 強轉 int。這也是重要觀念：
-// 最安全的 cast 往往是讓 loop/index 型別跟 container API 一致，完全不 cast。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1929. Concatenation of Array（陣列串接自身）
+// 題目：將 nums 接在自己後方；[1,2,1] 回傳 [1,2,1,1,2,1]。
+// 為何使用本章主題：此題刻意讓 index 採 vector 的 size_t，示範最安全的 cast 是維持 API 原型別而完全不轉型。
+// 思路：1. 配置 2N 格 answer；2. 將 nums[i] 寫到 i；3. 同時寫到 i+N。
+// 複雜度：N 為元素數；時間 O(N)，輸出空間 O(N)、額外工作空間 O(1)。
+// 易錯點：nums.size()*2 仍需考慮配置上限；不要為迎合 int loop 而把 size_t 無檢查窄化。
+// -----------------------------------------------------------------------------
 std::vector<int> get_concatenation(const std::vector<int>& nums)
 {
     std::vector<int> answer(nums.size() * 2U);
@@ -57,7 +62,14 @@ void leetcode_1929_example()
     std::cout << "[LeetCode 1929] size_t indexing 不需 cast\n";
 }
 
-// 實務：percentage 計算若先做 integer division，之後 cast 已來不及救回精度。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】工作完成百分比計算
+// 情境：以 done/total 筆數計算 0 到 100 的完成率，total=0 時依產品契約回 0。
+// 為何使用本章主題：在除法前 static_cast 成 double 才能保留小數；除完再 cast 已無法救回整數除法遺失資訊。
+// 設計：1. 先處理 total==0；2. 將 done 轉 double 並乘 100；3. 再除以 double total。
+// 成本：固定次數數值運算，時間與空間皆 O(1)。
+// 上線注意：要明訂 done>total、極大 size_t 的精度與 total=0 語意；cast 不會自動驗業務範圍。
+// -----------------------------------------------------------------------------
 double completion_percentage(std::size_t done, std::size_t total)
 {
     if (total == 0U) return 0.0;

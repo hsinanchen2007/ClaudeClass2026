@@ -44,8 +44,14 @@ void basic_example()
     std::cout << "[基礎] 最後 strong owner 消失後 weak_ptr expired\n";
 }
 
-// LeetCode 133：Clone Graph。
-// owners vector 擁有 nodes；neighbor edges 用 weak_ptr，保留 graph cycle 卻不造成 leak。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 133. Clone Graph（複製圖）
+// 題目：深複製連通無向圖，包含 cycle；例如節點 1、2 互連時，clone 也互連但地址全不同。
+// 為何使用本章主題：本例改以 shared owners 加 weak edges 建模 cycle；clones map 同時防重複遞迴並持有新節點。
+// 思路：null 直接回；已複製就回 map 值；先建立並登記 clone；再 lock 每個鄰點並遞迴接邊。
+// 複雜度：時間 O(V+E)、額外空間 O(V)，V/E 為可達節點與邊數，另有遞迴 stack O(V)。
+// 易錯點：必須在走 neighbors 前登記；weak edge 需外部 owner 保活；clones map 若銷毀，只回 root 不足以擁有其餘節點。
+// -----------------------------------------------------------------------------
 struct GraphNode {
     explicit GraphNode(int node_value) : value(node_value) {}
     int value;
@@ -86,7 +92,14 @@ void leetcode_133_example()
     std::cout << "[LeetCode 133] cyclic graph deep clone 完成且 edges 不擁有\n";
 }
 
-// 實務案例：多個 inference request 共享 immutable model weights。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】多個推論請求共享唯讀模型權重
+// 情境：兩個 InferenceRequest 同時使用 llama 模型，權重昂貴且應只載入一份，請求結束順序不固定。
+// 為何使用本章主題：shared_ptr<const Model> 表達真正共同 lifetime，const pointee 阻止請求意外修改模型。
+// 設計：make_shared 建模型與 control block；每個 request copy 一個 owner；run 透過共享 owner 讀 name。
+// 成本：每次 owner copy/reset 為常數 reference-count 成本，模型空間一份；run 字串配置 O(M)。
+// 上線注意：control block thread-safe 不等於模型內部可變 cache 安全；避免 ownership cycle，熱換模型需版本與同步策略。
+// -----------------------------------------------------------------------------
 class InferenceRequest {
 public:
     explicit InferenceRequest(std::shared_ptr<const Model> model) : model_(std::move(model)) {}

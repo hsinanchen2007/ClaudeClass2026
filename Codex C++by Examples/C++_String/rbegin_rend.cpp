@@ -19,7 +19,15 @@ void basic_demo() {
     assert(reversed == "cba");
 }
 
-// LeetCode 917（Reverse Only Letters）的雙指標版本。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 917. Reverse Only Letters（只反轉字母）
+// 題目：反轉所有英文字母的位置，非字母維持原索引；例如 `a-bC-dEf-ghIj` 變 `j-Ih-gfE-dCba`。
+// 為何使用本章主題：正向 iterator 找左側字母，reverse_iterator 找右側字母；base()-1
+//       用來判斷兩者是否尚未交錯，無需把右端轉成 size 索引。
+// 思路：1. 左右 iterator 由兩端開始；2. 各自跳過非 ASCII 字母；3. 交換字母並向內前進。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 是 text 長度，空間來自按值輸入副本。
+// 易錯點：reverse_iterator::base() 指向目前元素後一格；不可對 rend 或無效位置盲目做 base()-1。
+// -----------------------------------------------------------------------------
 bool is_ascii_letter(const char ch) {
     return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
 }
@@ -41,7 +49,15 @@ std::string leetcode_reverse_only_letters(std::string text) {
     return text;
 }
 
-// 實務：從右側找副檔名；找到的 reverse iterator 對應正向 iterator 要用 base()-1。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】由右側擷取副檔名
+// 情境：從 `archive.tar.gz` 取得 `gz`；沒有點或檔名以點結尾時回空。
+// 為何使用本章主題：rbegin/rend 讓 std::find 從尾端找第一個點；命中時 dot.base()
+//       正好指向點後第一字元，可直接建構副檔名。
+// 設計：1. 反向搜尋 `.`；2. 未找到或點在最後就回空；3. 由 base() 複製到 end。
+// 成本：搜尋時間 O(N)、額外空間 O(E)，N 是 filename 長度，E 是副檔名長度。
+// 上線注意：hidden file、多重副檔名、目錄中的點與大小寫政策未處理；正式路徑應用 filesystem。
+// -----------------------------------------------------------------------------
 std::string practical_extension_of(const std::string& filename) {
     const auto dot = std::find(filename.rbegin(), filename.rend(), '.');
     if (dot == filename.rend() || dot == filename.rbegin()) {

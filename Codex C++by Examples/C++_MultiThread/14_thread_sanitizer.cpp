@@ -33,11 +33,14 @@ void basic_demo()
     assert(counter == 2'000);
 }
 
-// ----------------------------------------------------------------------------
-// LeetCode 217：Contains Duplicate（安全的平行插入）
-// ----------------------------------------------------------------------------
-// 共享 unordered_set 的每次操作都鎖住同一 mutex；即使插不同 bucket，rehash 仍修改
-// 全域結構，所以不能無鎖併發 insert。結果 atomic 不是必要，因也在同一鎖內。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 217. Contains Duplicate（存在重複元素）
+// 題目：若陣列任兩個不同 index 的值相同就回 true；例如 [1,2,3,1] 為 true，[1,2,3,4] 為 false。
+// 為何使用本章主題：兩段平行掃描共享 unordered_set，所有 insert 與 duplicate flag 都由同一 mutex 保護，形成可由 TSan 驗證的 race-free 路徑。
+// 思路：1. 切成兩段。2. 每個值在鎖內插入 set。3. insert 失敗就設 duplicate。4. join 後回傳旗標。
+// 複雜度：平均總時間 O(N)、空間 O(N)，但每個元素都競爭同一鎖，最壞 hash 行為可退化。
+// 易錯點：unordered_set 即使不同 bucket 也可能 rehash 全域結構，不能無鎖 insert；TSan 無報告也只涵蓋本次執行路徑。
+// -----------------------------------------------------------------------------
 bool contains_duplicate(const std::vector<int>& values)
 {
     std::unordered_set<int> seen;
@@ -65,9 +68,14 @@ void leetcode_demo()
     assert(!contains_duplicate({1, 2, 3, 4}));
 }
 
-// ----------------------------------------------------------------------------
-// 實務：用 message passing 避免共享 vector push_back
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【日常實務範例】Thread-local 批次結果的主執行緒合併
+// 情境：兩個 worker 分別產生 [1,2] 與 [3,4]，不能同時向同一 vector push_back，最後需得到穩定串接結果。
+// 為何使用本章主題：每個 worker 唯一擁有自己的 vector，join 後才由 main transfer/merge，比共享容器每次加鎖簡單且容易通過 TSan。
+// 設計：1. 準備兩個獨立輸出。2. worker 各自填值。3. join 等待 ownership 回到 main。4. main 單執行緒 insert 合併。
+// 成本：產生與合併總時間 O(N)，額外空間 O(N)，join 後 insert 可能配置與複製元素。
+// 上線注意：worker 例外不可逃出 thread entry；大型結果可預先 reserve 或 move，且所有 local buffers 必須活到 join。
+// -----------------------------------------------------------------------------
 void practical_demo()
 {
     std::vector<int> left;

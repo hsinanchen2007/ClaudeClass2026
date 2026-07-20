@@ -18,7 +18,15 @@ void basic_demo() {
     assert(text == "Hello Ada");
 }
 
-// LeetCode 1108（Defanging an IP Address）：由左至右替換每個點。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1108. Defanging an IP Address（IP 位址去敏化）
+// 題目：將合法 IPv4 中每個點換成 `[.]`；例如 255.100.50.0 得 255[.]100[.]50[.]0。
+// 為何使用本章主題：replace(position,1,"[.]") 一次表達刪一字元、插三字元；修改後游標
+//       跳過新片段，避免再次匹配剛插入內容中的點。
+// 思路：1. 從 position 0 找點；2. 替換該一字元；3. 游標加 3；4. 到 npos 為止。
+// 複雜度：IPv4 固定三次替換時時間 O(N)、額外空間 O(N)；一般 P 個點的中段搬移可達 O(P*N)。
+// 易錯點：替換後不能只前進 1；一般輸入應先驗 IPv4，且每次 replace 可能使舊 iterator 失效。
+// -----------------------------------------------------------------------------
 std::string leetcode_defang_ip(std::string address) {
     std::size_t position = 0U;
     while ((position = address.find('.', position)) != std::string::npos) {
@@ -28,7 +36,15 @@ std::string leetcode_defang_ip(std::string address) {
     return address;
 }
 
-// 實務：替換所有模板 token；空 token 必須拒絕，否則迴圈不前進。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】非遞迴模板 token 替換
+// 情境：把文字中的每個 `{{name}}` 替換成值；新插入 value 即使含相同 token 也不再遞迴展開。
+// 為何使用本章主題：replace 可在找到位置後一次調整長度與內容；相較 erase+insert 分兩步，
+//       游標與意圖更集中。
+// 設計：1. 空 token 原樣返回；2. 從游標 find；3. replace 匹配；4. 依 value.size 跳過新內容。
+// 成本：最壞時間 O(R*N)、額外空間 O(N+growth)，R 是匹配數，N 是動態文字長度，因中段需搬移。
+// 上線注意：必須設定最大輸出與匹配次數，並明定遞迴語意；模板替換不會自動做 HTML/SQL escaping。
+// -----------------------------------------------------------------------------
 std::string practical_replace_all(std::string text, const std::string& token,
                         const std::string& value) {
     if (token.empty()) return text;

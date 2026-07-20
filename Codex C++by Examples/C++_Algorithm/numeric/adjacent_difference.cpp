@@ -14,7 +14,17 @@
 #include <numeric>
 #include <vector>
 
-// LeetCode 1109：Corporate Flight Bookings 的差分陣列核心。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1109. Corporate Flight Bookings（航班預訂統計）
+// 題目：每筆 [first,last,seats] 對閉區間航班增加 seats，回每班總座位；例如題中三筆
+// 預訂與 5 班航班得到 [10,55,45,25,25]。
+// 為何使用本章主題：本題採「相鄰差分」資料模型，但函式沒有直接呼叫
+// adjacent_difference；它手寫區間端點更新，再用反操作 partial_sum 還原每班值。
+// 思路：1. 建 F+1 格 difference；2. 在 first-1 加 seats；3. 在 last 扣 seats；
+// 4. 對前 F 格做 prefix sum。
+// 複雜度：時間 O(B+F)、額外空間 O(F)，B 為 booking 數、F 為 flight_count。
+// 易錯點：題目索引是 1-based；F+1 哨兵才能安全在 last 扣回；輸入三欄與範圍需先驗證。
+// -----------------------------------------------------------------------------
 std::vector<int> leetcode_flight_bookings(
     const std::vector<std::vector<int>>& bookings, int flight_count) {
     std::vector<int> difference(static_cast<std::size_t>(flight_count + 1), 0);
@@ -31,7 +41,16 @@ std::vector<int> leetcode_flight_bookings(
     return answer;
 }
 
-// 實務：累積電表讀數轉為每小時用量，並保留負值供上層判定感測器重置。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】累積電表轉每小時用量
+// 情境：meter 保存逐時累積讀數；報表要轉成相鄰時段增量，第一筆只是基準而應輸出 0，
+// 負差值保留給上層判斷重置或倒退。
+// 為何使用本章主題：adjacent_difference 直接計算 current-previous，正好把累積序列
+// 轉成變化量，無需手動保存上一筆。
+// 設計：1. 建立等長 usage；2. 對 meter 做 adjacent_difference；3. 非空時將第一項覆寫為 0。
+// 成本：時間 O(N)、額外空間 O(N)，N 為讀值數。
+// 上線注意：讀值可能溢位、重置或時間間隔不等；負值不能在未記錄前就靜默 clamp。
+// -----------------------------------------------------------------------------
 std::vector<int> practical_hourly_usage(const std::vector<int>& meter) {
     std::vector<int> usage(meter.size());
     std::adjacent_difference(meter.begin(), meter.end(), usage.begin());

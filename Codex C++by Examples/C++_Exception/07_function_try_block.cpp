@@ -30,6 +30,14 @@ private:
     std::size_t value_ = 0U;
 };
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】建構失敗的指標計數
+// 情境：Buffer 的 size member 驗證或 vector 配置失敗時，要遞增外部 failures metric，同時保留原始 exception 給呼叫端。
+// 為何使用本章主題：constructor function-try-block 能涵蓋 initializer list，普通 constructor body 內的 try 無法捕捉先發生的 member failure。
+// 設計：1. 先建 PositiveSize。2. 依驗證後大小建 vector。3. 任一 initializer 失敗便進 handler。4. 只更新外部 counter 並 bare rethrow。
+// 成本：成功路徑仍由 N 個 int 的 vector 配置/初始化主導；失敗另有已建 member 解構與 unwinding 成本。
+// 上線注意：handler 中 object 尚未完整建成，不可讀 members 或復活 this；metric 更新本身也應不拋且具備併發安全。
+// -----------------------------------------------------------------------------
 class Buffer {
 public:
     Buffer(int size, int& failures)
@@ -60,8 +68,14 @@ void basic_example()
     std::cout << "[基礎] initializer failure logged then original error rethrown\n";
 }
 
-// LeetCode 1656：Ordered Stream。validated_size 在 vector initializer 前驗證 n；
-// function-try-block 可為 allocation/validation failure 增加 construction counter/context。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1656. Design an Ordered Stream（設計有序流）
+// 題目：以 1-based id 插入字串，每次回傳從目前 pointer 起連續可用的 chunk；先插 id=2 無輸出，再插 id=1 回 [aa,bb]。
+// 為何使用本章主題：validated_size 在 initializer 前驗證 n，function-try-block 讓建構驗證或配置失敗可計數後原樣重拋；這是教學擴充。
+// 思路：1. 配置 n+1 的 1-based vector。2. insert 將值放到 id。3. 從 next 收集連續非空字串。4. 同步推進 next。
+// 複雜度：建構時間/空間 O(N)；所有 insert 合計輸出每項一次，單次另加回傳 chunk 大小 O(K)。
+// 易錯點：id 必須在 1..N 且每 id 只插一次；本實作收集結果配置失敗時 next_ 可能已前進，未提供 strong guarantee。
+// -----------------------------------------------------------------------------
 class OrderedStream {
 public:
     OrderedStream(int count, int& failures)
@@ -105,7 +119,6 @@ void leetcode_1656_example()
     std::cout << "[LeetCode 1656] valid constructor and ordered chunk pass\n";
 }
 
-// 實務：真正需要 translation 時，catch 原 error 後 throw_with_nested（下一課）。
 void practical_example()
 {
     int failures = 0;

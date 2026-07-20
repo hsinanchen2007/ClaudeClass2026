@@ -22,8 +22,15 @@ std::any basic_dynamic_value(bool use_text) {
     return 42;
 }
 
-// LeetCode 1 的動態輸入版本：先驗證每個 any 確實是 int，再執行 Two Sum。
-// 正式 LeetCode 不會用 any；此處是為了展示 runtime type check。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1. Two Sum（兩數之和）
+// 題目：在整數陣列中找兩個相異索引，使其值相加為 target；此例 [2,"skip",7,11]、9 得 [0,2]。
+// 為何使用本章主題：本函式刻意把輸入改為 vector<any>，以 pointer any_cast 略過非 int；
+// 正式題目只有 int，不應使用 any，這是展示執行期型別檢查代價的教學改寫。
+// 思路：逐項嘗試 any_cast<int>；成功才查互補值；命中回兩個原始索引，否則記錄目前整數。
+// 複雜度：平均時間 O(N)、額外空間 O(K)，N 是 values 數量、K 是其中 int 的數量。
+// 易錯點：型別必須精確是 int，long 不會自動轉換；非 int 被靜默略過，且減法仍可能溢位。
+// -----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t>
 leetcode_two_sum_any(const std::vector<std::any>& values, int target) {
     std::unordered_map<int, std::size_t> seen;
@@ -40,7 +47,15 @@ leetcode_two_sum_any(const std::vector<std::any>& values, int target) {
     return {values.size(), values.size()};
 }
 
-// 【實務情境】外掛 metadata 的欄位型別開放，邊界層集中做 any_cast 驗證。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】外掛 metadata 顯示邊界
+// 情境：外掛可附加未知欄位，顯示層只支援 int、string、bool，並區分缺少與不支援型別。
+// 為何使用本章主題：any 容許外掛在不修改中央型別清單下加入值；相較 variant 更開放，
+// 但所有 any_cast 集中在邊界函式，避免執行期型別契約散落整個系統。
+// 設計：先查 key；依序用 pointer any_cast 探測三種支援型別；無匹配則回 unsupported。
+// 成本：平均查找 O(1)，三次以內型別探測 O(1)，字串輸出成本 O(L) 且 any 可能使用 heap。
+// 上線注意：要限制 metadata 大小與允許型別，避免敏感欄位外洩；錯誤最好回結構化狀態而非字串。
+// -----------------------------------------------------------------------------
 using Metadata = std::unordered_map<std::string, std::any>;
 
 std::string practical_render_metadata(const Metadata& metadata, const std::string& key) {

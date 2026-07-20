@@ -14,12 +14,30 @@
 #include <string>
 #include <vector>
 
-// LeetCode 31：Next Permutation；標準函式就是題意，原地 O(1) 額外空間。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 31. Next Permutation（下一個排列）
+// 題目：原地產生 nums 的下一個字典序排列；若已是最大排列則改成最小排列，例如
+// [1,1,5] 變 [1,5,1]。
+// 為何使用本章主題：std::next_permutation 的完整契約就是題意，包含 wrap-around，
+// 可直接取代手寫 pivot/suffix 操作。
+// 思路：1. 呼叫 next_permutation；2. 忽略 bool，因題目只要求修改後陣列且 false 時也已 wrap。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 為 nums 的元素數。
+// 易錯點：回 false 不代表未修改；最大排列會被重排為最小排列，重複值也由字典序正確處理。
+// -----------------------------------------------------------------------------
 void leetcode_next_permutation(std::vector<int>& nums) {
     static_cast<void>(std::next_permutation(nums.begin(), nums.end()));
 }
 
-// 實務：列出小型 feature flags 的所有啟用順序，用於 deterministic 測試。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】小型 Feature Flag 順序窮舉測試
+// 情境：整合測試要列出少量 flags 的所有不同啟用順序，輸出必須 deterministic，重複
+// flag 不可造成重複排列。
+// 為何使用本章主題：先排序到最小排列，再 do/while next_permutation，可依字典序列出
+// 所有 unique permutations，不需額外 set 去重。
+// 設計：1. 排序 flags；2. 先記錄目前排列；3. 反覆產生下一排列直到 wrap 回 false。
+// 成本：時間與空間 O(P*N)，N 為字元數、P=N!/prod(count!) 為不同排列數。
+// 上線注意：排列數階乘爆炸，必須限制 N；若只需逐一測試應串流處理，避免 materialize 全部結果。
+// -----------------------------------------------------------------------------
 std::vector<std::string> practical_all_orders(std::string flags) {
     std::sort(flags.begin(), flags.end());
     std::vector<std::string> orders;

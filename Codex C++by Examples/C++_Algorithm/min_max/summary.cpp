@@ -69,7 +69,17 @@ struct Statistics {
     std::size_t maximum_index;
 };
 
-// 實務整合：單趟極值後產生監控摘要；空輸入用 optional 表達，而非 magic value。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】監控樣本極值與跨度摘要
+// 情境：整數監控樣本可能為空；非空時要回最小/最大值、跨度及各自索引，包含
+// INT_MIN/INT_MAX 也不能在相減時溢位。
+// 為何使用本章主題：minmax_element 單趟取得兩個 iterator，既能讀值也能算索引；
+// optional 明確表達空輸入，比 {0,0} sentinel 安全。
+// 設計：1. 空樣本回 nullopt；2. 找第一個 minimum 與最後一個 maximum；3. 先升格
+// 再算 spread；4. 封裝值與 distance 索引。
+// 成本：時間 O(N)、額外空間 O(1)，N 為樣本數。
+// 上線注意：vector 必須在計算 iterator 距離前保持不變；若改收浮點資料要先定義 NaN policy。
+// -----------------------------------------------------------------------------
 std::optional<Statistics> practical_summarize(
     const std::vector<int>& samples) {
     if (samples.empty()) {
@@ -86,7 +96,16 @@ std::optional<Statistics> practical_summarize(
                       static_cast<std::size_t>(std::distance(samples.begin(), high))};
 }
 
-// LeetCode 121：running min + running max-result；寬回傳型別也涵蓋題目約束外的極值。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 121. Best Time to Buy and Sell Stock（買賣股票的最佳時機）
+// 題目：給每日 prices，最多完成一次先買後賣交易，回最大非負利潤；例如
+// [7,1,5,3,6,4] 回 5。
+// 為何使用本章主題：std::min 維持 running minimum，std::max 維持截至目前的最佳
+// 價差；long long 回傳也讓教材測試可涵蓋題目約束外的 int 極值。
+// 思路：1. 空輸入回 0；2. 更新目前最低價；3. 升格後計算當日候選利潤；4. 更新 profit。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 為價格筆數。
+// 易錯點：相減前兩個運算元都要升格；全程下跌應回 0；最低價只能來自當日或更早。
+// -----------------------------------------------------------------------------
 long long leetcode_stock_profit(const std::vector<int>& prices) {
     if (prices.empty()) {
         return 0;

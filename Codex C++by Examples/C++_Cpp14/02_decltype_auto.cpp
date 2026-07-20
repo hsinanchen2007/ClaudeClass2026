@@ -41,7 +41,14 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 303：Range Sum Query - Immutable。prefix 建構 O(n)，查詢 O(1)。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 303. Range Sum Query - Immutable（不可變陣列區間和）
+// 題目：對固定陣列回答多次 [left,right] 總和查詢；[-2,0,3,-5,2,-1] 的 [2,5] 為 -1。
+// 為何使用本章主題：此 immutable API 刻意不用 decltype(auto)，而明確回 long long 值；保留 prefix_ reference 反而會破壞封裝。
+// 思路：1. 建立多一格的前綴和；2. prefix[i+1] 累加 nums[i]；3. 用兩個前綴值相減回答區間。
+// 複雜度：N 為元素數；建構時間 O(N)、每次查詢 O(1)，額外空間 O(N)。
+// 易錯點：right 要加一；at 會檢查越界，但程式仍依賴 left<=right，且總和須避免 int 溢位。
+// -----------------------------------------------------------------------------
 class NumArray {
 public:
     explicit NumArray(const std::vector<int>& nums) : prefix_(nums.size() + 1U, 0) {
@@ -65,8 +72,15 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】可寫設定 accessor：decltype(auto) 保留 map::at 回傳的 std::string&。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】可寫設定值存取器
+// 情境：管理介面要依 key 取得既有設定字串，並透過回傳值直接更新 map 中的內容。
+// 為何使用本章主題：decltype(auto) 套用 map::at 的精確型別，保留 std::string&；普通 auto 只會回傳副本。
+// 設計：1. 接收可寫 Configuration；2. 使用 at 查既有 key；3. 將括號化 lvalue 原樣回傳給呼叫端。
+// 成本：M 為設定數；std::map 查詢時間 O(log M)、額外空間 O(1)。
+// 上線注意：key 不存在會丟 out_of_range；reference 受 config 與元素生命週期約束，erase 後不可再用。
+// -----------------------------------------------------------------------------
 struct Configuration {
     std::map<std::string, std::string> values;
 };

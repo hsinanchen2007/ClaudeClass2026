@@ -17,13 +17,32 @@
 #include <string>
 #include <vector>
 
-// LeetCode 344：用兩個不重疊半區與 reverse_iterator 反轉字串。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 344. Reverse String（反轉字串）
+// 題目：原地反轉字元陣列並使用 O(1) 額外空間；例如 hello 變成 olleh。
+// 為何使用本章主題：這是教學改寫，將前半與由尾端開始的等長反向範圍逐項交換；
+// 標準 reverse 更直接，但本版專門展示 swap_ranges 的非重疊契約。
+// 思路：1. 計算 floor(N/2)；2. 前半使用正向 iterator；3. 後半由 rbegin 反向走；
+// 4. 交換兩個半區。
+// 複雜度：時間 O(N)、額外空間 O(1)，實際交換 floor(N/2) 對字元。
+// 易錯點：兩個底層範圍不可重疊；奇數長度的中央字元必須留在兩範圍之外。
+// -----------------------------------------------------------------------------
 void leetcode_reverse_with_swap_ranges(std::vector<char>& text) {
     const auto half = static_cast<std::ptrdiff_t>(text.size() / 2U);
     std::swap_ranges(text.begin(), text.begin() + half, text.rbegin());
 }
 
-// 實務：blue/green buffer 同時切換前 count 個 slot，剩餘資料保留。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】Blue/Green 前段 Slot 切換
+// 情境：blue 與 green 各有相同型別的部署 slot，只交換前 count 個啟用位置，後續
+// staging 資料保持原樣。
+// 為何使用本章主題：swap_ranges 可精確交換兩個等長子範圍，比逐項手寫 swap 更
+// 清楚，且不同 vector 保證底層區間不重疊。
+// 設計：1. 驗證 count 不超過任一容器；2. 將 count 轉 difference type；3. 交換
+// blue 前段與 green 前段並核對回傳尾端。
+// 成本：時間 O(C)、額外空間 O(1)，C=count；每項成本取決於 string swap。
+// 上線注意：assert 在 release 不提供輸入驗證；元素 swap 若會丟例外，可能只完成部分切換。
+// -----------------------------------------------------------------------------
 void practical_swap_active_slots(std::vector<std::string>& blue,
                                  std::vector<std::string>& green,
                                  std::size_t count) {

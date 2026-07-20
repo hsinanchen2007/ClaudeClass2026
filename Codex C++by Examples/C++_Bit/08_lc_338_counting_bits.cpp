@@ -16,6 +16,14 @@
 #include <stdexcept>
 #include <vector>
 
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 338. Counting Bits（計算 0 到 n 的位元數）
+// 題目：回傳 0..n 每個整數的 set bit 數；n=5 得 [0,1,1,2,1,2]。
+// 為何使用本章主題：`bits[x]=bits[x>>1]+(x&1)` 以右移與最低 bit 重用較小索引的 DP 答案。
+// 思路：1. 建立 n+1 格並令 0 的答案為 0；2. 從 1 遞增；3. 查 x>>1 並加 x&1。
+// 複雜度：N 為上限；時間 O(N)，輸出與額外 DP 儲存 O(N)。
+// 易錯點：n<0 要在轉 size_t 前拒絕；結果本來就有 N+1 格，不能宣稱 O(1) 空間。
+// -----------------------------------------------------------------------------
 std::vector<int> count_bits(int n)
 {
     if (n < 0) throw std::invalid_argument("n must be nonnegative");
@@ -45,7 +53,14 @@ void leetcode_example()
     std::cout << "[LeetCode 338] n=5 -> 0,1,1,2,1,2\n";
 }
 
-// 實務：預建 byte popcount lookup table，之後大量資料可 O(1) 查每 byte 的 1 數。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】byte popcount 查詢表預建
+// 情境：大量逐 byte 診斷希望以 table[byte] 直接取得 1 的數量，啟動時建立 256 格表。
+// 為何使用本章主題：Counting Bits recurrence 一次產出 0..255，之後每個 byte 查詢只需索引。
+// 設計：1. 呼叫 count_bits(255)；2. 保存 256 個結果；3. 以 unsigned byte 值當索引。
+// 成本：建表時間與空間 O(256)，之後每次查詢 O(1)。
+// 上線注意：現代 CPU 的 std::popcount 可能更快；需依實際資料密度、cache 與平台 benchmark。
+// -----------------------------------------------------------------------------
 std::vector<int> make_byte_popcount_table()
 {
     return count_bits(255);

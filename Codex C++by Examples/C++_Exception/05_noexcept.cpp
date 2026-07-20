@@ -43,8 +43,14 @@ void basic_example()
     std::cout << "[基礎] Buffer move/swap/size have checked noexcept contracts\n";
 }
 
-// LeetCode 155：MinStack。查詢在題目保證 non-empty 時可做 O(1)，但 vector::push_back
-// 可能配置失敗，不能標 noexcept；pop/top 若自行呼叫在空 stack 是前置條件違反。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 155. Min Stack（最小堆疊）
+// 題目：支援 push、pop、top、getMin，且所有操作皆 O(1)；範例 push -2,0,-3 後最小值 -3，pop 後為 -2。
+// 為何使用本章主題：查詢與 pop 在原題非空前置條件下不拋而標 noexcept；push 可能配置記憶體，不能做同一承諾。
+// 思路：1. values 保存原值。2. minimums 同步保存截至該層的最小值。3. push 同時追加兩者。4. pop 同時移除。
+// 複雜度：每個操作時間 O(1)，N 個元素需額外 O(N) minimums 空間。
+// 易錯點：空 stack 呼叫 back/pop 是前置條件違反；第二個 push_back 若丟例外可能讓兩個 vector 失步，正式版需 rollback 或單一節點。
+// -----------------------------------------------------------------------------
 class MinStack {
 public:
     void push(int value)
@@ -70,7 +76,14 @@ void leetcode_155_example()
     std::cout << "[LeetCode 155] only truly nonthrowing/preconditioned ops marked noexcept\n";
 }
 
-// 實務：free function swap 轉送 member noexcept，讓 standard algorithms 使用。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】大型 Buffer 的 ADL swap
+// 情境：generic algorithm 要交換大小不同的 Buffer，應只交換 vector ownership，不複製 100 個元素，並保留不拋保證。
+// 為何使用本章主題：namespace 內 free swap 轉送 noexcept member swap，讓 `using std::swap; swap(a,b)` 經 ADL 選到專用實作。
+// 設計：1. 呼叫端先引入 std::swap。2. ADL 找到 Buffer overload。3. overload 呼叫 member swap。4. 底層 vector 交換擁有權。
+// 成本：一般 allocator 條件下交換時間 O(1)、空間 O(1)，不搬移元素內容。
+// 上線注意：free/member 的 noexcept 必須真實反映成員與 allocator 契約；若底層可能丟，錯標 noexcept 會直接 terminate。
+// -----------------------------------------------------------------------------
 void swap(Buffer& left, Buffer& right) noexcept { left.swap(right); }
 
 void practical_example()

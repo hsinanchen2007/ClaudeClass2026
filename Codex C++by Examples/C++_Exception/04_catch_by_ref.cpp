@@ -45,9 +45,14 @@ void basic_example()
     std::cout << "[基礎] catch const& + throw; preserves ConfigError fields\n";
 }
 
-// LeetCode 8：String to Integer。題目要求只讀合法 numeric prefix 並 clamp；直接 stoi 再
-// catch 不能完整表達 parse position，也容易在前導空白負溢位時判錯 sign，因此正式解法
-// 在 overflow 發生前比較界線。Exception 教學留在上方 ConfigError 與下方 application boundary。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 8. String to Integer (atoi)（字串轉整數）
+// 題目：略過前導空白、讀可選正負號與連續數字，無數字回 0，超出 int 時 clamp；例如 "   -42" 得 -42。
+// 為何使用本章主題：這個最佳解不靠例外；它在運算前檢查界線，因直接 stoi/catch 無法正確取代 numeric-prefix 與 clamp 契約。
+// 思路：1. 跳過空白並讀 sign。2. 設定正負各自 magnitude 上限。3. 逐位在乘 10 前檢查 overflow。4. 套 sign 或回邊界。
+// 複雜度：掃描字串長度 N 的時間 O(N)、額外空間 O(1)。
+// 易錯點：INT_MIN 的絕對值比 INT_MAX 大 1；遇第一個非數字就停止，且 overflow 檢查必須發生在有號運算之前。
+// -----------------------------------------------------------------------------
 int my_atoi(const std::string& text)
 {
     std::size_t index = 0U;
@@ -88,7 +93,14 @@ void leetcode_8_example()
     std::cout << "[LeetCode 8] prefix parsing、sign 與雙向 clamp 完整驗證\n";
 }
 
-// 實務：application boundary 可 catch base std::exception 做最後 logging，但不可假成功。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】應用程式啟動設定的最後防線
+// 情境：設定載入拋出帶 key 的 ConfigError，最外層命令邊界要記錄失敗並回傳非零 exit code 2。
+// 為何使用本章主題：中間層以 bare throw 保留 dynamic type；最後邊界以 const std::exception& 接住標準階層，避免 value slicing。
+// 設計：1. 呼叫 intermediate_layer。2. 成功回 0。3. 邊界按 const reference 捕捉。4. 記錄 what 並回 2。
+// 成本：正常路徑只有呼叫成本；失敗路徑包含輸出 I/O 與跨 stack frame unwinding。
+// 上線注意：日誌不可洩漏 secret；handler 內 reference 不能保存到 scope 外，且未知非標準例外需另有一致的終止政策。
+// -----------------------------------------------------------------------------
 int application_boundary()
 {
     try { intermediate_layer(); }

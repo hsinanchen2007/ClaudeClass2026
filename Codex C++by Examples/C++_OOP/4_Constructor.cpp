@@ -50,7 +50,14 @@ void basic_example()
     std::cout << "[基礎] Port{443} 合法，70000 在 constructor 被拒\n";
 }
 
-// LeetCode 1656：Ordered Stream。constructor 依 n 配好 1-based 儲存空間。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1656. Design an Ordered Stream（設計有序串流）
+// 題目：依 id 插入字串，每次回傳從目前 ptr 起連續已填值；例如先插 3 等待，再插 1、2 依序輸出 1 與 2,3。
+// 為何使用本章主題：constructor 一次配置 n+1 個 1-based slots 並將 next_ 設為 1，物件出生即符合題目 invariant。
+// 思路：驗證 n>0；insert 把值放入 id；從 next_ 收集連續非空 slots；每輸出一筆就推進 next_。
+// 複雜度：建構 O(N) 空間與初始化；每次插入攤銷 O(K)，K 為本次輸出筆數，所有值總共輸出一次。
+// 易錯點：id 必須在 1..N 且不可重複；本實作用空字串當未填 sentinel，因此輸入值不得為空。
+// -----------------------------------------------------------------------------
 class OrderedStream {
 public:
     explicit OrderedStream(int size)
@@ -95,7 +102,14 @@ void leetcode_1656_example()
     std::cout << "[LeetCode 1656] constructor 預配置 5 個 stream slots\n";
 }
 
-// 工作案例：ConnectionOptions 沒有「未設 host/port」的半成品狀態。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】完整建構連線端點設定
+// 情境：連線設定必須同時有非空 host 與 1..65535 的 Port，建立後即可直接產生 endpoint。
+// 為何使用本章主題：constructor 直接接收已驗證 Port 並驗 host，避免 default construct 後忘記 init 的半成品。
+// 設計：先由 Port constructor 驗範圍；ConnectionOptions move host 並拒絕空值；endpoint 組成 host:port。
+// 成本：建構與 endpoint 皆 O(H)，空間 O(H)，H 為 host 字串長度。
+// 上線注意：還需驗證 DNS/IP、Unicode 與 host 長度；endpoint 回傳新字串會配置，密集呼叫可考慮快取。
+// -----------------------------------------------------------------------------
 class ConnectionOptions {
 public:
     ConnectionOptions(std::string host, Port port)

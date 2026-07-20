@@ -40,7 +40,14 @@ void basic_example()
     std::cout << "[基礎] FILE* will fclose on every scope-exit path\n";
 }
 
-// LeetCode 705：Design HashSet。用 calloc 配 table、custom free deleter 自動釋放。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 705. Design HashSet（設計雜湊集合）
+// 題目：不使用內建 hash set 實作 add/remove/contains；例如加入 1、2 後包含 1，移除 2 後不包含 2。
+// 為何使用本章主題：本例以 calloc 直接位址表簡化題目，custom FreeDeleter 確保 allocation 與 free 正確配對。
+// 思路：constructor calloc 並驗失敗；checked 驗 key；三操作讀寫 byte slot；owner 解構自動呼叫 free。
+// 複雜度：初始化/空間 O(R)，每次操作 O(1)，R 為 key range 1,000,001。
+// 易錯點：這不是一般 collision hash table；calloc 必須配 free；deleter 型別要接受實際 pointer 且不得拋例外。
+// -----------------------------------------------------------------------------
 struct FreeDeleter {
     void operator()(void* pointer) const noexcept { std::free(pointer); }
 };
@@ -75,7 +82,14 @@ void leetcode_705_example()
     std::cout << "[LeetCode 705] calloc table will be released by free deleter\n";
 }
 
-// 實務：模擬 C API handle，deleter 可保存 release context/state。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】帶釋放狀態的 C API handle owner
+// 情境：外部 handle 離開 scope 時除釋放資源，還要把 release_count 加一供測試與可觀測性驗證。
+// 為何使用本章主題：stateful custom deleter 將 release context 與 owner 綁定，比散落的手動 close 路徑可靠。
+// 設計：deleter 保存 counter pointer；owner 接管 handle；scope exit 呼叫 delete；隨後累加一次計數。
+// 成本：owner 操作 O(1)，釋放成本由外部 API 決定；stateful deleter 通常增加 unique_ptr 大小。
+// 上線注意：release_count 必須比 owner 活得久且並行時需 atomic；deleter 應處理 API 錯誤但不可讓例外逃出。
+// -----------------------------------------------------------------------------
 struct HandleDeleter {
     int* release_count;
     void operator()(int* handle) const noexcept

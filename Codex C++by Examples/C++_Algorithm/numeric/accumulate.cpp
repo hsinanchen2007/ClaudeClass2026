@@ -17,7 +17,16 @@
 #include <string>
 #include <vector>
 
-// LeetCode 1672：Richest Customer Wealth。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1672. Richest Customer Wealth（最富有客戶的資產總量）
+// 題目：accounts[i][j] 是第 i 位客戶在第 j 家銀行的資產，回最大客戶總額；例如
+// [[1,5],[7,3],[3,5]] 回 10。
+// 為何使用本章主題：每位客戶的一列資產可由 accumulate 依序加總，再與目前 best
+// 比較；初值 0 同時定義空列總額與 int 累加型別。
+// 思路：1. best 初始化為 0；2. 對每列 accumulate；3. wealth 較大時更新 best。
+// 複雜度：時間 O(T)、額外空間 O(1)，T 為所有 accounts 元素總數。
+// 易錯點：題目資產非負才可用 best=0；若總額可能超過 int，初值與回傳型別都要升格。
+// -----------------------------------------------------------------------------
 int leetcode_maximum_wealth(const std::vector<std::vector<int>>& accounts) {
     int best = 0;
     for (const auto& row : accounts) {
@@ -34,7 +43,16 @@ struct Invoice {
     long long cents;
 };
 
-// 實務：財務資料用整數分幣，避免 double 的二進位小數誤差。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】發票整數分幣總額彙整
+// 情境：Invoice 以 cents 保存正向收款與負向退款，帳務報表要取得整批淨額，不使用
+// binary floating point。
+// 為何使用本章主題：accumulate 以固定左到右順序把 Invoice 映入 long long total，
+// 空批次自然回 0LL，且不需另建 cents 陣列。
+// 設計：1. 初值使用 0LL；2. callback 將每筆 invoice.cents 加入 total；3. 回最終淨額。
+// 成本：時間 O(N)、額外空間 O(1)，N 為發票數。
+// 上線注意：仍需估算 long long 上界並做 checked addition；幣別與 cents 單位必須先一致。
+// -----------------------------------------------------------------------------
 long long practical_total_cents(const std::vector<Invoice>& invoices) {
     return std::accumulate(
         invoices.begin(), invoices.end(), 0LL,

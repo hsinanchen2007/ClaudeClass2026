@@ -59,7 +59,15 @@ void basic_example()
     std::cout << "[基礎] checked text file round-trip two lines\n";
 }
 
-// LeetCode 1480：從文字檔 transport 讀 nums，演算法仍是純 function。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1480. Running Sum of 1d Array（一維陣列動態總和）
+// 題目：把 nums 原地轉為前綴和；[1,2,3,4] 得 [1,3,6,10]。
+// 為何使用本章主題：running_sum 保持純函式，example 額外把每個整數寫入文字檔後以 ifstream
+//       extraction 讀回，示範 transport 可替換而不改演算法；檔案 I/O 不是原題要求。
+// 思路：1. 測試先寫四行數字；2. ifstream 逐 int 讀到 vector；3. partial_sum 覆寫副本；4. 驗證。
+// 複雜度：演算法時間 O(N)、額外空間 O(N)，N 是元素數；文字檔讀寫另為 O(B)，B 是總 bytes。
+// 易錯點：讀完要分辨 clean EOF 與 malformed/badbit；正式 LeetCode 提交不應加入檔案 transport。
+// -----------------------------------------------------------------------------
 std::vector<int> running_sum(std::vector<int> nums)
 {
     std::partial_sum(nums.begin(), nums.end(), nums.begin());
@@ -77,7 +85,16 @@ void leetcode_1480_example()
     std::cout << "[LeetCode 1480] text transport + pure running-sum logic\n";
 }
 
-// 實務：append audit line，不覆寫舊資料；durability 仍需 OS fsync policy。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】稽核文字檔追加事件
+// 情境：既有檔案已有 `start`，新事件 `done` 必須附加到尾端而不可截斷歷史內容。
+// 為何使用本章主題：ofstream 搭配 ios::app 保證每次 write 定位檔尾；相較預設 out|trunc，
+//       不會在開檔時清空既有紀錄。
+// 設計：1. 建立含 start 的測試檔；2. 以 app 開啟並寫 done+newline；3. 關閉後逐行讀回驗證。
+// 成本：追加 O(L)，驗證讀回 O(F)，額外空間 O(F)，L 是新行長、F 是檔案總 bytes。
+// 上線注意：必須檢查 open/write/flush/close，且 close 不等於 fsync durability；多程序併發、
+//       rotation、權限與 log injection 應交給成熟 logging/audit 設計。
+// -----------------------------------------------------------------------------
 void practical_example()
 {
     TempFile file;

@@ -35,8 +35,14 @@ void basic_example()
     std::cout << "[基礎] timeout=2500ms，cast seconds=2\n";
 }
 
-// LeetCode 933：Number of Recent Calls。
-// 題目用 int milliseconds；domain class 內改用 chrono::milliseconds，避免單位混淆。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 933. Number of Recent Calls（最近的請求次數）
+// 題目：依序輸入毫秒時間 t，回傳閉區間 [t-3000, t] 內的 ping 數；例如 3002ms 時移除 1ms 的紀錄後回傳 3。
+// 為何使用本章主題：以 chrono::milliseconds 表達題目的毫秒時間與 3000ms 視窗，讓相減與單位在型別中可見。
+// 思路：1. 將本次時間推入 deque。2. 計算 now-3000ms。3. 從前端移除早於下界的紀錄。4. 回傳剩餘筆數。
+// 複雜度：每筆紀錄至多進出 deque 各一次，單次攤銷時間 O(1)、額外空間 O(W)，W 為目前視窗內的 ping 數。
+// 易錯點：視窗下界是 inclusive，恰等於 t-3000 的紀錄不可刪；題目也保證 t 嚴格遞增。
+// -----------------------------------------------------------------------------
 class RecentCounter {
 public:
     int ping(std::chrono::milliseconds now)
@@ -64,7 +70,14 @@ void leetcode_933_example()
     std::cout << "[LeetCode 933] chrono window retains 3 recent calls\n";
 }
 
-// 實務：API 直接接受 duration，呼叫點帶單位，避免裸數字 `set_timeout(5000)` 歧義。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】HTTP client timeout 的型別安全設定
+// 情境：呼叫端要把請求逾時設為 5 秒，設定物件內部統一保存毫秒，避免把裸數字 5000 誤讀成秒。
+// 為何使用本章主題：duration 讓 5s 在傳入時自動且安全地轉成 milliseconds，比整數加文件註記更能防止單位混用。
+// 設計：1. set_timeout 直接接 milliseconds。2. 拒絕非正 duration。3. 按值保存。4. getter 仍回傳帶單位的 duration。
+// 成本：設定與讀取皆為 O(1) 值拷貝，沒有計時器、同步或 I/O 成本。
+// 上線注意：正式邊界不能只靠 assert 驗證；還要限制最大 timeout，並在序列化欄位名稱中保留 `_ms` 單位。
+// -----------------------------------------------------------------------------
 class ClientOptions {
 public:
     void set_timeout(std::chrono::milliseconds timeout)

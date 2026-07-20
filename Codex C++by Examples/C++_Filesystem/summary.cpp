@@ -197,11 +197,14 @@ void basic_path_and_iteration_demo()
     assert((names == std::vector<fs::path>{"a.log", "b.log"}));
 }
 
-// ---------------------------------------------------------------------------
-// LeetCode 71：Simplify Path
-// 這是 lexical stack 題，不該查詢本機 filesystem；輸入中的名稱即使不存在也要正確處理。
-// O(n) time / O(n) space。
-// ---------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 71. Simplify Path（簡化路徑）
+// 題目：簡化 POSIX absolute path；"/a/./b/../../c/" 回傳 "/c"。
+// 為何使用本章主題：這是 lexical stack 題，刻意不查 filesystem；不存在的 component 也必須依文字契約處理。
+// 思路：1. 依 `/` 讀 components；2. `..` pop、`.`/空字串略過、名稱 push；3. 以單一 `/` 重組。
+// 複雜度：N 為輸入字元數；時間 O(N)、額外 components 與結果空間 O(N)。
+// 易錯點：先要求 absolute path；root 上的 `..` 不可再向上，substr 遇 npos 的長度語意也要正確。
+// -----------------------------------------------------------------------------
 std::string simplify_path(const std::string& path)
 {
     if (path.empty() || path.front() != '/') {
@@ -234,11 +237,14 @@ void leetcode_demo()
     assert(simplify_path("/a/./b/../../c/") == "/c");
 }
 
-// ---------------------------------------------------------------------------
-// 實務：原子可見的設定發布 + recursive inventory。
-// 本例處理空 parent、同目錄唯一 temp、失敗清理與既有目的政策。唯一名稱避免同一
-// process 的 writer 互撞，但「先查再 rename」仍不是 hostile directory 的安全邊界。
-// ---------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【日常實務範例】同目錄 temporary 的設定發布
+// 情境：發布 config.txt 時支援拒絕既有檔或替換政策，失敗要自動清掉 temporary。
+// 為何使用本章主題：path、create_directories、fstream close-check、RAII cleanup 與 rename 組成原子可見發布流程。
+// 設計：1. 驗 parent 並選唯一 sibling temp；2. 寫完且 close 成功；3. 套 existing policy 後 rename，成功才 commit cleanup。
+// 成本：B 為內容大小；寫入 O(B)、暫存空間 O(B)，其餘為多次 metadata/rename I/O。
+// 上線注意：reject 的先查再 rename 有 TOCTOU；跨平台 replace 語意不同，atomic visibility 也不等於 fsync durability。
+// -----------------------------------------------------------------------------
 enum class ExistingDestinationPolicy {
     reject_existing,
     replace_existing
@@ -376,6 +382,14 @@ private:
     bool active_{true};
 };
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】遞迴 regular file inventory
+// 情境：掃描發布目錄，產生 relative generic path 到 file size 的穩定排序清單。
+// 為何使用本章主題：recursive_directory_iterator 遞迴列舉，error_code 逐步檢查，std::map 讓結果按 path 決定性排序。
+// 設計：1. 以 skip_permission_denied 建 iterator；2. regular file 取 relative path 與 size；3. 每次 increment/error 都驗證。
+// 成本：E 為 entries；走訪與 metadata I/O O(E)，結果路徑空間 O(K*L)，map 插入 O(K log K)。
+// 上線注意：skip_permission_denied 可能使清單不完整；file_size 是瞬間 snapshot，不是內容 hash 或後續存在保證。
+// -----------------------------------------------------------------------------
 std::map<std::string, std::uintmax_t> regular_file_inventory(const fs::path& root)
 {
     std::map<std::string, std::uintmax_t> result; // map 讓輸出按 key 穩定排序

@@ -13,7 +13,16 @@
 #include <string>
 #include <vector>
 
-// LeetCode 283：Move Zeroes；必須保留非零元素相對順序。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 283. Move Zeroes（移動零）
+// 題目：原地把所有 0 移到尾端並維持非零值順序；例如 [0,1,0,3,12] 變成
+// [1,3,12,0,0]。
+// 為何使用本章主題：stable_partition 以 value!=0 將非零穩定移到前段，語意正確；
+// 但實作可能配置 buffer，不保證原題追問的 O(1) 額外空間，雙指標更適合正式面試解。
+// 思路：1. 將非零分類為 true；2. 穩定分區整個 nums；3. 零自然集中到後段。
+// 複雜度：有 buffer 時間 O(N)、額外空間可 O(N)；無 buffer 時交換成本可 O(N log N)。
+// 易錯點：不要宣稱標準 stable_partition 必為 O(1) 空間；stable 只保證各群組內相對次序。
+// -----------------------------------------------------------------------------
 void leetcode_move_zeroes(std::vector<int>& nums) {
     std::stable_partition(nums.begin(), nums.end(),
                           [](int value) { return value != 0; });
@@ -24,7 +33,16 @@ struct Ticket {
     bool vip;
 };
 
-// 實務：VIP 先處理，但 VIP/普通群組內維持到達順序。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】客服 Ticket VIP 優先且維持 FIFO
+// 情境：Ticket 依到達順序保存；要把 VIP 移到前半，但 VIP 與普通兩群各自都必須
+// 保留原到達順序，並回 VIP 數量。
+// 為何使用本章主題：stable_partition 同時提供二分組與群內穩定性，比不穩定 partition
+// 更符合可觀察的 FIFO 契約。
+// 設計：1. 以 ticket.vip 分類；2. 穩定分區；3. 由 boundary distance 算 VIP 數。
+// 成本：常見時間 O(N)、額外空間 O(N) buffer；配置失敗 fallback 可能 O(N log N) 次 swap。
+// 上線注意：演算法可能配置且不是 thread-safe；hard real-time 路徑需預配置或採其他資料結構。
+// -----------------------------------------------------------------------------
 std::size_t practical_prioritize_vip(std::vector<Ticket>& tickets) {
     const auto point = std::stable_partition(
         tickets.begin(), tickets.end(),

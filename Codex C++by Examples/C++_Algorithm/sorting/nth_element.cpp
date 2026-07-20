@@ -11,7 +11,15 @@
 #include <iostream>
 #include <vector>
 
-// LeetCode 215：Kth Largest Element；descending comparator 下第 k-1 個。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 215. Kth Largest Element in an Array（陣列中的第 K 大元素）
+// 題目：輸入 nums 與 k，回排序後第 k 大值；例如 [3,2,1,5,6,4]、k=2 回 5。
+// 為何使用本章主題：greater comparator 下，第 k-1 個 order statistic 就是第 k 大；
+// nth_element 只定位該值，不支付完整排序成本。
+// 思路：1. 驗 k 位於 [1,N]；2. nth 指向 begin+k-1；3. 以 greater partition；4. 回 *nth。
+// 複雜度：平均時間 O(N)、額外空間 O(N)，N 為 nums 數量；空間包含按值輸入副本。
+// 易錯點：nth 兩側內部未排序；duplicate 可分布兩側；k 的 1-based 索引要轉成 k-1。
+// -----------------------------------------------------------------------------
 int leetcode_find_kth_largest(std::vector<int> nums, int k) {
     assert(k >= 1 && static_cast<std::size_t>(k) <= nums.size());
     const auto nth = nums.begin() + (k - 1);
@@ -19,7 +27,16 @@ int leetcode_find_kth_largest(std::vector<int> nums, int k) {
     return *nth;
 }
 
-// 實務：取得 latency p-quantile；函式接受 copy，避免破壞呼叫者觀測順序。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】Latency Floor-index Quantile
+// 情境：監控要從 latency snapshot 取得 p 分位值，採 index=floor(p*(N-1))，且不能
+// 改變呼叫端樣本的觀測順序。
+// 為何使用本章主題：nth_element 對副本只定位單一 quantile，平均線性，通常比為一個
+// p 值完整 sort 更省；按值參數隔離原資料。
+// 設計：1. 驗非空與 p 在 [0,1]；2. 算 floor index；3. nth_element；4. 回該值。
+// 成本：平均時間 O(N)、額外空間 O(N)，N 為樣本數，空間來自副本。
+// 上線注意：quantile 定義必須文件化；NaN 需先拒絕，assert 不能當外部輸入驗證。
+// -----------------------------------------------------------------------------
 double practical_quantile(std::vector<double> samples, double quantile) {
     assert(!samples.empty());
     assert(quantile >= 0.0 && quantile <= 1.0);

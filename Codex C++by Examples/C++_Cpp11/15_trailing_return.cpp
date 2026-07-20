@@ -32,7 +32,14 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 1480：Running Sum。回傳型別依 input container 的 value_type 建立 vector。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1480. Running Sum of 1d Array（一維陣列動態和）
+// 題目：輸入 nums，輸出每個位置以前的累加和；[1,2,3,4] 變成 [1,3,6,10]。
+// 為何使用本章主題：trailing return 可在 Container 已進入 scope 後，以 value_type 明確形成對應的 vector 回傳型別。
+// 思路：1. 預留輸出容量；2. 逐項加到 total；3. 每次將目前 total 放入 result。
+// 複雜度：N 為元素數；時間 O(N)，輸出空間 O(N)、除輸出外額外空間 O(1)。
+// 易錯點：Value{} 決定累加型別；若元素總和超過 Value 範圍仍會溢位，模板也假設容器有 size/value_type。
+// -----------------------------------------------------------------------------
 template <class Container>
 auto running_sum(const Container& nums)
     -> std::vector<typename Container::value_type> {
@@ -53,8 +60,15 @@ void test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】泛型 normalization adapter：trailing return 由物件的 normalized() 決定結果型別。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】監控讀值正規化轉接器
+// 情境：不同讀值型別各自提供 normalized()，通用轉接函式要原樣回傳其計算結果型別。
+// 為何使用本章主題：C++11 trailing return 讓簽章引用參數 object，並用 decltype 跟隨 normalized() 的實際型別。
+// 設計：1. Reading 保存百分比數值；2. normalized 將值除以 100；3. normalize 只轉呼叫並回傳結果。
+// 成本：此 Reading 實作時間與空間皆 O(1)；泛型成本等同底層 normalized()。
+// 上線注意：若 normalized() 回傳 reference，trailing decltype 也可能傳出借用；需審查來源生命週期與除零/範圍契約。
+// -----------------------------------------------------------------------------
 struct Reading {
     double value;
     double normalized() const { return value / 100.0; }

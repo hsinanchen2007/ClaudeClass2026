@@ -53,7 +53,14 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 58：Length of Last Word。string 版本保持 C++11 可編譯。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 58. Length of Last Word（最後一個單字的長度）
+// 題目：輸入由單字與空白組成的字串，回傳最後一個單字長度；"Hello World" 回傳 5。
+// 為何使用本章主題：此字串題不需要 UDL；它作為同檔演算法案例，UDL 的真正角色留在後方容量單位實務範例。
+// 思路：1. 從尾端找最後一個非空白；2. 再向前找分隔空白；3. 以兩個位置差計算長度。
+// 複雜度：N 為字串長度；最壞時間 O(N)、額外空間 O(1)。
+// 易錯點：全空白輸入會得到 npos；第一個單字前沒有空白時長度要用 last+1。
+// -----------------------------------------------------------------------------
 std::size_t length_of_last_word(const std::string& text) {
     const auto last = text.find_last_not_of(' ');
     if (last == std::string::npos) return 0U;
@@ -67,10 +74,17 @@ void test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】buffer 配額：64_KiB 把單位寫進呼叫點，避免裸整數究竟是 byte 或 KiB。
 namespace practical {
 using namespace units;
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】網路緩衝區容量配額
+// 情境：服務有固定 64 KiB buffer，要在編譯期判斷 8 KiB 或 128 KiB 請求是否可容納。
+// 為何使用本章主題：_KiB 把單位直接寫在呼叫點並回傳 Bytes，避免裸整數究竟代表 byte 或 KiB 的歧義。
+// 設計：1. UDL 將 literal 安全乘 1024；2. BufferBudget 持有容量；3. fits 比較 request 與 capacity 的 byte 數。
+// 成本：literal 轉換與比較皆 O(1)，物件空間 O(1)，常數輸入可完全在編譯期求值。
+// 上線注意：UDL 已檢查 size_t 乘法上限；不同單位仍應維持強型別，且 UDL 不應隱藏配置或 I/O。
+// -----------------------------------------------------------------------------
 class BufferBudget {
 public:
     explicit constexpr BufferBudget(Bytes capacity) : capacity_(capacity) {}

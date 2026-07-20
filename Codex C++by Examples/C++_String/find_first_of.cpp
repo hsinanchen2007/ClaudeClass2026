@@ -19,7 +19,15 @@ void basic_demo() {
     assert(text.find_first_of("0123456789") == std::string::npos);
 }
 
-// LeetCode 345（Reverse Vowels of a String）。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 345. Reverse Vowels of a String（反轉字串中的母音）
+// 題目：只反轉英文字串中的母音位置，其他字元不動；例如 "hello" 變成 "holle"。
+// 為何使用本章主題：find_first_of 從左找任一母音，find_last_of 從右找任一母音，
+//       以字元集合 API 直接跳過所有非母音位置。
+// 思路：1. 找最左與最右母音；2. 左小於右時交換；3. 分別從下一個內側位置繼續搜尋。
+// 複雜度：時間 O(N*V)、額外空間 O(N)，N 是 text 長度、V=10 是母音集合大小，空間為輸入副本。
+// 易錯點：npos 必須先判斷；right==0 時不可做 right-1，且此集合只涵蓋 ASCII 母音。
+// -----------------------------------------------------------------------------
 std::string leetcode_reverse_vowels(std::string text) {
     constexpr char vowels[] = "aeiouAEIOU";
     std::size_t left = text.find_first_of(vowels);
@@ -35,7 +43,15 @@ std::string leetcode_reverse_vowels(std::string text) {
     return text;
 }
 
-// 實務：找 CSV/TSV 中最先出現的 delimiter，回傳 delimiter 本身與位置。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】混合分隔格式的首個 delimiter 偵測
+// 情境：匯入前要找一行中最先出現的逗號、tab 或分號，並同時回報其位置與實際字元。
+// 為何使用本章主題：find_first_of(",\t;") 會按輸入順序找集合中的任一字元，正好符合需求；
+//       多次分別 find 再取最小值較冗長。
+// 設計：1. 搜尋 delimiter 集合；2. npos 時回 `{npos,'\0'}`；3. 命中時以索引讀回字元。
+// 成本：時間 O(N*D)、額外空間 O(1)，N 是行長，D=3 是 delimiter 數。
+// 上線注意：這只做格式猜測，不解析 quoted CSV；空欄、escape、UTF-8 與錯誤回報仍需正式 parser。
+// -----------------------------------------------------------------------------
 std::pair<std::size_t, char> practical_first_delimiter(const std::string& line) {
     const std::size_t position = line.find_first_of(",\t;");
     return position == std::string::npos ? std::pair{position, '\0'}

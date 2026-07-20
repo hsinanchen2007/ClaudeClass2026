@@ -33,7 +33,15 @@ private:
     std::array<T, Rows * Columns> data_{};
 };
 
-// LeetCode 303：Range Sum Query - Immutable 的固定尺寸版本。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 303. Range Sum Query - Immutable（區域和檢索：不可變）
+// 題目：由整數陣列建立物件，多次查詢閉區間 [left,right] 總和；[-2,0,3] 的 [0,2] 為 1。
+// 為何使用本章主題：N 是 NTTP，PrefixSum<N> 在型別與 std::array 儲存中固定輸入長度，
+// 並可在 constant evaluation 建構；原題長度在 runtime，這是固定尺寸教學版。
+// 思路：建構時建立前綴和陣列；查詢以 prefix[right+1]-prefix[left] 回答。
+// 複雜度：建構時間 O(N)、空間 O(N)，每次查詢時間 O(1)，N 是編譯期元素數。
+// 易錯點：必須滿足 left<=right<N；函式未做邊界檢查，前綴 int 加總也可能溢位。
+// -----------------------------------------------------------------------------
 template <std::size_t N>
 class PrefixSum {
 public:
@@ -56,9 +64,17 @@ int leetcode_range_sum(const PrefixSum<N>& prefix, std::size_t left, std::size_t
     return prefix.sum_range(left, right);
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】固定寬度協定整數編碼
+// 情境：網路協定欄位在規格中固定為 Bytes 個位元組，並明訂 little 或 big endian。
+// 為何使用本章主題：Bytes 與 Endian 都是 NTTP，非法寬度在實體化時由 static_assert 拒絕；
+// 相較 runtime 參數，可得到固定大小回傳型別並消除每次的 policy 分支。
+// 設計：逐次取 value 最低 8 bits；依 endian 算目標索引；寫入後右移處理下一 byte。
+// 成本：時間與回傳空間 O(Bytes)，Bytes 是編譯期常數，沒有動態配置。
+// 上線注意：超過 Bytes 可容納範圍的高位會被截斷；需先驗值域並與協定 signedness 對齊。
+// -----------------------------------------------------------------------------
 enum class Endian { little, big };
 
-// 實務：協定欄位寬度與位元序在編譯期固定，錯誤組合可及早被拒絕。
 template <std::size_t Bytes, Endian Order>
 std::array<unsigned char, Bytes> practical_encode_unsigned(unsigned int value) {
     static_assert(Bytes >= 1 && Bytes <= sizeof(unsigned int));

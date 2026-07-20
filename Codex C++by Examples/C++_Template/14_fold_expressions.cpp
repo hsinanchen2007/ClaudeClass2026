@@ -25,7 +25,15 @@ constexpr bool all(Conditions... conditions) {
     return (... && static_cast<bool>(conditions));
 }
 
-// LeetCode 1929：Concatenation of Array 的 pack 示範版。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1929. Concatenation of Array（陣列串接）
+// 題目：回傳 nums 接上自己；[1,2,1] 變成 [1,2,1,1,2,1]。
+// 為何使用本章主題：本例泛化為 first 加任意數量 rest vectors，fold 計算總長度並依序 insert；
+// 原題只需插入同一陣列兩次，這是 variadic fold 的教學擴充。
+// 思路：折疊所有 size 得總長度；一次 reserve；先插 first，再以逗號 fold 依序插入 rest。
+// 複雜度：時間 O(S)、結果空間 O(S)，S 是所有輸入 vector 元素總數。
+// 易錯點：rest 必須精確為 vector<T>；輸入不可與 result alias，總長度相加也可能 size_t 溢位。
+// -----------------------------------------------------------------------------
 template <typename T, typename... Vectors>
 std::vector<T> leetcode_concatenate(const std::vector<T>& first, const Vectors&... rest) {
     static_assert((std::is_same_v<std::vector<T>, Vectors> && ...));
@@ -37,13 +45,21 @@ std::vector<T> leetcode_concatenate(const std::vector<T>& first, const Vectors&.
     return result;
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】請求前置驗證鏈
+// 情境：請求進入服務前要依序確認登入、配額與 schema，任一失敗便停止後續驗證。
+// 為何使用本章主題：`validators(request) && ...` 把任意數量 validator 折疊並保留 && 短路；
+// 相較手動 if 鏈，新增規則不需修改 practical_validate 本體。
+// 設計：Request 保存三項狀態；呼叫端建立各 validator；fold 由左至右執行並回傳總結果。
+// 成本：最多 O(V) 次驗證、額外空間 O(1)，V 是 validator 數；每項內部 I/O 成本另計。
+// 上線注意：validator 順序會影響副作用與成本；空 pack 回 true，需確認是否符合安全政策。
+// -----------------------------------------------------------------------------
 struct Request {
     bool authenticated{};
     bool quota_available{};
     bool schema_valid{};
 };
 
-// 實務：把任意數量的驗證器折疊；&& 具有短路語意，前一項 false 後不再呼叫後面。
 template <typename... Validators>
 bool practical_validate(const Request& request, Validators... validators) {
     return (validators(request) && ...);

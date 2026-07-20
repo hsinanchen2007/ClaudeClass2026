@@ -53,8 +53,14 @@ void basic_example()
     std::cout << "[基礎] recursive traversal found root and nested files\n";
 }
 
-// LeetCode 388：Longest Absolute File Path。每行前方 tab 數就是 DFS depth；
-// length_at_depth[d] 保存「走到 depth d 父目錄後，已包含 separator 的長度」。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 388. Longest Absolute File Path（最長絕對檔案路徑）
+// 題目：解析以換行與 tab 編碼的目錄樹，回傳最長檔案路徑長度；範例 dir/subdir2/file.ext 為 20。
+// 為何使用本章主題：題目模擬 recursive traversal；length_at_depth 保存每層父路徑長度，無需建立真實 filesystem。
+// 思路：1. 以 tab 數取得 depth；2. 檔名含點時更新 longest；3. 目錄則記錄下一層含 `/` 的前綴長度。
+// 複雜度：N 為 encoded_tree 字元數、H 為深度；時間 O(N)、額外空間 O(H)。
+// 易錯點：depth 不可跳過不存在 parent；依題目以 `.` 判檔案，真實 filesystem 不可用此規則分類。
+// -----------------------------------------------------------------------------
 int length_longest_path(const std::string& encoded_tree)
 {
     std::vector<std::size_t> length_at_depth{0U};
@@ -90,7 +96,14 @@ void leetcode_388_example()
     std::cout << "[LeetCode 388] tab-encoded tree 最長絕對路徑長度=20\n";
 }
 
-// 實務：略過名為 .git 的 subtree，避免掃描 repository internals。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】原始碼樹掃描並略過 .git
+// 情境：遞迴收集 repository 中的 `.cpp`，但不進入 `.git` internals 以避免無關 I/O。
+// 為何使用本章主題：recursive_directory_iterator 走完整 subtree，disable_recursion_pending 可在遇到 `.git` 目錄時剪枝。
+// 設計：1. 建 iterator；2. 遇 `.git` 目錄就禁止下鑽；3. 其他 regular `.cpp` 收入結果。
+// 成本：V 為實際走訪 entries、K 為結果數；時間 O(V) 加 metadata I/O，結果空間 O(K)、遍歷狀態 O(H)。
+// 上線注意：要明訂 symlink、permission 與 max-depth；iterator 增加後不可長期保存舊 entry reference。
+// -----------------------------------------------------------------------------
 std::vector<fs::path> source_files(const fs::path& root)
 {
     std::vector<fs::path> result;

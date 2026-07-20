@@ -28,6 +28,14 @@ void expect(bool condition, const char* message)
     if (!condition) throw std::runtime_error(message);
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】可排空且可回復部分建構的固定工作池
+// 情境：服務建立固定 worker pool；若第 N 個 OS thread 啟動失敗，要停止並 join 已啟動者，正常析構時則先排空已接受任務。
+// 為何使用本章主題：jthread、condition_variable 與 protected queue 組成長生命週期 executor，攤銷逐 task 建 thread 的成本。
+// 設計：1. constructor 逐一啟動 worker。2. 失敗時發布 stopping、喚醒並 join 後重拋。3. worker 取鎖出列、鎖外執行。4. destructor drain/join。
+// 成本：建立 W 個 workers；每次 submit 有配置、一次 queue lock 與喚醒，unbounded queue 空間 O(Q)。
+// 上線注意：constructor 失敗不會呼叫 destructor；production 還需 bounded queue、拒絕/取消政策、metrics，並避免 worker 同步等待同 pool 任務。
+// -----------------------------------------------------------------------------
 class ThreadPool {
 public:
     // WorkerStarter 是可注入的啟動介面：一般 caller 使用單參數 constructor；
@@ -142,9 +150,14 @@ void basic_demo()
     expect(zero_rejected, "zero-worker pool must be rejected in release builds too");
 }
 
-// ----------------------------------------------------------------------------
-// LeetCode 2235：Add Two Integers（透過 pool 執行）
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 2235. Add Two Integers（兩整數相加）
+// 題目：輸入 num1、num2 並回傳其和；例如 12+5=17、-10+4=-6。
+// 為何使用本章主題：加法本身完全不需要多執行緒；這是刻意的 pool 教學改寫，用 future 展示 submit、結果等待與例外通道。
+// 思路：1. 以 value capture 建加法 task。2. submit 到 pool。3. worker 執行 packaged_task。4. 呼叫端 get 結果。
+// 複雜度：算術時間/空間 O(1)，但實際成本由 task 配置、queue 同步、排程與 future 等待主導。
+// 易錯點：有號加法超出 int 是 UB；在 pool worker 內向單 worker pool submit 後立即 get 可能自我 deadlock。
+// -----------------------------------------------------------------------------
 int add_two_integers(ThreadPool& pool, int left, int right)
 {
     return pool.submit([left, right] { return left + right; }).get();
@@ -158,9 +171,14 @@ void leetcode_demo()
     expect(positive == 17 && mixed == -6, "LeetCode addition result mismatch");
 }
 
-// ----------------------------------------------------------------------------
-// 實務：批次轉換，共用固定兩個 worker 而非建立 N 個 thread
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【日常實務範例】固定 Worker 的批次平方轉換
+// 情境：四個值要平行平方，重用既有兩個 worker 而非為每個元素建立一條 OS thread，並保持輸出順序與輸入一致。
+// 為何使用本章主題：每個 packaged task 回傳 future，pool 限制同時執行數；依 futures 原順序 get 可組回穩定結果。
+// 設計：1. 每值 submit 一個 value-captured task。2. 保存 futures。3. 依提交順序逐一 get。4. append 到輸出。
+// 成本：N 個 task 的總計算 O(N)、future/queue/輸出空間 O(N)，同步與配置成本可能大於簡單平方。
+// 上線注意：平方要防 int overflow；任一 future 丟例外時仍須消費/管理其餘工作，且大量 producer 需 backpressure 防止 queue 耗盡記憶體。
+// -----------------------------------------------------------------------------
 std::vector<int> square_batch(ThreadPool& pool, const std::vector<int>& values)
 {
     std::vector<std::future<int>> futures;

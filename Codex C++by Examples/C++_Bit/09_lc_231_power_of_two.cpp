@@ -16,6 +16,14 @@
 #include <iostream>
 #include <optional>
 
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 231. Power of Two（判斷是否為 2 的冪）
+// 題目：判斷正整數是否只有一個 set bit；1、16 為 true，3、0、-2 為 false。
+// 為何使用本章主題：C++20 std::has_single_bit 直接表達單一 set bit 契約，比手寫 magic expression 清楚。
+// 思路：1. 先要求 value>0；2. 安全轉成 uint32_t；3. 呼叫 has_single_bit。
+// 複雜度：固定寬度整數時間 O(1)、額外空間 O(1)。
+// 易錯點：1=2^0 應回 true；必須先排除 0 與負數，不能把 signed representation 當題意。
+// -----------------------------------------------------------------------------
 bool is_power_of_two(int value)
 {
     return value > 0 && std::has_single_bit(static_cast<std::uint32_t>(value));
@@ -41,7 +49,14 @@ void leetcode_example()
     std::cout << "[LeetCode 231] only positive single-bit values pass\n";
 }
 
-// 實務：ring buffer 用 bit-mask 取代 modulo 的前提是 capacity 為 2 的冪。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】2 次冪 ring buffer 索引
+// 情境：以單調遞增 sequence 對應固定容量環形緩衝區 slot，非法容量要拒絕。
+// 為何使用本章主題：capacity 為 2 的冪時，`sequence&(capacity-1)` 等價於取 modulo 且直接表達低位遮罩。
+// 設計：1. 以 has_single_bit 驗 capacity；2. 非法時回 nullopt；3. 用 mask 取得 slot。
+// 成本：每次索引時間與空間皆 O(1)。
+// 上線注意：power-of-two 只解決索引；producer/consumer 同步、sequence wraparound 與容量配置仍需另行處理。
+// -----------------------------------------------------------------------------
 std::optional<std::size_t> ring_index(std::size_t sequence, std::size_t capacity)
 {
     if (!std::has_single_bit(capacity)) return std::nullopt;

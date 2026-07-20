@@ -40,7 +40,14 @@ void basic_example()
     std::cout << "[基礎] shuffled deck remains a 1..52 permutation\n";
 }
 
-// LeetCode 384：Shuffle an Array 的核心；完整 class 在第 8 課。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 384. Shuffle an Array（打亂陣列）
+// 題目：保存原陣列，shuffle 回傳等機率排列且 reset 可還原；此檔只示範不改原輸入的 shuffle 核心，完整類別在第 8 課。
+// 為何使用本章主題：std::shuffle 以呼叫端 engine 實作 Fisher-Yates 類均勻排列，取代已移除且依賴全域狀態的 random_shuffle。
+// 思路：1. 複製 input。2. 對副本呼叫 std::shuffle。3. 回傳副本。4. 測試 permutation 且確認 input 未變。
+// 複雜度：N 個元素的時間 O(N)、回傳副本空間 O(N)，N 為陣列長度。
+// 易錯點：原排列也是合法結果，不能斷言一定改變；engine 必須持續推進，且本 helper 本身沒有實作 reset API。
+// -----------------------------------------------------------------------------
 std::vector<int> shuffled_copy(const std::vector<int>& input, std::mt19937& engine)
 {
     std::vector<int> output = input;
@@ -58,7 +65,14 @@ void leetcode_384_example()
     std::cout << "[LeetCode 384] shuffle returns permutation without mutating original\n";
 }
 
-// 實務：隨機化 test execution order，失敗時記錄 seed 以重播順序。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】可重播的測試執行順序
+// 情境：測試框架要隨機化 0..test_count-1 的執行順序，以暴露順序依賴，失敗時用 seed=2026 完整重播。
+// 為何使用本章主題：固定 seed 的 mt19937 加 std::shuffle 同時提供隨機排列與診斷重現，比全域 rand 更容易隔離測試。
+// 設計：1. 驗證 count 非負。2. 用 iota 建立所有測試 ID。3. 由 seed 建 engine。4. 原地 shuffle 後回傳。
+// 成本：建立與洗牌時間 O(T)、輸出空間 O(T)，T 為測試數；engine state 為固定額外成本。
+// 上線注意：報告必須記 seed、測試清單版本與工具鏈；同 seed 的 distribution/shuffle 細節未必跨標準庫完全一致。
+// -----------------------------------------------------------------------------
 std::vector<int> randomized_test_order(int test_count, unsigned seed)
 {
     if (test_count < 0) throw std::invalid_argument("negative test count");

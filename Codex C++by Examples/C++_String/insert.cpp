@@ -22,8 +22,15 @@ void basic_demo() {
     assert(text == "[Hello World]");
 }
 
-// LeetCode 1309（Decrypt String from Alphabet to Integer Mapping）：倒序解析並插在前端。
-// 前端反覆 insert 是 O(n^2)，此寫法用來教 API；高效版應 push_back 後 reverse。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1309. Decrypt String from Alphabet to Integer Mapping（解密字母映射）
+// 題目：1..9 對應 a..i，10#..26# 對應 j..z；例如 "10#11#12" 解成 "jkab"。
+// 為何使用本章主題：本教學版由右向左解析，再用 insert(begin,char) 把字元放到答案前端；
+//       這能展示 API，但反覆搬移前綴為 O(N^2)，高效提交應 push_back 後 reverse。
+// 思路：1. 從 encoded 尾端開始；2. 遇 # 讀前兩位，否則讀一位；3. 映射字母並插到開頭。
+// 複雜度：時間 O(N^2)、額外空間 O(N)，N 是 encoded/輸出長度，平方成本來自前端插入。
+// 易錯點：原題保證編碼合法；一般 parser 在讀 i-3 前要驗長度與數字範圍，不能只靠 assert。
+// -----------------------------------------------------------------------------
 std::string leetcode_decrypt_mapping(const std::string& encoded) {
     std::string answer;
     std::size_t i = encoded.size();
@@ -42,7 +49,15 @@ std::string leetcode_decrypt_mapping(const std::string& encoded) {
     return answer;
 }
 
-// 實務：在檔名前插入版本標記，保留最後一個副檔名。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】輸出檔名加入版本標記
+// 情境：將 `report.csv` 轉成 `report-v2.csv`，無副檔名的 README 則變成 README-v2。
+// 為何使用本章主題：rfind 定位最後一點後，insert(position, suffix) 可在副檔名前原地加入內容；
+//       相較手動拆成多個 substr，步驟較少。
+// 設計：1. 找最後一個點；2. 無點就選字串尾；3. 建立 `-version` 並插入該位置。
+// 成本：時間 O(N+V)、額外空間 O(N+V)，N、V 是 filename、version 長度；按值 filename 是工作副本。
+// 上線注意：hidden file、尾端點、多重副檔名與非法路徑字元要另訂政策；version 也需清理以防路徑注入。
+// -----------------------------------------------------------------------------
 std::string practical_add_version_suffix(std::string filename, const std::string& version) {
     const std::size_t dot = filename.rfind('.');
     const std::size_t position = dot == std::string::npos ? filename.size() : dot;

@@ -12,8 +12,16 @@
 #include <iostream>
 #include <vector>
 
-// LeetCode 1480：Running Sum of 1d Array。
-// sequential for_each_n 以 capture 維持 running sum，原地更新。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1480. Running Sum of 1d Array（一維陣列的動態和）
+// 題目：回傳 runningSum[i]=nums[0]+...+nums[i]；例如 [1,2,3,4] 回 [1,3,6,10]。
+// 為何使用本章主題：本教學版以 sequential for_each_n 恰好處理 N 項，capture 維持
+// running sum 並原地覆寫；partial_sum/inclusive_scan 會更符合前綴和語意。
+// 思路：1. running 初始化為 0；2. 依序處理每個 value；3. 先加到 running，再把
+// value 改為 running。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 為 nums 元素數，不計按值回傳的陣列。
+// 易錯點：正確性依賴 sequential 順序，不可換平行 policy；總和可能 int 溢位。
+// -----------------------------------------------------------------------------
 std::vector<int> leetcode_running_sum(std::vector<int> nums) {
     int running = 0;
     std::for_each_n(nums.begin(), nums.size(), [&running](int& value) {
@@ -28,7 +36,17 @@ struct Job {
     bool processed;
 };
 
-// 實務：每輪最多處理 batch_size 筆，回下一個 iterator 的 index。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】固定上限工作批次標記
+// 情境：jobs 本輪最多接受 batch_size 筆，要把實際前 C 筆標為 processed，並回下一
+// 批起始 index；batch_size 可大於剩餘筆數。
+// 為何使用本章主題：for_each_n 精確處理 C 筆並回尾後 iterator；先以 min 限制 C，
+// 補足 classic API 不知道 end 的安全責任。
+// 設計：1. C=min(batch_size,jobs.size())；2. 對前 C 筆設 processed=true；3. 將回傳
+// iterator 轉成 index。
+// 成本：時間 O(C)、額外空間 O(1)，C=min(batch_size,N)。
+// 上線注意：processed bool 無法表達執行失敗或重試；真正工作狀態應有 pending/running/done/error。
+// -----------------------------------------------------------------------------
 std::size_t practical_mark_batch(std::vector<Job>& jobs, std::size_t batch_size) {
     const std::size_t count = std::min(batch_size, jobs.size());
     const auto next = std::for_each_n(jobs.begin(), count,

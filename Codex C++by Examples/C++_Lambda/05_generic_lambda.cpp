@@ -36,7 +36,15 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 217：Contains Duplicate。generic lambda 讓相同演算法可測 int/string。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 217. Contains Duplicate（存在重複元素）
+// 題目：判斷整數陣列是否有任一值至少出現兩次；[1,2,3,1] 為 true，[1,2,3,4] 為 false。
+// 為何使用本章主題：generic lambda 把原題的 int 解法泛化到任何可雜湊型別，方便同一 closure
+// 處理 int 與 string；這是教學擴充，LeetCode 原始介面只要求整數。
+// 思路：建立空 unordered_set；依序插入每個元素；首次插入失敗時由 any_of 立即回傳 true。
+// 複雜度：平均時間 O(N)、額外空間 O(N)，N 是 values 長度；惡劣雜湊下時間可能退化。
+// 易錯點：T 必須可雜湊且可比較相等；空陣列沒有重複值，predicate 參考捕獲的 seen 只在呼叫中有效。
+// -----------------------------------------------------------------------------
 const auto leetcode_contains_duplicate = []<class T>(const std::vector<T>& values) {
     std::unordered_set<T> seen;
     return std::any_of(values.begin(), values.end(),
@@ -49,8 +57,16 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】projection-based max：caller 用 lambda 指定 Metric 的比較欄位，演算法保持泛型。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】依投影欄位找最大監控指標
+// 情境：監控資料含指標名稱與數值，呼叫端要指定比較欄位並取出數值最大的完整資料列。
+// 為何使用本章主題：泛型 Projection 可接受不同 lambda，不必為每種資料列或欄位另寫比較函式；
+// 相較固定 comparator，投影介面把「取 key」與 max_element 的排序流程分離。
+// 設計：接收 range 與 projection；比較兩列的投影結果；解參考最大元素並以值回傳。
+// 成本：時間 O(N)、額外空間 O(1)，N 是 rows 數量；目前回傳值會複製一個最大元素。
+// 上線注意：rows 必須非空，否則會解參考 end；昂貴元素宜回 iterator，並記錄其失效規則。
+// -----------------------------------------------------------------------------
 struct Metric {
     std::string name;
     double value;

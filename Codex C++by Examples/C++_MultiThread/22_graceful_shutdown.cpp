@@ -24,6 +24,14 @@ void expect(bool condition, const char* message)
     if (!condition) throw std::runtime_error(message);
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】接受工作後保證排空的背景處理器
+// 情境：producer 與兩個 closer 同時競跑；submit 在線性化點成功的每一筆都必須平方並寫入結果，所有 close caller 返回時 worker 已 join。
+// 為何使用本章主題：mutex/cv 定義接受與 drain 狀態，call_once 讓 concurrent close 冪等且只有一個 joiner，比 joinable check-then-join 安全。
+// 設計：1. submit 鎖內接受或拒絕。2. worker 等 closed 或 queue 非空。3. close 設 closed、notify 並 join。4. worker 排空後才退出。
+// 成本：每筆 queue/結果各有 mutex 操作；空間 O(Q+R)，close latency 包含所有已接受工作與 join。
+// 上線注意：worker 計算/結果配置若丟例外不能逃出 thread entry；永久阻塞工作需 deadline/取消，平方也要先防 int overflow。
+// -----------------------------------------------------------------------------
 class DrainingWorker {
 public:
     DrainingWorker() : worker_([this] { run(); }) {}
@@ -113,9 +121,14 @@ void basic_demo()
     expect(rejected, "submit after close must be rejected");
 }
 
-// ----------------------------------------------------------------------------
-// LeetCode 1480：Running Sum，工作全部 drain 後才回傳
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1480. Running Sum of 1d Array（一維陣列的動態和）
+// 題目：回傳每個 prefix 的累加值；例如 [1,2,3,4] 得 [1,3,6,10]。
+// 為何使用本章主題：prefix 本身仍在 caller 順序計算；本教學另把每個 prefix 送入 DrainingWorker 做平方稽核，只為驗證 close 前工作全數 drain，不是平行 scan。
+// 思路：1. 逐值更新 total。2. append 正規 prefix 結果。3. submit 同一 total 作背景 audit。4. close 並確認 audit 筆數後回傳。
+// 複雜度：前景與背景總工作 O(N)、prefix/audit 結果空間 O(N)，另有每筆 queue 同步與最終 join。
+// 易錯點：不能把 audit 平方結果誤當題目答案；total 與平方都可能 signed overflow，close 失敗/worker 例外也需回報。
+// -----------------------------------------------------------------------------
 std::vector<int> running_sum(const std::vector<int>& numbers)
 {
     DrainingWorker worker;
@@ -140,9 +153,6 @@ void leetcode_demo()
     expect((result == std::vector<int>{1, 3, 6, 10}), "running sum mismatch");
 }
 
-// ----------------------------------------------------------------------------
-// 實務：close 前送入的工作一筆不漏
-// ----------------------------------------------------------------------------
 void practical_demo()
 {
     DrainingWorker worker;

@@ -59,9 +59,14 @@ void basic_example()
     std::cout << "[基礎] total=" << total << '\n';
 }
 
-// LeetCode 973：K Closest Points to Origin。
-// Point::operator< 依 squared distance 排序；priority_queue top 是目前最遠者，
-// 超過 k 就 pop，最後留下 k 個最近點。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 973. K Closest Points to Origin（最接近原點的 K 個點）
+// 題目：回傳距原點最近的 k 個點；例如 (1,3)、(-2,2) 且 k=1 時回 (-2,2)。
+// 為何使用本章主題：Point::operator< 以距離平方定義 heap 次序，使 priority_queue top 成為目前最遠候選。
+// 思路：每點 push 進 max-heap；大小超過 k 就 pop 最遠點；最後取出剩餘 k 點。
+// 複雜度：時間 O(N log K)、額外空間 O(K)，N 為點數、K 為回傳數。
+// 易錯點：k 必須不大於 N；不需開根號；同距離順序不限；座標超出題目限制時兩平方相加仍可能溢位。
+// -----------------------------------------------------------------------------
 class Point {
 public:
     Point(int x, int y) : x_(x), y_(y) {}
@@ -107,7 +112,14 @@ void leetcode_973_example()
     std::cout << "[LeetCode 973] closest=(-2,2)\n";
 }
 
-// 實務案例：SemanticVersion 的 operator< 讓 std::sort 直接依版本欄位排序。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】語意版本排序
+// 情境：部署工具要把 2.0.0、1.10.2、1.9.9 依 major/minor/patch 排成正確升冪。
+// 為何使用本章主題：operator< 將版本的自然次序放進 value type，std::sort 可直接使用且避免字串字典序錯誤。
+// 設計：先比較 major；相同再比 minor；最後比較 patch；sort 依 strict weak ordering 排列。
+// 成本：每次比較 O(1)，排序 O(N log N)，額外空間依 sort 實作通常 O(log N)。
+// 上線注意：欄位不得為負；完整 SemVer 還有 prerelease/build metadata，簡化 comparator 不可直接用於完整規格。
+// -----------------------------------------------------------------------------
 struct SemanticVersion {
     int major;
     int minor;

@@ -59,9 +59,14 @@ void basic_demo()
     assert(((*current) == std::vector<int>{1, 2, 3}));
 }
 
-// ----------------------------------------------------------------------------
-// LeetCode 303：Range Sum Query - Immutable（snapshot 版本）
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 303. Range Sum Query - Immutable（區域和檢索）
+// 題目：建構後重複查詢 nums[left..right] 的總和；例如 [-2,0,3,-5,2,-1] 的 [0,2] 為 1、[2,5] 為 -1。
+// 為何使用本章主題：本例刻意改成 COW snapshot 並加 replace 擴充，讓每次 query 讀一致版本；它用 accumulate O(R)，不是原題 prefix-sum O(1) 最佳解。
+// 思路：1. read 取得 shared_ptr snapshot。2. 驗證左右邊界。3. 在該 immutable 版本累加閉區間。4. replace 複製並 CAS 發布新版。
+// 複雜度：區間長 R 的查詢 O(R)、replace 複製 O(N)，每個活躍 snapshot 可能保留 O(N) 空間。
+// 易錯點：邊界不能只靠 assert；mutator 可能因 CAS 失敗重跑且不可含外部副作用，總和也要防 int overflow。
+// -----------------------------------------------------------------------------
 class NumArray {
 public:
     explicit NumArray(std::vector<int> values) : values_(std::move(values)) {}
@@ -91,9 +96,14 @@ void leetcode_demo()
     assert(numbers.sum_range(2U, 5U) == -1);
 }
 
-// ----------------------------------------------------------------------------
-// 實務：讀者持有舊 routing snapshot，writer 發布新版不破壞舊讀取
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【日常實務範例】無鎖讀取的路由表版本切換
+// 情境：reader 正在使用只含 api-v1 的舊路由時，writer 加入 api-v2；舊 request 必須繼續看到穩定舊版，新 request 讀到新版。
+// 為何使用本章主題：atomic<shared_ptr<const T>> 讓 reader 取得 owning immutable snapshot 後不持鎖，writer 則 copy-on-write 後原子發布。
+// 設計：1. reader load 並保留舊 shared_ptr。2. writer 複製目前 routes。3. 修改副本並 CAS。4. 驗證舊/新 owner 各見一致版本。
+// 成本：讀取有 atomic shared_ptr/refcount 成本；每次更新 O(N) 複製，慢 reader 會延長舊版記憶體生命。
+// 上線注意：多 writer 可能反覆重試而飢餓，mutator 必須可重放；atomic shared_ptr 不保證 lock-free，需量測讀寫比例與峰值記憶體。
+// -----------------------------------------------------------------------------
 void practical_demo()
 {
     CowSnapshot<std::vector<std::string>> routes({"api-v1"});

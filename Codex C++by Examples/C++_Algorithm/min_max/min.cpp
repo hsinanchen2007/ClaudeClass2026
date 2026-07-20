@@ -12,8 +12,16 @@
 #include <iostream>
 #include <vector>
 
-// LeetCode 121：Best Time to Buy and Sell Stock。
-// 每天更新截至目前最低買價，再計算今天賣出的最佳利潤，O(N)/O(1)。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 121. Best Time to Buy and Sell Stock（買賣股票的最佳時機）
+// 題目：輸入每日價格 prices，只能先買一次再賣一次，回最大利潤；無正利潤回 0，
+// 例如 [7,1,5,3,6,4] 回 5。
+// 為何使用本章主題：std::min 維護截至當日的最低買價，再以 std::max 保留最佳賣出
+// 利潤，避免枚舉所有買賣日組合。
+// 思路：1. 空輸入回 0；2. 逐日更新 lowest；3. 計算今日賣出的 price-lowest；4. 更新 best。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 為交易日數。
+// 易錯點：買入必須先於或同日於賣出；全程下跌要回 0；價差若約束放寬需防溢位。
+// -----------------------------------------------------------------------------
 int leetcode_max_profit(const std::vector<int>& prices) {
     if (prices.empty()) {
         return 0;
@@ -27,7 +35,15 @@ int leetcode_max_profit(const std::vector<int>& prices) {
     return best;
 }
 
-// 實務：多個限額取最嚴格者；直接存值，不保存可能懸空的 reference。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】多層上傳限額合併
+// 情境：帳號、系統與單次請求各自給上傳上限，實際可用值必須取三者中最嚴格者。
+// 為何使用本章主題：std::min initializer_list 直接表示多來源 minimum，且回傳值，
+// 比巢狀 min 更易讀也沒有兩參數 temporary reference 的保存風險。
+// 設計：1. 將 account、system、request 放入同型別列表；2. 比較並回最小值。
+// 成本：時間 O(1)、額外空間 O(1)，固定比較三個整數。
+// 上線注意：三個值必須使用同一單位；0 是禁止或不限速要先正規化，熱更新時需讀同一版本快照。
+// -----------------------------------------------------------------------------
 int practical_effective_upload_limit(int account, int system, int request) {
     return std::min({account, system, request});
 }

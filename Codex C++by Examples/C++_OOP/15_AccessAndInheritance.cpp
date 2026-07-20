@@ -47,9 +47,14 @@ void basic_example()
     std::cout << "[基礎] public inheritance 保留 request_count API\n";
 }
 
-// LeetCode 933：Number of Recent Calls。
-// TimestampWindow 是 implementation helper，RecentCounter 不應對外宣稱「is-a window」，
-// 因此用 private inheritance 示範；production code 多半改 composition 更直白。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 933. Number of Recent Calls（最近的請求次數）
+// 題目：ping(t) 回傳 [t-3000,t] 內請求數，t 嚴格遞增；例如 1,100,3001,3002 得 1,2,3,3。
+// 為何使用本章主題：private inheritance 只為示範隱藏 TimestampWindow helper；RecentCounter 並非 is-a window，實務宜 composition。
+// 思路：把新時間放尾端；從前端移除小於下界者；回傳剩餘數量。
+// 複雜度：N 次 ping 總時間 O(N)、單次攤銷 O(1)，空間 O(W)，W 為窗口內請求數。
+// 易錯點：依賴時間單調遞增且包含下界；time-3000 要防溢位；size 轉 int 前需驗範圍。
+// -----------------------------------------------------------------------------
 class TimestampWindow {
 protected:
     void push_timestamp(int time) { times_.push_back(time); }
@@ -89,7 +94,14 @@ void leetcode_933_example()
     std::cout << "[LeetCode 933] private base helper 維護 3000ms window\n";
 }
 
-// 實務案例：composition 版本通常更清楚，JobQueue「has-a」Metrics，而非 is-a。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】工作佇列內嵌提交計數器
+// 情境：JobQueue 每次 submit 都要累加已提交工作數，但佇列不是一種 Metrics。
+// 為何使用本章主題：composition 以 has-a 關係表達 ownership，比 private inheritance 更清楚且不暴露不必要 base 關係。
+// 設計：Metrics 封裝 counter；JobQueue 保存一個 Metrics member；submit 委派 increment；observer 回傳 jobs。
+// 成本：提交與查詢皆 O(1)，每個 queue 多一個 int state。
+// 上線注意：int 計數可能溢位；多執行緒 submit 需 atomic/mutex，metrics 發送失敗不應破壞工作提交語意。
+// -----------------------------------------------------------------------------
 class Metrics {
 public:
     void increment() { ++jobs_; }

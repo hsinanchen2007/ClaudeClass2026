@@ -253,9 +253,16 @@ std::string_view trim_view(const std::string_view input) {
     return input.substr(begin, end - begin + 1U);
 }
 
-// LeetCode 3（Longest Substring Without Repeating Characters）。
-// last_seen[byte] 保存「上次索引 + 1」；0 代表沒出現。把 char 轉 unsigned char，
-// 避免 UTF-8 high-bit byte 在 signed-char 平台成負索引。這仍按 byte，不按 Unicode 字形。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 3. Longest Substring Without Repeating Characters（無重複字元的最長子字串）
+// 題目：找不含重複字元的最長連續區段長度；"abcabcbb" 回 3，"bbbbb" 回 1。
+// 為何使用本章主題：string_view 零拷貝讀輸入，固定 256 格 last_seen 以 byte 為 key 保存上次位置；
+//       相較每輪建立 substr，不需配置候選字串。
+// 思路：1. window_begin 表示合法視窗左界；2. 讀目前 byte 上次索引+1；3. 左界只向右推；
+//       4. 更新視窗長度、best 與目前 byte 位置。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 是 text byte 數，256 格陣列為固定大小。
+// 易錯點：char 先轉 unsigned char 才能當 0..255 索引；本解法按 bytes，不是 Unicode code point/字形。
+// -----------------------------------------------------------------------------
 int leetcode_longest_unique_substring(const std::string_view text) {
     std::array<std::size_t, 256U> last_seen{};
     std::size_t window_begin = 0U;
@@ -274,7 +281,15 @@ int leetcode_longest_unique_substring(const std::string_view text) {
     return static_cast<int>(best);
 }
 
-// LeetCode 125（Valid Palindrome），依原題只處理 ASCII 英數語意。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 125. Valid Palindrome（驗證回文）
+// 題目：忽略非英數並忽略大小寫後判斷是否回文；Panama 句為 true，race a car 為 false。
+// 為何使用本章主題：string_view 借用輸入，isalnum/tolower 處理原題 ASCII 英數語意，
+//       雙索引直接在原資料比較而不建立清理後副本。
+// 思路：1. 左右邊界由兩端開始；2. 各自跳過非英數；3. 轉小寫比較；4. 相同後向中央收縮。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 是 text byte 數。
+// 易錯點：cctype 必須接 unsigned char 或 EOF；這不是 Unicode normalization/case folding。
+// -----------------------------------------------------------------------------
 bool leetcode_valid_palindrome(const std::string_view text) {
     std::size_t left = 0U;
     std::size_t right = text.size();
@@ -299,12 +314,22 @@ bool leetcode_valid_palindrome(const std::string_view text) {
     return true;
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】有範圍限制的整數設定解析
+// 情境：解析 ` key = integer `，要求 key/value 非空、數字完整消耗且位於 caller 指定範圍；
+//       結果 key 必須脫離原始 line 生命週期。
+// 為何使用本章主題：string_view 與 trim_view 零拷貝切片，find/substr 定位欄位，from_chars
+//       嚴格解析且不受 locale 影響；成功邊界才複製 owning key。
+// 設計：1. trim 全行並找第一個 `=`；2. trim key/value 並拒空；3. from_chars 完整解析；
+//       4. 驗範圍後建立 Setting。
+// 成本：時間 O(N)、額外空間 O(K)，N 是 line 長度、K 是成功時 key 長度。
+// 上線注意：要限制行長並驗 key grammar/重複設定；optional 未保留錯誤原因，minimum>maximum 也應在 API 邊界拒絕。
+// -----------------------------------------------------------------------------
 struct Setting {
     std::string key;  // owning：結果可脫離原始 line 生命週期。
     int value{};
 };
 
-// 實務：解析 ` key = integer `。parser 內以 view 零拷貝切片，API 邊界回 owning key。
 std::optional<Setting> practical_parse_setting(const std::string_view line,
                                                const int minimum,
                                                const int maximum) {
@@ -326,7 +351,16 @@ std::optional<Setting> practical_parse_setting(const std::string_view line,
     return Setting{std::string(key), value};
 }
 
-// 實務：建立 `https://host:port/path`。to_chars 避免數字中間 string；reserve 降重配。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】HTTPS endpoint 字串組裝
+// 情境：由 host、unsigned short port 與 path 建立 `https://host:port/path`，path 缺前導斜線時自動補上。
+// 為何使用本章主題：to_chars 直接把 port 寫入固定 char array，不建立數字暫存 string；
+//       reserve 依已知欄位長度預留，append/push_back 再依序建立唯一結果。
+// 設計：1. 將 port 轉入五格 buffer；2. 算出輸出上限並 reserve；3. 附加 scheme/host/port；
+//       4. 視需要補 `/` 後附加 path。
+// 成本：時間 O(H+P)、額外空間 O(H+P)，H、P 是 host、path 長度，port buffer 為 O(1)。
+// 上線注意：host/path 尚未驗證或 URL encode，size 加總需防 overflow；assert 不能取代 to_chars 錯誤處理。
+// -----------------------------------------------------------------------------
 std::string practical_build_endpoint(const std::string_view host,
                                      const unsigned short port,
                                      const std::string_view path) {

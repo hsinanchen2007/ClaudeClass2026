@@ -29,7 +29,15 @@ void basic_demo() {
     assert(joined == "user=alice");
 }
 
-// LeetCode 14（Longest Common Prefix）：string_view 避免為每個候選字串建立副本。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 14. Longest Common Prefix（最長共同前綴）
+// 題目：找出所有 words 的最長共同前綴；flower/flow/flight 得 fl，沒有共同前綴回空。
+// 為何使用本章主題：prefix 以 string_view 借用第一個 word，remove_suffix 只縮長度不配置；
+//       最後才建 owning string。literal 章節同時說明 view 與 owning 結果的生命週期差異。
+// 思路：1. 空集合回空；2. prefix 起始為第一字；3. 每個 word 不符合時逐字縮尾；4. 複製結果。
+// 複雜度：最壞時間 O(W*P^2)、額外空間 O(P)，W 是單字數、P 是首字長度，反覆 starts_with 會重比前綴。
+// 易錯點：prefix 縮成空後 starts_with(empty) 為 true；view 借用 words.front，vector/字串不可在迴圈中修改。
+// -----------------------------------------------------------------------------
 std::string leetcode_longest_common_prefix(const std::vector<std::string>& words) {
     if (words.empty()) {
         return {};
@@ -43,7 +51,15 @@ std::string leetcode_longest_common_prefix(const std::vector<std::string>& words
     return std::string(prefix);
 }
 
-// 實務：協定常數用 sv literal，不配置且可 constexpr 比較。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】HTTP 唯讀方法分類
+// 情境：將 GET 與 HEAD 視為只讀方法，POST 等其他 token 不接受。
+// 為何使用本章主題：`"GET"sv`、`"HEAD"sv` 指向靜態 literal，零配置且可直接與輸入 view 比內容；
+//       相較每次建 std::string，不需要 ownership。
+// 設計：1. 借用 method；2. 與兩個固定 sv literal 精確比較；3. 任一相等回 true。
+// 成本：固定短 token 下時間與空間 O(1)；一般長度 M 時比較為 O(M)。
+// 上線注意：HTTP method 區分大小寫且需要完整 token；輸入 view 的來源仍須在呼叫期間有效。
+// -----------------------------------------------------------------------------
 bool practical_is_read_method(const std::string_view method) {
     return method == "GET"sv || method == "HEAD"sv;
 }

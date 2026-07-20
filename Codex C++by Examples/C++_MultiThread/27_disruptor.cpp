@@ -25,6 +25,14 @@ void expect(bool condition, const char* message)
     if (!condition) throw std::runtime_error(message);
 }
 
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 622. Design Circular Queue（設計循環佇列）
+// 題目：實作固定容量循環 queue 的入列、出列、首尾與滿空查詢；本檔只借題測試 SPSC sequence FIFO/wrap，並非完整 LeetCode 介面。
+// 為何使用本章主題：producer/consumer 以單調 uint64 sequence 交接預配置 slots，published/consumed 的 release/acquire 防止覆寫與讀未發布資料。
+// 思路：1. producer 等 sequence 距離小於容量。2. 寫 slot 後發布 exclusive position。3. consumer 等 published 前進。4. 讀後發布 consumed。
+// 複雜度：每筆成功 publish/consume O(1)、固定空間 O(C)，但滿/空時 busy-yield 的等待無界。
+// 易錯點：只有單 producer/consumer；unsigned wrap 需容量小於序號空間一半，MPMC 不能只把 producer index 改 atomic。
+// -----------------------------------------------------------------------------
 template <std::size_t Capacity>
 class SequencedRing {
     static_assert(Capacity > 0U);
@@ -94,9 +102,6 @@ void basic_demo()
     expect(first == 10 && second == 20, "SPSC basic order mismatch");
 }
 
-// ----------------------------------------------------------------------------
-// LeetCode 622：Design Circular Queue（sequence 版測試）
-// ----------------------------------------------------------------------------
 void leetcode_demo()
 {
     SequencedRing<3> queue;
@@ -113,9 +118,14 @@ void leetcode_demo()
            "circular queue order mismatch");
 }
 
-// ----------------------------------------------------------------------------
-// 實務：預配置 telemetry pipeline，ring 很小仍由 gating 防覆寫
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【日常實務範例】小容量 Telemetry Sequence 管線
+// 情境：容量 2 的預配置 ring 傳送 1..20 並求和 210，即使 producer 較快也不能覆寫 consumer 尚未讀的 slot；另測 uint64 wrap。
+// 為何使用本章主題：consumer gating 以 sequence distance 提供 backpressure，避免配置與 mutex；可注入起始序號讓 wrap 邊界可決定性測試。
+// 設計：1. producer 依序 publish。2. 滿時等 consumed 前進。3. consumer 依序 consume 並累加。4. 從 UINT64_MAX-1 再驗三筆跨 wrap FIFO。
+// 成本：N 筆總工作 O(N)、ring 空間 O(C)，busy wait 消耗與延遲依 producer/consumer 速率而定。
+// 上線注意：需 stop/close 與可配置 wait strategy，否則任一方退出會讓另一方永久等待；crash durability 與多 consumer topology也未涵蓋。
+// -----------------------------------------------------------------------------
 void practical_demo()
 {
     SequencedRing<2> ring;

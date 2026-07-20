@@ -19,7 +19,16 @@
 #include <string>
 #include <vector>
 
-// LeetCode 35：Search Insert Position。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 35. Search Insert Position（搜尋插入位置）
+// 題目：輸入無重複升冪陣列 nums 與 target；若存在回索引，否則回插入後仍有序的
+// 位置，例如 [1,3,5,6] 查 2 回 1。
+// 為何使用本章主題：std::lower_bound 回第一個不小於 target 的位置，無論 target
+// 存不存在都恰好是題目要求的最左插入點。
+// 思路：1. 在整個 nums 求 lower_bound；2. 計算 begin 到結果的距離；3. 轉成 size_t 回傳。
+// 複雜度：時間 O(log N)、額外空間 O(1)，N 為 nums 的元素數。
+// 易錯點：nums 必須升冪；target 大於全部元素時合法回 N；不要解參考只為判斷位置。
+// -----------------------------------------------------------------------------
 std::size_t leetcode_search_insert(const std::vector<int>& nums, int target) {
     return static_cast<std::size_t>(
         std::distance(nums.begin(),
@@ -31,7 +40,17 @@ struct Deployment {
     std::string version;
 };
 
-// 實務：找出第一筆時間 >= 查詢時間的部署，常用於時間軸查詢。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】部署時間軸的 ceiling 查詢
+// 情境：部署紀錄依 timestamp 升冪保存，給定查詢時間後要找當時或其後第一個版本；
+// 若後續沒有部署則回傳 "none"。
+// 為何使用本章主題：lower_bound 的異質比較可直接找第一筆 timestamp>=key；相較
+// 線性掃描，適合對同一份唯讀時間軸反覆查詢。
+// 設計：1. 以 Deployment.timestamp 與 long key 比較；2. 取得第一個不早於查詢時間
+// 的 iterator；3. 對 end 回 sentinel，否則回該筆 version。
+// 成本：時間 O(log N)、額外空間 O(1)，N 為部署紀錄數；回傳字串會產生值複製。
+// 上線注意：載入時需驗證 timestamp 非遞減；正式 API 宜用 optional 取代可能與版本名衝突的 "none"。
+// -----------------------------------------------------------------------------
 std::string practical_first_deployment_at_or_after(
     const std::vector<Deployment>& log, long timestamp) {
     const auto it = std::lower_bound(

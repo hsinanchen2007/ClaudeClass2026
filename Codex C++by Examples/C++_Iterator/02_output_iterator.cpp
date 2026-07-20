@@ -27,7 +27,14 @@ void basic_example()
     std::cout << "[基礎] transform writes through back_insert_iterator\n";
 }
 
-// LeetCode 1929：兩次 copy 到同一 back inserter，形成 nums concatenation。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1929. Concatenation of Array（陣列串接）
+// 題目：建立長度 2N 的 answer，使前後兩半皆為 nums；例如 [1,2,1] 得 [1,2,1,1,2,1]。
+// 為何使用本章主題：back_insert_iterator 把 algorithm 的輸出賦值轉成 push_back，連續寫入兩份 range。
+// 思路：預留 2N 容量；第一次 copy 原陣列；第二次 copy 同一 range；回傳 answer。
+// 複雜度：時間 O(N)、額外空間 O(N)（不含必要輸出則為 O(1)），N 為 nums 長度。
+// 易錯點：nums.size()*2 可能 size_t 溢位；reserve 不改 size；直接寫 begin 前必須先 resize。
+// -----------------------------------------------------------------------------
 std::vector<int> get_concatenation(const std::vector<int>& nums)
 {
     std::vector<int> answer;
@@ -43,7 +50,14 @@ void leetcode_1929_example()
     std::cout << "[LeetCode 1929] output iterator appended two ranges\n";
 }
 
-// 實務：ostream_iterator 產生 line-oriented report，每筆一行無歧義。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】逐行輸出的識別碼報表
+// 情境：下游工具要求每行一個 id，輸入 [10,20,30] 必須輸出三行且保留最後換行。
+// 為何使用本章主題：ostream_iterator 將每次 assignment 直接格式化到 stream，無需手寫索引與分隔判斷。
+// 設計：建立輸出 stream；以換行作 delimiter；copy 所有 id 到 output iterator；檢查結果。
+// 成本：時間 O(N) 加序列化/I/O，額外記憶體依 stream 緩衝；N 為 id 數。
+// 上線注意：delimiter 也出現在最後一筆後；必須檢查 stream state，寫檔若需原子性應先寫暫存檔再替換。
+// -----------------------------------------------------------------------------
 void practical_example()
 {
     std::ostringstream output;

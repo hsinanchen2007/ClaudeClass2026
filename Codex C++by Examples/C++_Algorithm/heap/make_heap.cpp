@@ -16,7 +16,17 @@
 #include <iostream>
 #include <vector>
 
-// LeetCode 215：第 K 大元素。建 max-heap 後 pop k-1 次。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 215. Kth Largest Element in an Array（陣列中的第 K 大元素）
+// 題目：輸入未排序陣列 nums 與 k，回傳排序後第 k 大的值；例如
+// [3,2,1,5,6,4]、k=2 回 5。
+// 為何使用本章主題：make_heap 可在線性時間把完整輸入建成 max-heap，之後每次
+// pop_heap 移除一個目前最大值，直到 heap front 成為第 k 大。
+// 思路：1. 驗證 k 在 [1,N]；2. 建 max-heap；3. 執行 k-1 次 pop_heap 與 pop_back；
+// 4. 回傳剩餘 heap 的 front。
+// 複雜度：時間 O(N+K log N)、額外空間 O(N)，N 為 nums 數量；空間包含按值複製輸入。
+// 易錯點：pop_heap 不會縮小 vector，必須再 pop_back；k 不可為 0 或大於 N。
+// -----------------------------------------------------------------------------
 int leetcode_find_kth_largest(std::vector<int> nums, int k) {
     assert(k >= 1 && static_cast<std::size_t>(k) <= nums.size());
     std::make_heap(nums.begin(), nums.end());
@@ -27,7 +37,16 @@ int leetcode_find_kth_largest(std::vector<int> nums, int k) {
     return nums.front();
 }
 
-// 實務：一次載入待處理工作，建立 min-heap 讓最早 deadline 優先。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】批次工作最早期限選取
+// 情境：一次載入尚未排程的 Job，每筆有 deadline 與 id；要先取得截止時間最早的
+// 工作 id，原輸入可由呼叫端繼續保留。
+// 為何使用本章主題：make_heap 可從批次資料一次建 min-heap，成本低於逐筆排序；
+// LaterDeadline 反轉預設順序，讓最小 deadline 位於 front。
+// 設計：1. 比較器以較晚 deadline 為較低優先；2. 對 jobs 建 heap；3. 讀取 front.id。
+// 成本：時間 O(N)、額外空間 O(N)，N 為工作數；額外空間來自按值接收 jobs。
+// 上線注意：函式要求非空輸入；deadline 相同目前沒有穩定順序，正式排程應加入 sequence/id tie-break。
+// -----------------------------------------------------------------------------
 struct Job {
     int deadline;
     int id;

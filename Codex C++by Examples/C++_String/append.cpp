@@ -24,7 +24,16 @@ void basic_demo() {
     assert(text == "key=VALUE");
 }
 
-// LeetCode 1768（Merge Strings Alternately）。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1768. Merge Strings Alternately（交錯合併字串）
+// 題目：輸入字串 a、b，從 a 開始輪流取同索引字元，較長者的尾段照原序補上；例如
+//       "abc" 與 "pq" 要得到 "apbqc"。
+// 為何使用本章主題：append(count, char) 每次精確附加一個字元，並配合 reserve 避免
+//       在答案逐步成長時反覆重新配置。
+// 思路：1. 預留 N+M 個字元；2. 索引走到兩字串都結束；3. 各自仍有字元時依序 append。
+// 複雜度：時間 O(N+M)、額外空間 O(N+M)，N、M 分別是 a、b 的長度，空間為回傳答案。
+// 易錯點：每次讀 a[i]／b[i] 前都要各自檢查界線；計算 N+M 時正式程式也要防 size overflow。
+// -----------------------------------------------------------------------------
 std::string leetcode_merge_alternately(const std::string& a, const std::string& b) {
     std::string result;
     result.reserve(a.size() + b.size());
@@ -35,7 +44,15 @@ std::string leetcode_merge_alternately(const std::string& a, const std::string& 
     return result;
 }
 
-// 實務：建立批次 log；append(pointer,count) 能保存切片，無須先做 substr 副本。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】批次工作紀錄欄位組裝
+// 情境：收到多個已完成編碼的 log 欄位，要輸出如 "INFO | job=7 | done" 的單行紀錄。
+// 為何使用本章主題：append(pointer, count) 直接複製 field 的完整 byte 範圍，不需建立
+//       substr 暫存，也能保留欄位中的內嵌 NUL。
+// 設計：1. 從空結果開始；2. 非首欄先附加分隔符；3. 以 data()+size() 附加每個欄位。
+// 成本：令 T 為欄位與分隔符總 bytes，時間 O(T)、答案空間 O(T)；未 reserve 可能多次配置。
+// 上線注意：必須限制總長度並 escape 換行與分隔符；append 期間不得使用已失效的舊指標。
+// -----------------------------------------------------------------------------
 std::string practical_join_log_fields(const std::vector<std::string>& fields) {
     std::string line;
     for (const std::string& field : fields) {

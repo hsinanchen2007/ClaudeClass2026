@@ -22,7 +22,15 @@ void basic_demo() {
     assert(text.substr(text.size()).empty());
 }
 
-// LeetCode 28 的教學版：逐位置建立 substring 比較，簡單但可能反覆配置。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 28. Find the Index of the First Occurrence in a String（尋找首次出現位置）
+// 題目：回傳 pattern 在 text 中第一次完整匹配的位置，找不到回 -1；"sadbutsad"、"sad" 回 0。
+// 為何使用本章主題：每個候選位置以 substr 建 owning 片段再比較，便於展示 API 邊界；
+//       這是會反覆配置的教學寫法，實際提交宜用 find 或 string_view::compare。
+// 思路：1. pattern 較長直接失敗；2. 枚舉所有可容納起點；3. 建等長 substring；4. 首次相等回索引。
+// 複雜度：時間 O((N-K+1)*K)、額外暫存空間 O(K)，N、K 是 text、pattern 長度。
+// 易錯點：迴圈上界要允許最後一個候選；空 pattern 會在位置 0 匹配，索引轉 int 前要驗範圍。
+// -----------------------------------------------------------------------------
 int leetcode_str_str_substr(const std::string& text, const std::string& pattern) {
     if (pattern.size() > text.size()) return -1;
     for (std::size_t i = 0U; i + pattern.size() <= text.size(); ++i) {
@@ -31,7 +39,15 @@ int leetcode_str_str_substr(const std::string& text, const std::string& pattern)
     return -1;
 }
 
-// 實務：解析 `scheme://rest`；結果需要脫離 input 生命週期，所以回 owning strings。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】URL scheme 與剩餘部分拆分
+// 情境：將 `https://example.test/a` 拆成 owning scheme=https 與 rest=example.test/a，供稍後保存。
+// 為何使用本章主題：substr 建立獨立擁有的結果，來源 url 離開 scope 後仍安全；相較 string_view
+//       多一次複製，但 API 生命週期更簡單。
+// 設計：1. find `://`；2. 拒絕缺分隔符或空 scheme；3. 以兩次 substr 建立欄位。
+// 成本：搜尋 O(N)，複製 O(N)，額外空間 O(N)，N 是 url 長度。
+// 上線注意：這不是完整 URL parser，未驗 scheme grammar、空 host、authority、encoding 或長度上限。
+// -----------------------------------------------------------------------------
 struct UrlParts {
     std::string scheme;
     std::string rest;

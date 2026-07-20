@@ -46,9 +46,14 @@ void basic_example()
     std::cout << "[基礎] custom Employee 可 sort 並依 name find_if\n";
 }
 
-// LeetCode 1：Two Sum。
-// ValueIndex 把 value 與原始 index 綁成一個 value object；operator< 讓 sort 依 value，
-// two-pointer 找到總和後仍能回原 index。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1. Two Sum（兩數之和）
+// 題目：找兩個不同索引使總和等於 target；例如 [2,7,11,15]、target=9 回傳 0,1。
+// 為何使用本章主題：ValueIndex 把值與來源索引包成 custom value；operator< 讓 STL sort 後仍能回原索引。
+// 思路：建立 ValueIndex vector；按 value 排序；左右指標算寬型別總和；依大小收斂直到命中。
+// 複雜度：時間 O(N log N)、額外空間 O(N)，N 為輸入長度；hash 解可平均 O(N)。
+// 易錯點：至少兩元素；sum 用 long long 防 int overflow；size_t 索引轉 int 前應驗範圍，未命中回 sentinel pair。
+// -----------------------------------------------------------------------------
 class ValueIndex {
 public:
     ValueIndex(int value, int index) : value_(value), index_(index) {}
@@ -89,7 +94,14 @@ void leetcode_1_example()
     std::cout << "[LeetCode 1] custom ValueIndex 找到 indices 0,1\n";
 }
 
-// 實務案例：strong AssetId 避免把任意 string 誤傳；自訂 hash 支援 unordered_map。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】以強型別資產 ID 建 hash 索引
+// 情境：模型檔大小表應只接受 AssetId，避免把一般路徑、使用者名稱等任意 string 誤傳成 key。
+// 為何使用本章主題：custom class 建立 domain type；operator== 與 AssetIdHash 一致後可安全用於 unordered_map。
+// 設計：AssetId 擁有字串；相等比較完整值；hash 委派 std::hash<string>；map 保存 id->bytes。
+// 成本：hash/equality 平均 O(L)，查找平均 O(1) bucket 操作，空間 O(N*L)。
+// 上線注意：equal 的 id 必須產生相同 hash；constructor 應驗空值/正規化，插入後不可修改影響 hash 的 key。
+// -----------------------------------------------------------------------------
 class AssetId {
 public:
     explicit AssetId(std::string value) : value_(std::move(value)) {}

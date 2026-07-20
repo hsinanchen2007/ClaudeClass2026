@@ -45,8 +45,14 @@ void basic_example()
     std::cout << "[基礎] abstract Shape contract area=12\n";
 }
 
-// LeetCode 278：First Bad Version。
-// 線上 judge 提供 isBadVersion；用 abstract oracle 表達外部依賴，測試注入 fake oracle。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 278. First Bad Version（第一個錯誤的版本）
+// 題目：版本 1..n 中從某版起皆為 bad，找第一個 bad；例如 n=5、first bad=4 時回 4。
+// 為何使用本章主題：abstract VersionOracle 表達 judge 的外部 isBadVersion 依賴，測試可注入固定 fake。
+// 思路：維持含答案的 [left,right]；查 middle；bad 就收右界，good 就移左界；相遇即答案。
+// 複雜度：時間 O(log N) 次 oracle 呼叫、額外空間 O(1)，N 為版本數。
+// 易錯點：N 必須至少 1 且 oracle 結果單調；middle 用 left+(right-left)/2 防溢位；oracle reference 必須存活。
+// -----------------------------------------------------------------------------
 class VersionOracle {
 public:
     virtual ~VersionOracle() = default;
@@ -81,7 +87,14 @@ void leetcode_278_example()
     std::cout << "[LeetCode 278] injected oracle 找到 first bad=4\n";
 }
 
-// 實務案例：Storage 是穩定邊界；MemoryStorage 可供本機與 unit test 使用。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】可注入的模型 metadata 儲存層
+// 情境：服務以 key 保存/讀取模型名稱，production 可換資料庫，本機與單元測試先用記憶體實作。
+// 為何使用本章主題：Storage abstract class 定義穩定 put/get 契約，MemoryStorage 是可替換 concrete dependency。
+// 設計：put 將 key/value 移入 map；get 查 key；缺少時丟 out_of_range；呼叫端只持 Storage&。
+// 成本：MemoryStorage put/get O(log N)，空間 O(N) 加字串內容，N 為 key 數；外部 backend 成本另計。
+// 上線注意：需定義 overwrite、missing、持久性與錯誤型別；map 與 pointee 非自動 thread-safe，borrow 也不延長生命。
+// -----------------------------------------------------------------------------
 class Storage {
 public:
     virtual ~Storage() = default;

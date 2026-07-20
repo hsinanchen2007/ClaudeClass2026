@@ -31,8 +31,14 @@ void basic_example()
     std::cout << "[基礎] 1500ms cast=1s round=2s; floor(-1500ms)=-2s\n";
 }
 
-// LeetCode 539：Minimum Time Difference。
-// 將 HH:MM 解析成 minutes duration，排序後比較相鄰與跨午夜 gap。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 539. Minimum Time Difference（最小時間差）
+// 題目：輸入至少兩個 HH:MM 時刻，求 24 小時循環中的最小分鐘差；例如 23:59 與 00:00 的答案是 1。
+// 為何使用本章主題：hours 與 minutes 可直接組成 minutes duration，跨午夜差值也能以 24h 明確表示，不需混用裸整數單位。
+// 思路：1. 解析每個字串為午夜後分鐘數。2. 排序。3. 比較所有相鄰差。4. 再比較首尾跨午夜差。
+// 複雜度：N 個時刻的時間 O(N log N)、額外空間 O(N)，N 為 timePoints 數量。
+// 易錯點：不可漏掉最後與第一個時刻的環形差；production parser 還須嚴格拒絕格式錯誤與超出 00:00..23:59 的值。
+// -----------------------------------------------------------------------------
 std::chrono::minutes parse_time(const std::string& text)
 {
     const int hours = std::stoi(text.substr(0U, 2U));
@@ -61,7 +67,14 @@ void leetcode_539_example()
     std::cout << "[LeetCode 539] minimum gaps 1 and 120 minutes\n";
 }
 
-// 實務：backoff 以 duration 算，不把毫秒與秒裸整數混在一起。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】服務重試的指數退避間隔
+// 情境：網路請求失敗後從 100ms 開始倍增等待，並把最大間隔限制在 6400ms，避免持續壓迫故障服務。
+// 為何使用本章主題：chrono duration 讓乘法結果仍帶毫秒單位，比回傳 unsigned 裸值更不易在 sleep 或排程 API 處誤用。
+// 設計：1. 將 attempt 上限設為 6。2. 以 2 的 capped 次方放大 100ms。3. 回傳 milliseconds 給排程層。
+// 成本：每次計算時間 O(1)、空間 O(1)，真正等待與重試 I/O 不在此函式內。
+// 上線注意：實際系統通常還要加入 jitter、總 deadline 與可取消等待；位移前必須封頂以避免整數溢位或未定義行為。
+// -----------------------------------------------------------------------------
 std::chrono::milliseconds exponential_backoff(unsigned attempt)
 {
     const unsigned capped = std::min(attempt, 6U);

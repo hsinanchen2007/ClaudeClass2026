@@ -40,9 +40,14 @@ void basic_demo()
     waiter.join();
 }
 
-// ----------------------------------------------------------------------------
-// LeetCode 1114：binary_semaphore 排序
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1114. Print in Order（按序列印）
+// 題目：三個方法由任意順序啟動的 thread 呼叫，仍須輸出 firstsecondthird。
+// 為何使用本章主題：兩個初值 0 的 binary_semaphore 分別代表 first/second 已完成，acquire 阻塞後續步驟且建立同步。
+// 思路：1. first 寫入後 release 第一個 permit。2. second acquire 後追加。3. release 第二個 permit。4. third acquire 後追加。
+// 複雜度：控制操作與同步物件空間 O(1)，等待延遲取決於 thread 排程。
+// 易錯點：binary semaphore 不可把 permit 累積超過上限；同一方法重複呼叫會破壞前置條件，result 也只能在 join 後讀。
+// -----------------------------------------------------------------------------
 class Foo {
 public:
     void first()
@@ -84,9 +89,14 @@ void leetcode_demo()
     assert(foo.result() == "firstsecondthird");
 }
 
-// ----------------------------------------------------------------------------
-// 實務：兩 worker 進行兩階段計算，barrier 保證 phase 1 全完才讀彼此結果
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【日常實務範例】兩階段分片計算的 Barrier 對齊
+// 情境：兩個 worker 先各算 4^2、5^2，再各自讀兩個 partial 得 41；任何人都不能在另一方完成前進入 reduce phase。
+// 為何使用本章主題：barrier 可在固定 participant 間重複對齊 phase，比手寫 counter+condition_variable 更直接且不需 busy wait。
+// 設計：1. 每 worker 寫自己的 partial slot。2. 第一個 barrier 等全部完成。3. 各自讀兩格寫 combined。4. 第二個 barrier 結束 phase。
+// 成本：每 phase 有一次全體同步；資料工作 O(1)、空間 O(P)，P 為 participant 數，最慢 worker 決定進度。
+// 上線注意：任何 participant 提前退出都要 arrive_and_drop，否則永久等待；partial slots 可能 false sharing，輸入乘法也需防 overflow。
+// -----------------------------------------------------------------------------
 void practical_demo()
 {
     int partial[2]{0, 0};

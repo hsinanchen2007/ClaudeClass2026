@@ -35,7 +35,15 @@ std::unique_ptr<ListNode> make_list(std::initializer_list<int> values) {
     return std::move(sentinel->next);
 }
 
-// LeetCode 2：Add Two Numbers；factory 以 forward 將 int 原樣交給 ListNode constructor。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 2. Add Two Numbers（兩數相加）
+// 題目：兩條反向儲存十進位數字的 linked list 相加；[2,4,3]+[5,6,4] 產生 [7,0,8]。
+// 為何使用本章主題：make_object 以 forwarding reference 與 std::forward 把節點值交給 constructor；
+// 對 int 並無效能必要，這是把通用 factory 套入題目的 perfect-forwarding 教學示範。
+// 思路：以 sentinel 管理結果頭；逐位加上兩邊值與 carry；建立個位數節點並更新進位。
+// 複雜度：時間 O(max(M,N))、結果空間 O(max(M,N))，M、N 是兩條 list 的節點數。
+// 易錯點：最後 carry 非零時仍要建節點；輸入 digit 應為 0..9，unique_ptr 負責結果串列所有權。
+// -----------------------------------------------------------------------------
 std::unique_ptr<ListNode> leetcode_add_two_numbers(const ListNode* left,
                                                    const ListNode* right) {
     auto sentinel = make_object<ListNode>(0);
@@ -53,7 +61,15 @@ std::unique_ptr<ListNode> leetcode_add_two_numbers(const ListNode* left,
     return std::move(sentinel->next);
 }
 
-// 【實務情境】事件 factory 同時接受 lvalue 名稱與 rvalue payload，保留各自 value category。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】保留引數類別的事件 factory
+// 情境：呼叫端要保留仍會使用的 lvalue 事件名稱，同時把臨時 payload 高效移入 Event。
+// 為何使用本章主題：practical_make_event 以 forwarding references 接收參數，再用 std::forward
+// 保留 lvalue/rvalue；相較無條件 std::move，不會意外搬空 name。
+// 設計：factory 推導每個 Args；原樣轉送給 Event constructor；constructor 複製 lvalue name、移動 rvalue payload。
+// 成本：name 複製 O(L)，payload 移動通常 O(1)，L 是名稱長度；Event 本身保存 payload 空間。
+// 上線注意：同一參數不可 forward 給多個消費者；braced list 推導受限，且 temporary 生命週期不會被延長。
+// -----------------------------------------------------------------------------
 struct Event {
     std::string name;
     std::vector<int> payload;

@@ -26,6 +26,14 @@ void expect(bool condition, const char* message)
     if (!condition) throw std::runtime_error(message);
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】前景低延遲、關閉時排空的非同步日誌
+// 情境：producer 依序提交 record-0..99，同時兩個 closer 可能先關閉；所有 log 回成功的 records 必須在每個 close 返回前寫入 sink。
+// 為何使用本章主題：producer 只在 mutex 下 enqueue，單背景 worker 序列化 sink；call_once 讓 concurrent close 共享同一次 drain/join。
+// 設計：1. log 鎖內接受完整 owning string。2. worker cv 等待並出列。3. close 停止收件、notify。4. worker 排空後退出並由 closer join。
+// 成本：每筆有字串 ownership、queue/written mutex 與配置；空間 O(Q+R)，close latency 取決於 backlog/sink。
+// 上線注意：unbounded queue 需 block/drop policy；close/join 不代表 fsync，process crash 仍可能遺失，worker I/O 例外也需傳回 owner。
+// -----------------------------------------------------------------------------
 class AsyncLogger {
 public:
     AsyncLogger() : worker_([this] { run(); }) {}
@@ -112,9 +120,14 @@ void basic_demo()
     expect(rejected, "log after close must be rejected");
 }
 
-// ----------------------------------------------------------------------------
-// LeetCode 359：Logger Rate Limiter
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 359. Logger Rate Limiter（日誌速率限制器）
+// 題目：同一 message 每 10 秒最多輸出一次；例如 foo 在 timestamp 1 允許、2 抑制、11 再允許。
+// 為何使用本章主題：mutex 讓多 thread 對 next_allowed_ 的查詢與更新成為單一原子操作；原題時間遞增，這裡額外提供 thread-safe wrapper。
+// 思路：1. 鎖住 map。2. 查 message 的門檻。3. 未到時間回 false。4. 允許時寫 timestamp+10 並回 true。
+// 複雜度：unordered_map 平均每次 O(1)、空間 O(M)，M 為不同訊息數；所有 caller 仍競爭同一 mutex。
+// 易錯點：timestamp 等於門檻時要允許；timestamp+10 需防 int overflow，長期服務也要淘汰舊 message 避免 map 無界成長。
+// -----------------------------------------------------------------------------
 class RateLimiter {
 public:
     bool should_print(int timestamp, const std::string& message)
@@ -140,9 +153,6 @@ void leetcode_demo()
     expect(first && !suppressed && after_window, "rate limiter window mismatch");
 }
 
-// ----------------------------------------------------------------------------
-// 實務：兩 producer；每一 producer 內順序保留，全域 interleaving 不作假設
-// ----------------------------------------------------------------------------
 void practical_demo()
 {
     AsyncLogger logger;

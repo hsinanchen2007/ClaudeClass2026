@@ -35,7 +35,14 @@ void basic_example()
     std::cout << "[基礎] seed_seq words reproduce raw mt19937 state\n";
 }
 
-// LeetCode 380：RandomizedSet 測試注入 seed，讓 getRandom failure 可重播。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 380. Insert Delete GetRandom O(1)（O(1) 插入、刪除與隨機取值）
+// 題目：集合需支援平均 O(1) insert/remove/getRandom；本檔只借用介面展示 seed 注入，線性 find 且未實作 remove，並非完整最佳解。
+// 為何使用本章主題：constructor 接收 seed 並把 mt19937 保存在物件內，使相同資料與呼叫順序能重播相同 getRandom 序列。
+// 思路：1. 線性檢查重複後加入 vector。2. 在合法 index 閉區間均勻抽樣。3. 由 index 取值。4. 以相同 seed 建兩組序列比較。
+// 複雜度：insert 時間 O(N)、getRandom 期望 O(1)、儲存空間 O(N)；因此不符合原題 insert 的平均 O(1) 要求。
+// 易錯點：空集合會讓 size()-1 下溢，正式版必須拒絕；完整解需 vector 加 index hash map，seed 相同仍要求呼叫順序相同。
+// -----------------------------------------------------------------------------
 class RandomizedSet {
 public:
     explicit RandomizedSet(std::uint32_t seed) : engine_(seed) {}
@@ -74,7 +81,14 @@ void leetcode_380_example()
     std::cout << "[LeetCode 380] injected seed replays getRandom calls\n";
 }
 
-// 實務：取得 nondeterministic seed 時保存它；random_device 不是密碼學保證。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】隨機化測試的執行期 seed 紀錄
+// 情境：未指定 seed 時從環境取得一個起始值執行 fuzz/simulation，並把實際值印入報告供失敗重播。
+// 為何使用本章主題：random_device 可作一般非安全 PRNG 的 seed 來源；保存 seed 比只追求每次不同更利於診斷。
+// 設計：1. 建立 random_device。2. 取得 uint32 seed。3. 用它初始化 mt19937。4. 在使用序列時同步記錄 seed。
+// 成本：建立/讀取 random_device 可能涉及 OS I/O 且成本依平台；後續 mt19937 draw 為記憶體內狀態更新。
+// 上線注意：random_device 可能是 deterministic 且不保證密碼學安全；安全 token 必須改用 OS CSPRNG，log 也不可洩漏安全種子。
+// -----------------------------------------------------------------------------
 std::uint32_t runtime_seed()
 {
     std::random_device device;

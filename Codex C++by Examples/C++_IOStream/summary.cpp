@@ -195,11 +195,15 @@ void basic_stream_demo()
     }
 }
 
-// ---------------------------------------------------------------------------
-// LeetCode 151：Reverse Words in a String
-// operator>> 自然把一個以上 whitespace 視為分隔；再反向輸出單一空白。
-// O(n) time / O(n) space。
-// ---------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 151. Reverse Words in a String（反轉句中單字）
+// 題目：反轉單字順序、去除首尾空格並把單字間空格正規化成一格；`  hello   world  ` 得 `world hello`。
+// 為何使用本章主題：istringstream 的 operator>> 自動依 whitespace 切 word，ostringstream
+//       再以單一空格反向輸出；相較手寫索引，程式短但會配置 words 與輸出 buffer。
+// 思路：1. extraction 讀出所有 word；2. 存入 vector；3. 由 rbegin 走回；4. 非首輸出先加一格。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 是 text 長度，所有單字與結果各自擁有資料。
+// 易錯點：`>>` 的 whitespace 受 locale 影響；不能用 `while(!eof())`，且 hot path 可用原地雙指標減少配置。
+// -----------------------------------------------------------------------------
 std::string reverse_words(const std::string& text)
 {
     std::istringstream input(text);
@@ -223,11 +227,16 @@ void leetcode_demo()
     assert(reverse_words("a good   example") == "example good a");
 }
 
-// ---------------------------------------------------------------------------
-// 實務：明確 wire format，而非 `write(reinterpret_cast<char*>(&struct), sizeof struct)`。
-// 格式：magic "JOB1" + big-endian uint32 job id + 1-byte priority。
-// 固定長度 9 bytes；encode/decode 都檢查完整性。
-// ---------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【日常實務範例】版本化工作標頭 binary wire format
+// 情境：序列化 job id 與 priority，格式固定為 magic `JOB1`、big-endian uint32、1-byte priority，總長 9 bytes。
+// 為何使用本章主題：ostream::write/put 與 istream::read/get 按明確 bytes 操作；相較直接 dump struct，
+//       不會洩漏 padding、host endian 或 ABI layout。
+// 設計：1. 寫/驗四 byte magic；2. 逐位編解碼 big-endian id；3. 寫/讀 priority；4. 每步檢查 stream。
+// 成本：固定 9 bytes 時時間與暫存空間 O(1)；一般 payload 則順序 I/O 為 O(B)。
+// 上線注意：外部 length、checksum、更多 version 與 trailing-byte policy 仍需定義；錯誤要帶 offset，
+//       重要輸出必須檢查 flush/close，decode_job 本身不驗證後方是否還有額外 bytes。
+// -----------------------------------------------------------------------------
 struct JobHeader {
     std::uint32_t id;
     std::uint8_t priority;
@@ -279,6 +288,16 @@ JobHeader decode_job(std::istream& input)
     return JobHeader{id, static_cast<std::uint8_t>(priority)};
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】單行診斷紀錄安全 escaping
+// 情境：level/message 可能含換行、CR、tab、反斜線或 ASCII control bytes，輸出仍必須維持恰好一筆單行紀錄。
+// 為何使用本章主題：local ostringstream 先組完整 record，避免污染 caller formatting state；逐 byte
+//       escape 相較直接插入原字串可防止換行偽造多筆紀錄。
+// 設計：1. 逐 byte escape `\\`、換行、CR、tab與 control；2. 同時處理 level/message；3. 組 `[level] message\n`。
+// 成本：時間 O(L+M)、額外空間 O(L+M)，L、M 是兩欄長度；control byte 最多擴張成四字元。
+// 上線注意：要限制擴張後長度、驗 UTF-8 與加入 timestamp/context；多執行緒應把完整結果一次排入
+//       synchronized queue/sink，ostringstream 本身不提供跨執行緒或 durability 保證。
+// -----------------------------------------------------------------------------
 std::string make_log_line(const std::string& level, const std::string& message)
 {
     const auto escape_field = [](const std::string& input) {

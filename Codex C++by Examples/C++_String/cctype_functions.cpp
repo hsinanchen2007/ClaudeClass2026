@@ -28,7 +28,15 @@ void basic_demo() {
     assert(upper == 'M');
 }
 
-// LeetCode 125（Valid Palindrome）：題目使用英數 ASCII，適合 cctype。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 125. Valid Palindrome（驗證回文）
+// 題目：忽略非英數並忽略大小寫後判斷字串是否回文；例如 Panama 句為 true，race a car 為 false。
+// 為何使用本章主題：isalnum 負責略過非英數，tolower 統一兩端大小寫；題目限定的 ASCII
+//       語意適合 cctype，但每個 char 都先轉 unsigned char 才符合 API 契約。
+// 思路：1. 左右索引夾住範圍；2. 各自跳過非英數；3. 比較小寫值；4. 相同就向中央收縮。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 是 text 的 byte 數。
+// 易錯點：負的 signed char 直接傳 cctype 是未定義行為；此解法不是 Unicode 正規化或 case folding。
+// -----------------------------------------------------------------------------
 bool leetcode_valid_palindrome(const std::string& text) {
     std::size_t left = 0U;
     std::size_t right = text.size();
@@ -47,7 +55,16 @@ bool leetcode_valid_palindrome(const std::string& text) {
     return true;
 }
 
-// 實務：產生 ASCII slug；連續非英數合併成一個 dash，並移除尾端 dash。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】ASCII 網址 slug 產生器
+// 情境：把英文標題轉成小寫英數 slug，連續標點合併成一個 '-'，首尾不留分隔符。
+// 為何使用本章主題：isalnum/tolower 可集中處理 C locale 的單 byte 分類，比手列兩套大小寫
+//       區間簡潔；相較 regex，此逐 byte 狀態機成本可預測。
+// 設計：1. 英數轉小寫後附加；2. 非英數只在已有內容且尾端非 '-' 時補一個；3. 移除尾 dash。
+// 成本：時間 O(N)、額外空間 O(N)，N 是 title bytes，輸出最長與輸入同階。
+// 上線注意：非 ASCII UTF-8 bytes 會被當成非英數，可能丟失名稱；公開 slug 還要處理碰撞、
+//       長度上限與既有 URL 穩定性。
+// -----------------------------------------------------------------------------
 std::string practical_make_slug(const std::string& title) {
     std::string slug;
     for (const char ch : title) {

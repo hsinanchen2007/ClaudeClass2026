@@ -38,7 +38,16 @@ void basic_example()
     std::cout << "[基礎] strict parse rejects trailing data\n";
 }
 
-// LeetCode 150：RPN tokens 本來已切好；此例由一行 stringstream 切 token 再求值。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 150. Evaluate Reverse Polish Notation（計算逆波蘭表示式）
+// 題目：原題輸入已切好的 tokens 並支援 +、-、*、/；本例改讀單一文字行且只實作 +、-，
+//       `2 1 + 3 +` 得 6，因此是 stringstream 教學子集，不能直接提交原題。
+// 為何使用本章主題：istringstream 依空白切 token，再由嚴格 parse_int_exact 解析操作數；
+//       相較手寫 lexer 適合這個受限展示，但原題 vector<string> 不需要 stream。
+// 思路：1. 逐 token；2. 數字 push stack；3. operator 取右、左 operand 計算後 push；4. 最後須恰一值。
+// 複雜度：時間 O(T)、額外空間 O(T)，T 是 token/輸入總字元數，stack 最壞保存所有操作數。
+// 易錯點：減法 operand 順序不可反；要驗 stack 至少兩格，且此版缺乘除與除零/overflow 規則。
+// -----------------------------------------------------------------------------
 int eval_rpn_line(const std::string& line)
 {
     std::istringstream input(line);
@@ -63,8 +72,15 @@ void leetcode_150_example()
     std::cout << "[LeetCode 150] line tokenization + RPN evaluation answers 6\n";
 }
 
-// 實務：CSV 只在「沒有 quote/escape/newline」的簡化格式可用 getline delimiter；
-// production CSV 應用成熟 parser。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】受限 CSV 單行切欄
+// 情境：格式契約保證沒有 quote、escape 或欄內 newline，只需以逗號切欄，且 `a,b,` 要保留尾端空欄。
+// 為何使用本章主題：istringstream 搭配 getline(delimiter) 可重用 stream API 逐欄讀取；相較 regex
+//       簡單且可讀，但只適用明確受限格式。
+// 設計：1. 以 line 建 input；2. getline 逗號迴圈加入欄位；3. 原行尾為逗號時補一個空欄。
+// 成本：時間 O(N)、額外空間 O(N)，N 是 line 長度，所有欄位合計擁有內容副本。
+// 上線注意：一般 CSV 的 quoted comma、雙引號 escaping 與多行欄位必須用成熟 parser；也要限制行長。
+// -----------------------------------------------------------------------------
 std::vector<std::string> split_simple_csv(const std::string& line)
 {
     std::istringstream input(line);

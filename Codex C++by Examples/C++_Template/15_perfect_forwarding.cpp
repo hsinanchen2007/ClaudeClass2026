@@ -26,7 +26,15 @@ struct ListNode {
     explicit ListNode(int initial) : value(initial) {}
 };
 
-// LeetCode 2：Add Two Numbers。節點以 make_owned 完美轉發建構參數。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 2. Add Two Numbers（兩數相加）
+// 題目：兩條逆序 digit linked list 相加；[2,4,3]+[5,6,4] 產生 [7,0,8]。
+// 為何使用本章主題：make_owned 以 Args&&... 和 std::forward 建構 ListNode；對單一 int 並無
+// 效能必要，這是把通用 ownership factory 套入題目的 perfect-forwarding 教學。
+// 思路：sentinel 保存結果頭；逐位讀兩串列與 carry；建立 sum%10 節點並更新 carry。
+// 複雜度：時間 O(max(M,N))、結果空間 O(max(M,N))，M/N 是兩條輸入串列長度。
+// 易錯點：最後 carry 仍要輸出；digit 應為 0..9，回傳 unique_ptr 表示結果所有權。
+// -----------------------------------------------------------------------------
 std::unique_ptr<ListNode> leetcode_add_two_numbers(const ListNode* left, const ListNode* right) {
     auto sentinel = make_owned<ListNode>(0);
     ListNode* tail = sentinel.get();
@@ -53,6 +61,15 @@ std::unique_ptr<ListNode> make_list(std::initializer_list<int> digits) {
     return std::move(sentinel->next);
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】事件佇列原地建構
+// 情境：事件名稱與 payload 進入 queue 時，要直接在 vector 儲存區建立 Event，避免額外中間物件。
+// 為何使用本章主題：EventQueue::emplace 以 forwarding references 保留 lvalue/rvalue，
+// 再交給 emplace_back；相較固定 overload 可支援 Event 的各種 constructor 組合。
+// 設計：呼叫端移交 payload；emplace 轉送全部參數；Event constructor 將 name/payload 移入成員。
+// 成本：單次插入攤銷 O(1)，payload 移動通常 O(1)；vector 擴容會搬移既有 Event。
+// 上線注意：同一參數不可 forward 兩次；回傳 Event& 會在後續 reallocation 失效，併發操作也需同步。
+// -----------------------------------------------------------------------------
 struct Event {
     std::string name;
     std::vector<int> payload;
@@ -61,7 +78,6 @@ struct Event {
         : name(std::move(event_name)), payload(std::move(event_payload)) {}
 };
 
-// 實務：直接在 vector 儲存區內建構，避免先建立 Event 再搬移。
 class EventQueue {
 public:
     template <typename... Args>

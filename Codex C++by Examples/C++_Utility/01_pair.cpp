@@ -19,8 +19,15 @@ std::pair<std::string, int> basic_lookup() {
     return std::make_pair(std::string{"gpu"}, 75);
 }
 
-// LeetCode 1：Two Sum。pair 很適合回傳兩個 index。
-// 平均 O(n) 時間、O(n) 額外空間；找不到時回傳 size,size 作 sentinel。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1. Two Sum（兩數之和）
+// 題目：輸入整數陣列與 target，回傳兩個相異索引使其值相加為 target；[2,7,11,15]、9 得 [0,1]。
+// 為何使用本章主題：pair 將兩個同等地位的索引組成單一回傳值，適合局部且欄位語意明確的結果；
+// 若公開 API 還要攜帶錯誤原因，named struct 或 optional 會更清楚。
+// 思路：逐項計算互補值；先在 seen 查找；命中便回傳舊索引與目前索引，否則記錄目前值。
+// 複雜度：平均時間 O(N)、額外空間 O(N)，N 是 values 長度；大量雜湊碰撞時時間可退化。
+// 易錯點：先查再插才能避免重用同一元素；target-values[i] 可能有 signed overflow，無解用 {N,N}。
+// -----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t>
 leetcode_two_sum(const std::vector<int>& values, int target) {
     std::unordered_map<int, std::size_t> seen;
@@ -35,7 +42,15 @@ leetcode_two_sum(const std::vector<int>& values, int target) {
     return {values.size(), values.size()};
 }
 
-// 實務：解析 HTTP 狀態。這裡 pair 的 first/second 尚可理解；大型 API 應改 named struct。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】HTTP 回應狀態驗證
+// 情境：請求層收到狀態碼後，要同時回傳是否接受與可記錄的文字訊息。
+// 為何使用本章主題：bool 與短訊息只在局部一起傳遞，pair 足以表達簡單二元結果；
+// 相較丟例外，非 2xx 是預期業務分支，但跨模組介面宜改具名 HttpValidation。
+// 設計：2xx 回成功訊息；404 回資源不存在；其餘狀態把數值納入診斷字串。
+// 成本：判斷時間 O(1)，空間為 O(L)，L 是產生的訊息長度，字串可能配置記憶體。
+// 上線注意：需涵蓋重導向與重試狀態、避免把敏感回應寫入訊息，並提供結構化狀態供監控聚合。
+// -----------------------------------------------------------------------------
 std::pair<bool, std::string> practical_validate_http_status(int status) {
     if (status >= 200 && status < 300) {
         return {true, "request accepted"};

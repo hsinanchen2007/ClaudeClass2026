@@ -246,11 +246,14 @@ void basic_duration_and_calendar_demo()
     assert(overflow_rejected);
 }
 
-// ---------------------------------------------------------------------------
-// LeetCode 933：Number of Recent Calls
-// timestamp 在題目中是遞增整數；用 milliseconds 表達後，窗口語意更清楚。
-// 每個 ping 最多進出 queue 一次，因此 amortized O(1) time，O(w) space。
-// ---------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 933. Number of Recent Calls（最近的請求次數）
+// 題目：每次傳入遞增的毫秒時間 t，回傳 [t-3000,t] 內的 ping 數；輸入 1、100、3001、3002 時依序回 1、2、3、3。
+// 為何使用本章主題：milliseconds 保存題目單位，queue 表示滑動時間窗；額外驗證非負與單調時間，使摘要版契約比題目假設更明確。
+// 思路：1. 驗證時間戳。2. 記住 last 並 enqueue。3. pop 所有早於 now-3000ms 的項目。4. 回傳 queue 大小。
+// 複雜度：每個 ping 至多 enqueue/pop 各一次，單次攤銷時間 O(1)、空間 O(W)，W 為視窗內請求數。
+// 易錯點：下界是 inclusive；queue 在 push 後必定非空才可讀 front，且 production 版不能默默接受時間倒退。
+// -----------------------------------------------------------------------------
 class RecentCounter {
 public:
     int ping(std::chrono::milliseconds now)
@@ -288,11 +291,14 @@ void leetcode_demo()
     assert(at_3_002 == 3); // 1ms 被移除
 }
 
-// ---------------------------------------------------------------------------
-// 實務：可測試的 retry/backoff 排程。
-// Production code 不把 now() 寫死在演算法裡，而是把 time_point 當輸入，單測無需真的 sleep。
-// delays 採 saturating exponential backoff；每個結果都是 absolute steady deadline。
-// ---------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【日常實務範例】可重播的重試退避期限排程
+// 情境：從指定 start 安排五次重試，延遲由 100ms 倍增並封頂 500ms，產生可直接比較的絕對 steady deadlines。
+// 為何使用本章主題：注入 time_point 讓測試不必真的 sleep；absolute deadline 比每步重新套 relative timeout 更能維持總時間語意。
+// 設計：1. 驗證 initial/max。2. 將 delay 加到前一期限。3. 保存每個 time_point。4. 倍增 delay，超過一半時直接飽和到上限。
+// 成本：A 次重試需時間 O(A)、輸出空間 O(A)，每步只做固定次數 duration/time_point 算術。
+// 上線注意：checked_add 仍須處理極端範圍；實際 client 還要 jitter、取消、總 SLA，以及落後時是否跳過重試的政策。
+// -----------------------------------------------------------------------------
 std::vector<std::chrono::steady_clock::time_point> retry_schedule(
     std::chrono::steady_clock::time_point start,
     std::chrono::milliseconds initial_delay,

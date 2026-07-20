@@ -66,7 +66,15 @@ using ConstBegin = decltype(std::declval<const Range&>().begin());
 template <typename Range>
 using ConstEnd = decltype(std::declval<const Range&>().end());
 
-// LeetCode 771：Jewels and Stones。以 SFINAE 檢查 range 與元素比較所需語法。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 771. Jewels and Stones（寶石與石頭）
+// 題目：計算 stones 中有多少字元也出現在 jewels；jewels="aA"、stones="aAAbbbb" 得 3。
+// 為何使用本章主題：void_t 把 begin/end、遞增、比較等 expression 放入立即語境，不合格 range
+// 會由 SFINAE 移除候選；原題固定 string，這是泛型序列教學版。
+// 思路：逐顆 stone 掃描 jewels；首次相等便累加並停止內圈；空任一 range 自然回 0。
+// 複雜度：時間 O(J*S)、額外空間 O(1)，J/S 分別是 jewels 與 stones 元素數。
+// 易錯點：目前 `const auto` 會複製元素但 constraint 未檢查可複製；int count 也可能在巨大輸入溢位。
+// -----------------------------------------------------------------------------
 template <typename Jewels, typename Stones,
           typename = std::void_t<ConstBegin<Jewels>, ConstEnd<Jewels>,
                                  ConstBegin<Stones>, ConstEnd<Stones>,
@@ -94,7 +102,15 @@ int leetcode_count_jewels(const Jewels& jewels, const Stones& stones) {
     return count;
 }
 
-// 實務：依型別類別選序列化 overload；失敗型別不會誤走數值版。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】數值與字串欄位序列化 overload
+// 情境：設定輸出只接受算術值或 std::string，其他型別不應誤入函式本體後才產生難讀錯誤。
+// 為何使用本章主題：enable_if 讓 arithmetic 與 decay 後 string 的候選互斥，代換失敗者退出 overload set；
+// 相較單一無限制模板，錯誤型別不會嘗試不合法的 to_string。
+// 設計：數值版呼叫 to_string；字串版保留 value category 並加引號；呼叫點由 SFINAE 選候選。
+// 成本：時間與空間 O(L)，L 是輸出長度，編譯期分派本身無 runtime 成本。
+// 上線注意：arithmetic 也包含 bool/char，格式未必符合協定；字串未 escaping，應改 concepts 改善診斷。
+// -----------------------------------------------------------------------------
 template <typename T>
 std::enable_if_t<std::is_arithmetic_v<T>, std::string> practical_encode(const T& value) {
     return std::to_string(value);

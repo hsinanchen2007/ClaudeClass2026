@@ -16,7 +16,17 @@
 #include <utility>
 #include <vector>
 
-// LeetCode 34：找 target 的首尾位置。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 34. Find First and Last Position of Element in Sorted Array（在排序陣列中找元素的第一與最後位置）
+// 題目：輸入升冪陣列 nums 與 target，回傳第一與最後索引；不存在回 [-1,-1]，例如
+// [5,7,7,8,8,10] 查 8 得 [3,4]。
+// 為何使用本章主題：lower_bound 定位第一個 target，upper_bound 定位最後一個
+// target 的尾後位置，兩者正好形成完整重複區間。
+// 思路：1. 找最左候選並驗證存在；2. 從候選起找第一個大於 target 的位置；3. 將
+// first 與 after-1 轉為索引。
+// 複雜度：時間 O(log N)、額外空間 O(1)，N 為 nums 的元素數。
+// 易錯點：after 是尾後位置，右界須減 1；先驗 first!=end 才能解參考。
+// -----------------------------------------------------------------------------
 std::pair<int, int> leetcode_search_range(const std::vector<int>& nums,
                                           int target) {
     const auto first = std::lower_bound(nums.begin(), nums.end(), target);
@@ -34,7 +44,17 @@ struct Limit {
     int price;
 };
 
-// 實務：階梯費率表用「第一個 maximum > usage」選級距。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】用量階梯費率選擇
+// 情境：費率表依 maximum 升冪，每列代表 usage 小於該上限時的價格；查詢 99 命中
+// 100 級距，查詢 100 則進入下一級距。
+// 為何使用本章主題：upper_bound 以 comp(key,element) 找第一個 maximum>usage，
+// 能精確表達嚴格上界，避免手寫迴圈的等號錯誤。
+// 設計：1. 用 usage 與 Limit.maximum 做異質比較；2. 取得第一個嚴格較大的級距；
+// 3. end 表示超出所有級距，否則回 price。
+// 成本：時間 O(log N)、額外空間 O(1)，N 為級距數。
+// 上線注意：必須驗證 maximum 嚴格遞增並先定義邊界等號歸屬；-1 sentinel 應改成 optional/error。
+// -----------------------------------------------------------------------------
 int practical_rate_for_usage(const std::vector<Limit>& limits, int usage) {
     const auto it = std::upper_bound(
         limits.begin(), limits.end(), usage,

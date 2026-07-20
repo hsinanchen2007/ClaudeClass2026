@@ -18,7 +18,16 @@
 #include <string>
 #include <vector>
 
-// LeetCode 384：Shuffle an Array。此函式回一份 shuffled copy，保留原輸入。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 384. Shuffle an Array（打亂陣列）
+// 題目：設計物件支援 reset 與均勻 shuffle；例如 [1,2,3] 可回任一等機率排列。
+// 本 helper 僅回傳一次 shuffled copy，未實作題目要求的完整 class/reset 介面。
+// 為何使用本章主題：std::shuffle 以 mt19937 對可隨機存取的副本做均勻排列，避免
+// 手寫有偏差的交換索引。
+// 思路：1. 複製 nums；2. 由 seed 建立 engine；3. 原地 shuffle 副本；4. 回傳副本。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 為 nums 的元素數。
+// 易錯點：合法 shuffle 可能剛好等於原序列；完整 LC384 還需保存 immutable original 供 reset。
+// -----------------------------------------------------------------------------
 std::vector<int> leetcode_shuffle_copy(const std::vector<int>& nums,
                                        std::uint32_t seed) {
     std::vector<int> result = nums;
@@ -27,7 +36,16 @@ std::vector<int> leetcode_shuffle_copy(const std::vector<int>& nums,
     return result;
 }
 
-// 實務：先打散使用者，再 round-robin 分到 A/B，可避免輸入排序造成偏差。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】一次性 A/B 實驗批次分組
+// 情境：user_ids 可能依註冊時間排序，先打散再交錯放入 A/B，讓兩組筆數最多差 1，
+// 且每位使用者只出現一次。
+// 為何使用本章主題：shuffle 可移除輸入順序與分組位置的直接關聯，再由 round-robin
+// 均分；適合一次性批次，不適合需要跨重跑穩定黏著的線上實驗。
+// 設計：1. 複製並打散 user_ids；2. 建立 A/B 容器；3. 偶數位置進 A、奇數位置進 B。
+// 成本：時間 O(N)、額外空間 O(N)，N 為使用者數。
+// 上線注意：正式實驗應以 hash(user_id,experiment_id) 穩定分桶；mt19937 也不是安全抽籤 RNG。
+// -----------------------------------------------------------------------------
 std::map<char, std::vector<int>> practical_assign_experiment(
     const std::vector<int>& user_ids, std::uint32_t seed) {
     std::vector<int> shuffled = user_ids;

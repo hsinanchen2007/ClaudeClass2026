@@ -60,7 +60,14 @@ void basic_example()
     std::cout << "[基礎] filesystem path + checked fstream round-trip\n";
 }
 
-// LeetCode 1929：把檔案中的整數 vector concatenate 後寫回，真正執行題目邏輯。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1929. Concatenation of Array（陣列串接自身）
+// 題目：回傳 nums 後再接一份 nums；[1,2,1] 得 [1,2,1,1,2,1]。
+// 為何使用本章主題：演算法本身不需 filesystem/fstream；本檔刻意將 content transform 與檔案 transport 分離。
+// 思路：1. 以 nums 複製建立 output；2. 將 nums 範圍 insert 到尾端；3. 以值回傳完整結果。
+// 複雜度：N 為元素數；時間 O(N)，輸出空間 O(N)。
+// 易錯點：輸出需預期配置 2N 個元素；不要把檔案讀寫錯誤混成演算法的 LeetCode 契約。
+// -----------------------------------------------------------------------------
 std::vector<int> concatenate(const std::vector<int>& nums)
 {
     std::vector<int> output = nums;
@@ -75,7 +82,14 @@ void leetcode_1929_example()
     std::cout << "[LeetCode 1929] content transform remains separate from file transport\n";
 }
 
-// 實務：同 directory temp + rename 發佈。此測試 destination 原先不存在，跨平台較一致。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】設定檔暫存後 rename 發布
+// 情境：先完整寫入同目錄 temporary，再改名為 MANIFEST，避免讀者看到半份內容。
+// 為何使用本章主題：filesystem 管路徑與 rename，fstream 負責 checked write/close；兩者各處理自己的錯誤邊界。
+// 設計：1. 產生 destination.tmp；2. write_text 並確認 close；3. rename 成 destination。
+// 成本：B 為內容 bytes；寫入 O(B)，同 filesystem rename 通常是 metadata I/O，另占 O(B) 暫存檔空間。
+// 上線注意：固定 `.tmp` 會碰撞，rename 覆寫語意跨平台；atomic visibility 也不等於 fsync durability。
+// -----------------------------------------------------------------------------
 void publish_text(const fs::path& destination, const std::string& text)
 {
     const fs::path temporary = destination.string() + ".tmp";

@@ -24,8 +24,15 @@ Overloaded(Functions...) -> Overloaded<Functions...>;
 
 using Token = std::variant<int, char>;
 
-// LeetCode 150：Evaluate Reverse Polish Notation。
-// int 代表數字，char 代表 + - * /；時間 O(n)、stack 空間 O(n)。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 150. Evaluate Reverse Polish Notation（逆波蘭表示式求值）
+// 題目：依後序 token 計算整數運算式；[2,1,+,3,*] 代表 (2+1)*3，答案為 9。
+// 為何使用本章主題：variant<int,char> 在編譯期限制 token 只能是數字或運算子，visit 強制處理
+// 兩種 alternative；原題輸入是 string，這是先完成解析後的型別安全教學表示。
+// 思路：數字直接入 stack；運算子依序取出右、左運算元；計算後把結果推回，最後留下單一值。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 是 token 數量，每個 token 只進出 stack 常數次。
+// 易錯點：減除法不可顛倒左右值；要防 stack underflow、除以零、未知運算子與整數溢位。
+// -----------------------------------------------------------------------------
 int leetcode_eval_rpn(const std::vector<Token>& tokens) {
     std::vector<int> stack;
     for (const Token& token : tokens) {
@@ -56,7 +63,15 @@ int leetcode_eval_rpn(const std::vector<Token>& tokens) {
     return stack.back();
 }
 
-// 【實務情境】通知型別集合封閉，variant 讓 routing 必須窮舉 Email/Sms/Push。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】多通道通知路由
+// 情境：通知服務只接受 Email、Sms、Push 三種封閉訊息，需依 active 型別選擇路由目標。
+// 為何使用本章主題：variant 讓訊息在任一時間只持有一種 payload，visit 在新增通道時提供
+// 編譯期完整性檢查；相較 any，不必靠執行期 cast 猜型別。
+// 設計：三個 struct 保存各通道欄位；Notification 列出 alternatives；visitor 產生通道路由字串。
+// 成本：visit 分派為常數時間，輸出建構 O(L)，L 是位址、號碼或 ID 文字長度。
+// 上線注意：需驗證 email/電話/user_id、避免把完整目的地寫入 log，並處理實際傳送失敗與重試。
+// -----------------------------------------------------------------------------
 struct Email { std::string address; std::string body; };
 struct Sms { std::string number; std::string body; };
 struct Push { int user_id{}; std::string body; };

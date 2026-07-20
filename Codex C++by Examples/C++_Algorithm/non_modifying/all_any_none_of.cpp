@@ -13,7 +13,17 @@
 #include <numeric>
 #include <vector>
 
-// LeetCode 896：Monotonic Array。建立相鄰 index，檢查全遞增或全遞減。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 896. Monotonic Array（單調陣列）
+// 題目：判斷 nums 是否整體非遞減或非遞增；例如 [1,2,2,3] 與 [6,5,4,4] 為 true，
+// [1,3,2] 為 false。
+// 為何使用本章主題：本教學版用 all_of 分別驗證所有相鄰 pair 的 <= 或 >=；為了套用
+// API 先建立 index vector，正式單迴圈可省下 O(N) 空間。
+// 思路：1. 長度小於 2 直接成立；2. iota 產生 0..N-2；3. all_of 檢查非遞減；
+// 4. 再檢查非遞增，任一成立即回 true。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 為 nums 的元素數。
+// 易錯點：相等元素在兩種單調性都合法；空與單元素也應回 true。
+// -----------------------------------------------------------------------------
 bool leetcode_is_monotonic(const std::vector<int>& nums) {
     if (nums.size() < 2U) {
         return true;
@@ -35,7 +45,16 @@ struct Check {
     bool fatal;
 };
 
-// 實務：一次報告三種聚合狀態，避免手寫容易漏空範圍語意的 flags。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】健康檢查量詞摘要
+// 情境：每項 Check 提供 valid、warning、fatal；摘要要回答是否全部有效、是否至少
+// 一項警告、以及是否完全沒有致命錯誤。
+// 為何使用本章主題：all_of/any_of/none_of 直接對應三個量詞，短路語意清楚，避免
+// 手寫旗標忘記空範圍的數學結果。
+// 設計：1. all_of 聚合 valid；2. any_of 聚合 warning；3. none_of 排除 fatal；4. 回三值。
+// 成本：時間 O(N)、額外空間 O(1)，N 為檢查數，最壞共掃描三次。
+// 上線注意：空輸入得到 {true,false,true}；若業務要 unknown，必須在呼叫演算法前另建模。
+// -----------------------------------------------------------------------------
 std::vector<bool> practical_health_summary(const std::vector<Check>& checks) {
     const bool all_valid = std::all_of(checks.begin(), checks.end(),
                                        [](const Check& item) { return item.valid; });

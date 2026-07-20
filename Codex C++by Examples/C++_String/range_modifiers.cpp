@@ -109,7 +109,15 @@ void basic_demo() {
     assert(invalid_range_rejected);
 }
 
-// LeetCode 1768（Merge Strings Alternately）：每回合把小 range 附加到答案。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1768. Merge Strings Alternately（交錯合併字串）
+// 題目：從 a 開始交替取兩字串字元，某一輸入耗盡後接上另一輸入剩餘部分；"ab"、"XYZ" 得 "aXbYZ"。
+// 為何使用本章主題：每個字元包成一元素 array，再由 append_char_range 接受 range；這是刻意
+//       展示 C++23 range modifier/fallback 的教學寫法，實際解題直接 push_back 更簡單。
+// 思路：1. 索引走到兩輸入皆結束；2. a 尚有字元就建立一元素 range 並附加；3. b 同理。
+// 複雜度：時間 O(N+M)、額外空間 O(N+M)，N、M 是輸入長度；一元素 temporary 為常數空間。
+// 易錯點：這不是最精簡提交；C++20 fallback 會 materialize，每個來源 range 也不得在修改中失效。
+// -----------------------------------------------------------------------------
 std::string leetcode_merge_alternately(const std::string& a, const std::string& b) {
     std::string result;
     for (std::size_t i = 0U; i < a.size() || i < b.size(); ++i) {
@@ -125,7 +133,15 @@ std::string leetcode_merge_alternately(const std::string& a, const std::string& 
     return result;
 }
 
-// 實務：從數個 byte chunks 組成完整訊息；每段範圍不必先轉 string。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】網路 byte chunks 訊息組裝
+// 情境：接收層交付多個 vector<char> 區塊，要依到達順序合成一份完整 HTTP2 文字標記。
+// 為何使用本章主題：append_range 可直接接受每個 char range，不需 caller 先轉成 string；
+//       C++20 fallback 先 materialize，亦給 single-pass/self-overlap 明確快照語意。
+// 設計：1. 建立空 result；2. 依序走 chunks；3. 將每段完整 range 附加到尾端。
+// 成本：時間 O(T)、額外答案空間 O(T)，T 是所有 chunk bytes 總和；fallback 另有單段 temporary。
+// 上線注意：應先檢查總長度溢位並 reserve；若資料是任意 binary，string 可保存 NUL，但後續不可當 C 字串。
+// -----------------------------------------------------------------------------
 std::string practical_assemble_chunks(const std::vector<std::vector<char>>& chunks) {
     std::string result;
     for (const auto& chunk : chunks) append_char_range(result, chunk);

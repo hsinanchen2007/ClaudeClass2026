@@ -22,7 +22,15 @@ void basic_demo() {
     static_cast<void>(before);
 }
 
-// LeetCode 1768（Merge Strings Alternately）；reserve 後 capacity 至少容納答案。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1768. Merge Strings Alternately（交錯合併字串）
+// 題目：交替取 a、b 的同索引字元，最後接上較長輸入的剩餘字元；"ab"、"XYZ" 得 "aXbYZ"。
+// 為何使用本章主題：答案長度確定為 N+M，先 reserve 後可用 capacity() 驗證儲存區至少
+//       能容納目前答案；正確性不依賴實作實際給了多少額外容量。
+// 思路：1. 預留 N+M；2. 索引逐輪前進；3. 對仍未結束的輸入各附加一字元。
+// 複雜度：時間 O(N+M)、額外空間 O(N+M)，N、M 是兩輸入長度，空間為輸出字串。
+// 易錯點：capacity 不是可直接寫入的元素數；只有 [0,size()) 合法，且 N+M 應防無號溢位。
+// -----------------------------------------------------------------------------
 std::string leetcode_merge_alternately(const std::string& a, const std::string& b) {
     std::string answer;
     answer.reserve(a.size() + b.size());
@@ -38,7 +46,16 @@ std::string leetcode_merge_alternately(const std::string& a, const std::string& 
     return answer;
 }
 
-// 實務：觀察是否會重配，但不把特定 allocator 行為當正確性條件。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】追加前的重新配置預判
+// 情境：低延遲 log builder 已有內容，追加 incoming bytes 前要判斷目前容量是否足夠。
+// 為何使用本章主題：capacity()-size() 是現有配置尚可容納的元素數，可做延遲或指標失效風險
+//       的提示；相較猜測 SSO 或成長倍數，此判斷只依標準保證。
+// 設計：1. 讀目前 size 與 capacity；2. 計算剩餘容量；3. incoming 不超過剩餘量才回 true。
+// 成本：時間 O(1)、額外空間 O(1)，不配置也不修改 buffer。
+// 上線注意：結果只代表「此刻下一次追加」；其他執行緒修改或追加量改變就失效，且即使會重配
+//       也不代表操作失敗，只代表舊 pointer／iterator 可能失效。
+// -----------------------------------------------------------------------------
 bool practical_next_append_fits_without_reallocation(const std::string& buffer,
                                            const std::size_t incoming) {
     return incoming <= buffer.capacity() - buffer.size();

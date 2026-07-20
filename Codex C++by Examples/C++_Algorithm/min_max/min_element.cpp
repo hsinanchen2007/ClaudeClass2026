@@ -14,8 +14,15 @@
 #include <iostream>
 #include <vector>
 
-// LeetCode 153：Find Minimum in Rotated Sorted Array 的線性基準解。
-// 題目最佳解是 O(log N)，這裡刻意用 min_element 建立正確性基線。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 153. Find Minimum in Rotated Sorted Array（尋找旋轉排序陣列中的最小值）
+// 題目：輸入由嚴格升冪陣列旋轉而成的 nums，回最小值；例如 [3,4,5,1,2] 回 1。
+// 為何使用本章主題：本例刻意用 min_element 建立 O(N) 正確性基線，沒有利用旋轉陣列
+// 的單調結構；正式最佳解應以二分搜尋達 O(log N)。
+// 思路：1. 驗證非空；2. 線性掃描取得最小 iterator；3. 解參考回傳最小值。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 為 nums 的元素數。
+// 易錯點：空範圍會回 end 而不可解參考；面試需主動說明這不是題目要求的最佳複雜度。
+// -----------------------------------------------------------------------------
 int leetcode_find_min_linear(const std::vector<int>& nums) {
     assert(!nums.empty());
     return *std::min_element(nums.begin(), nums.end());
@@ -26,7 +33,16 @@ struct Server {
     int active_requests;
 };
 
-// 實務：挑負載最低 server；tie 時 min_element 保留第一台，結果可預測。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】最低負載伺服器選擇
+// 情境：負載平衡器取得 server id 與 active_requests 快照，要挑目前請求數最少者；
+// 同負載時沿用輸入中的第一台。
+// 為何使用本章主題：min_element 一次線性掃描即可取得最低負載物件，無需完整排序，
+// 並提供明確的第一個最小值 tie 規則。
+// 設計：1. comparator 比較 active_requests；2. 找第一個最小 server；3. 回其 id。
+// 成本：時間 O(N)、額外空間 O(1)，N 為 server 數。
+// 上線注意：輸入不可空且應先過濾 unhealthy server；併發負載變動若要求一致決策需使用 snapshot。
+// -----------------------------------------------------------------------------
 int practical_least_loaded_server(const std::vector<Server>& servers) {
     assert(!servers.empty());
     const auto it = std::min_element(

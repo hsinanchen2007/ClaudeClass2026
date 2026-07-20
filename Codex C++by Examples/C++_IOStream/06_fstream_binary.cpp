@@ -57,7 +57,15 @@ void basic_example()
     std::cout << "[基礎] explicit big-endian u32 round-trip\n";
 }
 
-// LeetCode 190：Reverse Bits，並將結果以明定 big-endian bytes 落檔。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 190. Reverse Bits（反轉位元）
+// 題目：反轉一個 32-bit unsigned integer 的位元順序；指定範例結果為 964176192。
+// 為何使用本章主題：reverse_bits 是純位元演算法，example 再以明定 big-endian encode/decode
+//       驗證結果可跨主機保存；binary fstream/wire encoding 並非原題必要步驟。
+// 思路：1. result 從 0；2. 重複 32 次左移 result；3. 接上 value 最低位；4. value 右移。
+// 複雜度：固定 32 回合，時間與額外空間 O(1)；四 byte 編解碼同為 O(1)。
+// 易錯點：必須用 unsigned 位移；binary mode 不會自動處理 endian，格式仍需自行明定。
+// -----------------------------------------------------------------------------
 std::uint32_t reverse_bits(std::uint32_t value)
 {
     std::uint32_t result = 0U;
@@ -73,7 +81,15 @@ void leetcode_190_example()
     std::cout << "[LeetCode 190] reversed value survives binary encoding\n";
 }
 
-// 實務：truncated read 必須 fail，不補零冒充合法 record。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】固定寬度 uint32 截斷偵測
+// 情境：wire format 要求恰好四個 big-endian bytes；輸入只有兩 bytes 時必須報錯，不能以零補滿。
+// 為何使用本章主題：istream::read 做 unformatted fixed-size 讀取，gcount 回實際數量；相較 formatted
+//       extraction，不受 whitespace/locale 影響並能保留任意 byte。
+// 設計：1. 準備四格 buffer；2. read 四 bytes；3. gcount 不等於 4 就丟 truncated；4. 完整才 decode。
+// 成本：固定欄位時間與空間 O(1)；一般 K-byte 欄位為 O(K)。
+// 上線注意：還要分辨 badbit 與 EOF、記錄 offset/context；外部 length 在配置前需上限與 overflow 檢查。
+// -----------------------------------------------------------------------------
 std::uint32_t read_u32_be(std::istream& input)
 {
     std::array<char, 4> bytes{};

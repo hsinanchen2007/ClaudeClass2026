@@ -52,8 +52,14 @@ void basic_example()
     std::cout << "[基礎] fluent Rectangle area=12\n";
 }
 
-// LeetCode 1472：Design Browser History。
-// back/forward 都透過 this 所指物件的 current_ 修改同一份 browsing state。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1472. Design Browser History（設計瀏覽器歷史記錄）
+// 題目：支援 visit、back、forward；新造訪會刪除 forward 分支，例如回退後造訪 linkedin 即不能再前進。
+// 為何使用本章主題：每次 member call 的 this 指向同一 BrowserHistory，讓 history_ 與 current_ 一起維持狀態。
+// 思路：visit 截斷目前位置後方再追加；back 將索引向零夾限；forward 將索引向尾端夾限。
+// 複雜度：back/forward O(1)，visit 最壞 O(N) 因 resize/配置，空間 O(N)，N 為保留頁面數。
+// 易錯點：steps 契約需非負；新 visit 必須清 forward history；回傳 const reference 只在物件與該元素未失效時有效。
+// -----------------------------------------------------------------------------
 class BrowserHistory {
 public:
     explicit BrowserHistory(std::string homepage)
@@ -103,7 +109,14 @@ void leetcode_1472_example()
     std::cout << "[LeetCode 1472] browser state 由同一個 this 維護\n";
 }
 
-// 實務案例：RequestBuilder 的鏈式 API。build() 是 const，不改 builder。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】HTTP 請求 URL 的鏈式建構器
+// 情境：呼叫端依序設定 api.example.com 與 /v1/jobs，最後產生 https://api.example.com/v1/jobs。
+// 為何使用本章主題：每個 setter 回傳 *this reference，可在同一物件上串接；build 標 const 表明只讀取 state。
+// 設計：host/path 各自 move 進 member；回傳目前 builder；build 串接 scheme、host 與 path。
+// 成本：設定與 build 為 O(H+P) 字串搬移/配置，H/P 為 host/path 長度。
+// 上線注意：鏈式回傳是 borrow，不能超過物件生命；需驗空 host、路徑編碼與 URL injection，並避免共用可變 builder。
+// -----------------------------------------------------------------------------
 class RequestBuilder {
 public:
     RequestBuilder& host(std::string host)

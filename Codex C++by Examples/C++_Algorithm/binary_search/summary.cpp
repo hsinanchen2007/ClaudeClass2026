@@ -88,7 +88,17 @@ struct Record {
     std::string payload;
 };
 
-// LeetCode 35：手寫 lower_bound，展示面試不變量。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 35. Search Insert Position（搜尋插入位置）
+// 題目：輸入升冪陣列 nums 與 target，回傳既有索引或保持排序的插入位置；例如
+// [1,3,5,6] 查 4 回 2。
+// 為何使用本章主題：此處手寫 lower_bound 以展示二分搜尋的 [lo,hi) 不變量，並非
+// 為了取代標準函式；回傳的 lo 正是第一個不小於 target 的位置。
+// 思路：1. 令候選區間為 [0,N)；2. nums[mid]<target 時排除左半含 mid；3. 否則
+// 保留 mid 並縮右界；4. lo==hi 時回傳唯一插入點。
+// 複雜度：時間 O(log N)、額外空間 O(1)，N 為 nums 的元素數。
+// 易錯點：mid 要以 lo+(hi-lo)/2 計算；每輪必須縮區間；size_t 模板不可寫出負索引。
+// -----------------------------------------------------------------------------
 std::size_t leetcode_manual_lower_bound(const std::vector<int>& nums,
                                         int target) {
     std::size_t lo = 0;
@@ -104,7 +114,17 @@ std::size_t leetcode_manual_lower_bound(const std::vector<int>& nums,
     return lo;
 }
 
-// 實務整合：在排序索引中查詢某 key 的全部 payload。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】排序索引的同鍵 payload 批次查詢
+// 情境：Record 索引依 key 升冪，同鍵可有多個 payload；服務要回指定 key 的全部值，
+// 不存在時回空 vector。
+// 為何使用本章主題：lower_bound 與 upper_bound 分別找等價區段兩端，比從頭掃描更
+// 適合讀多寫少的排序 vector，且異質比較不需建立查詢用 Record。
+// 設計：1. 找第一個 key>=wanted；2. 從 lower 找第一個 key>wanted；3. 預留區段
+// 大小並依索引順序複製 payload。
+// 成本：時間 O(log N + K)、額外空間 O(K)，N 為索引筆數、K 為命中筆數。
+// 上線注意：索引發布後查詢期間不可原地重排；大量批次更新宜建立新快照後原子替換。
+// -----------------------------------------------------------------------------
 std::vector<std::string> practical_lookup_all(const std::vector<Record>& index,
                                               int key) {
     const auto lower = std::lower_bound(

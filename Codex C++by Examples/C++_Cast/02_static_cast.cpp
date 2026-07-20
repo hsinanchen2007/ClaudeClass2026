@@ -35,8 +35,14 @@ void basic_example()
     std::cout << "[基礎] enum code=1，3.9 truncates to 3\n";
 }
 
-// LeetCode 69：Sqrt(x)。binary search 使用 long long 避免 middle*middle 的 int overflow；
-// 最後在已證明 answer<=sqrt(INT_MAX) 後才安全 cast 回 int。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 69. Sqrt(x)（整數平方根）
+// 題目：回傳非負整數 x 的平方根向下取整；x=8 回傳 2，INT_MAX 回傳 46,340。
+// 為何使用本章主題：以 long long 計算 middle^2 防 int 溢位，最後在範圍已證明後才 static_cast 回 int。
+// 思路：1. 在 [0,x] 二分；2. middle^2<=x 時記錄並往右；3. 否則往左，最後回最佳 answer。
+// 複雜度：X 為輸入值；時間 O(log X)、額外空間 O(1)。
+// 易錯點：負值要拒絕；static_cast 不是 range check，安全性來自 answer<=sqrt(INT_MAX) 的先行證明。
+// -----------------------------------------------------------------------------
 int integer_sqrt(int value)
 {
     if (value < 0) throw std::invalid_argument("sqrt input must be nonnegative");
@@ -63,7 +69,14 @@ void leetcode_69_example()
     std::cout << "[LeetCode 69] sqrt(INT_MAX)=46340 without overflow\n";
 }
 
-// 實務：double seconds 轉 milliseconds 前驗證 finite/range，再明定 truncation policy。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】秒數轉毫秒的受檢窄化
+// 情境：外部 double 秒數要轉成 long long 毫秒，負值、NaN、無限值或超範圍都回失敗。
+// 為何使用本章主題：static_cast 明確採截斷政策，但只有在 isfinite 與數值上界檢查後才合法可靠。
+// 設計：1. 驗 finite 且非負；2. 以 max/1000 驗乘法後可表示；3. 乘 1000 後 cast 並包 optional。
+// 成本：固定次數檢查與運算，時間、額外空間皆 O(1)。
+// 上線注意：需確認截斷而非四捨五入符合需求；浮點邊界與單位來源也要在 API 契約明訂。
+// -----------------------------------------------------------------------------
 std::optional<long long> seconds_to_milliseconds(double seconds)
 {
     if (!std::isfinite(seconds) || seconds < 0.0) return std::nullopt;

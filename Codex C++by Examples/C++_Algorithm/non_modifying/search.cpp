@@ -15,7 +15,16 @@
 #include <string>
 #include <vector>
 
-// LeetCode 28：Find the Index of the First Occurrence in a String。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 28. Find the Index of the First Occurrence in a String（找出字串中第一個匹配項的索引）
+// 題目：回傳 needle 在 haystack 中第一次出現的位置，不存在回 -1；例如
+// sadbutsad/sad 回 0，空 needle 回 0。
+// 為何使用本章主題：std::search 直接尋找第一個完整連續子序列，回傳 iterator 可轉成
+// 索引；面試若要求手寫，仍需能提供 KMP 等演算法。
+// 思路：1. 搜尋 haystack 與 needle 完整範圍；2. end 表示未命中；3. 否則計算起點距離。
+// 複雜度：generic 最壞時間 O(N*M)、額外空間 O(1)，N/M 為 haystack/needle 長度。
+// 易錯點：空 needle 會回 begin；索引轉 int 前需由題目約束保證可表示。
+// -----------------------------------------------------------------------------
 int leetcode_str_str(const std::string& haystack, const std::string& needle) {
     const auto it = std::search(haystack.begin(), haystack.end(),
                                 needle.begin(), needle.end());
@@ -24,7 +33,16 @@ int leetcode_str_str(const std::string& haystack, const std::string& needle) {
                : static_cast<int>(std::distance(haystack.begin(), it));
 }
 
-// 實務：在 byte stream 尋找 protocol magic，回 size sentinel 表示未找到。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】Byte Stream Protocol Magic 搜尋
+// 情境：解析器在 unsigned byte stream 中找第一個 magic pattern 起點，找不到時回
+// bytes.size()，供呼叫端判斷是否需要更多資料。
+// 為何使用本章主題：std::search 可對任意相等可比序列找連續 pattern，不必轉成
+// std::string，也避免 signed char 對 binary byte 的歧義。
+// 設計：1. 搜尋 bytes/magic 完整範圍；2. 將命中或 end iterator 統一轉成 offset。
+// 成本：generic 最壞時間 O(N*M)、額外空間 O(1)，N/M 為 stream/pattern 長度。
+// 上線注意：空 magic 會命中 0；magic 也可能出現在 payload，完整協定需 framing、長度與 checksum。
+// -----------------------------------------------------------------------------
 std::size_t practical_find_magic(const std::vector<unsigned char>& bytes,
                                  const std::vector<unsigned char>& magic) {
     const auto it = std::search(bytes.begin(), bytes.end(), magic.begin(), magic.end());

@@ -13,7 +13,16 @@
 #include <string>
 #include <vector>
 
-// LeetCode 1431 延伸：以排序後 includes 驗證 required candies multiset。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1431. Kids With the Greatest Number of Candies（擁有最多糖果的孩子）
+// 題目：原題給 candies 與 extraCandies；例如 [2,3,5,1,3] 加 3 回
+// [true,true,true,false,true]。本 helper 改查 inventory 是否包含 requested multiset。
+// 為何使用本章主題：排序後 std::includes 可驗證每種糖果值及其重複次數都包含於庫存；
+// 這是以糖果情境展示 multiset containment 的教學延伸。
+// 思路：1. 排序 inventory；2. 排序 requested；3. includes 驗每個需求 occurrence 都有供應。
+// 複雜度：時間 O(N log N+M log M)、額外空間 O(N+M)，N/M 為庫存/需求筆數，參數按值複製。
+// 易錯點：不得當作 LC1431 提交解；includes 會計算 duplicate multiplicity，兩邊排序規則必須相同。
+// -----------------------------------------------------------------------------
 bool leetcode_can_supply_candies(std::vector<int> inventory,
                                  std::vector<int> requested) {
     std::sort(inventory.begin(), inventory.end());
@@ -22,7 +31,16 @@ bool leetcode_can_supply_candies(std::vector<int> inventory,
                          requested.begin(), requested.end());
 }
 
-// 實務：角色 permissions 與 endpoint required permissions 都以 canonical sort 儲存。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】Endpoint 權限包含檢查
+// 情境：granted 與 required permissions 都以 canonical 升冪字串保存；只有角色包含
+// endpoint 的全部需求權限時才授權。
+// 為何使用本章主題：includes 對兩個已排序序列做線性 subset 檢查，可在首個缺項早退，
+// 不需建立額外 hash set。
+// 設計：1. 開發期驗證兩邊排序；2. 以 required 作第二個 multiset；3. 回包含結果。
+// 成本：時間 O(N+M)、額外空間 O(1)，N/M 為 granted/required 數量。
+// 上線注意：權限通常應 unique；大小寫、Unicode normalization 與 comparator 必須由同一 canonicalizer 保證。
+// -----------------------------------------------------------------------------
 bool practical_authorized(const std::vector<std::string>& granted,
                           const std::vector<std::string>& required) {
     assert(std::is_sorted(granted.begin(), granted.end()));

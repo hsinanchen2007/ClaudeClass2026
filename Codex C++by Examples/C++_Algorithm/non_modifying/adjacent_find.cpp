@@ -15,7 +15,17 @@
 #include <numeric>
 #include <vector>
 
-// LeetCode 645：Set Mismatch。排序後重複值相鄰，再由期望總和求遺失值。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 645. Set Mismatch（錯誤的集合）
+// 題目：nums 原應含 1..N，但一個值重複並取代另一值；回 [duplicate,missing]，例如
+// [1,2,2,4] 回 [2,3]。
+// 為何使用本章主題：先排序使重複值相鄰，adjacent_find 取得 duplicate；再由 1..N
+// 的期望總和與實際總和推回 missing。
+// 思路：1. 排序 nums；2. 找第一對相鄰重複；3. 計算實際與期望總和；4. 扣除多算的
+// duplicate 後求 missing。
+// 複雜度：時間 O(N log N)、額外空間 O(N)，N 為 nums 數量；空間包含按值輸入副本。
+// 易錯點：題目保證恰一組錯配；加總要用 long long；adjacent_find 自身只找相鄰重複。
+// -----------------------------------------------------------------------------
 std::vector<int> leetcode_find_error_nums(std::vector<int> nums) {
     std::sort(nums.begin(), nums.end());
     const auto duplicate_it = std::adjacent_find(nums.begin(), nums.end());
@@ -33,7 +43,17 @@ struct Event {
     long timestamp_ms;
 };
 
-// 實務：已依 sequence 排序的事件不應有相同 timestamp 相鄰，回問題位置。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】事件時間戳相鄰重複診斷
+// 情境：事件已依 sequence 排列，契約規定相鄰事件不可有同一 timestamp_ms；要回
+// 第一組違規的左側索引，完全合法時回 events.size()。
+// 為何使用本章主題：adjacent_find 的 binary predicate 正好檢查每一對鄰居，並回
+// 首個違規 pair 起點，比手寫前一筆狀態更直接。
+// 設計：1. 比較相鄰 Event.timestamp_ms；2. 找到即停止；3. end 轉 size sentinel，
+// 否則轉成索引。
+// 成本：時間 O(N)、額外空間 O(1)，N 為事件數。
+// 上線注意：相同時間是否真違規須由資料契約決定；size sentinel 不可當成可索引位置。
+// -----------------------------------------------------------------------------
 std::size_t practical_first_duplicate_timestamp(
     const std::vector<Event>& events) {
     const auto it = std::adjacent_find(

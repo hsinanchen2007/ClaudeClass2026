@@ -20,7 +20,15 @@ void basic_demo() {
     assert(a.compare(0U, 3U, "app") == 0);
 }
 
-// LeetCode 1455（Check If a Word Occurs As a Prefix of Any Word in a Sentence）。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1455. Check If a Word Occurs As a Prefix of Any Word in a Sentence（查找單字前綴）
+// 題目：回傳 sentence 中第一個以 search 開頭的單字之 1-based 位置；找不到回 -1，
+//       例如 "i love eating burger" 搜 "burg" 回 4。
+// 為何使用本章主題：compare(begin, search.size(), search) 直接比較原句片段，不建立每個單字的 substr。
+// 思路：1. 以空格找每個單字邊界；2. 長度足夠才比較前綴；3. 命中回索引，否則移到下一字。
+// 複雜度：時間 O(N+W*K) 的直觀上界、額外空間 O(1)，N 是句長，W 是單字數，K 是 search 長度。
+// 易錯點：compare 只看結果是否為 0；空 search 依本實作會匹配第一個單字，產品規格應明定。
+// -----------------------------------------------------------------------------
 int leetcode_is_prefix_of_word(const std::string& sentence, const std::string& search) {
     std::size_t begin = 0U;
     int index = 1;
@@ -37,7 +45,15 @@ int leetcode_is_prefix_of_word(const std::string& sentence, const std::string& s
     return -1;
 }
 
-// 實務：依 namespace prefix 分流，避免先配置 substr。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】設定鍵 namespace 路由
+// 情境：把 `user.*` 與 `job.*` 設定鍵送到不同服務，其他鍵回 unknown。
+// 為何使用本章主題：帶 pos/count 的 compare 可直接驗證前綴，較 substr 後比較少一份配置，
+//       且比一般 find 更準確表達「必須從位置 0 開始」。
+// 設計：1. 先做各前綴長度 guard；2. 比對最前面的固定 bytes；3. 命中即回對應 route。
+// 成本：固定前綴下時間 O(1)、額外空間 O(1)；一般化時為 O(P)，P 是前綴長度。
+// 上線注意：規則區分大小寫且只按 bytes；路由表擴大時要處理重疊前綴的優先順序與可觀測性。
+// -----------------------------------------------------------------------------
 std::string practical_route_key(const std::string& key) {
     if (key.size() >= 5U && key.compare(0U, 5U, "user.") == 0) return "user-service";
     if (key.size() >= 4U && key.compare(0U, 4U, "job.") == 0) return "job-service";

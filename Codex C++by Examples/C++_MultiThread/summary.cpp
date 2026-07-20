@@ -292,9 +292,14 @@ void basic_demo()
     assert(sum == 21LL);
 }
 
-// ----------------------------------------------------------------------------
-// LeetCode 1115：Print FooBar Alternately（semaphore state machine）
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1115. Print FooBar Alternately（交替列印 FooBar）
+// 題目：foo 與 bar 由兩個 thread 各呼叫 n 次，輸出必須是 n 組 foobar；摘要範例 n=3。
+// 為何使用本章主題：兩個 binary_semaphore 將回合保存為 permit，不怕 release 早於 acquire，並確保 output 同時只有一個 writer。
+// 思路：1. foo_turn 初值 1。2. foo acquire、追加並 release bar。3. bar 做相反交接。4. join 後讀完整結果。
+// 複雜度：2N 次字串追加與 semaphore handoff，時間/輸出空間 O(N)，控制空間 O(1)。
+// 易錯點：repetitions 需為非負且兩 worker 都必須執行；binary semaphore 不能重複 release 超過上限，result 僅在 join 後讀。
+// -----------------------------------------------------------------------------
 class FooBar {
 public:
     explicit FooBar(int repetitions) : repetitions_(repetitions) {}
@@ -336,11 +341,14 @@ void leetcode_demo()
     assert(value.result() == "foobarfoobarfoobar");
 }
 
-// ----------------------------------------------------------------------------
-// 實務整合：固定 worker executor + future exception + graceful drain
-// ----------------------------------------------------------------------------
-// 狀態機：accepting=true 可 submit；close 改 false、喚醒；worker 只有 queue 空且關閉才退。
-// packaged_task 把 value/exception 交給 future。close 後所有已接受 task 都完成。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】具 Future 與 Graceful Drain 的固定 Worker Executor
+// 情境：兩個 worker 執行回傳 20、22 與拋錯的三個 task；future 要傳值/例外，兩個外部 closer 同時呼叫後三項都已完成。
+// 為何使用本章主題：packaged_task/future 建立結果通道，mutex/cv queue 重用 workers，lifecycle mutex 序列化 close/join 並採 drain 契約。
+// 設計：1. submit 鎖內檢查 accepting 並入列。2. worker 鎖外執行 task。3. close 停止收件並喚醒。4. 排空後 join，全 caller 才返回。
+// 成本：每 task 有配置、queue lock、喚醒與 future state；空間 O(Q+W)，close latency 包含 backlog。
+// 上線注意：部分 worker 建構失敗要先 shutdown/join；不可由 executor 自己的 task 呼叫 close，production 也需 bounded queue、取消與錯誤 metrics。
+// -----------------------------------------------------------------------------
 class MiniExecutor {
 public:
     explicit MiniExecutor(std::size_t worker_count)

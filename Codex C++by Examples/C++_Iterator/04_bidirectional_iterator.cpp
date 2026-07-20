@@ -26,7 +26,14 @@ void basic_example()
     std::cout << "[基礎] list iterator walks backward from end\n";
 }
 
-// LeetCode 234：Palindrome Linked List；用 bidirectional list 由兩端比較。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 234. Palindrome Linked List（回文鏈結串列）
+// 題目：判斷串列是否前後相同；例如 [1,2,2,1] 為 true，[1,2] 為 false。
+// 為何使用本章主題：這是 std::list 雙向 iterator 教學改寫；原題單向 ListNode 通常以快慢指標反轉後半。
+// 思路：left 從 begin 前進；right 從 end 先遞減再比較；只處理 size/2 對元素。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 為節點數。
+// 易錯點：end 不可解參考，須先 --right；空 range 不能無條件 --end；不可把此法冒充原題單向解。
+// -----------------------------------------------------------------------------
 bool is_palindrome(const std::list<int>& values)
 {
     auto left = values.begin();
@@ -46,7 +53,14 @@ void leetcode_234_example()
     std::cout << "[LeetCode 234] bidirectional endpoints detect palindrome\n";
 }
 
-// 實務：stable iterator 保存 queue 中 job，插入其他 jobs 後仍有效。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】追蹤插隊後仍有效的工作位置
+// 情境：排程 list 追蹤 job 3 的位置，之後在它前方插入 job 2，追蹤 handle 仍須指向原 job 3。
+// 為何使用本章主題：list 的節點式插入不使其他 iterator 失效，比 vector 中間插入更適合穩定位置需求。
+// 設計：取得 job 3 iterator；在該位置 insert 新工作；再次解參考 tracked；建立 snapshot 驗證次序。
+// 成本：已知位置插入 O(1)，snapshot O(N) 時間與空間，N 為工作數。
+// 上線注意：tracked 指向的節點一旦 erase 就失效；list 不提供執行緒安全，且穩定 iterator 不代表容器永生。
+// -----------------------------------------------------------------------------
 void practical_example()
 {
     std::list<int> jobs{1, 3};

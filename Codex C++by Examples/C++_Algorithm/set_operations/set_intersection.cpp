@@ -11,7 +11,16 @@
 #include <iterator>
 #include <vector>
 
-// LeetCode 350：Intersection of Two Arrays II，題目正是 multiset intersection。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 350. Intersection of Two Arrays II（兩個陣列的交集 II）
+// 題目：回兩陣列交集，每個值出現 min(count1,count2) 次；例如 [1,2,2,1] 與 [2,2]
+// 回 [2,2]，順序不限。
+// 為何使用本章主題：排序兩個副本後，set_intersection 正好實作 multiset 的最小重複
+// 次數規則，輸出自然保持升冪。
+// 思路：1. 排序 first/second；2. 預留較小輸入大小；3. 線性求交集。
+// 複雜度：時間 O(N log N+M log M)、額外空間 O(N+M)，N/M 為兩輸入大小。
+// 易錯點：LC350 要保留 multiplicity，不能先 unique；兩邊必須用相同 comparator 排序。
+// -----------------------------------------------------------------------------
 std::vector<int> leetcode_intersect(std::vector<int> first,
                                     std::vector<int> second) {
     std::sort(first.begin(), first.end());
@@ -23,7 +32,16 @@ std::vector<int> leetcode_intersect(std::vector<int> first,
     return output;
 }
 
-// 實務：找兩個 datacenter 都已部署的版本 ID，輸入維護 sorted invariant。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】雙資料中心共同部署版本
+// 情境：east 與 west 維護升冪版本 ID，發布系統要取得兩邊都已部署的版本清單，供
+// 安全回退選擇。
+// 為何使用本章主題：set_intersection 以線性雙指標找共同 ID，輸出仍有序，可直接
+// 餵給後續 includes/difference。
+// 設計：1. 驗證兩邊排序；2. 求交集並 append 到 common；3. 回共同版本。
+// 成本：時間 O(N+M)、額外空間 O(K)，N/M 為兩中心版本數、K 為交集大小。
+// 上線注意：版本 ID 理論上應 unique；若有 duplicate，輸出依 multiset min 次數而非單一 ID。
+// -----------------------------------------------------------------------------
 std::vector<int> practical_common_versions(const std::vector<int>& east,
                                            const std::vector<int>& west) {
     assert(std::is_sorted(east.begin(), east.end()));

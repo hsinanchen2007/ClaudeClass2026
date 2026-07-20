@@ -38,7 +38,15 @@ void basic_demo() {
     std::allocator_traits<Allocator>::deallocate(allocator, memory, 4U);
 }
 
-// LeetCode 242（Valid Anagram）：固定字母表比配置 map 更直接。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 242. Valid Anagram（有效的字母異位詞）
+// 題目：判斷兩個小寫英文字串是否由完全相同的字母與次數組成；anagram/nagaram 為 true。
+// 為何使用本章主題：此題不需要 get_allocator；固定 26 格 array 比額外配置 map/string 更合適，
+//       這是刻意展示 allocator 介面不應為了章節而硬塞進一般演算法。
+// 思路：1. 長度不同直接失敗；2. 第一字串累加 26 格計數；3. 第二字串遞減；4. 檢查全為零。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 是字串長度，字母表固定為 26。
+// 易錯點：原題保證小寫 a..z；一般輸入必須先驗證，否則 `ch-'a'` 可能越界。
+// -----------------------------------------------------------------------------
 bool leetcode_is_anagram(const std::string& first, const std::string& second) {
     if (first.size() != second.size()) {
         return false;
@@ -49,7 +57,17 @@ bool leetcode_is_anagram(const std::string& first, const std::string& second) {
     return std::all_of(counts.begin(), counts.end(), [](const int value) { return value == 0; });
 }
 
-// 實務：只有 propagate_on_container_swap=true，或 allocator 相等，才符合 swap 前置條件。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】PMR 字串交換前置條件稽核
+// 情境：兩個 pmr::string 可能來自不同 memory_resource，呼叫 swap 前要確認 allocator 契約成立。
+// 為何使用本章主題：get_allocator() 可取得各容器 allocator 副本，搭配 allocator_traits 的
+//       propagate_on_container_swap 判定；相較直接 swap，可避免不相等 allocator 下的前置條件違反。
+// 設計：1. 編譯期讀 propagation trait；2. 可傳播則允許；3. 否則比較兩 allocator；4. 範例改用
+//       有定義但可能線性搬移的 move assignment。
+// 成本：前置條件檢查 O(1)；allocator 不相等的 move assignment 可能 O(N) 並向目的 resource 配置。
+// 上線注意：memory_resource 必須活得比所有容器久；不能把 `swap 不合法` 解讀成自動線性 fallback，
+//       也不要保存 get_allocator 回傳值來假裝替換容器內 allocator。
+// -----------------------------------------------------------------------------
 template <typename String>
 bool member_swap_precondition_holds(const String& first, const String& second) {
     using Allocator = typename String::allocator_type;

@@ -49,8 +49,14 @@ void basic_example()
     std::cout << "[基礎] status identifies regular file and missing path\n";
 }
 
-// LeetCode 1971：Find if Path Exists in Graph。名稱雖也叫 path，這裡的 path 是 graph route，
-// 不是 filesystem::path；BFS 以 visited 防 cycle，時間 O(V+E)、空間 O(V+E)。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1971. Find if Path Exists in Graph（圖中是否存在路徑）
+// 題目：給無向圖、source 與 destination，判斷兩點是否相連；三角形圖的 0 到 2 為 true。
+// 為何使用本章主題：題名的 path 是 graph route，不是 filesystem::path；本例刻意對照兩種完全不同的「存在」契約。
+// 思路：1. 由 edges 建雙向 adjacency list；2. BFS queue 從 source 出發；3. visited 防環，抵達 destination 即成功。
+// 複雜度：V 為節點數、E 為邊數；時間 O(V+E)、額外空間 O(V+E)。
+// 易錯點：本實作依賴 LeetCode 保證節點與 edge 索引合法；visited 應在 enqueue 時設定以免重複入列。
+// -----------------------------------------------------------------------------
 bool valid_path(int node_count, const std::vector<std::vector<int>>& edges,
                 int source, int destination)
 {
@@ -85,7 +91,14 @@ void leetcode_1971_example()
     std::cout << "[LeetCode 1971] BFS 正確區分相連與不相連 components\n";
 }
 
-// 實務：status metadata 可判是否接受 input；實際開檔仍再次檢查 stream。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】可讀 regular file 輸入驗證
+// 情境：批次工具只接受可實際開啟的 regular file，目錄、不存在路徑與 metadata 錯誤都要拒絕。
+// 為何使用本章主題：is_regular_file(error_code) 先分類 metadata，再以 ifstream 真正 open；不把 exists 當永久保證。
+// 設計：1. 查 regular file 並檢查 error；2. 嘗試開啟 input stream；3. 只有 stream.good() 才接受。
+// 成本：通常至少一次 metadata 查詢與一次 open I/O；時間受 filesystem 影響，額外記憶體 O(1)。
+// 上線注意：檢查與 open 間仍有 TOCTOU；安全邊界應直接開 descriptor 並驗 fstat，還要明訂 symlink 政策。
+// -----------------------------------------------------------------------------
 bool readable_regular_file(const fs::path& path)
 {
     std::error_code error;

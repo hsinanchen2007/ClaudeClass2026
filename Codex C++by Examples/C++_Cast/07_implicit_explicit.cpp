@@ -44,8 +44,14 @@ void basic_example()
     std::cout << "[基礎] explicit Port and visible numeric truncation\n";
 }
 
-// LeetCode 1656：Design an Ordered Stream。
-// constructor explicit 避免 `consume_stream(5)` 意外建成大型 stateful object。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1656. Design an Ordered Stream（設計有序資料流）
+// 題目：依 id 插入字串，只有從目前 ptr 起連續就緒時才回傳該段；先插 2，再插 1 時回 [aa,bb]。
+// 為何使用本章主題：explicit constructor 防止 int 在其他 API 呼叫中意外轉成配置 N+1 格的 stateful OrderedStream。
+// 思路：1. 配置 1-based slots；2. insert 將 value 寫入 id；3. 從 next_ 連續收集非空值並前進。
+// 複雜度：N 為 slot 數；儲存 O(N)，單次 insert 加輸出 K 筆為 O(K)，所有插入總走訪 O(N)。
+// 易錯點：id 要驗 1..N；空字串被當作尚未就緒 sentinel，若題目允許空 payload 就需獨立 presence 狀態。
+// -----------------------------------------------------------------------------
 class OrderedStream {
 public:
     explicit OrderedStream(int count) : values_(checked_size(count)), next_(1U) {}
@@ -84,7 +90,14 @@ void leetcode_1656_example()
     std::cout << "[LeetCode 1656] explicit stateful constructor, ordered chunk aa/bb\n";
 }
 
-// 實務：Strong IDs 防止 user ID 與 job ID 都是 int 時互相誤傳。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】使用者 ID 強型別路徑
+// 情境：user ID 與 job ID 底層都可能是整數，但 `/users/...` API 只能接受使用者 ID。
+// 為何使用本章主題：explicit UserId constructor 阻止 unsigned long 自動轉換，要求呼叫點明寫領域型別。
+// 設計：1. UserId 私有保存數值；2. explicit 建構；3. user_path 只接受 UserId 並格式化路徑。
+// 成本：建立 ID O(1)，輸出字串依十進位位數 D 為 O(D) 時間與空間。
+// 上線注意：strong type 仍要驗 ID 範圍與不存在值；不要用 `using UserId=unsigned long`，那不會建立型別隔離。
+// -----------------------------------------------------------------------------
 class UserId {
 public:
     explicit UserId(unsigned long value) : value_(value) {}

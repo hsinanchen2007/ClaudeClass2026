@@ -36,9 +36,14 @@ void basic_demo()
     consumer.join();
 }
 
-// ----------------------------------------------------------------------------
-// LeetCode 1115：Print FooBar Alternately
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1115. Print FooBar Alternately（交替列印 FooBar）
+// 題目：兩個 thread 分別呼叫 foo/bar，各執行 n 次，輸出必須是連續 n 組 foobar；例如 n=3 得 foobarfoobarfoobar。
+// 為何使用本章主題：condition_variable 讓非當前回合的 worker 睡眠，bool predicate 與 output 由同一 mutex 保護，避免 busy wait 與 data race。
+// 思路：1. foo 等待 foo_turn。2. 追加 foo 並切到 bar。3. bar 以相反 predicate 執行。4. 每輪解鎖後 notify 對方。
+// 複雜度：共 2N 次回合與字串追加，時間 O(N)、輸出空間 O(N)，另有 O(N) 次同步/喚醒。
+// 易錯點：wait 必須重查 predicate；result 僅能在 join 後無鎖讀，本類也假設兩個 worker 都會啟動，否則另一方永久等待。
+// -----------------------------------------------------------------------------
 class FooBar {
 public:
     explicit FooBar(int repetitions) : repetitions_(repetitions) {}
@@ -87,9 +92,14 @@ void leetcode_demo()
     assert(value.result() == "foobarfoobarfoobar");
 }
 
-// ----------------------------------------------------------------------------
-// 實務：可關閉 blocking queue
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【日常實務範例】可排空後關閉的阻塞工作佇列
+// 情境：producer 推入 10、20 後關閉 queue；consumer 阻塞等待資料，並在已接受項目全數取完後收到 false 正常退出。
+// 為何使用本章主題：condition_variable 以 `closed || !empty` 狀態 predicate 等待，比輪詢省 CPU；mutex 讓 push、pop、close 線性化。
+// 設計：1. push 鎖內入列後 notify_one。2. pop 等資料或關閉。3. 有資料先 drain。4. close 設旗標並 notify_all 喚醒所有 waiter。
+// 成本：每筆 push/pop 的容器操作通常 O(1)，另有 mutex contention 與 wakeup；queue 空間 O(Q)，Q 為尚未消費筆數。
+// 上線注意：本例 close 後 push 只靠 assert，正式版須回拒絕狀態；析構前要停止並 join 所有 waiter，且 unbounded queue 需 backpressure。
+// -----------------------------------------------------------------------------
 class BlockingQueue {
 public:
     void push(int value)

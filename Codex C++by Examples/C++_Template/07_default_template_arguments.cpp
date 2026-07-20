@@ -21,8 +21,15 @@ struct Entry {
     Value value{};
 };
 
-// LeetCode 703：Kth Largest Element in a Stream。
-// Compare 有預設值，想改成其他排序規則時仍可覆寫。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 703. Kth Largest Element in a Stream（資料流中的第 K 大元素）
+// 題目：先給 k 與初始資料，每次 add 後回傳目前第 k 大；k=3、[4,5,8,2] 加 3 時回 4。
+// 為何使用本章主題：T 預設 int、Compare 預設 greater<T>，常見呼叫只寫 KthLargest<>；
+// min-heap 的 top 保留第 k 大值，進階用法仍可覆寫型別與比較策略。
+// 思路：每個值先入 heap；大小超過 k 就移除目前最小值；留下最多 k 個最大值並回 top。
+// 複雜度：建構 M 筆為 O(M log K)，每次 add O(log K)、空間 O(K)，M 是初始筆數。
+// 易錯點：k 必須大於 0，否則 pop 後 top 空 heap；greater 形成 min-heap，方向容易寫反。
+// -----------------------------------------------------------------------------
 template <typename T = int, typename Compare = std::greater<T>>
 class KthLargest {
 public:
@@ -45,6 +52,15 @@ private:
     std::priority_queue<T, std::vector<T>, Compare> heap_;
 };
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】具有安全預設的請求重試 Client
+// 情境：一般請求預設只嘗試一次，特定測試或遠端操作可改用三次策略，成功時回應文字。
+// 為何使用本章主題：Response 與 RetryPolicy 有預設模板引數，簡單 Client<> 保持低噪音；
+// 相較 runtime attempts 欄位，策略在編譯期固定，但不同策略會形成不同 Client 型別。
+// 設計：policy 提供 attempts；request 依序呼叫 operation(attempt)；optional 有值立即回傳，耗盡回空 Response。
+// 成本：最多呼叫 A 次 operation、額外空間 O(1)，A 是 RetryPolicy::attempts；網路/I/O 成本主導。
+// 上線注意：空 Response 可能與合法空內容混淆，宜回 optional/expected；還需 backoff、逾時與可觀測性。
+// -----------------------------------------------------------------------------
 struct NoRetry {
     static constexpr int attempts = 1;
 };
@@ -53,7 +69,6 @@ struct ThreeAttempts {
     static constexpr int attempts = 3;
 };
 
-// 實務：Client 的資料型別與 retry policy 都有安全預設；測試可替換 policy。
 template <typename Response = std::string, typename RetryPolicy = NoRetry>
 class Client {
 public:

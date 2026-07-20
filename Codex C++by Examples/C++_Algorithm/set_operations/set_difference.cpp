@@ -12,7 +12,16 @@
 #include <string>
 #include <vector>
 
-// LeetCode 2215：Find the Difference of Two Arrays；題目是 distinct set，先 sort+unique。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 2215. Find the Difference of Two Arrays（找出兩陣列的不同）
+// 題目：原題回兩個 distinct 清單：只在 nums1 與只在 nums2；本 helper 只回 first-second
+// 單側結果，例如 [1,2,3,3] 與 [2,4,6] 回 [1,3]。
+// 為何使用本章主題：先 sort+unique 將陣列轉成 distinct sorted set，再由
+// set_difference 線性產生單側差異；完整題解還要對調輸入再算一次。
+// 思路：1. 各自排序去重；2. 計算 first-second；3. 以 back_inserter 收集結果。
+// 複雜度：時間 O(N log N+M log M)、額外空間 O(N+M)，N/M 為兩輸入大小。
+// 易錯點：difference 有方向；本函式不是完整 LC2215 回傳型別，duplicate 必須先去除。
+// -----------------------------------------------------------------------------
 std::vector<int> leetcode_only_in_first(std::vector<int> first,
                                         std::vector<int> second) {
     std::sort(first.begin(), first.end());
@@ -25,7 +34,16 @@ std::vector<int> leetcode_only_in_first(std::vector<int> first,
     return output;
 }
 
-// 實務：expected job IDs 減去 completed IDs，得到尚未完成清單。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】預期工作扣除已完成清單
+// 情境：expected 與 completed job IDs 都升冪；要列出 expected 中尚未完成的每一筆，
+// 保留 expected 的排序。
+// 為何使用本章主題：set_difference 直接實作 expected-completed 的方向性 multiset 差，
+// 比每筆 binary_search 更適合大小相近的兩個 sorted ranges。
+// 設計：1. 驗證兩邊 sorted invariant；2. 預留最多 expected.size；3. 線性輸出 pending。
+// 成本：時間 O(N+M)、額外空間 O(K)，N/M 為兩輸入大小、K 為 pending 數。
+// 上線注意：completed 中未知 ID 會被忽略；若要偵測資料錯誤，還需另算 completed-expected。
+// -----------------------------------------------------------------------------
 std::vector<int> practical_pending_jobs(const std::vector<int>& expected,
                                         const std::vector<int>& completed) {
     assert(std::is_sorted(expected.begin(), expected.end()));

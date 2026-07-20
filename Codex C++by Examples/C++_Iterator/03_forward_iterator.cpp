@@ -26,7 +26,14 @@ void basic_example()
     std::cout << "[基礎] forward iterator copies support independent passes\n";
 }
 
-// LeetCode 876：Middle of Linked List；slow/fast 都只需 forward increments。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 876. Middle of the Linked List（鏈結串列的中間節點）
+// 題目：回傳中間節點，偶數長度取第二個中點；例如 [1,2,3,4,5,6] 取值 4。
+// 為何使用本章主題：slow/fast 只需複製後各自前進，正好由 multi-pass forward iterator 支援。
+// 思路：兩者從 begin 出發；fast 每輪走兩步；每完成兩步 slow 走一步；fast 到 end 時 slow 在中點。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 為節點數。
+// 易錯點：空串列會解參考 end，本 API 需非空；每次 fast 第二步前要查 end；偶數長度須回後中點。
+// -----------------------------------------------------------------------------
 int middle_value(const std::forward_list<int>& values)
 {
     auto slow = values.begin();
@@ -47,7 +54,14 @@ void leetcode_876_example()
     std::cout << "[LeetCode 876] forward slow/fast yields middle 3/4\n";
 }
 
-// 實務：std::unique 只需 forward iterator；erase_after 完成 physical erase。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】移除相鄰的重複事件代碼
+// 情境：單向事件序列已按群組排列，需將 [1,1,2,2,3] 壓成 [1,2,3] 並保留首次出現順序。
+// 為何使用本章主題：forward_list::unique 只需 forward iterator，就能直接解除相鄰重複節點而不搬移元素。
+// 設計：建立單向串列；呼叫 unique 比較相鄰值；以具名 expected range 驗證結果。
+// 成本：時間 O(N)、額外空間 O(1)，N 為節點數；刪節點另有解配置成本。
+// 上線注意：unique 只移除相鄰重複，未排序資料不會全域去重；temporary ranges 的 iterator 不可混用。
+// -----------------------------------------------------------------------------
 void practical_example()
 {
     std::forward_list<int> values{1, 1, 2, 2, 3};

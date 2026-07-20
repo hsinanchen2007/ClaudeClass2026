@@ -37,10 +37,14 @@ void basic_demo()
     assert(counters[1].value.load() == 10'000U);
 }
 
-// ----------------------------------------------------------------------------
-// LeetCode 191：Number of 1 Bits（兩分片 local counters）
-// ----------------------------------------------------------------------------
-// 對 32 bits 分成兩半，每個 worker 只寫自己的 padded slot。時間固定 O(32)。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 191. Number of 1 Bits（位元 1 的個數）
+// 題目：輸入 32-bit 無號整數，回傳 binary representation 中 1 的數量；例如 0b1011 得 3、UINT32_MAX 得 32。
+// 為何使用本章主題：這是刻意的雙 thread 教學改寫，低/高 16 bits 各寫一個 padded counter，展示避免熱寫欄位落在同 cache line。
+// 思路：1. 分成 bit [0,16) 與 [16,32)。2. 各 worker 在 local 變數計數。3. store 到自己的 padded slot。4. join 後相加。
+// 複雜度：對固定 32 bits 為 O(1)，一般 W-bit 表示為 O(W)，額外空間 O(1)；thread 成本遠高於此小工作。
+// 易錯點：此 padding 只示範 layout，不證明效能提升或 cache line 必為 64 bytes；位移型別必須是 unsigned。
+// -----------------------------------------------------------------------------
 int hamming_weight(unsigned int value)
 {
     PaddedCounter counters[2];
@@ -67,9 +71,14 @@ void leetcode_demo()
     assert(hamming_weight(0xFFFFFFFFU) == 32);
 }
 
-// ----------------------------------------------------------------------------
-// 實務：per-worker metrics，最後才 reduce
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【日常實務範例】Per-worker 處理量指標彙總
+// 情境：兩個 worker 分別處理 120、80 筆，只更新自己的熱 counter；收集端在 join 後計算總量 200。
+// 為何使用本章主題：per-worker padded counters 避免所有執行緒競爭同一 atomic 與可能的 false sharing，適合低頻集中 reduce。
+// 設計：1. 為每 worker 配獨立 padded slot。2. worker 只 store 自己的值。3. join 建立完成關係。4. collector load 並加總。
+// 成本：更新 O(1)，彙總 P 個 worker 為 O(P)，空間 O(P) 且 padding 會增加 cache/memory footprint。
+// 上線注意：alignas 數值需依硬體量測，動態 worker 生命週期與 counter reset 要協調；高頻讀取仍可能干擾 writer cache。
+// -----------------------------------------------------------------------------
 void practical_demo()
 {
     PaddedCounter processed[2];

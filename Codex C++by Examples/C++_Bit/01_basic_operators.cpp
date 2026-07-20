@@ -34,8 +34,14 @@ void basic_example()
     std::cout << "[基礎] AND=8 OR=14 XOR=6，bit5=32\n";
 }
 
-// LeetCode 231：Power of Two。
-// 2 的冪在 binary 中恰有一個 1；n & (n-1) 會清掉最低的 1。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 231. Power of Two（判斷是否為 2 的冪）
+// 題目：輸入整數 value，判斷是否存在 k 使 value=2^k；16 為 true，3、0 為 false。
+// 為何使用本章主題：正的 2 次冪恰有一個 set bit，`bits & (bits-1)` 可一次清除它。
+// 思路：1. 先排除 value<=0；2. 轉成 uint32_t；3. 檢查清除最低 set bit 後是否為 0。
+// 複雜度：固定寬度整數只做常數次位元運算，時間 O(1)、額外空間 O(1)。
+// 易錯點：若未先排除 0，公式會誤判；signed 負值不在題意，位元式應在 unsigned domain 執行。
+// -----------------------------------------------------------------------------
 bool is_power_of_two(int value)
 {
     if (value <= 0) return false;
@@ -52,7 +58,14 @@ void leetcode_231_example()
     std::cout << "[LeetCode 231] 1/16=true，3/0=false\n";
 }
 
-// 實務案例：Unix-like 權限 bit mask；不需要為每個組合建立獨立 bool 欄位。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】Unix-like 權限遮罩維護
+// 情境：單一 byte 同時保存 read、write、execute 權限，並支援查詢、授予與撤銷。
+// 為何使用本章主題：每個權限占一個 bit，&、|、~ 可取代多個彼此獨立的 bool 欄位與組合分支。
+// 設計：1. 以 shift 定義三個 masks；2. `|=` 授予 execute；3. `&=~mask` 撤銷 write 並以 & 查詢。
+// 成本：每次權限操作時間與空間皆 O(1)。
+// 上線注意：~ 會發生 integer promotion，需轉回 uint8_t；外部輸入還要拒絕未知 bits 並集中授權紀錄。
+// -----------------------------------------------------------------------------
 enum Permission : std::uint8_t {
     read_permission = 1U << 0U,
     write_permission = 1U << 1U,

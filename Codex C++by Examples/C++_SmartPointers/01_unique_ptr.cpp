@@ -40,7 +40,14 @@ void basic_example()
     std::cout << "[基礎] ownership moved; source unique_ptr is null\n";
 }
 
-// LeetCode 206：Reverse Linked List；unique_ptr 版本以 move 重接 ownership。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 206. Reverse Linked List（反轉鏈結串列）
+// 題目：反轉單向串列；例如 1->2->3 變成 3->2->1。
+// 為何使用本章主題：每個 next 是 unique_ptr，演算法以 move 重接獨占 ownership，不需手動 delete。
+// 思路：先 move 保存下一段；把目前 head 的 next 接到 previous；把目前節點移成 previous；繼續下一段。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 為節點數。
+// 易錯點：覆寫 next 前必須保存舊 owner；函式按值接管 head；moved-from unique_ptr 為 null，舊 borrow 可能懸空。
+// -----------------------------------------------------------------------------
 struct ListNode {
     explicit ListNode(int node_value) : value(node_value) {}
     int value;
@@ -69,7 +76,14 @@ void leetcode_206_example()
     std::cout << "[LeetCode 206] unique ownership reversed 3->2->1\n";
 }
 
-// 實務：Controller 明確獨占 Backend，呼叫端 move 後不能再使用 owner。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】Controller 獨占運算 Backend
+// 情境：一個 Controller 必須全權管理一個 Backend，建立後不允許其他 owner 同時控制該 backend。
+// 為何使用本章主題：unique_ptr 型別直接表達單一 ownership，constructor 按值接管比裸 pointer 的責任更清楚。
+// 設計：caller 用 make_unique 建立；move 進 Controller；原 owner 變 null；health 經內部 owner 查 status。
+// 成本：ownership move O(1)，health 成本由 Backend::status 決定；解構會加上 backend cleanup 成本。
+// 上線注意：constructor 應拒絕 null；move 前借出的 raw pointer 不得長期保存，跨執行緒操作仍需同步。
+// -----------------------------------------------------------------------------
 class Backend {
 public:
     std::string status() const { return "ready"; }

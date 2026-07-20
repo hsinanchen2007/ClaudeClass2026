@@ -17,7 +17,17 @@
 #include <utility>
 #include <vector>
 
-// LeetCode 189：Rotate Array。先把尾端 move 到暫存，再重組；O(N) 額外空間。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 189. Rotate Array（輪轉陣列）
+// 題目：將 nums 向右輪轉 k 步；例如 [1,2,3,4,5,6,7]、k=3 變成
+// [5,6,7,1,2,3,4]。
+// 為何使用本章主題：範圍 std::move 將尾段與前段搬到暫存輸出的正確位置；對 int
+// 效果等同 copy，本例用來展示演算法版 move，並非 O(1) 空間最佳解。
+// 思路：1. 空陣列直接回；2. 對 N 取 k 餘數；3. move 尾 K 項到輸出前端；4. move
+// 其餘項到後端，再把 output 所有權移回 nums。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 為 nums 的元素數。
+// 易錯點：空陣列不可做 k%N；來源元素 move 後內容未指定；最佳題解可用三次 reverse 降到 O(1) 空間。
+// -----------------------------------------------------------------------------
 void leetcode_rotate_right(std::vector<int>& nums, std::size_t k) {
     if (nums.empty()) {
         return;
@@ -31,7 +41,17 @@ void leetcode_rotate_right(std::vector<int>& nums, std::size_t k) {
     nums = std::move(output);
 }
 
-// 實務：把 move-only 工作所有權從 pending 批次移交給 worker queue。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】Move-only 工作批次移交
+// 情境：pending 以 unique_ptr 擁有工作名稱，要把整批所有權交給 ready queue，不可
+// 複製工作，也不能讓來源保留重複 owner。
+// 為何使用本章主題：range std::move 配 back_inserter 逐項 move unique_ptr，目的
+// vector 可自動成長；相較 copy，這是 move-only 型別唯一合法的所有權轉移。
+// 設計：1. 依合併後大小 reserve ready；2. move 所有 pending 元素到 ready 尾端；
+// 3. clear 已成 moved-from 的 pending。
+// 成本：時間 O(P)、額外配置最多 O(R+P)，P/R 為 pending/ready 數；工作本體不被複製。
+// 上線注意：中途配置或 move 例外可能形成部分移交；需要 all-or-nothing 時應設計 staging/commit。
+// -----------------------------------------------------------------------------
 using Job = std::unique_ptr<std::string>;
 
 void practical_transfer_jobs(std::vector<Job>& pending,

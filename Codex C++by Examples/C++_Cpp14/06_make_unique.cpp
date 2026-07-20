@@ -38,7 +38,14 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 104：Maximum Depth of Binary Tree。unique_ptr 建立測試樹並自動遞迴釋放。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 104. Maximum Depth of Binary Tree（二元樹最大深度）
+// 題目：輸入二元樹根節點，回傳根到最深葉節點的節點數；[3,9,20,null,null,15,7] 深度為 3。
+// 為何使用本章主題：TreeNode 以 unique_ptr 唯一擁有子樹，make_unique 建測試樹並自動遞迴釋放；演算法只借用 const raw pointer。
+// 思路：1. nullptr 深度為 0；2. 遞迴求左右子樹深度；3. 取較大值再加目前節點 1。
+// 複雜度：N 為節點數、H 為樹高；時間 O(N)、遞迴堆疊 O(H)，樹本身 ownership 空間 O(N)。
+// 易錯點：observer pointer 不可 delete；極度偏斜樹可能耗盡 call stack，Base 多型擁有時還要 virtual destructor。
+// -----------------------------------------------------------------------------
 struct TreeNode {
     explicit TreeNode(int initial_value) : value(initial_value) {}
     int value;
@@ -62,8 +69,15 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】多型處理 pipeline：vector<unique_ptr<Stage>> 明確擁有每個 stage，無手動 delete。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】可組合的資料處理 pipeline
+// 情境：服務依序執行多個 Stage，pipeline 容器要明確擁有不同 concrete stage 並在離開 scope 時釋放。
+// 為何使用本章主題：vector<unique_ptr<Stage>> 表達唯一 ownership，make_unique 建立 ScaleStage，無需裸 new/delete。
+// 設計：1. 定義具 virtual destructor 的 Stage；2. 以 make_unique 加入倍率 stage；3. 依序把前一步輸出餵給下一步。
+// 成本：S 為 stage 數；執行時間 O(S) 加各 stage 成本，持有空間 O(S)，每個 stage 各一次 allocation。
+// 上線注意：pipeline 不可複製但可移動；需定義 stage 例外策略、輸入溢位與是否允許跨執行緒共用。
+// -----------------------------------------------------------------------------
 class Stage {
 public:
     virtual ~Stage() {}

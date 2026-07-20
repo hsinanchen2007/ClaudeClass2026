@@ -39,7 +39,14 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 682：Baseball Game。switch-init 先取得 token 第一字元，數字路徑另 parse。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 682. Baseball Game（棒球比賽計分）
+// 題目：依序處理分數、+、D、C 並回傳有效分數總和；["5","2","C","D","+"] 得 30。
+// 為何使用本章主題：switch-init 將 token.front() 命名為 operation，字元只在該次分派範圍內存在。
+// 思路：1. 逐 token 取第一字元；2. 三種命令更新 scores，其他 token 解析為整數；3. 最後 accumulate。
+// 複雜度：N 為操作數；時間 O(N)、額外空間 O(N)。
+// 易錯點：token 不可為空；+ 需兩筆、D/C 需一筆，本實作依賴題目保證操作序列合法。
+// -----------------------------------------------------------------------------
 int leetcode_cal_points(const std::vector<std::string>& operations) {
     std::vector<int> scores;
     for (const std::string& token : operations) {
@@ -58,8 +65,15 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】事件分派：先把 raw code 轉成 scoped enum，再限制 event 只活在 switch。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】服務事件代碼分派
+// 情境：外部傳入 1/2/3 事件代碼，服務要映射成 allocate、release 或 refresh 動作。
+// 為何使用本章主題：switch-init 先轉成 scoped Event，並把 event 作用域限制在分派 statement 內。
+// 設計：1. 將 raw_event 轉 Event；2. 每個合法 enumerator 直接回動作；3. 未知值離開 switch 後丟例外。
+// 成本：單次分派時間與空間皆 O(1)。
+// 上線注意：static_cast 不會驗 raw 值；目前以最終 throw 防守，正式協定還要記錄未知代碼與版本。
+// -----------------------------------------------------------------------------
 enum class Event { start = 1, stop = 2, heartbeat = 3 };
 
 std::string practical_dispatch(int raw_event) {

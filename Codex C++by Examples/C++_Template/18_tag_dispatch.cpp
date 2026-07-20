@@ -60,7 +60,15 @@ Iterator advance_n(Iterator iterator, std::size_t count) {
     return advance_n_impl(iterator, count, Category{});
 }
 
-// LeetCode 876：Middle of the Linked List。forward_list 路徑使用快慢 iterator。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 876. Middle of the Linked List（鏈結串列的中間節點）
+// 題目：找串列中點，偶數長度回第二個中點；[1,2,3,4,5,6] 得 4，空泛化輸入回無值。
+// 為何使用本章主題：本泛型版讀取 iterator_category tag 並驗證至少是 forward iterator，
+// 但沒有依 tag overload 分派；它是相鄰的 category 教學改寫，且回值而非原題節點指標。
+// 思路：空 range 回 nullopt；slow/fast 同起點；fast 每輪兩步、slow 一步，最後複製 slow 值。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 是元素數；optional 內另保存一份中間元素。
+// 易錯點：需要可多趟走訪的 forward iterator；value_type 必須可複製，偶數長度取第二個中點。
+// -----------------------------------------------------------------------------
 template <typename ForwardRange>
 auto leetcode_middle(const ForwardRange& values)
     -> std::optional<typename ForwardRange::value_type> {
@@ -86,6 +94,15 @@ auto leetcode_middle(const ForwardRange& values)
     return *slow;
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】訊息立即送出或緩衝排隊
+// 情境：同一訊息 API 依編譯期部署模式回報 queued 或 sent，不在熱路徑做 runtime policy 判斷。
+// 為何使用本章主題：BufferedTag/ImmediateTag 由 overload resolution 選 send_impl，公開模板只建立 tag；
+// 相較 virtual dispatch 沒有間接呼叫，但部署時不能對同一物件動態切換策略。
+// 設計：兩個 tag 各對應一個 impl；practical_send 按值取得 message；move 給選中的實作並加狀態前綴。
+// 成本：分派 O(1) 且通常完全消除，字串建構 O(L)，L 是訊息長度。
+// 上線注意：範例只回字串，真正 buffered 路徑需處理容量、持久化與失敗；訊息內容也要避免洩密。
+// -----------------------------------------------------------------------------
 struct BufferedTag {};
 struct ImmediateTag {};
 
@@ -97,7 +114,6 @@ std::string send_impl(std::string message, ImmediateTag) {
     return "sent:" + std::move(message);
 }
 
-// 實務：策略型別在編譯期選路徑，沒有 runtime if 或 virtual dispatch。
 template <typename DeliveryTag>
 std::string practical_send(std::string message) {
     return send_impl(std::move(message), DeliveryTag{});

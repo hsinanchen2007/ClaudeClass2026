@@ -33,11 +33,14 @@ void basic_demo()
     assert(next != status.end() && next->first == 300);
 }
 
-// ----------------------------------------------------------------------------
-// LeetCode 981：Time Based Key-Value Store（核心查詢）
-// ----------------------------------------------------------------------------
-// 每個 key 的 timestamp 有序；upper_bound(t) 找第一個 >t，再退一步得最後有效版本。
-// set O(log versions)，get O(log versions)。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 981. Time Based Key-Value Store（基於時間的鍵值儲存）
+// 題目：set(key,value,t) 保存版本，get(key,t) 取時間不超過 t 的最新值；如 t=10 設 safe，t=20 查得 safe。
+// 為何使用本章主題：內層 map 依 timestamp 排序，upper_bound 可直接找到查詢時間之後的第一個版本。
+// 思路：外層以 key 找版本表；對 timestamp 做 upper_bound；若不是 begin 就退一步取得最後有效版本。
+// 複雜度：set/get 皆為 O(log K + log V)，額外空間 O(M)，K 為 key 數、V 為該 key 版本數、M 為總版本數。
+// 易錯點：upper_bound 等於 begin 代表沒有有效版本；缺 key 回空字串；同 timestamp 由 insert_or_assign 覆寫。
+// -----------------------------------------------------------------------------
 class TimeMap {
 public:
     void set(std::string key, std::string value, int timestamp)
@@ -72,9 +75,14 @@ void leetcode_demo()
     assert(store.get("mode", 30) == "fast");
 }
 
-// ----------------------------------------------------------------------------
-// 實務：依門檻選費率區間
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【日常實務範例】依用量門檻選擇階梯費率
+// 情境：費率表以最低適用用量為 key，查詢任意用量時要取得不超過該用量的最高門檻費率。
+// 為何使用本章主題：map 維持門檻排序並支援 upper_bound，比每次線性掃描或手動排序更直接。
+// 設計：找第一個大於 units 的門檻；退回前一項；回傳該區間的費率。
+// 成本：每次查詢時間 O(log R)、額外空間 O(1)，R 為費率區間數。
+// 上線注意：表必須非空且含涵蓋最小輸入的門檻；assert 不能取代正式錯誤處理，浮點費率也應定義精度政策。
+// -----------------------------------------------------------------------------
 double rate_for(const std::map<int, double>& rate_by_minimum_units, int units)
 {
     const auto after = rate_by_minimum_units.upper_bound(units);

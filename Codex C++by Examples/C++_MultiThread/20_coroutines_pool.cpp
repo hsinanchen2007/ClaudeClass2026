@@ -28,6 +28,14 @@
 
 class Executor;
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】單 Worker Coroutine Executor 與安全 Frame 回收
+// 情境：多個 IntTask 排入單 worker executor，外部可同步 get，worker 內 nested get 需協助 queue，完成後 owner 才能安全 destroy coroutine frame。
+// 為何使用本章主題：coroutine 表達 suspend/resume，executor 決定執行 thread；active_resumes 與 condition_variable 解決 final_suspend 過早通知的 lifetime race。
+// 設計：1. await_suspend 將 handle/state 放入 ready queue。2. worker 記 active_resumes 後 resume。3. final 記到達終點。4. resume 返回後發布 done，get 才可 destroy。
+// 成本：每次排程含 queue lock、shared_ptr/refcount、resume 與通知；frame/ready queue 空間隨 pending task 數量成長。
+// 上線注意：executor 必須活得比 pending tasks 久；handle 不擁有 frame且不可重複 resume/destroy，單 worker reentrant helping 也需防自我等待 cycle。
+// -----------------------------------------------------------------------------
 struct IntTaskState {
     mutable std::mutex mutex;
     std::condition_variable condition;
@@ -280,6 +288,14 @@ private:
     std::shared_ptr<IntTaskState> state_;
 };
 
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 2235. Add Two Integers（兩整數相加）
+// 題目：回傳 num1+num2；例如 12+5=17、-10+4=-6。
+// 為何使用本章主題：加法不需要 coroutine；此教學改寫先 co_await ScheduleOn，把後續運算排到 executor worker，再透過 IntTask::get 取結果。
+// 思路：1. 建立 coroutine frame。2. ScheduleOn 發布 handle 並暫停。3. worker resume 後計算 left+right。4. co_return 發布值供 get。
+// 複雜度：加法 O(1)，但 frame 配置、queue 同步、context resume 與 blocking get 是主要成本。
+// 易錯點：signed int 加法仍可能 overflow；temporary task 的 get 返回前 frame 不可銷毀，executor 也不可先結束生命週期。
+// -----------------------------------------------------------------------------
 IntTask async_add(Executor& executor, int left, int right)
 {
     co_await ScheduleOn{executor};  // 之後的程式在 executor worker 繼續。
@@ -300,9 +316,6 @@ void basic_demo()
     expect(task.get() == 42, "coroutine result mismatch");
 }
 
-// ----------------------------------------------------------------------------
-// LeetCode 2235：Add Two Integers
-// ----------------------------------------------------------------------------
 void leetcode_demo()
 {
     Executor executor;
@@ -311,9 +324,6 @@ void leetcode_demo()
     expect(positive == 17 && mixed == -6, "LeetCode addition result mismatch");
 }
 
-// ----------------------------------------------------------------------------
-// 實務：blocking bridge、worker nested wait，以及 frame 立即回收壓力測試
-// ----------------------------------------------------------------------------
 void practical_demo()
 {
     Executor executor;

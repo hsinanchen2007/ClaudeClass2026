@@ -30,11 +30,14 @@ void basic_demo()
     assert((ada_scores == std::vector<int>{90, 95}));
 }
 
-// ----------------------------------------------------------------------------
-// LeetCode 49 風格：Group Anagrams
-// ----------------------------------------------------------------------------
-// 排序後字串作 key，相同字母組合落在同一 equal_range。建立時每字 O(k log k)，
-// 最後依 ordered key 輸出可重現。真正解題也常用 unordered_map<string,vector<string>>。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 49. Group Anagrams（字母異位詞分組）
+// 題目：將由相同字母重排而成的字串放在同組；例如 eat、tea、ate 同組，tan、nat 同組。
+// 為何使用本章主題：這是 multimap 教學改寫，以排序後字串作重複 key；常見最佳實作會用 unordered_map<string,vector<string>>。
+// 思路：排序每個 word 得 signature；插入 signature->word；依 equal_range 收集相同 signature；跳到下一組。
+// 複雜度：時間 O(N*K log K + N log N)、額外空間 O(N*K)，N 為字數、K 為最長字串長度。
+// 易錯點：不可假設不同 key 的插入順序；空字串 signature 合法；群組與群內順序若有契約需另行排序。
+// -----------------------------------------------------------------------------
 std::vector<std::vector<std::string>> group_anagrams(
     const std::vector<std::string>& words)
 {
@@ -69,9 +72,14 @@ void leetcode_demo()
     assert(total == 6U);
 }
 
-// ----------------------------------------------------------------------------
-// 實務：一個時間點可有多個排程事件
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【日常實務範例】同一時間點的排程事件索引
+// 情境：排程表允許同一 timestamp 同時有 log rotation 與 health check，查詢時需取回全部事件。
+// 為何使用本章主題：multimap 直接保存重複時間鍵且保持排序，equal_range 可精確取得該時間的連續區間。
+// 設計：對 timestamp 呼叫 equal_range；走訪半開區間；複製每筆事件名稱到結果。
+// 成本：查找與收集為 O(log N + M)，額外空間 O(M)，N 為總事件數、M 為命中事件數。
+// 上線注意：同鍵相對順序不應代替明確 priority；修改可能使保存的區間邊界失效，取消單筆要用 iterator。
+// -----------------------------------------------------------------------------
 std::vector<std::string> events_at(
     const std::multimap<int, std::string>& timeline, int timestamp)
 {

@@ -47,9 +47,14 @@ void basic_example()
     std::cout << "[基礎] friend operator<<: " << first << '\n';
 }
 
-// LeetCode 155：Min Stack。
-// Judge 只需 public operations；friend probe 讓單元測試驗證兩個 stack 同步，
-// 又不必把內部 containers 永久暴露成 production API。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 155. Min Stack（最小棧）
+// 題目：push、pop、top、getMin 都須 O(1)；例如 push -2,0,-3 時最小為 -3，pop 後為 -2。
+// 為何使用本章主題：friend probe 只為測試檢查雙 stack 同步，不是解題必要；production public API 仍維持封裝。
+// 思路：values_ 保存值；minimums_ 每層保存截至該層最小值；push/pop 同步；get_min 讀第二個 top。
+// 複雜度：所有操作時間 O(1)，額外空間 O(N)，N 為 stack 元素數。
+// 易錯點：空 stack 不可 pop/top；重複最小值每層都要保存；friend 擴大 trusted boundary 但不授予 ownership。
+// -----------------------------------------------------------------------------
 class MinStack;
 
 class MinStackProbe {
@@ -96,7 +101,14 @@ void leetcode_155_example()
     std::cout << "[LeetCode 155] friend test probe 驗證雙 stack invariant\n";
 }
 
-// 實務案例：Serializer 需要讀 private wire fields，但一般呼叫端只看 domain API。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】API token 的受控 wire serialization
+// 情境：domain caller 只需 issue token，但 wire serializer 必須讀 private owner/serial 產生 build-agent#42。
+// 為何使用本章主題：friend class 精準授權緊密合作的 serializer，避免為所有呼叫端公開內部 wire 欄位。
+// 設計：ApiToken 以 private constructor 建合法 state；issue 建立值；TokenSerializer 直接讀兩欄並組字串。
+// 成本：序列化時間與空間 O(O+D)，O/D 為 owner 與 serial 字串長度。
+// 上線注意：owner 中的 # 需 escaping 或結構化格式；token 可能敏感，日誌要遮罩，friend 不會延長 token 生命週期。
+// -----------------------------------------------------------------------------
 class ApiToken {
 public:
     static ApiToken issue(std::string owner, unsigned long serial)

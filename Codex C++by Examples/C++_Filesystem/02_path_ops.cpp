@@ -30,7 +30,14 @@ void basic_example()
     std::cout << "[基礎] replace operations only change path value\n";
 }
 
-// LeetCode 71：標準庫可完成 lexical normalize，但題目另要求刪除非 root 的 trailing `/`。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 71. Simplify Path（簡化路徑）
+// 題目：將 POSIX absolute path 簡化成 canonical 題目字串；"/a/./b/../../c/" 回傳 "/c"。
+// 為何使用本章主題：lexically_normal 處理 dot segments 與重複 separator，不做任何存在性或 symlink I/O。
+// 思路：1. lexical normalize；2. 除 root 外持續移除 trailing `/`；3. 空字串回傳 `/`。
+// 複雜度：L 為輸入長度；時間與結果空間 O(L)。
+// 易錯點：題目要求 POSIX 語意；lexically_normal 不是 canonical，也不能阻擋真實 filesystem 的 symlink traversal。
+// -----------------------------------------------------------------------------
 std::string simplify_path(const std::string& input)
 {
     std::string result = fs::path(input).lexically_normal().generic_string();
@@ -38,8 +45,14 @@ std::string simplify_path(const std::string& input)
     return result.empty() ? "/" : result;
 }
 
-// 同一觀念的實務延伸：限制結果必須留在 lexical sandbox。先拒 absolute，再 normalize，
-// 並拒絕第一個 component 是 ..；這仍不是抵抗 symlink race 的完整 security sandbox。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】受信任工作區的 lexical 路徑守衛
+// 情境：將使用者提供的相對名稱接到 `/srv/data`，拒絕 absolute path 與正規化後以 `..` 開頭的輸入。
+// 為何使用本章主題：is_absolute、lexically_normal 與 component iterator 能在不碰磁碟時完成第一層語法防護。
+// 設計：1. 先拒 absolute；2. normalize 並檢查首 component；3. 合法才以 root/operator/ 組合。
+// 成本：C 為 component 數、L 為字元數；時間與結果空間 O(L)。
+// 上線注意：這只適合受信任目錄，不抵抗 symlink 與 TOCTOU；敵對環境需 descriptor-relative OS API。
+// -----------------------------------------------------------------------------
 fs::path lexical_sandbox_path(const fs::path& root, const fs::path& user_relative)
 {
     if (user_relative.is_absolute()) throw std::invalid_argument("absolute input rejected");
@@ -63,7 +76,14 @@ void leetcode_71_example()
     std::cout << "[LeetCode 71] canonical path outputs match official contract\n";
 }
 
-// 實務：同一 input 產生 sidecar checksum path。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】產物 checksum sidecar 命名
+// 情境：為 model.bin 產生同層的 model.bin.sha256，而不是把原副檔名替換掉。
+// 為何使用本章主題：path::operator+= 直接附加 filename 字元；相較 replace_extension，可保留完整原檔名。
+// 設計：1. 以值接收 artifact 副本；2. 附加 `.sha256`；3. 回傳 owning path value。
+// 成本：L 為路徑長度；複製與附加時間、結果空間 O(L)。
+// 上線注意：命名完成不代表 sidecar 存在或可信；寫入時仍需原子發布、hash schema 與碰撞政策。
+// -----------------------------------------------------------------------------
 fs::path checksum_path(fs::path artifact)
 {
     artifact += ".sha256";

@@ -24,7 +24,15 @@ void basic_demo() {
     assert(!spaces.empty());
 }
 
-// LeetCode 20（Valid Parentheses）：empty 是 stack underflow 與最終平衡檢查。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 20. Valid Parentheses（有效括號）
+// 題目：輸入只含三種括號，判斷每個閉括號是否依正確類型與順序配對；"([]{})" 合法，"([)]" 不合法。
+// 為何使用本章主題：string 作為 stack 時，empty() 同時保護 back/pop_back 不發生 underflow，
+//       並在掃描結束確認沒有未閉合括號。
+// 思路：1. 開括號 push；2. 閉括號先判 stack 非空；3. pop 並核對類型；4. 最後 stack 必須為空。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 是 text 長度，最壞全部都是開括號。
+// 易錯點：閉括號到來時要先 empty guard；本版也明確拒絕題目契約外的非括號字元。
+// -----------------------------------------------------------------------------
 bool leetcode_valid_parentheses(const std::string& text) {
     std::string stack;
     for (const char ch : text) {
@@ -48,7 +56,15 @@ bool leetcode_valid_parentheses(const std::string& text) {
     return stack.empty();
 }
 
-// 實務：必填設定不能只檢查 empty，還要辨認全空白。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】必填設定值檢查
+// 情境：表單或設定欄位不能是空字串，也不能只含 space、tab、LF、CR。
+// 為何使用本章主題：empty() 只能回答元素數是否為零，本例逐 byte 補上業務層的 ASCII
+//       whitespace 規則；相較 `text != ""`，能拒絕看似有長度但沒有內容的值。
+// 設計：1. 逐字元掃描；2. 找到任一非列舉空白立即回 true；3. 掃完則回 false。
+// 成本：時間 O(N)、額外空間 O(1)，N 是 text 長度，可在首個有效字元提前結束。
+// 上線注意：只處理四種 ASCII 空白；Unicode whitespace 需要明定編碼與文字函式庫，不能逐 byte 猜測。
+// -----------------------------------------------------------------------------
 bool practical_has_non_space(const std::string& text) {
     for (const char ch : text) {
         if (ch != ' ' && ch != '\t' && ch != '\n' && ch != '\r') {

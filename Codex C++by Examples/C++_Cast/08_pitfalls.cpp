@@ -37,9 +37,14 @@ void basic_example()
     std::cout << "[基礎] checked cast accepts 255, rejects 256/-1\n";
 }
 
-// LeetCode 8：String to Integer (atoi)。
-// 逐 digit 前先用 unsigned char 呼叫 cctype，並在乘 10/加 digit 前做 range clamp；
-// 最後 cast 回 int 已有數學證明，不是用 cast 隱藏 overflow。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 8. String to Integer (atoi)（字串轉整數）
+// 題目：解析前導空白、正負號與連續數字，超過 int 時截到 INT_MIN/MAX；"   -042" 回 -42。
+// 為何使用本章主題：cctype 前先轉 unsigned char，累加用 long long；最後 static_cast 只在已 clamp 的範圍內執行。
+// 思路：1. 略過空白並讀 sign；2. 逐 digit 累加；3. 每輪檢查 signed_value 上下界，遇非數字停止。
+// 複雜度：N 為輸入長度；時間 O(N)、額外空間 O(1)。
+// 易錯點：直接把負 char 傳 cctype 可能 UB；cast 不會阻止 overflow，必須在乘加過程中先驗範圍。
+// -----------------------------------------------------------------------------
 int my_atoi(const std::string& input)
 {
     std::size_t index = 0U;
@@ -71,7 +76,14 @@ void leetcode_8_example()
     std::cout << "[LeetCode 8] parsing clamps before final int cast\n";
 }
 
-// 實務：duration API 從 unsigned external field 進 signed internal type前檢查上界。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】wire timeout 受檢窄化
+// 情境：協定以 unsigned long 傳毫秒數，內部舊 API 只接受 int，超過 INT_MAX 時要明確拒絕。
+// 為何使用本章主題：先以 numeric_limits 比較數學範圍，再 static_cast；不以 cast 壓掉 conversion warning。
+// 設計：1. 將 INT_MAX 安全轉成來源型別；2. 超過上限回 nullopt；3. 合法才轉 int。
+// 成本：單次檢查與轉換時間、空間皆 O(1)。
+// 上線注意：還需驗 timeout 的業務上限與特殊 sentinel；不同 signedness 比較必須先選不遺失資訊的共同型別。
+// -----------------------------------------------------------------------------
 std::optional<int> timeout_from_wire(unsigned long milliseconds)
 {
     if (milliseconds > static_cast<unsigned long>(std::numeric_limits<int>::max())) {

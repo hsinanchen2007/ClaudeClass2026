@@ -99,12 +99,14 @@ void basic_demo()
     expect(values.snapshot().size() == 1U, "ConcurrentMap snapshot size mismatch");
 }
 
-// ----------------------------------------------------------------------------
-// LeetCode 981：Time Based Key-Value Store 的完整多 key 契約
-// set(key, value, timestamp)：同一 key 的 timestamp 必須嚴格遞增且大於 0。
-// get(key, t)：回傳 timestamp <= t 的最新 value；找不到時依題意回傳空字串。
-// 外層 map 查 key 為 O(log k)，內層 vector 二分搜尋為 O(log m)，set 攤銷 O(log k)。
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 981. Time Based Key-Value Store（基於時間的鍵值儲存）
+// 題目：set(key,value,timestamp) 保存版本，get(key,t) 回傳 timestamp<=t 的最新值，無資料回空字串；例如 foo@1 在 t=3 仍回 bar。
+// 為何使用本章主題：shared_mutex 讓不同 reader 同時二分查詢，set 以 exclusive lock 維護每 key timestamp 遞增與 history vector 一致性。
+// 思路：1. set 驗證正時間與同 key 遞增。2. append entry。3. get shared-lock 查 key。4. upper_bound 後取前一筆 floor value。
+// 複雜度：K 個 key、單 key M 版時，set 攤銷 O(log K)，get O(log K+log M)，總儲存空間 O(所有版本數)。
+// 易錯點：upper_bound 前若無版本要回空字串；不可讓 entry reference 逃出鎖，且 shared_mutex 不支援持 shared lock 原地升級。
+// -----------------------------------------------------------------------------
 class TimeMap {
 public:
     void set(std::string key, std::string value, int timestamp)
@@ -163,11 +165,14 @@ void leetcode_demo()
     expect(store.get("foo", 4) == "bar2", "rejected TimeMap write changed state");
 }
 
-// ----------------------------------------------------------------------------
-// 實務：功能旗標以「版本 + 全部欄位」一起發布，reader 取得一致 snapshot。
-// 若逐欄各鎖一次，reader 可能看到跨版本組合；shared_mutex 保護的是整體 invariant。
-// version 到 UINT64_MAX 時拒絕發布，避免無號整數回繞讓監控誤認為舊版本。
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【日常實務範例】具版本的一致功能旗標快照
+// 情境：fraud-check 與 new-checkout 必須同版一起開關；兩個 reader 在 writer 反覆發布時不可看到跨版本混合值。
+// 為何使用本章主題：一把 shared_mutex 把 version 與整張 flags map 當成共同 invariant；reader 可並行複製，writer 則原子式獨占提交。
+// 設計：1. writer 在鎖外準備 next map。2. unique-lock 檢查版本未耗盡。3. swap 全部 flags 並遞增版本。4. reader shared-lock 複製兩欄。
+// 成本：publish 的 map swap 通常 O(1)，snapshot 複製 O(F) 並在期間阻塞 writer；鎖成本取決於讀寫 contention。
+// 上線注意：版本到 UINT64_MAX 必須先拒絕且不提交；長時間 snapshot copy 可能餓死 writer，發布與讀取例外也要保留一致狀態。
+// -----------------------------------------------------------------------------
 struct FlagSnapshot {
     std::uint64_t version;
     std::map<std::string, bool> flags;

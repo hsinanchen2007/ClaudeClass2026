@@ -13,7 +13,15 @@
 #include <numeric>
 #include <vector>
 
-// LeetCode 1979：Find Greatest Common Divisor of Array。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1979. Find Greatest Common Divisor of Array（找出陣列的最大公約數）
+// 題目：找 nums 中最小值與最大值的最大公因數；例如 [2,5,6,9,10] 回 gcd(2,10)=2。
+// 為何使用本章主題：std::gcd 已封裝 Euclid 演算法與符號正規化；題目只需先線性
+// 取得兩個極值，不必對所有元素連續求 gcd。
+// 思路：1. 以首元素初始化 smallest/largest；2. 掃描更新兩極；3. 回 gcd(smallest,largest)。
+// 複雜度：時間 O(N+log V)、額外空間 O(1)，N 為元素數、V 為極值絕對值尺度。
+// 易錯點：nums 不可空；若值含最小可表示負數，取絕對值可能超出共同型別。
+// -----------------------------------------------------------------------------
 int leetcode_find_gcd(const std::vector<int>& nums) {
     assert(!nums.empty());
     int smallest = nums.front();
@@ -29,7 +37,17 @@ int leetcode_find_gcd(const std::vector<int>& nums) {
     return std::gcd(smallest, largest);
 }
 
-// 實務：多個週期多久同時發生。結果超過 limit 就回 0，避免靜默溢位。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】多排程週期共同觸發間隔
+// 情境：periods 是多個正整數秒數，要找它們下一次同時觸發的 LCM；若結果超過
+// 業務 limit，回 0 表示不可排程。
+// 為何使用本章主題：每輪先以 gcd 約分 answer，再乘新 period，可降低中間值並在
+// 乘法前用 limit/period 檢查溢位。
+// 設計：1. answer 以 LCM identity 1 開始；2. 求 divisor；3. 先除再檢查乘法上限；
+// 4. 安全時更新 answer。
+// 成本：時間 O(P log V)、額外空間 O(1)，P 為週期數、V 為目前數值尺度。
+// 上線注意：period 必須大於 0；0 同時可能是合法 LCM 與錯誤 sentinel，正式 API 宜回 optional/expected。
+// -----------------------------------------------------------------------------
 long long practical_common_interval(const std::vector<int>& periods,
                                     long long limit) {
     long long answer = 1;

@@ -12,7 +12,17 @@
 #include <iostream>
 #include <vector>
 
-// LeetCode 2558：Take Gifts From the Richest Pile。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 2558. Take Gifts From the Richest Pile（從最富有的禮物堆取禮物）
+// 題目：輸入各堆禮物數 gifts 與操作次數 k；每輪取最大堆並留下 floor(sqrt(x))，
+// 最後回傳總數，例如 [25,64,9,4,100] 操作 4 次後為 29。
+// 為何使用本章主題：max-heap 可在每輪取得最大堆；本檔額外用 std::is_heap 驗證
+// pop、改值與 push 後仍維持 heap，這是教學診斷而非正式題解必要工作。
+// 思路：1. 以 make_heap 建堆；2. 每輪 pop 最大值並替換成平方根下取整；3. push_heap
+// 恢復不變量並驗證；4. 線性加總剩餘值。
+// 複雜度：含每輪 is_heap 驗證時為 O(N+K*N)，額外空間 O(N)；N 為堆數、K 為操作次數。
+// 易錯點：正式提交應移除 O(N) 的逐輪驗證；禮物須非負，且 pop_heap 後要在同一範圍恢復 heap。
+// -----------------------------------------------------------------------------
 long long leetcode_pick_gifts(std::vector<int> gifts, int k) {
     std::make_heap(gifts.begin(), gifts.end());
     for (int round = 0; round < k; ++round) {
@@ -29,7 +39,17 @@ long long leetcode_pick_gifts(std::vector<int> gifts, int k) {
     return total;
 }
 
-// 實務：接收序列化 priority queue 後，在使用前驗證格式。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】序列化優先佇列完整性診斷
+// 情境：服務從磁碟或網路收到以陣列保存的 max-heap，要在派送前找出第一個破壞父子
+// 優先序的位置；完整合法時回 data.size()。
+// 為何使用本章主題：is_heap_until 不修改外部資料，且比單一 bool 多提供首個違規
+// child 的索引，便於記錄來源資料損壞位置。
+// 設計：1. 掃描整個序列取得首個違規 iterator；2. 計算其與 begin 的距離；3. 以
+// size sentinel 同時表達「沒有違規」。
+// 成本：時間 O(N)、額外空間 O(1)，N 為序列元素數。
+// 上線注意：index==size 不可解參考；若資料採 min-heap，驗證與後續操作都要傳同一 comparator。
+// -----------------------------------------------------------------------------
 std::size_t practical_first_invalid_heap_index(const std::vector<int>& data) {
     const auto it = std::is_heap_until(data.begin(), data.end());
     return static_cast<std::size_t>(std::distance(data.begin(), it));

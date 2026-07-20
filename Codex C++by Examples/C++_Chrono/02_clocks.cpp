@@ -30,9 +30,14 @@ void basic_example()
     std::cout << "[基礎] steady is monotonic; system time_t=" << wall_seconds << '\n';
 }
 
-// LeetCode 359：Logger Rate Limiter。
-// 題目 timestamp 單調遞增；以 seconds duration 表示，而非與 system_clock 綁定，
-// 讓 unit test 完全 deterministic。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 359. Logger Rate Limiter（日誌速率限制器）
+// 題目：依時間戳與訊息決定是否輸出；同一訊息每 10 秒最多一次，例如 foo 在 1 秒可印、2 秒拒絕、11 秒再允許。
+// 為何使用本章主題：題目給的是邏輯秒數，使用 chrono::seconds 而非讀 system_clock，既保留單位又讓測試不受校時影響。
+// 思路：1. 查訊息的 next-allowed 時間。2. 未到期限便拒絕。3. 允許時把期限更新為 timestamp+10s。
+// 複雜度：unordered_map 平均每次時間 O(1)、空間 O(M)，M 為出現過的不同訊息數。
+// 易錯點：timestamp 恰等於期限時必須允許；若用 system_clock 控制間隔，NTP 向後校時可能破壞限制語意。
+// -----------------------------------------------------------------------------
 class Logger {
 public:
     bool should_print_message(std::chrono::seconds timestamp, const std::string& message)
@@ -55,7 +60,14 @@ void leetcode_359_example()
     std::cout << "[LeetCode 359] deterministic 10-second rate limit\n";
 }
 
-// 實務：同一事件同時保留 wall/monotonic；log 顯示 wall，SLA 計算 monotonic。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】同時記錄稽核時間與 SLA 起點
+// 情境：服務事件既要在日誌顯示可讀的牆鐘時間，也要可靠計算兩事件間耗時。
+// 為何使用本章主題：system_clock 可轉民用時間但可能跳動；steady_clock 單調，適合 elapsed，兩種語意不能由單一 clock 兼任。
+// 設計：1. 事件發生時依序擷取 wall 與 monotonic。2. 將兩個 time_point 放入同一 EventStamp。3. 顯示與 SLA 各用對應欄位。
+// 成本：每次事件有兩次 now() 呼叫與兩個 time_point 的儲存成本；實際延遲依平台 clock source 而定。
+// 上線注意：兩次取樣並非同一瞬間，跨主機 monotonic 值也不可比較或持久化；分散式追蹤需另用 correlation 資訊。
+// -----------------------------------------------------------------------------
 struct EventStamp {
     std::chrono::system_clock::time_point wall;
     std::chrono::steady_clock::time_point monotonic;

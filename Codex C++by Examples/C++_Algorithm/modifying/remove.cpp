@@ -15,7 +15,17 @@
 #include <string>
 #include <vector>
 
-// LeetCode 27：Remove Element，題目只要求回傳新長度。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 27. Remove Element（移除元素）
+// 題目：原地移除所有等於 val 的元素並回傳剩餘數量 k，前 k 格放保留值；例如
+// [3,2,2,3] 移除 3 後 k=2。
+// 為何使用本章主題：std::remove 穩定壓縮保留值並回 logical end；本教材再 erase
+// 尾段讓 vector 實際縮小，這比原題只要求前 k 格多做一步。
+// 思路：1. remove 所有 value；2. 計算 begin 到 new_end 的長度；3. erase 未指定尾段；
+// 4. 回傳 k。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 為 nums 的元素數。
+// 易錯點：remove 不會改 size；原題不要求保留 k 後內容，本函式則明確 erase 尾端。
+// -----------------------------------------------------------------------------
 int leetcode_remove_element(std::vector<int>& nums, int value) {
     const auto new_end = std::remove(nums.begin(), nums.end(), value);
     const int length = static_cast<int>(std::distance(nums.begin(), new_end));
@@ -28,7 +38,16 @@ struct Session {
     bool expired;
 };
 
-// 實務：刪除過期 session。predicate 不可在同時修改被遍歷容器。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】過期 Session 批次清理
+// 情境：記憶體中的 Session vector 含 expired 標記，要一次刪除所有過期項目並維持
+// 未過期 session 的原順序。
+// 為何使用本章主題：erase-remove_if 只線性搬移保留元素一次，避免在迴圈逐筆 erase
+// 造成反覆位移的 O(N^2) 成本。
+// 設計：1. remove_if 將 expired 項目排除並回 new_end；2. erase 尾段真正銷毀 session。
+// 成本：時間 O(N)、額外空間 O(1)，N 為 session 數；保留元素可能被 move-assign。
+// 上線注意：predicate 不可修改 vector 結構；若 Session 析構會做 I/O，批次延遲與失敗策略要另管控。
+// -----------------------------------------------------------------------------
 void practical_purge_expired(std::vector<Session>& sessions) {
     const auto new_end = std::remove_if(
         sessions.begin(), sessions.end(),

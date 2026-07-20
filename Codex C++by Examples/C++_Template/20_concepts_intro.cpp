@@ -60,7 +60,15 @@ concept BinarySearchableRange =
         { target < *std::ranges::begin(values) } -> std::convertible_to<bool>;
     };
 
-// LeetCode 704：受 concept 約束的 Binary Search。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 704. Binary Search（二分搜尋）
+// 題目：在升冪陣列找 target 索引，找不到回 -1；[-1,0,3,5,9,12] 查 9 得 4。
+// 為何使用本章主題：BinarySearchableRange 明列 random access、sized、排序與雙向比較需求，
+// 讓 forward_list 在呼叫邊界被拒絕；原題固定 vector<int>，此處泛化為 range。
+// 思路：以 difference_type 維護半開區間；由 first+mid 讀值；比較後縮左或右界，命中回 mid。
+// 複雜度：時間 O(log N)、額外空間 O(1)，N 是 range 長度。
+// 易錯點：concept 無法證明資料真的已排序或比較無副作用；重複值時不保證回第一筆。
+// -----------------------------------------------------------------------------
 template <BinarySearchableRange Range>
 auto leetcode_binary_search_index(
     const Range& values, const std::ranges::range_value_t<Range>& target)
@@ -83,6 +91,15 @@ auto leetcode_binary_search_index(
     return static_cast<Difference>(-1);
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】受約束的監控指標顯示
+// 情境：顯示層只接受具有可轉字串 name 與可轉 double value 的監控資料。
+// 為何使用本章主題：Metric concept 把結構需求命名並放在 abbreviated template 參數上；
+// 相較無限制模板，傳入 int 時會在 API 邊界得到 constraint 診斷。
+// 設計：concept 檢查兩成員 expression；Gauge 滿足契約；renderer 建立 owning 名稱與數值字串。
+// 成本：constraint 僅在編譯期，runtime 時間與空間 O(L)，L 是輸出字串長度。
+// 上線注意：concept 不驗 name 非空、value 有限或單位；浮點格式與 locale 也需明訂。
+// -----------------------------------------------------------------------------
 template <typename T>
 concept Metric = requires(const T& metric) {
     { metric.name } -> std::convertible_to<std::string>;
@@ -94,7 +111,6 @@ struct Gauge {
     double value{};
 };
 
-// 實務：錯誤型別在呼叫邊界就得到「不滿足 Metric」，而不是進函式深處才爆錯。
 std::string practical_render_metric(const Metric auto& metric) {
     return std::string{metric.name} + "=" +
            std::to_string(static_cast<double>(metric.value));

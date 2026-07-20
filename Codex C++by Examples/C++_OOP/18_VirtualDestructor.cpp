@@ -50,8 +50,14 @@ void basic_example()
     std::cout << "[基礎] base pointer deletion 已執行 derived destructor\n";
 }
 
-// LeetCode 703：Kth Largest Element in a Stream。
-// KthLargest 實作抽象 IntStream；經 base owner 銷毀仍能正確解構 priority_queue。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 703. Kth Largest Element in a Stream（資料流中的第 K 大元素）
+// 題目：初始化 k 與 nums，每次 add 後回目前第 k 大；例如 k=3、加入 3,5,10,9 依序得到 4,5,5,8。
+// 為何使用本章主題：min-heap 是解題核心；額外實作 IntStream 只為展示 base owner 最後經 virtual destructor 正確清理。
+// 思路：所有值進 min-heap；大小超過 k 就移除最小；top 即保留集合中的第 k 大。
+// 複雜度：建構 O(N log K)，每次 add O(log K)，空間 O(K)。
+// 易錯點：k 必須大於零；需要足夠歷史值才能稱第 k 大；空 heap 不可 top，base destructor 必須 virtual。
+// -----------------------------------------------------------------------------
 class IntStream {
 public:
     virtual ~IntStream() = default;
@@ -92,7 +98,14 @@ void leetcode_703_example()
     std::cout << "[LeetCode 703] virtual stream 回傳 kth largest=8\n";
 }
 
-// 實務案例：Plugin owner 只知道介面；plugin destructor 可釋放自有 connection/cache。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】經介面 owner 關閉 metrics plugin
+// 情境：主程式只持有 Plugin 介面，但 concrete plugin 解構時必須關閉自有 connection/cache。
+// 為何使用本章主題：unique_ptr<Plugin> 透過 virtual destructor 走完整 derived cleanup，避免只解構 base 的 UB。
+// 設計：Plugin 宣告 virtual destructor；MetricsPlugin override 並在解構時標記 stopped；base owner 離開 scope 觸發清理。
+// 成本：polymorphic delete 為常數派發，總成本由 concrete cleanup 決定，可能包含 I/O。
+// 上線注意：destructor 不應拋例外；外部 stopped reference 必須更長壽，真正 shutdown 失敗需另有可回報 API。
+// -----------------------------------------------------------------------------
 class Plugin {
 public:
     virtual ~Plugin() = default;

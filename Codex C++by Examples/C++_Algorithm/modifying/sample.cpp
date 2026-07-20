@@ -17,7 +17,17 @@
 #include <set>
 #include <vector>
 
-// LeetCode 398：Random Pick Index，reservoir sampling 選一個 target index。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 398. Random Pick Index（隨機選取索引）
+// 題目：對可能重複的 target，等機率回傳其中任一索引；例如 nums=[1,2,3,3,3]
+// 查 3 時，索引 2、3、4 機率相同。
+// 為何使用本章主題：本函式用 reservoir sampling 完成單一樣本，不直接呼叫
+// std::sample；它與本章抽樣主題共享「不知道命中數也能均勻無放回選取」的模型。
+// 思路：1. 掃描每個 target 命中；2. 第 seen 個命中以 1/seen 機率取代 chosen；
+// 3. 結束後回選中索引，未命中則回 nums.size()。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 為 nums 的元素數。
+// 易錯點：題目保證 target 存在，但通用 helper 以 size sentinel 表示缺席；固定 seed 只用於可重現測試。
+// -----------------------------------------------------------------------------
 std::size_t leetcode_reservoir_pick(const std::vector<int>& nums, int target,
                                     std::uint32_t seed) {
     std::mt19937 engine(seed);
@@ -36,7 +46,16 @@ std::size_t leetcode_reservoir_pick(const std::vector<int>& nums, int target,
     return chosen;
 }
 
-// 實務：從 request id 母體抽稽核樣本；回傳順序不列入契約。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】Request ID 稽核抽樣
+// 情境：從一批 request id 中無放回抽最多 count 筆供人工稽核；來源不能被打亂，
+// seed 由本次稽核工作保存以便重現。
+// 為何使用本章主題：std::sample 單次掃描來源並保證同一元素最多選一次，不必先
+// shuffle 整份資料；back_inserter 可處理實際輸出小於 count 的情況。
+// 設計：1. 建立指定 seed 的 mt19937；2. 預留 min(count,N)；3. sample 到 result。
+// 成本：時間 O(N)、額外空間 O(min(C,N))，N 為母體大小、C=count。
+// 上線注意：mt19937 不可用於安全抽獎；跨標準庫不保證相同樣本，稽核需保存工具鏈或實際抽樣結果。
+// -----------------------------------------------------------------------------
 std::vector<int> practical_audit_sample(const std::vector<int>& requests,
                                         std::size_t count,
                                         std::uint32_t seed) {

@@ -48,8 +48,14 @@ void basic_example()
     std::cout << "[基礎] recursive create is idempotent; remove deletes empty leaf\n";
 }
 
-// LeetCode 1166：Design File System。每個 logical path 是可再擁有 children 的 node，
-// 所以不能把 `/a` 建成普通檔案；本例以 directory 表 node，`.value` 保存該 node 的 int。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1166. Design File System（設計邏輯檔案系統）
+// 題目：createPath 只在 parent 已存在且 target 不存在時建立 path/value，get 不存在回 -1。
+// 為何使用本章主題：這是以真實 temp directory 教學改寫 logical store；directory 表 node，`.value` 保存該節點整數。
+// 思路：1. 解析並驗 logical relative path；2. 檢查 target 不存在且 parent 是目錄後建 node；3. 寫 `.value`，失敗則清理。
+// 複雜度：P 為 path 長度；每次操作含 O(P) path 處理與多次 filesystem I/O，儲存空間隨節點數 O(N)。
+// 易錯點：不是官方 in-memory 最佳模型；exists/create/write 非交易且有 TOCTOU，寫檔失敗必須回滾新目錄。
+// -----------------------------------------------------------------------------
 class FileSystem {
 public:
     explicit FileSystem(fs::path root) : root_(std::move(root)) {}
@@ -110,7 +116,14 @@ void leetcode_1166_example()
     std::cout << "[LeetCode 1166] createPath/get 與 parent/duplicate 契約完整驗證\n";
 }
 
-// 實務：安全清理只允許由 caller 建立的 temporary child，並要求 marker。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】marker 守衛的暫存樹清理
+// 情境：清理工作目錄時只允許刪除明確含 `.codex-temp` marker 的非 root 路徑。
+// 為何使用本章主題：fs::remove_all 能遞迴刪整棵，先以 path/root/exists 守衛縮小誤刪風險。
+// 設計：1. 拒空路徑與 filesystem root；2. 要求 marker 存在；3. 呼叫 remove_all 並回刪除數。
+// 成本：N 為樹內 entries；驗證有 metadata I/O，remove_all 時間 O(N)、額外 traversal 成本由實作決定。
+// 上線注意：marker 檢查仍有 symlink/TOCTOU race；正式工具要 allowlist、dry-run、權限隔離與逐項稽核。
+// -----------------------------------------------------------------------------
 std::uintmax_t remove_marked_tree(const fs::path& root)
 {
     if (root.empty() || root == root.root_path() || !fs::exists(root / ".codex-temp")) {

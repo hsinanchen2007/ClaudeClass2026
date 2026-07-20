@@ -47,8 +47,14 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 1929：Concatenation of Array 的固定大小版本。
-// N 在 compile time 已知，static_assert 可拒絕空輸入的教材規格。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1929. Concatenation of Array（陣列串接自身）
+// 題目：輸入 nums，回傳 nums 後再接一次 nums；例如 [1,2,1] 變成 [1,2,1,1,2,1]。
+// 為何使用本章主題：教材改用固定大小 std::array，使 N 成為模板參數並可用 static_assert 拒絕空陣列規格。
+// 思路：1. 建立大小 2N 的 answer；2. 將 nums[i] 寫到 i；3. 同時寫到 i+N。
+// 複雜度：N 為輸入長度；時間 O(N)，結果空間 O(N)、除結果外額外工作空間 O(1)。
+// 易錯點：這是固定大小教學改寫，不是 LeetCode 的 vector 介面；第二份索引必須偏移 N。
+// -----------------------------------------------------------------------------
 template <std::size_t N>
 std::array<int, N * 2U> concatenate(const std::array<int, N>& nums) {
     static_assert(N > 0U, "題目輸入至少要有一個元素");
@@ -67,8 +73,15 @@ void test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】MetricsCounter 型別契約：只允許 unsigned counter，錯誤設定無法實體化。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】無負值的指標計數器
+// 情境：請求數等 metrics 只能增加非負數量，希望錯用 signed counter 時直接無法建置。
+// 為何使用本章主題：類別內 static_assert 檢查 Counter type trait，把型別契約提前到模板實體化階段。
+// 設計：1. 驗 Counter 為 unsigned；2. add 將批次值累加；3. total 以相同型別回傳目前值。
+// 成本：每次 add/total 時間 O(1)，每個計數器空間 O(1)。
+// 上線注意：unsigned 仍會模數溢位，且多執行緒更新有 data race；需依需求加入飽和、atomic 或鎖。
+// -----------------------------------------------------------------------------
 template <class Counter>
 class MetricsCounter {
     static_assert(std::is_unsigned<Counter>::value, "計數器必須是 unsigned，避免負計數");

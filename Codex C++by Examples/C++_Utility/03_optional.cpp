@@ -26,7 +26,15 @@ std::optional<int> basic_parse_positive(const std::string& text) {
     return std::nullopt;
 }
 
-// LeetCode 278：First Bad Version 的泛化版；若範圍內沒有 bad，回 nullopt。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 278. First Bad Version（第一個錯誤的版本）
+// 題目：版本 1..n 從某版起全部為 bad，找出第一版；例如 n=10 且 4 起為 bad，答案是 4。
+// 為何使用本章主題：原題保證存在 bad 版本；此泛化介面用 optional 額外表達 count 無效或範圍內
+// 完全沒有 bad，避免以 -1 當 magic sentinel。
+// 思路：在 1..count 二分；bad 時縮右界，good 時移左界；收斂後再驗證候選是否真的 bad。
+// 複雜度：時間 O(log N)、額外空間 O(1)，N 是 count，另有一次最終 is_bad 查詢。
+// 易錯點：count<=0 要回 nullopt；is_bad 必須單調且 std::function 不可為空，否則會丟例外。
+// -----------------------------------------------------------------------------
 std::optional<int> leetcode_first_bad_version(int count,
                                               const std::function<bool(int)>& is_bad) {
     int left = 1;
@@ -45,7 +53,15 @@ std::optional<int> leetcode_first_bad_version(int count,
     return left;
 }
 
-// 【實務情境】設定鍵不存在是正常狀態，不需要以 exception 表示。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】可缺少的環境設定查詢
+// 情境：服務從環境設定表查 MODE、PORT 等鍵，未設定是可由呼叫端套預設值的正常狀態。
+// 為何使用本章主題：optional 明確區分「鍵不存在」與「存在但值是空字串」；相較例外或特殊字串，
+// 呼叫端可用 has_value/value_or 直接處理缺值分支。
+// 設計：在 unordered_map 查 key；未命中回 nullopt；命中則複製字串到 engaged optional。
+// 成本：平均查找 O(1)、回傳複製 O(L)，L 是設定值長度；惡劣碰撞時查找可到 O(N)。
+// 上線注意：敏感值不可寫入 log；需區分缺值、空值與格式錯誤，熱更新時還要同步環境快照。
+// -----------------------------------------------------------------------------
 using Environment = std::unordered_map<std::string, std::string>;
 
 std::optional<std::string> practical_find_config(const Environment& environment,

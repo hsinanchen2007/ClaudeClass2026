@@ -17,7 +17,16 @@
 #include <utility>
 #include <vector>
 
-// LeetCode 1491：Average Salary Excluding Minimum and Maximum。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1491. Average Salary Excluding the Minimum and Maximum Salary（去掉最低與最高薪資後的平均值）
+// 題目：輸入至少三筆互異 salary，排除一筆最低與一筆最高後求平均；例如
+// [4000,3000,1000,2000] 回 2500。
+// 為何使用本章主題：逐筆以 minmax 更新目前上下界，同時累加總額；本寫法展示兩值
+// minmax 的 reference pair 需立即複製，無需先完整排序。
+// 思路：1. 驗證至少三筆；2. 線性累加 total 並更新 low/high；3. 扣除兩極值；4. 除以 N-2。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 為薪資筆數。
+// 易錯點：只排除各一筆極值；總和使用 long long；兩值 minmax 回 reference，不可回傳區域參考。
+// -----------------------------------------------------------------------------
 double leetcode_average_salary(const std::vector<int>& salary) {
     if (salary.size() < 3U) {
         throw std::invalid_argument("salary needs at least three entries");
@@ -36,7 +45,15 @@ double leetcode_average_salary(const std::vector<int>& salary) {
            static_cast<double>(salary.size() - 2U);
 }
 
-// 實務：輸入端點順序不可信，用 minmax 正規化閉區間。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】不定順序區間端點正規化
+// 情境：UI 拖曳或外部 API 可能以任意順序傳入兩個端點，後端要統一成 [low,high]。
+// 為何使用本章主題：std::minmax 一次比較即可取得兩端，比先判斷再 swap 更直接；
+// 函式立即複製成 value pair，避免 reference pair 逸出。
+// 設計：1. 對 endpoint_a 與 endpoint_b 求 minmax；2. 將 bounds.first/second 複製回傳。
+// 成本：時間 O(1)、額外空間 O(1)，只需一次比較。
+// 上線注意：若端點有非法 sentinel 或單位不同，必須先驗證；不可直接回 std::minmax(local...) 的參考 pair。
+// -----------------------------------------------------------------------------
 std::pair<int, int> practical_normalize_interval(int endpoint_a,
                                                  int endpoint_b) {
     const auto bounds = std::minmax(endpoint_a, endpoint_b);

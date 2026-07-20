@@ -51,8 +51,14 @@ void basic_example()
     std::cout << "[基礎] nested chain: " << chain << '\n';
 }
 
-// LeetCode 394：Decode String。題目保證合法；production wrapper 加 input context 並保留
-// parser root cause。簡化 parser 支援 k[letters] nested 結構。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 394. Decode String（字串解碼）
+// 題目：將 k[encoded] 遞迴展開；例如 3[a]2[bc] 得 aaabcbc，3[a2[c]] 得 accaccacc。
+// 為何使用本章主題：原題保證格式合法；production wrapper 以 throw_with_nested 加入完整 input context，同時保留缺括號的 parser root cause。
+// 思路：1. 一般字元直接追加。2. 解析 repeat 與左括號。3. 遞迴解碼內層並驗右括號。4. 重複追加，最外層再驗無尾隨 ]。
+// 複雜度：若輸出長度為 O，解碼至少時間/空間 O(O)；遞迴額外 stack O(D)，D 為最大巢狀深度。
+// 易錯點：repeat 累積、輸出長度與遞迴深度都可能溢位或耗盡資源；nested exception 只保存原因鏈，不等於輸入限制。
+// -----------------------------------------------------------------------------
 std::string decode_at(const std::string& text, std::size_t& index)
 {
     std::string output;
@@ -92,7 +98,14 @@ void leetcode_394_example()
     std::cout << "[LeetCode 394] nested decoder outputs expected strings\n";
 }
 
-// 實務：boundary 保留 chain 給 log；user UI 可只顯示最外層安全訊息。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】解析失敗的分層診斷日誌
+// 情境：輸入 2[abc 缺少右括號，操作端需要看到高層 cannot decode context 與低層 missing ] 原因，使用者介面則只顯示安全摘要。
+// 為何使用本章主題：exception_chain 透過 rethrow_if_nested 遞迴還原因果，比只丟新的 runtime_error 或拼接單層 what 保留更多型別化上下文。
+// 設計：1. boundary 呼叫 decoder。2. 捕捉最外層 std::exception。3. 遞迴展開 nested causes。4. 驗證並輸出完整診斷鏈。
+// 成本：D 層 chain 需 O(D) 次重拋與字串配置；訊息總長度另決定 I/O 成本。
+// 上線注意：輸入、路徑或 secret 需遮罩並限制 chain 長度；遞迴 logger 也要處理非標準例外與 logging failure。
+// -----------------------------------------------------------------------------
 void practical_example()
 {
     try { (void)decode_string("2[abc"); }

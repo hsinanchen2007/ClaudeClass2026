@@ -94,7 +94,15 @@ ManifestDiff basic_manifest_diff(const std::vector<FileRecord>& primary,
     return diff;
 }
 
-// LeetCode 349：Intersection of Two Arrays，distinct result。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 349. Intersection of Two Arrays（兩個陣列的交集）
+// 題目：回兩陣列共同的 distinct 值，順序不限；例如 [1,2,2,1] 與 [2,2] 回 [2]。
+// 為何使用本章主題：先 sort+unique 建立 distinct sorted ranges，再由
+// set_intersection 取共同值，直接落實集合而非 multiset 語意。
+// 思路：1. 各自排序去重；2. 預留輸出；3. 線性求 intersection。
+// 複雜度：時間 O(N log N+M log M)、額外空間 O(N+M)，N/M 為兩輸入大小。
+// 易錯點：必須先 unique 才符合 LC349 distinct 輸出；LC350 則不可去除重複。
+// -----------------------------------------------------------------------------
 std::vector<int> leetcode_intersection(std::vector<int> first,
                                        std::vector<int> second) {
     std::sort(first.begin(), first.end());
@@ -107,7 +115,16 @@ std::vector<int> leetcode_intersection(std::vector<int> first,
     return output;
 }
 
-// 實務：將兩個已排序 audit streams 合併；相同 timestamp 時 primary 先出。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】Primary/Secondary Audit Stream 合併
+// 情境：兩條 audit stream 各依 timestamp 升冪；要建立完整時間線，相同 timestamp
+// 時 primary 訊息必須先出，兩個來源保持不變。
+// 為何使用本章主題：std::merge 的 stable tie 規則會先取第一範圍，正好滿足 primary
+// 優先，且只需線性掃描。
+// 設計：1. 以同一 less_time 驗證兩邊；2. 預留總大小；3. 將 primary 作第一範圍 merge。
+// 成本：時間 O(N+M)、額外空間 O(N+M)，N/M 為兩 stream 筆數。
+// 上線注意：跨來源真正順序若不能只靠 timestamp，需納入 sequence/clock source；snapshot 期間不可併發修改。
+// -----------------------------------------------------------------------------
 struct Audit {
     int timestamp;
     std::string message;

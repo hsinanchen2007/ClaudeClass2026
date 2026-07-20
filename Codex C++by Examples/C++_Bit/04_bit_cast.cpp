@@ -31,8 +31,14 @@ void basic_example()
     std::cout << "[基礎] float 1.0 representation=0x" << std::hex << bits << std::dec << '\n';
 }
 
-// LeetCode 190：Reverse Bits。bit_cast 不是解題必要條件；這裡用 bytes 顯示反轉前後
-// representation，再以 shift 完成 32-bit reversal。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 190. Reverse Bits（反轉位元）
+// 題目：將 32-bit unsigned 整數的 bit 順序完全反轉；指定範例輸出 964,176,192。
+// 為何使用本章主題：反轉本身只需 shift；bit_cast 僅在測試中把結果查看成四個 byte，是刻意標示的非必要教學用途。
+// 思路：1. result 從 0 開始；2. 左移 result 並接上 input 最低 bit；3. input 右移，固定重複 32 次。
+// 複雜度：W=32；時間 O(W)、額外空間 O(1)。
+// 易錯點：必須使用 unsigned 避免 signed shift；bit_cast 不會改 endian，也不能取代 reversal 演算法。
+// -----------------------------------------------------------------------------
 std::uint32_t reverse_bits(std::uint32_t value)
 {
     std::uint32_t result = 0U;
@@ -53,7 +59,14 @@ void leetcode_190_example()
     std::cout << "[LeetCode 190] reversed value=" << output << '\n';
 }
 
-// 實務案例：把 32-bit float 明確編成 big-endian bytes。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】浮點數 big-endian 封包編碼
+// 情境：將 32-bit float 的 object representation 明確輸出成四個 big-endian bytes。
+// 為何使用本章主題：bit_cast 安全取得同大小 uint32_t 值，再用 shift 明訂 wire byte order，不違反 aliasing。
+// 設計：1. bit_cast float 成 uint32_t；2. 依 24/16/8/0 位移取 byte；3. 依網路順序放入 array。
+// 成本：固定四 byte，時間與輸出空間皆 O(1)。
+// 上線注意：需確認協定採 IEEE-754 binary32，並實作對稱 decode；bit_cast 本身不保證浮點格式或 endian。
+// -----------------------------------------------------------------------------
 std::array<std::uint8_t, 4> encode_float_be(float value)
 {
     const std::uint32_t bits = std::bit_cast<std::uint32_t>(value);

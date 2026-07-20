@@ -48,8 +48,14 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 155：Min Stack。兩個 stack 讓 push/pop/top/getMin 都是 O(1)。
-// 類別不管理 raw resource，因此特殊成員可全部交給 compiler（Rule of Zero）。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 155. Min Stack（可常數時間取最小值的堆疊）
+// 題目：實作 push、pop、top 與 getMin，所有操作皆須 O(1)；例如壓入 -2,0,-3 後最小值是 -3。
+// 為何使用本章主題：兩個 std::stack 已管理資源，MinStack 採 Rule of Zero，不必手寫或 delete/default 特殊成員。
+// 思路：1. values_ 保存原值；2. minima_ 每層保存截至該層的最小值；3. push/pop 同步操作兩個 stack。
+// 複雜度：每個操作時間 O(1)；N 個元素需要 O(N) 額外空間存 minima_。
+// 易錯點：兩個 stack 必須同步；題目保證非空才 pop/top/getMin，實務 API 應自行檢查空堆疊。
+// -----------------------------------------------------------------------------
 class MinStack {
 public:
     void push(int value) {
@@ -79,9 +85,15 @@ void test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】AuditToken 強型別邊界：delete int overload，讓錯誤 ID 在編譯期被拒絕。
 namespace practical {
-// 實務：AuditToken 不允許從 bool/char 等型別隱式建立，避免 ID 混淆。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】稽核請求權杖強型別
+// 情境：稽核 API 只接受字串 request token，不能讓整數 ID 因隱式轉換混入相同入口。
+// 為何使用本章主題：將 AuditToken(int) 標為 = delete，讓錯誤型別在 overload resolution 階段得到明確診斷。
+// 設計：1. 只提供 explicit string constructor；2. 刪除 int constructor；3. 以 const reference 暴露已持有字串。
+// 成本：建構成本 O(L)，L 為 token 長度；讀取 value 為 O(1)，物件持有 O(L) 空間。
+// 上線注意：= delete 只擋 int 路徑，仍要驗 token 格式、長度與敏感資訊記錄政策；回傳 reference 不得活過 token。
+// -----------------------------------------------------------------------------
 class AuditToken {
 public:
     explicit AuditToken(std::string value) : value_(std::move(value)) {}

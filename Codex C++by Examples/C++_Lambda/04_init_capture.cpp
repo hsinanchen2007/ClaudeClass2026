@@ -32,7 +32,15 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 724：Find Pivot Index。init-capture 保存 total，reference capture 更新 left sum。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 724. Find Pivot Index（尋找陣列的中心下標）
+// 題目：找最左側索引，使其左側總和等於右側總和；[1,7,3,6,5,6] 的答案是 3。
+// 為何使用本章主題：lambda 以值捕獲預先算好的 total、以參考捕獲 left；目前語法是一般捕獲，
+// 並未使用 `[total = expression]` init-capture，因此只是展示「建立時保存衍生值」的相近概念。
+// 思路：先算全陣列總和；由左至右比較 left 與 total-left-value；比較後才把 value 加入 left。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 是 nums 長度；第一次走訪求總和，第二次找索引。
+// 易錯點：必須在更新 left 前比較；找不到回 -1，空陣列也回 -1，整數總和可能溢位。
+// -----------------------------------------------------------------------------
 int leetcode_pivot_index(const std::vector<int>& nums) {
     const int total = std::accumulate(nums.begin(), nums.end(), 0);
     int left = 0;
@@ -53,8 +61,16 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】背景工作 ownership：init-capture 將 unique_ptr 移入 callback，離開 factory 仍安全。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】背景工作移交 payload 所有權
+// 情境：factory 收到唯一擁有的字串 payload，回傳可延後執行的工作以取得其長度。
+// 為何使用本章主題：init-capture 用 `owned = std::move(payload)` 把 unique_ptr 移入 closure；
+// 相較捕獲裸指標，工作離開 factory 後仍擁有有效資料且所有權明確。
+// 設計：呼叫端移交 unique_ptr；closure 成為唯一 owner；執行時判空並讀取 owned 字串長度。
+// 成本：建立工作是 O(1) 的指標移動，呼叫 O(1)、closure 持有一份 payload 生命週期成本。
+// 上線注意：回傳 closure 是 move-only，C++20 不能直接放入 std::function；也應明訂空 payload 行為。
+// -----------------------------------------------------------------------------
 auto practical_task(std::unique_ptr<std::string> payload) {
     return [owned = std::move(payload)]() {
         return owned == nullptr ? std::size_t{0} : owned->size();

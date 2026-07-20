@@ -30,8 +30,14 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 191：Number of 1 Bits。Brian Kernighan：每輪清掉最低 set bit。
-// 複雜度 O(k)，k 是 1-bit 數量；空間 O(1)。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 191. Number of 1 Bits（二進位中 1 的個數）
+// 題目：輸入 32-bit unsigned 整數，回傳 set bit 數；二進位 ...1011 的答案是 3。
+// 為何使用本章主題：binary literal 讓 32-bit 測資的位元位置可直接審查；Kernighan 式則逐次清掉最低 set bit。
+// 思路：1. count 從 0 開始；2. 每輪執行 value&=value-1；3. value 歸零時回傳輪數。
+// 複雜度：K 為 set bit 數；時間 O(K)、額外空間 O(1)。
+// 易錯點：必須在 unsigned domain 運算；binary literal 的 U suffix 與 32-bit 位數不可省略或寫錯。
+// -----------------------------------------------------------------------------
 int leetcode_hamming_weight(std::uint32_t value) {
     int count = 0;
     while (value != 0U) {
@@ -47,8 +53,15 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】權限 mask：二進位 literal 讓 read/write/execute 所占 bit 一眼可見。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】服務權限遮罩驗證
+// 情境：read、write、execute 各占一個 bit，要判斷帳號是否同時具備某組必要權限。
+// 為何使用本章主題：0b001/010/100 直接顯示欄位配置，比十進位 magic number 更容易審查。
+// 設計：1. 以單一 bit 定義各 Permission；2. OR 組合 granted/required；3. 比較 granted&required 是否等於 required。
+// 成本：單次組合與查詢時間、空間皆 O(1)。
+// 上線注意：外部 mask 要拒絕未知 bits；uint8_t 會 integer promotion，組合後需明確轉回目的型別。
+// -----------------------------------------------------------------------------
 enum Permission : std::uint8_t {
     read = 0b001,
     write = 0b010,

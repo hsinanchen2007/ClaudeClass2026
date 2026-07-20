@@ -20,7 +20,15 @@ void basic_demo() {
     assert(std::string(" \n").find_last_not_of(ascii_space) == std::string::npos);
 }
 
-// LeetCode 58（Length of Last Word）。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 58. Length of Last Word（最後一個單字的長度）
+// 題目：忽略句尾空格後，回傳最後一個由非空格字元組成的單字長度；全空白則為 0。
+// 為何使用本章主題：find_last_not_of(' ') 直接找最後一個有效字元，再找其前方空格，
+//       不需建立 trim 後的暫存字串。
+// 思路：1. 從右找非空格 end；2. 全空白回 0；3. 找 end 之前最後空格；4. 由邊界差算長度。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 是 text 長度。
+// 易錯點：end==npos 時不可做加減；`before+1` 也只能在 before 不是 npos 時執行。
+// -----------------------------------------------------------------------------
 int leetcode_length_of_last_word(const std::string& text) {
     const std::size_t end = text.find_last_not_of(' ');
     if (end == std::string::npos) return 0;
@@ -28,7 +36,15 @@ int leetcode_length_of_last_word(const std::string& text) {
     return static_cast<int>(end - (before == std::string::npos ? 0U : before + 1U) + 1U);
 }
 
-// 實務：完整 trim view，零配置；結果依賴 input 生命週期。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】設定值雙側零拷貝 trim
+// 情境：從設定行借用去除 space、tab、CR、LF 後的內容，例如 ` timeout=30 ` 得 timeout=30。
+// 為何使用本章主題：first_not_of 與 last_not_of 直接給左右保留邊界，string_view::substr
+//       只調整 pointer/length，相較 owning substr 不配置。
+// 設計：1. 找左側第一個非空白；2. 全空白回空 view；3. 找右側最後非空白；4. 回傳閉區間切片。
+// 成本：時間 O(N)、額外空間 O(1)，N 是 input 長度，結果為借用 view。
+// 上線注意：ASCII 集合不等於 Unicode whitespace；來源必須比 view 活得久，owner 修改後要重取。
+// -----------------------------------------------------------------------------
 std::string_view practical_trim(const std::string_view input) {
     const std::size_t begin = input.find_first_not_of(ascii_space);
     if (begin == std::string_view::npos) return {};

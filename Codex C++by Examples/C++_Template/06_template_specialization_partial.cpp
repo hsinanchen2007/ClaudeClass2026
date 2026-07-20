@@ -32,7 +32,15 @@ struct TypeShape<std::pair<First, Second>> {
     static constexpr int depth = 1;
 };
 
-// LeetCode 283：Move Zeroes。Trait 判定「是否為 vector」，讓演算法只在預期容器啟用。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 283. Move Zeroes（移動零）
+// 題目：保持非零元素順序，原地把所有 0 移到尾端；[0,1,0,3,12] 變成 [1,3,12,0,0]。
+// 為何使用本章主題：IsVector 主模板為 false，對 std::vector<Value,Allocator> 偏特化為 true，
+// 用 static_assert 限制教學函式；演算法其實只需索引容器，trait 不會讓解法更快。
+// 思路：write 指向下一個非零位置；依序覆寫非零值；走訪後把 write 到尾端全部填 0。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 是 values 長度，並保持非零元素相對順序。
+// 易錯點：Container 必須精確是 std::vector 特化；元素需可與 0 比較及指定，proxy 元素也可能有差異。
+// -----------------------------------------------------------------------------
 template <typename T>
 struct IsVector : std::false_type {};
 
@@ -53,7 +61,15 @@ void leetcode_move_zeroes(Container& values) {
     }
 }
 
-// 實務：針對一般值與 pair 提供不同顯示格式。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】座標欄位格式化
+// 情境：診斷輸出通常格式化單一數值，但座標 pair 要顯示為 `(x,y)`。
+// 為何使用本章主題：FieldFormatter<T> 提供一般數值規則，對整族 pair<A,B> 的偏特化一次涵蓋
+// 所有二元型別；完整特化則必須逐一列出 pair<int,int> 等組合。
+// 設計：一般版呼叫 to_string；pair 版分別格式化 first/second；座標 helper 實體化 int pair。
+// 成本：數值轉字串與輸出建構為 O(D)，D 是總位數，模板分派本身沒有 runtime 成本。
+// 上線注意：A/B 必須可被 std::to_string 接受；locale、浮點精度與巢狀 pair 需要另訂格式。
+// -----------------------------------------------------------------------------
 template <typename T>
 struct FieldFormatter {
     static std::string format(const T& value) { return std::to_string(value); }

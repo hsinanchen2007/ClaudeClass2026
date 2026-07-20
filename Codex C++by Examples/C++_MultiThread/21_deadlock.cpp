@@ -58,11 +58,14 @@ void basic_demo()
     }
 }
 
-// ----------------------------------------------------------------------------
-// LeetCode 1226：The Dining Philosophers（簡化一次進餐）
-// ----------------------------------------------------------------------------
-// scoped_lock 對左右兩叉使用 deadlock-avoidance。真題要處理五 philosopher 多輪；
-// 本函式保留相同資源取得問題並驗證每位都完成一次。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1226. The Dining Philosophers（哲學家進餐）
+// 題目：5 位哲學家需同時取得左右叉才能進餐且不可 deadlock；此簡化版只讓每人吃一次，未實作原題五個 callback 與多輪控制。
+// 為何使用本章主題：std::scoped_lock 對兩把叉 mutex 使用 deadlock-avoidance，比每位固定先拿左叉更能打破 circular wait。
+// 思路：1. 依 philosopher 算左右叉 index。2. scoped_lock 同時取得兩叉。3. 在持有期間增加自己的 meal slot。4. RAII 自動釋放。
+// 複雜度：每次進餐的資料操作 O(1)，等待時間無上界；5 把 mutex 與 5 個計數為 O(1) 固定空間。
+// 易錯點：scoped_lock 避免 deadlock 不保證 fairness/starvation；真題 callback 應在正確持鎖階段呼叫且其可重入風險需定義。
+// -----------------------------------------------------------------------------
 void dine_once(int philosopher,
                std::array<std::mutex, 5>& forks,
                std::array<int, 5>& meals)
@@ -88,9 +91,14 @@ void leetcode_demo()
            "not every philosopher completed");
 }
 
-// ----------------------------------------------------------------------------
-// 實務：跨兩資源更新；callback 放到解鎖後，避免 unknown code 反向取鎖
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【日常實務範例】雙資源提交後 Callback
+// 情境：兩個不同帳戶要在同一 critical section 各加 1，完成後才呼叫未知的 after_commit hook。
+// 為何使用本章主題：scoped_lock 保護雙資源 invariant；把 callback 移到解鎖後，避免外部程式重入帳戶或以反向順序取鎖形成 cycle。
+// 設計：1. 拒絕兩參數 alias。2. 同時鎖住兩帳戶。3. 完成兩欄更新並離開 scope。4. 無鎖呼叫 callback。
+// 成本：鎖內更新 O(1)，同步等待取決於 contention；callback 的時間/I/O 不佔用帳戶鎖。
+// 上線注意：解鎖後 callback 失敗不能自動 rollback 已提交狀態，需 outbox/補償；餘額遞增也要防 signed overflow。
+// -----------------------------------------------------------------------------
 void update_both(Account& first,
                  Account& second,
                  const std::function<void()>& after_commit)

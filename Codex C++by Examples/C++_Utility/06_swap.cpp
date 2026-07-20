@@ -37,7 +37,15 @@ void swap(Buffer& left, Buffer& right) noexcept {
     left.swap(right); // ADL 可找到此 overload
 }
 
-// LeetCode 344：Reverse String，原地 O(n) 時間、O(1) 額外空間。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 344. Reverse String（反轉字串）
+// 題目：原地反轉字元陣列；['h','e','l','l','o'] 要變成 ['o','l','l','e','h']。
+// 為何使用本章主題：std::swap 對稱交換左右字元，直接表達雙指標反轉的核心動作，
+// 不需要暫存變數，也不配置第二個陣列。
+// 思路：空輸入先返回；left/right 指向兩端；交換後向中央靠攏，直到索引相遇或交錯。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 是 text 長度，約執行 N/2 次交換。
+// 易錯點：空陣列不能先算 size()-1；size_t 無號下溢會產生極大索引。
+// -----------------------------------------------------------------------------
 void leetcode_reverse_string(std::vector<char>& text) {
     if (text.empty()) {
         return;
@@ -51,7 +59,15 @@ void leetcode_reverse_string(std::vector<char>& text) {
     }
 }
 
-// 實務：先在 staging 建好完整設定，最後以 noexcept swap 原子式替換 active 狀態。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】完成後一次發布 staging 緩衝區
+// 情境：新設定與資料先在 staging Buffer 完整建構，驗證後才取代目前 active 版本。
+// 為何使用本章主題：ADL 找到 Buffer 的 noexcept swap，只交換資源擁有權；相較逐欄覆寫，
+// commit 點不會留下半更新物件，舊 active 也由 staging 解構時回收。
+// 設計：呼叫前建立 staging；以未限定 swap 觸發 ADL；active 取得新狀態，staging 暫存舊狀態。
+// 成本：交換時間 O(1) 於常見 string/vector 實作，staging 建構與舊資源析構成本另計。
+// 上線注意：這只是單執行緒的邏輯 commit，不具跨執行緒原子性；發布前仍需驗證 staging 不變量。
+// -----------------------------------------------------------------------------
 void practical_publish_buffer(Buffer& active, Buffer staging) {
     using std::swap;
     swap(active, staging);

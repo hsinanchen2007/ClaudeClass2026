@@ -34,7 +34,14 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 70：Climbing Stairs。iterative DP，O(n) time、O(1) space。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 70. Climbing Stairs（爬樓梯）
+// 題目：每次走 1 或 2 階，計算走到第 n 階的方法數；n=5 時答案為 8。
+// 為何使用本章主題：C++14 放寬 constexpr body，讓一般 local variable、if 與 loop 的迭代 DP 也可進 static_assert。
+// 思路：1. 前兩階直接回傳 n；2. 保存前兩個答案；3. 從第 3 階迭代更新 next 直到 n。
+// 複雜度：N 為階數；時間 O(N)、額外空間 O(1)。
+// 易錯點：題目限定正整數；較大 N 會使 int 溢位，constexpr 也不代表所有 runtime 呼叫都在編譯期執行。
+// -----------------------------------------------------------------------------
 constexpr int leetcode_climb_stairs(int steps) {
     if (steps <= 2) return steps;
     int previous = 1;
@@ -53,11 +60,15 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】編譯期 lookup table：用 C++14 loop 建表，並避開當版 std::array 的 constexpr 限制。
 namespace practical {
-// 實務：編譯期建立簡單 CRC-like lookup（教學版，不是正式 CRC 規格）。
-// C++14 標準尚未要求 std::array 的 mutable operator[] 為 constexpr；該能力由 C++17
-// 的 P0031 加入。為讓本檔嚴格維持 C++14，這裡使用內建陣列。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】編譯期權重查詢表
+// 情境：固定四個位置的平方權重要隨程式發布，啟動時不應再重建資料表。
+// 為何使用本章主題：relaxed constexpr 允許 loop 修改 local aggregate；內建陣列避開 C++14 std::array 可寫 operator[] 限制。
+// 設計：1. 以零值初始化四格；2. loop 將 (i+1)^2 寫入；3. 回傳 Weights 並以 static_assert 驗端點。
+// 成本：K=4；編譯期建立時間 O(K)、產物空間 O(K)，runtime 查詢 O(1)。
+// 上線注意：這只是平方權重教學表，不是正式 CRC；表變大會增加編譯時間，索引也必須保持在 0..3。
+// -----------------------------------------------------------------------------
 struct Weights {
     unsigned values[4];
     constexpr unsigned operator[](std::size_t index) const { return values[index]; }

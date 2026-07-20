@@ -188,11 +188,14 @@ void basic_exception_demo()
     }
 }
 
-// ---------------------------------------------------------------------------
-// LeetCode 150：Evaluate Reverse Polish Notation
-// LeetCode 保證輸入合法；可重用 library 仍把 malformed input 定義為 typed exception。
-// 每個 token push/pop 一次：O(n) time / O(n) stack space。
-// ---------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 150. Evaluate Reverse Polish Notation（計算逆波蘭表示式）
+// 題目：依後綴 token 計算整數結果；例如 [2,1,+,3,*] 得 9，[4,13,5,/,+] 得 6，除法向零截斷。
+// 為何使用本章主題：摘要版把原題的合法輸入假設強化為 library 契約，以 invalid_argument、domain_error、overflow_error 區分失敗。
+// 思路：1. 非運算子完整解析並 push。2. 運算子 pop 右、左值。3. checked helper 在計算前防除零/溢位。4. 結尾要求單一結果。
+// 複雜度：N 個 token 的時間 O(N)、stack 額外空間 O(N)。
+// 易錯點：INT_MIN/-1 與有號加減乘溢位都是 UB 風險，必須先升格/檢查；stoi 還要確認 consumed 等於 token 長度。
+// -----------------------------------------------------------------------------
 int checked_rpn_operation(int left, int right, char operation)
 {
     if (operation == '/') {
@@ -271,10 +274,14 @@ void leetcode_demo()
     }
 }
 
-// ---------------------------------------------------------------------------
-// 實務：prepare-then-commit 提供 strong guarantee。
-// 先在 local candidate 完成所有可能失敗的 parse；全部成功才一次 swap 進正式 state。
-// ---------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【日常實務範例】服務設定熱重載的 strong guarantee
+// 情境：同時重載 workers 與 timeout_ms；第二欄格式錯誤時，服務必須完整保留上一版 8/250，不可只更新第一欄。
+// 為何使用本章主題：prepare-then-commit 讓所有可能丟出的 parse 都在 local candidate 完成，成功後才以不拋的 trivial assignment 發布。
+// 設計：1. 建立 candidate。2. 分別 parse 兩欄。3. 全部成功才 assign config。4. noexcept command boundary 將 typed/unknown 例外轉狀態碼。
+// 成本：兩次字串解析與常數大小 commit，時間 O(|workers|+|timeout|)、額外空間 O(1)，失敗另付 unwinding 成本。
+// 上線注意：若 config 含會丟的複雜成員，commit 應改用真正 noexcept swap；多執行緒 reader 還需原子 snapshot 與錯誤可觀測性。
+// -----------------------------------------------------------------------------
 struct ServiceConfig {
     int workers{1};
     int timeout_ms{1'000};

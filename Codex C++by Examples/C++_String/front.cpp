@@ -18,8 +18,15 @@ void basic_demo() {
     assert(token == "Json");
 }
 
-// LeetCode 20（Valid Parentheses）：以 string 當 stack，top 對應 back；front 用於
-// 快速拒絕第一個字元就是 closing bracket 的情況。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 20. Valid Parentheses（有效括號）
+// 題目：判斷三種括號是否依正確類型與順序配對；"()[]{}" 為 true，"(]" 為 false。
+// 為何使用本章主題：front() 在非空 guard 後快速拒絕首字元為閉括號的輸入；主要配對仍以
+//       string 的 back/push/pop 模擬 stack，front 是可省略但合法的提早判斷。
+// 思路：1. 首字元為閉括號即失敗；2. 開括號入 stack；3. 閉括號取 stack 尾核對；4. 最後須為空。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 是 text 長度。
+// 易錯點：空字串不能呼叫 front；原題保證只有括號，本版若出現其他字元會走閉括號分支而失敗。
+// -----------------------------------------------------------------------------
 bool leetcode_valid_parentheses(const std::string& text) {
     if (!text.empty() && (text.front() == ')' || text.front() == ']' || text.front() == '}')) {
         return false;
@@ -43,7 +50,15 @@ bool leetcode_valid_parentheses(const std::string& text) {
     return stack.empty();
 }
 
-// 實務：設定檔以 # 開頭表示註解；空行不可呼叫 front。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】設定檔註解行辨識
+// 情境：簡化設定格式規定只有第一個字元恰為 `#` 才是註解，空行或前有空格者不是。
+// 為何使用本章主題：在 empty guard 後用 front() 直接讀首字元，比 substr(0,1) 無配置且意圖清楚。
+// 設計：1. 先確認 line 非空；2. 讀取 front；3. 與 `#` 精確比較並回傳。
+// 成本：時間 O(1)、額外空間 O(1)。
+// 上線注意：若規格允許前導空白，必須先做 trim-left；多 byte BOM、Unicode 空白與 inline comment
+//       也要另訂規則，不能在空字串上直接 front。
+// -----------------------------------------------------------------------------
 bool practical_is_comment_line(const std::string& line) {
     return !line.empty() && line.front() == '#';
 }

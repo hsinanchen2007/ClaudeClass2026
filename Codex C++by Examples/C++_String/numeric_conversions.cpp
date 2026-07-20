@@ -27,7 +27,16 @@ void basic_demo() {
     assert(std::abs(parsed - 3.5) < 1e-12);
 }
 
-// LeetCode 8（String to Integer）：按題意 clamp 到 int；手寫避免例外與 locale 差異。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 8. String to Integer (atoi)（字串轉整數）
+// 題目：略過前導空格、讀可選正負號與連續數字，遇非數字停止，超出 32-bit int 時 clamp；
+//       例如 "4193 with words" 回 4193。
+// 為何使用本章主題：雖然本章介紹 stoi，原題的精確 grammar 與 clamp 更適合手寫；本實作
+//       在乘 10 前檢查上限，避免例外、locale 差異及 long long signed overflow。
+// 思路：1. 略過 ASCII space；2. 讀符號；3. 逐位累積前先檢查 limit；4. 套符號並處理 INT_MIN。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 是掃描到停止位置前的字元數。
+// 易錯點：負數可容納的絕對值比 INT_MAX 多 1；必須在乘法前檢查，不能先 overflow 再 clamp。
+// -----------------------------------------------------------------------------
 int leetcode_my_atoi(const std::string& text) {
     std::size_t i = 0U;
     while (i < text.size() && text[i] == ' ') ++i;
@@ -55,7 +64,15 @@ int leetcode_my_atoi(const std::string& text) {
     return sign > 0 ? narrowed : -narrowed;
 }
 
-// 實務：stoi 配合 idx 做嚴格設定解析，並把例外轉為 optional。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】重試次數設定解析
+// 情境：設定值必須是完整十進位整數且介於 0..10；"3" 合法，"3x" 與 "99" 不合法。
+// 為何使用本章主題：stoi 介面高階且適合低頻設定載入；搭配 idx 可拒絕部分解析，catch
+//       兩種標準例外後以 optional 統一錯誤，而不是讓例外穿過設定邊界。
+// 設計：1. stoi 並取得 consumed；2. 要求 consumed==size；3. 驗證領域範圍；4. 例外回 nullopt。
+// 成本：時間 O(N)、額外空間 O(1)，N 是 text 長度；例外失敗路徑通常有較高常數成本。
+// 上線注意：stoi 會略過前導空白，是否允許需明定；若要回報錯誤原因，optional 資訊不足。
+// -----------------------------------------------------------------------------
 std::optional<int> practical_parse_retry_count(const std::string& text) {
     try {
         std::size_t consumed = 0U;

@@ -67,8 +67,14 @@ void basic_example()
     std::cout << "[基礎] IntBuffer 會在 scope 結束時釋放陣列\n";
 }
 
-// LeetCode 705：Design HashSet。
-// Judge 關心 add/remove/contains；這裡額外讓 class 正確擁有動態 bool array。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 705. Design HashSet（設計雜湊集合）
+// 題目：不使用內建 hash set，支援 add/remove/contains；例如加入 1、2 後包含 1，不包含 3。
+// 為何使用本章主題：本例以直接位址 bool array 簡化題目，重點是 destructor 正確釋放 class 擁有的動態陣列。
+// 思路：constructor 配置並清零 key range；checked 驗 key；三個操作讀寫對應 slot；destructor 用 delete[]。
+// 複雜度：建構與空間 O(R)，每次操作 O(1)，R 為可接受 key 範圍 1,000,001。
+// 易錯點：這不是一般碰撞式 hash table；new[] 必須配 delete[]；禁止預設 shallow copy 才不會 double free。
+// -----------------------------------------------------------------------------
 class MyHashSet {
 public:
     MyHashSet() : present_(new bool[kRange]{}) {}
@@ -107,7 +113,14 @@ void leetcode_705_example()
     std::cout << "[LeetCode 705] add/remove/contains 通過，離開時釋放 table\n";
 }
 
-// 實務案例：ScopeCounter 可用來觀察 connection/session 是否成對釋放。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】追蹤作用域內的活躍 session 數
+// 情境：測試或診斷需要在 session guard 建立時加一、離開 scope 時減一，確認 acquire/release 成對。
+// 為何使用本章主題：destructor 在正常 return 與例外展開都會執行，比每條控制路徑手動遞減可靠。
+// 設計：constructor 保存外部計數 reference 並遞增；destructor 遞減；禁止 copy 避免重複扣減。
+// 成本：建立與解構皆 O(1)，無配置；同步成本目前未包含。
+// 上線注意：外部 int 必須比 guard 活得久；跨執行緒需 atomic/mutex，destructor 不應拋例外。
+// -----------------------------------------------------------------------------
 class ScopeCounter {
 public:
     explicit ScopeCounter(int& active) : active_(active) { ++active_; }

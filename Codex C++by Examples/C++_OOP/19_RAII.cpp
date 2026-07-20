@@ -43,9 +43,14 @@ void basic_example()
     std::cout << "[基礎] scope exit 自動把 busy 還原 false\n";
 }
 
-// LeetCode 206：Reverse Linked List。
-// unique_ptr 表達每個 node 獨占 next；reverse 只移轉 ownership，不用 new/delete，
-// 最終 head 離開 scope 時整串自動解構。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 206. Reverse Linked List（反轉鏈結串列）
+// 題目：反轉單向串列；例如 1->2->3 變成 3->2->1。
+// 為何使用本章主題：unique_ptr 將每個 next 表達成獨占資源，reverse 只移轉 ownership，無需裸 new/delete cleanup。
+// 思路：move 出 head->next；把 head->next 接到 previous；把 head 移成 previous；繼續處理保存的 next。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 為節點數。
+// 易錯點：每次覆寫 unique_ptr 前先保存下一段；呼叫會消耗原 head；極長鏈的遞迴式解構深度也需評估。
+// -----------------------------------------------------------------------------
 struct ListNode {
     explicit ListNode(int node_value) : value(node_value) {}
     int value;
@@ -76,7 +81,14 @@ void leetcode_206_example()
     std::cout << "[LeetCode 206] unique_ptr list reversed: 3->2->1\n";
 }
 
-// 實務案例：Transaction 預設 rollback；只有顯式 commit 才保留 staged changes。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】預設回滾的記憶體交易 guard
+// 情境：在 vector database 尾端暫存多筆 row；scope 未 commit 時恢復原大小，commit 才保留新增資料。
+// 為何使用本章主題：RAII destructor 涵蓋正常 return 與例外路徑，比要求每條路徑手動 rollback 更可靠。
+// 設計：constructor 記錄原大小；insert 追加；commit 設旗標；未 commit 的 destructor resize 回原大小。
+// 成本：insert 攤銷 O(1)；rollback 解構新增的 K 筆為 O(K)；guard 自身空間 O(1)。
+// 上線注意：只會撤銷尾端新增，不能回復既有 row 修改；database reference 必須更長壽，並行 writer 需交易同步。
+// -----------------------------------------------------------------------------
 class Transaction {
 public:
     explicit Transaction(std::vector<std::string>& database)

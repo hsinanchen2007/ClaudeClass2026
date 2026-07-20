@@ -24,6 +24,15 @@ T clamp_value(T value, T low, T high) {
 
 } // namespace header_style
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】固定支援型別的模板編譯邊界
+// 情境：函式庫只承諾 int/double Accumulator 與 int Parser，要集中機器碼並避免任意型別連結失敗。
+// 為何使用本章主題：唯一 implementation 區明確實體化 Accumulator<int/double>，Parser<int> 則提供
+// 完整特化定義；相較全 header-only，可控制支援集合與重複實體化成本。
+// 設計：主模板定義 add/total；列出 explicit instantiation；宣告 Parser 主模板並只定義 int 特化；測試邊界。
+// 成本：Accumulator add/total 為 O(1)，parse 約 O(L)，L 是文字長度；主要取捨是 build time 與 binary size。
+// 上線注意：header 需搭配 extern template 與特化宣告，且每個 definition 必須唯一並遵守 ODR/ABI 版本政策。
+// -----------------------------------------------------------------------------
 namespace explicit_instantiation_style {
 
 template <typename T>
@@ -42,7 +51,15 @@ template class Accumulator<double>;
 
 } // namespace explicit_instantiation_style
 
-// LeetCode 35：Search Insert Position。模板定義完整可見，vector<int> 才能在此實體化。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 35. Search Insert Position（搜尋插入位置）
+// 題目：在升冪無重複陣列找 target，存在回索引，否則回應插入位置；[1,3,5,6] 查 2 得 1。
+// 為何使用本章主題：函式模板定義在實體化點完整可見，編譯器才能為 vector<int> 產生程式碼；
+// 演算法本身不依賴特殊編譯技巧，泛化後 T 只需提供一致的 `<` 排序。
+// 思路：維護半開 [left,right)；middle 小於 target 時移左界；否則收右界，收斂點即 lower_bound。
+// 複雜度：時間 O(log N)、額外空間 O(1)，N 是 values 長度。
+// 易錯點：輸入必須升冪；回傳 size_t 可表示尾端 N，不能用 -1 表示未找到。
+// -----------------------------------------------------------------------------
 template <typename T>
 std::size_t leetcode_search_insert(const std::vector<T>& values, const T& target) {
     std::size_t left = 0;
@@ -69,7 +86,6 @@ int Parser<int>::parse(const std::string& text) {
     return std::stoi(text);
 }
 
-// 【實務情境】固定支援型別以 explicit instantiation 集中產生機器碼。
 void practical_compilation_boundary_test() {
     explicit_instantiation_style::Accumulator<int> requests;
     requests.add(10);

@@ -36,7 +36,15 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 56：Merge Intervals。comparator 必須用 <，不可用 <=。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 56. Merge Intervals（合併區間）
+// 題目：將重疊區間合併；例如 [[1,4],[4,5]] 因端點相接而合併成 [[1,5]]。
+// 為何使用本章主題：排序 lambda 展示 comparator 的安全契約；以 < 建立嚴格弱序，避免 <=
+// 造成 comp(x,x) 為 true 而讓 std::sort 行為未定義。
+// 思路：依 start、再依 end 排序；逐項追加不重疊區間；重疊時擴張最後結果的 end。
+// 複雜度：時間 O(N log N)、額外空間 O(N)，N 是區間數，回傳結果最壞保存 N 筆。
+// 易錯點：每個區間應滿足 start<=end；comparator 不可修改元素或依賴會變動的外部狀態。
+// -----------------------------------------------------------------------------
 using Interval = std::pair<int, int>;
 
 std::vector<Interval> leetcode_merge(std::vector<Interval> intervals) {
@@ -58,8 +66,16 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】長期 callback：capture weak_ptr，每次呼叫 lock，owner 消失就安全略過。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】不延長 Session 壽命的長期 callback
+// 情境：事件系統保存 callback，但 Session 可能先被關閉；呼叫時要安全取得 id 或回報已失效。
+// 為何使用本章主題：lambda 捕獲 weak_ptr 而非 this 或 shared_ptr，既避免懸空指標，也不會因
+// callback 反向持有 Session 而形成生命週期循環。
+// 設計：factory 從 shared_ptr 建立 weak_ptr；每次 callback 先 lock；成功讀 id，失敗回 -1。
+// 成本：每次呼叫 O(1)，但 weak_ptr::lock 有原子引用計數成本；closure 保存一個弱引用控制資訊。
+// 上線注意：-1 sentinel 可能與合法 id 衝突，宜改 optional；併發析構雖由 lock 保護，Session 內容仍需同步。
+// -----------------------------------------------------------------------------
 class Session {
 public:
     explicit Session(int id) : id_(id) {}

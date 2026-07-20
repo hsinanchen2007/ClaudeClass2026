@@ -49,7 +49,15 @@ T circle_area(T radius) {
     return pi_v<T> * radius * radius;
 }
 
-// LeetCode 367：Valid Perfect Square，不使用浮點 sqrt 避免精度問題。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 367. Valid Perfect Square（有效的完全平方數）
+// 題目：不使用 sqrt，判斷整數是否為某整數平方；16 為 true，14 為 false。
+// 為何使用本章主題：std::is_integral_v、is_same_v、is_signed_v 都是標準變數模板，
+// 用來限制 Integer 並只為 signed 型別編譯負數分支；核心解法仍是整數二分搜尋。
+// 思路：負數先失敗；在 [0,value] 二分；用 value/mid 判斷乘法是否會超界，再比較 mid*mid。
+// 複雜度：時間 O(log V)、額外空間 O(1)，V 是輸入 value 的數值大小。
+// 易錯點：bool 雖是 integral 仍被拒絕；mid*mid 前要防溢位，unsigned 邊界也不可令 left 溢出。
+// -----------------------------------------------------------------------------
 template <typename Integer>
 bool leetcode_is_perfect_square(Integer value) {
     static_assert(std::is_integral_v<Integer> && !std::is_same_v<Integer, bool>);
@@ -75,7 +83,15 @@ bool leetcode_is_perfect_square(Integer value) {
     return false;
 }
 
-// 實務：不同感測器精度使用不同 epsilon；特化變數而非複製演算法。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】依浮點型別設定感測器容差
+// 情境：float 感測資料容許 0.01 絕對誤差，double 資料使用較嚴格的 0.001。
+// 為何使用本章主題：sensor_tolerance_v<T> 為每種 T 產生編譯期常數，float 完整特化政策；
+// 相較複製比較函式，演算法維持一份並由型別選定容差。
+// 設計：主模板提供一般容差；float 特化覆寫；比較兩值差的絕對值是否不超過對應常數。
+// 成本：每次比較時間與額外空間 O(1)，常數通常可直接內嵌，沒有 runtime 分派。
+// 上線注意：絕對 epsilon 只適合同單位固定量級；NaN、無限值與不同感測器校正需另行處理。
+// -----------------------------------------------------------------------------
 template <typename T>
 inline constexpr T sensor_tolerance_v = static_cast<T>(0.001);
 

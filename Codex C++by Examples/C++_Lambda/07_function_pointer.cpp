@@ -32,11 +32,19 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 27. Remove Element（移除元素）
+// 題目：原地移除 nums 中所有等於 val 的元素並回傳新長度；[3,2,2,3]、val=3 得長度 2。
+// 為何使用本章主題：函式指標把「是否保留」規則注入雙指標流程；原題規則固定，這是 callback
+// 教學改寫，直接比較 value!=removed 會更簡潔且較利於 inline。
+// 思路：write 指向下一個保留位置；逐項呼叫 keep；保留時覆寫 nums[write]，最後縮短 vector。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 是 nums 原長度；函式會原地改動容器。
+// 易錯點：keep 不得為 null；只能保證前 K 個元素有效，這個示範額外 resize，與題目容許的尾段不同。
+// -----------------------------------------------------------------------------
 using KeepPredicate = bool (*)(int value, int removed);
 
 bool keep_not_equal(int value, int removed) { return value != removed; }
 
-// LeetCode 27：Remove Element。function pointer 注入保留規則，in-place O(n)/O(1)。
 int leetcode_remove_element(std::vector<int>& nums, int removed, KeepPredicate keep) {
     std::size_t write = 0U;
     for (const int value : nums) {
@@ -53,8 +61,16 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】C callback bridge：captureless lambda 轉 function pointer，狀態另由 void* context 傳遞。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】C API 事件 callback 橋接
+// 情境：舊式 C API 發出整數事件，callback 需把事件寫入呼叫端提供的狀態物件。
+// 為何使用本章主題：無捕獲 lambda 可轉成 CCallback 函式指標，狀態另走 void* context；
+// 相較 std::function，介面 ABI 簡單且不需 type erasure，但型別與生命週期全由呼叫端維護。
+// 設計：emit_event 檢查 callback；傳入 event 與 context；callback 將 context 轉回 int* 後寫值。
+// 成本：每次事件時間 O(1)、額外空間 O(1)，只有一次間接函式呼叫，沒有配置。
+// 上線注意：context 必須指向仍存活且型別正確的 int；非同步 API 還需同步寫入並防止重複釋放。
+// -----------------------------------------------------------------------------
 using CCallback = void (*)(int event, void* context);
 
 void emit_event(int event, CCallback callback, void* context) {

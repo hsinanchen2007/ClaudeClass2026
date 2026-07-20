@@ -29,7 +29,14 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 9：Palindrome Number。反轉一半避免整個數 overflow，O(log10 n)。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 9. Palindrome Number（回文數）
+// 題目：不轉字串，判斷整數正反讀是否相同；12'321 為 true，-121 與 10 為 false。
+// 為何使用本章主題：digit separator 只改善測試常數 12'321 的閱讀，不參與演算法，也不提供範圍檢查。
+// 思路：1. 排除負數與非零尾數 0；2. 逐位建立 reversed_half；3. 比較偶數位或去除中位數後的兩半。
+// 複雜度：D 為十進位位數；時間 O(D)、額外空間 O(1)。
+// 易錯點：只反轉一半才能避開整數溢位；奇數位數比較時要用 reversed_half/10 忽略中央位。
+// -----------------------------------------------------------------------------
 bool leetcode_is_palindrome(int value) {
     if (value < 0 || (value % 10 == 0 && value != 0)) return false;
     int reversed_half = 0;
@@ -47,8 +54,15 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】傳輸配額：數字分隔符讓 750 GB 級常數可審查，且不改變型別或數值。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】資料傳輸速率與月配額
+// 情境：設定每秒 125,000,000 bytes 與每月 750,000,000,000 bytes，判斷單次傳輸是否超額。
+// 為何使用本章主題：digit separator 依千位分組大型常數，review 時較不易漏零；ULL suffix 才真正決定 64-bit 型別。
+// 設計：1. 以 uint64_t 保存速率與月額度；2. 建立 policy；3. 比較請求 bytes 是否不超過 monthly_bytes。
+// 成本：單次檢查時間與空間皆 O(1)。
+// 上線注意：separator 不會檢查單位或溢位；實際配額需累計已使用量、處理併發更新與十進位/二進位 GB 定義。
+// -----------------------------------------------------------------------------
 struct TransferLimit {
     std::uint64_t bytes_per_second;
     std::uint64_t monthly_bytes;

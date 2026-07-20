@@ -29,8 +29,14 @@ void basic_example()
     std::cout << "[基礎] insert adapters grow sequence/associative containers\n";
 }
 
-// LeetCode 88：Merge Sorted Array。以 std::merge + back_inserter 寫清楚版本；題目正式要求
-// in-place nums1，面試可再用尾端雙指標達 O(1) extra space。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 88. Merge Sorted Array（合併兩個有序陣列）
+// 題目：合併兩個升冪序列；例如 [1,2,3] 與 [2,5,6] 得 [1,2,2,3,5,6]。
+// 為何使用本章主題：這是 insert iterator 教學改寫，以 merge+back_inserter 建新結果；原題要求寫回 nums1。
+// 思路：預留兩邊總容量；merge 同步比較兩個 range；由 back_inserter 逐項追加。
+// 複雜度：時間 O(N+M)、額外空間 O(N+M)，N/M 為兩輸入長度；原題尾端雙指標可用 O(1) 額外空間。
+// 易錯點：兩輸入必須已排序；本函式不符合原題原地限制；容量加法需防 size_t 溢位。
+// -----------------------------------------------------------------------------
 std::vector<int> merge_sorted(const std::vector<int>& left, const std::vector<int>& right)
 {
     std::vector<int> result;
@@ -45,7 +51,14 @@ void leetcode_88_example()
     std::cout << "[LeetCode 88] merge writes six sorted values via back inserter\n";
 }
 
-// 實務：set_union output 大小未知，用 back_inserter。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】合併新舊資料集的唯一識別碼
+// 情境：舊 id [1,3,5] 與新 id [2,3,4] 要合成排序且去除跨集合重複的 [1,2,3,4,5]。
+// 為何使用本章主題：set_union 無法事先確定重複數，back_inserter 可安全按實際輸出擴充 vector。
+// 設計：提供兩個排序半開區間；set_union 比較並略過共同值的額外份數；結果逐項 push_back。
+// 成本：時間 O(N+M)、結果空間 O(U)，U 為聯集大小。
+// 上線注意：兩輸入必須依同一 comparator 排序；back_inserter 不會 reserve，大資料應先預留上界以減少配置。
+// -----------------------------------------------------------------------------
 void practical_example()
 {
     const std::vector<int> old_ids{1, 3, 5};

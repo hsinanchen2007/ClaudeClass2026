@@ -49,7 +49,15 @@ using Lookup = std::unordered_map<Key, Value>;
 template <typename T>
 using Predicate = std::function<bool(const T&)>;
 
-// LeetCode 1：Two Sum。別名縮短簽名，但演算法仍是平均 O(n)、空間 O(n)。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1. Two Sum（兩數之和）
+// 題目：在 values 中找兩個相異索引使其值相加為 target；[2,7,11,15]、9 得 [0,1]。
+// 為何使用本章主題：List、Lookup、IndexPair 別名縮短 vector/map/pair 拼字並凸顯角色；
+// 它們不建立新型別，也不改變 unordered_map 的效能或索引契約。
+// 思路：以 long long 計算互補值；先查 value->index map；命中回 pair，否則記錄目前值。
+// 複雜度：平均時間 O(N)、額外空間 O(N)，N 是 values 長度；碰撞嚴重時時間可退化。
+// 易錯點：先查再插避免重用同一索引；long long 防 int 減法溢位，無解以 {N,N} 表示。
+// -----------------------------------------------------------------------------
 using IndexPair = std::pair<std::size_t, std::size_t>;
 
 IndexPair leetcode_two_sum(const List<int>& values, int target) {
@@ -66,12 +74,20 @@ IndexPair leetcode_two_sum(const List<int>& values, int target) {
     return {values.size(), values.size()};
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】依 owner 統計啟用工作
+// 情境：排程資料按 owner 分組，每組有多筆 Job，要查指定 owner 的 enabled 數量。
+// 為何使用本章主題：JobsByOwner 把巢狀 Lookup<string,List<Job>> 集中命名，Predicate<Job> 統一規則型別；
+// 相較展開完整模板較易讀，但 alias 不會消除 std::function 的間接呼叫與可能配置。
+// 設計：先查 owner；缺少時回 0；命中後逐筆呼叫 enabled predicate 並累加。
+// 成本：平均查找 O(1)、掃描 O(J)、額外空間 O(1)，J 是該 owner 的工作數。
+// 上線注意：若 predicate 固定可直接用模板/lambda 避免 type erasure；併發更新 map 時也需同步。
+// -----------------------------------------------------------------------------
 struct Job {
     std::string id;
     bool enabled{};
 };
 
-// 實務：將容易讀錯的巢狀模板集中命名。
 using JobsByOwner = Lookup<std::string, List<Job>>;
 
 std::size_t practical_count_enabled(const JobsByOwner& jobs, const std::string& owner) {

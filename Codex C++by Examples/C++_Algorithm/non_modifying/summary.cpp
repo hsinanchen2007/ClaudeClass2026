@@ -99,7 +99,16 @@ associative container 直接用 member count/equal_range，依容器結構取得
 #include <string>
 #include <vector>
 
-// LeetCode 28：第一個 substring index；保留為整合 demo 的搜尋核心。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 28. Find the Index of the First Occurrence in a String（找出字串中第一個匹配項的索引）
+// 題目：尋找 pattern 在 text 的第一個起點，不存在回 -1；例如 sadbutsad/sad 回 0，
+// abc/空 pattern 回 0。
+// 為何使用本章主題：std::search 是 non-modifying 子序列搜尋核心，直接回第一個匹配
+// iterator；此整合 demo 保留 generic 最壞成本，未手寫 KMP。
+// 思路：1. 搜尋兩個完整範圍；2. 命中 end 時回 -1；3. 否則轉成 int offset。
+// 複雜度：generic 最壞時間 O(N*M)、額外空間 O(1)，N/M 為 text/pattern 長度。
+// 易錯點：空 pattern 合法命中 begin；極大 distance 轉 int 前需有輸入上限。
+// -----------------------------------------------------------------------------
 int leetcode_first_occurrence(const std::string& text,
                               const std::string& pattern) {
     const auto it = std::search(text.begin(), text.end(),
@@ -120,7 +129,17 @@ struct AuditResult {
     bool all_status_valid;
 };
 
-// 實務整合：一次示範 count_if、find_if、all_of，輸入保持不變。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】服務日誌唯讀稽核摘要
+// 情境：LogLine 含 HTTP status 與 message；稽核要統計 5xx、找第一個含 SECRET 的行，
+// 並驗證所有 status 位於 100..599，來源不得修改。
+// 為何使用本章主題：count_if、find_if、all_of 分別對應計數、首個命中與全體驗證，
+// optional 可讓 index 0 與未命中不混淆。
+// 設計：1. 計數 status>=500；2. 找第一個 SECRET substring；3. all_of 驗 status；
+// 4. 命中時將 iterator 轉 optional index。
+// 成本：時間 O(N+C)、額外空間 O(1)，N 為行數、C 為搜尋 SECRET 所檢查的字元量。
+// 上線注意：空 logs 的 all_status_valid 為 true；敏感資料偵測需結構化規則，不能只靠單一大小寫 substring。
+// -----------------------------------------------------------------------------
 AuditResult practical_audit_logs(const std::vector<LogLine>& logs) {
     const auto errors = std::count_if(logs.begin(), logs.end(),
                                       [](const LogLine& line) {

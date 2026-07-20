@@ -15,7 +15,17 @@
 #include <string>
 #include <vector>
 
-// LeetCode 771：Jewels and Stones。反覆找下一顆屬於 jewels 的 stone。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 771. Jewels and Stones（寶石與石頭）
+// 題目：jewels 列出寶石字元，stones 是持有的石頭；計算 stones 中屬於 jewels 的
+// 數量，例如 jewels="aA"、stones="aAAbbbb" 回 3。
+// 為何使用本章主題：find_first_of 在 stones 剩餘區間找下一個屬於 jewels 候選集合
+// 的字元；固定字元表可用 lookup table 做到更低常數。
+// 思路：1. current 從 stones.begin 開始；2. 找下一個候選命中；3. 命中就計數並從
+// 下一字元繼續；4. 找不到時結束。
+// 複雜度：時間 O(S*J)、額外空間 O(1)，S/J 為 stones/jewels 長度。
+// 易錯點：候選集合空時永遠找不到；命中後必須推進 current，否則會重複計數同一位置。
+// -----------------------------------------------------------------------------
 int leetcode_num_jewels_in_stones(const std::string& jewels,
                                   const std::string& stones) {
     int count = 0;
@@ -32,7 +42,17 @@ int leetcode_num_jewels_in_stones(const std::string& jewels,
     return count;
 }
 
-// 實務：找 CSV-like 輸入的第一個可接受 delimiter。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】文字列第一個分隔符定位
+// 情境：輸入 line 可接受逗號、分號或豎線等 delimiters；解析前先取得最早出現的
+// 任一候選位置，完全沒有時回 line.size()。
+// 為何使用本章主題：find_first_of 直接表達「第一範圍中第一個屬於候選集合的元素」，
+// 適合候選集合很小的 delimiter 掃描。
+// 設計：1. 以 line 為搜尋範圍、delimiters 為候選；2. 找第一個命中；3. distance
+// 自然將 end 轉成 size sentinel。
+// 成本：時間 O(N*M)、額外空間 O(1)，N/M 為 line 與 delimiter 數量。
+// 上線注意：CSV quote/escape 內的 delimiter 不應切欄；完整 parser 不能只靠此搜尋。
+// -----------------------------------------------------------------------------
 std::size_t practical_first_delimiter(const std::string& line,
                                       const std::string& delimiters) {
     const auto it = std::find_first_of(line.begin(), line.end(),

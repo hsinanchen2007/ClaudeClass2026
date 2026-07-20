@@ -53,8 +53,14 @@ void basic_example()
     std::cout << "[基礎] deep copy 後修改副本不影響原物件\n";
 }
 
-// LeetCode 138：Copy List with Random Pointer。
-// RandomList 的 copy constructor 實作完整 deep copy：next 與 random 都指向新 nodes。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 138. Copy List with Random Pointer（複製帶隨機指標的鏈結串列）
+// 題目：深複製 next/random 結構，所有新指標只能指新節點；例如兩節點互指 random 也需保留。
+// 為何使用本章主題：RandomList copy constructor 建立獨立 ownership，展示 raw owning nodes 為何必須 deep copy。
+// 思路：第一趟複製 next chain 並建 source->clone map；第二趟依 map 重接 random；失敗時清除已建節點。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 為節點數。
+// 易錯點：random 必須為 null 或指向來源串列節點；constructor 丟例外時 destructor 不會跑；副本不得保留來源位址。
+// -----------------------------------------------------------------------------
 class RandomList {
 public:
     struct Node {
@@ -141,7 +147,14 @@ void leetcode_138_example()
     std::cout << "[LeetCode 138] next/random 全部指向複製後節點\n";
 }
 
-// 實務案例：設定 snapshot 按值複製，後續更新 live config 不改歷史版本。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】設定稽核快照
+// 情境：部署前保存 live worker limits，之後調整目前設定時，歷史 audit snapshot 必須維持舊值。
+// 為何使用本章主題：ConfigSnapshot 的 vector 具有正確 value semantics，compiler 產生的 copy constructor 會深複製元素。
+// 設計：以 live copy-construct audit_copy；修改 live 第一項；確認副本仍保存原值。
+// 成本：複製時間與額外空間 O(N)，N 為 limits 數量；後續單項修改 O(1)。
+// 上線注意：快照若含 pointer/handle，預設 memberwise copy 未必代表獨立資料；敏感設定也需加密與存取控管。
+// -----------------------------------------------------------------------------
 struct ConfigSnapshot {
     std::vector<int> worker_limits;
 };

@@ -16,6 +16,14 @@
 #include <stdexcept>
 #include <vector>
 
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 136. Single Number（只出現一次的數字）
+// 題目：其餘整數各出現兩次，找出唯一只出現一次者；[4,1,2,1,2] 回傳 4。
+// 為何使用本章主題：XOR 具交換與結合律，且 x^x=0，因此成對值不必相鄰也能抵消。
+// 思路：1. 先拒絕空輸入；2. result 從 0 開始逐項 XOR；3. 回傳剩下的唯一值。
+// 複雜度：N 為元素數；時間 O(N)、額外空間 O(1)。
+// 易錯點：解法不會驗證頻率契約；輸入若不是一個單例加成對元素，仍會產生看似合理的整數。
+// -----------------------------------------------------------------------------
 int single_number(const std::vector<int>& nums)
 {
     if (nums.empty()) throw std::invalid_argument("input must not be empty");
@@ -42,8 +50,14 @@ void leetcode_example()
     std::cout << "[LeetCode 136] answers 1, 4, -3\n";
 }
 
-// 實務：兩份相同 ID 記錄成對抵消，找出只出現在其中一邊的 transaction ID。
-// 這只適用「恰有一個 unmatched ID」；一般資料 reconciliation 應用 set/count map。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】交易 ID 單一落差對帳
+// 情境：兩批交易 ID 合併後，正常 ID 各有兩筆，預期只缺一個配對，要找出該 unmatched ID。
+// 為何使用本章主題：XOR 以 O(1) 空間抵消完全相同的 ID；這只適合「恰有一個落差」的受控批次。
+// 設計：1. 合併兩側 ID；2. 委派 single_number 全部 XOR；3. 將剩餘值當落差 ID。
+// 成本：N 為合併筆數；時間 O(N)、額外空間 O(1)。
+// 上線注意：一般對帳可能有重複、缺多筆或錯誤 ID，應改用 count map 並回報完整差異，不可盲信 XOR。
+// -----------------------------------------------------------------------------
 int unmatched_transaction(const std::vector<int>& ids)
 {
     return single_number(ids);

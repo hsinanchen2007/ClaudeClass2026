@@ -28,9 +28,14 @@ void basic_example()
     std::cout << "[基礎] generic path=" << path.generic_string() << '\n';
 }
 
-// LeetCode 71：Simplify Path。題目是 POSIX lexical path，不查真實 filesystem；
-// lexically_normal 可處理 .、..、重複 separator，但 standard path 可能保留 trailing `/`。
-// 題目要求 canonical result 除 root 外不得以 `/` 結尾，因此必須再正規化輸出契約。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 71. Simplify Path（簡化路徑）
+// 題目：將 POSIX absolute path 的重複斜線、`.`、`..` 正規化；"/home//foo/" 回傳 "/home/foo"。
+// 為何使用本章主題：fs::path::lexically_normal 純做 component 語法運算，不查磁碟；再補上題目不允許尾斜線的契約。
+// 思路：1. 建立 path 並 lexical normalize；2. 除 root 外移除尾端 `/`；3. 空結果映射成 root。
+// 複雜度：L 為路徑字元數；時間與結果空間 O(L)。
+// 易錯點：這是 POSIX 題目但 std::filesystem::path 具平台語意；lexical normalize 不解析 symlink，也不是安全 sandbox。
+// -----------------------------------------------------------------------------
 std::string simplify_path(const std::string& input)
 {
     std::string result = fs::path(input).lexically_normal().generic_string();
@@ -47,7 +52,14 @@ void leetcode_71_example()
     std::cout << "[LeetCode 71] trailing slash 與 dot segments 均符合題目契約\n";
 }
 
-// 實務：以 operator/ 組 path，不依賴 base 是否已帶 separator。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】每日報表輸出路徑組合
+// 情境：依部署 root 與日期建立 `<root>/reports/<date>.json`，root 可能有或沒有尾 separator。
+// 為何使用本章主題：path::operator/ 依平台 component 規則組合，不需手刻 `/` 或猜現有尾字元。
+// 設計：1. 接收 root path value；2. 接上 reports component；3. 將日期加 .json 後作為 filename。
+// 成本：L 為結果路徑長度；字串與 path 組合時間、結果空間皆 O(L)。
+// 上線注意：date 要驗格式與路徑分隔字元；若 child 可由外部控制，先拒 absolute/root-name 以免捨棄 root。
+// -----------------------------------------------------------------------------
 fs::path report_path(const fs::path& root, const std::string& date)
 {
     return root / "reports" / (date + ".json");

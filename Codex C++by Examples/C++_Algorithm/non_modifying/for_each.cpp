@@ -15,7 +15,16 @@
 #include <numeric>
 #include <vector>
 
-// LeetCode 1672：Richest Customer Wealth。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1672. Richest Customer Wealth（最富有客戶的資產總量）
+// 題目：accounts[i][j] 是第 i 位客戶在第 j 家銀行的資產，回傳任一客戶的最大總額；
+// 例如 [[1,5],[7,3],[3,5]] 回 10。
+// 為何使用本章主題：for_each 逐客戶執行相同聚合動作，內層 accumulate 求該列總額，
+// 外部 capture 更新 richest；一般迴圈同樣可讀，本例展示 callback 聚合。
+// 思路：1. richest 初始化為 0；2. 對每列加總 wealth；3. 以 max 更新目前最大值。
+// 複雜度：時間 O(T)、額外空間 O(1)，T 為 accounts 中所有元素總數。
+// 易錯點：題目資產非負才適合 richest=0；一般有負值資料應由首列或 optional 初始化。
+// -----------------------------------------------------------------------------
 int leetcode_maximum_wealth(const std::vector<std::vector<int>>& accounts) {
     int richest = 0;
     std::for_each(accounts.begin(), accounts.end(), [&richest](const auto& customer) {
@@ -35,7 +44,16 @@ struct MetricSummary {
     int alerts;
 };
 
-// 實務：聚合監控資料；回 value struct，來源保持不變。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】監控 Metric 總量與警報摘要
+// 情境：Metric 快照含 value 與 alert；報表要同時累加所有值與警報筆數，不修改來源。
+// 為何使用本章主題：for_each 適合在每筆上更新一個局部 Summary 狀態，兩個欄位可在
+// 同一趟完成，比各跑一次 accumulate/count_if 少一次掃描。
+// 設計：1. summary 初始化為零；2. 每筆加 value；3. alert 為 true 時遞增 alerts；
+// 4. 以值回傳摘要。
+// 成本：時間 O(N)、額外空間 O(1)，N 為 metric 筆數。
+// 上線注意：int total 可能溢位；parallel for_each 不可未同步共享 summary，應改 reduction。
+// -----------------------------------------------------------------------------
 MetricSummary practical_summarize_metrics(const std::vector<Metric>& metrics) {
     MetricSummary summary{0, 0};
     std::for_each(metrics.begin(), metrics.end(), [&summary](const Metric& metric) {

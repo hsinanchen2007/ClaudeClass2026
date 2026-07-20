@@ -34,7 +34,14 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 141：Linked List Cycle。用 alias 讓 non-owning pointer 語意更易閱讀。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 141. Linked List Cycle（鏈結串列是否成環）
+// 題目：輸入鏈結串列頭節點，判斷沿 next 是否會重訪節點；例如尾節點連回第二節點時回 true。
+// 為何使用本章主題：NodePtr 縮短重複的 ListNode* 宣告並表達 observer 角色，但 alias 不會建立新型別或 ownership。
+// 思路：1. slow 每輪走一步；2. fast 每輪走兩步；3. 相遇代表有環，fast 到 nullptr 則無環。
+// 複雜度：N 為可達節點數；時間 O(N)、額外空間 O(1)。
+// 易錯點：先確認 fast 與 fast->next 非空再走兩步；NodePtr 不負責 delete，也不延長節點生命週期。
+// -----------------------------------------------------------------------------
 struct ListNode {
     int value;
     ListNode* next;
@@ -67,8 +74,15 @@ void test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】權限表：alias 縮短巢狀容器型別並揭示 UserId、PermissionSet 的領域角色。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】使用者權限查詢表
+// 情境：小型 ACL 以使用者 ID 對應權限集合，要判斷指定使用者是否具 read 權限。
+// 為何使用本章主題：UserId、PermissionSet、AccessTable aliases 把巢狀 STL 型別換成領域名稱，降低簽章閱讀負擔。
+// 設計：1. 線性尋找 user；2. 命中後查 PermissionSet 的 read；3. 找不到使用者即回 false。
+// 成本：U 為使用者數、P 為單人權限數；平均時間 O(U+1)，雜湊最壞受 P 影響，儲存空間 O(U*P)。
+// 上線注意：using 不防 UserId 與普通 string 混用；大型 ACL 應以 user 為 key 建索引並處理同步更新。
+// -----------------------------------------------------------------------------
 using UserId = std::string;
 using PermissionSet = std::unordered_set<std::string>;
 using AccessTable = std::vector<std::pair<UserId, PermissionSet>>;

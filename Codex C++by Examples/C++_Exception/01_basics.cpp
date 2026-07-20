@@ -36,8 +36,14 @@ void basic_example()
     std::cout << "[基礎] domain_error caught by const reference\n";
 }
 
-// LeetCode 150：Evaluate Reverse Polish Notation。
-// 題目保證合法；production 版仍檢查 stack/除零/未知 token，讓 contract failure 可診斷。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 150. Evaluate Reverse Polish Notation（計算逆波蘭表示式）
+// 題目：輸入合法 token 序列，以整數運算計算後綴表示式；例如 [2,1,+,3,*] 得 9，[4,13,5,/,+] 得 6。
+// 為何使用本章主題：原題保證合法；可重用版本仍用 typed exception 回報缺 operand、除以零或 malformed expression，示範違約時的 stack unwinding。
+// 思路：1. 數字轉 int 後 push。2. 運算子取出右、左 operand。3. 計算並 push 結果。4. 結尾要求 stack 恰有一值。
+// 複雜度：N 個 token 的時間 O(N)、stack 額外空間 O(N)。
+// 易錯點：減法與除法的 operand 順序不能反；stoi 與 signed arithmetic 仍需完整格式及 overflow 檢查，catch 不能補救 UB。
+// -----------------------------------------------------------------------------
 int eval_rpn(const std::vector<std::string>& tokens)
 {
     std::vector<int> stack;
@@ -68,7 +74,14 @@ void leetcode_150_example()
     std::cout << "[LeetCode 150] valid RPN answers 9 and 6\n";
 }
 
-// 實務：在 application boundary 才 catch，轉成明確 exit/result；library 內保留型別資訊。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】計算服務邊界的錯誤轉譯
+// 情境：底層 divide 以 domain_error 表示分母為零，但 application 對呼叫端只需要明確的成功或失敗結果。
+// 為何使用本章主題：library 保留具體例外型別供中間層傳遞，直到能採取行動的邊界才 catch 並轉成 bool，避免每層吞錯。
+// 設計：1. 邊界呼叫 divide。2. 正常完成回 true。3. 只捕捉 domain_error。4. 將該失敗轉成 false。
+// 成本：正常路徑是一次除法；失敗路徑另付 throw 與 unwind 成本，取決於堆疊深度。
+// 上線注意：bool 會丟失錯誤細節，真實 API 可改 expected/status 並在邊界記錄 context；不可 catch-all 後回假成功。
+// -----------------------------------------------------------------------------
 bool run_calculation(double denominator)
 {
     try {

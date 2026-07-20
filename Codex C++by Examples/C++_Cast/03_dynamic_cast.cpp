@@ -51,9 +51,14 @@ void basic_example()
     std::cout << "[基礎] dynamic_cast identifies ErrorEvent code=404\n";
 }
 
-// LeetCode 341：Flatten Nested List Iterator。官方 NestedInteger 已提供 isInteger/getList，
-// 通常不需要 RTTI；本例以 abstract Item + dynamic_cast 建立等價資料模型，並實作題目要求的
-// next()/hasNext() API。constructor eager flatten，next/hasNext 均為 O(1)。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 341. Flatten Nested List Iterator（扁平化巢狀串列迭代器）
+// 題目：將 [1,[4,[6]]] 以 next/hasNext 依序輸出 1、4、6。
+// 為何使用本章主題：官方 NestedInteger 有 isInteger/getList，通常不需 RTTI；本檔以 Item hierarchy 教學改寫成 checked dynamic_cast。
+// 思路：1. IntegerItem 就輸出 value；2. ListItem 遞迴 flatten children；3. constructor 預先展平，next 依索引讀取。
+// 複雜度：N 為所有 items、H 為巢狀深度；建構 O(N)、儲存 O(N)、遞迴堆疊 O(H)，next/hasNext O(1)。
+// 易錯點：每次 cast 都要檢查 nullptr；未知 Item subtype 目前會被略過，深度過大也可能耗盡 call stack。
+// -----------------------------------------------------------------------------
 class Item {
 public:
     virtual ~Item() = default;
@@ -126,7 +131,14 @@ void leetcode_341_example()
     std::cout << "[LeetCode 341] next/hasNext flatten [1,[4,[6]]] -> 1,4,6\n";
 }
 
-// 實務：只有某些 plugins 支援 reload；dynamic_cast 檢查 optional capability。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】外掛可選 reload 能力
+// 情境：外掛集合都實作 Plugin，但只有部分 concrete plugin 支援不重啟重新載入設定。
+// 為何使用本章主題：dynamic_cast<ReloadablePlugin*> 在 runtime 檢查 optional capability，失敗可用 nullptr 表示。
+// 設計：1. 以 Plugin pointer 持有外掛；2. 嘗試 checked downcast；3. 成功才呼叫 reload 並觀察次數。
+// 成本：dynamic_cast 成本依 ABI 與繼承圖，標準不保證 O(1)；本例額外空間 O(1)。
+// 上線注意：回傳 pointer 只是 alias，不延長 plugin 生命；若多種外掛都需 reload，應抽 Reloadable 介面而非連鎖 cast。
+// -----------------------------------------------------------------------------
 class Plugin {
 public:
     virtual ~Plugin() = default;

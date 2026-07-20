@@ -31,7 +31,15 @@ private:
     int mutable_reads_{};
 };
 
-// LeetCode 303 使用不可變輸入建立 prefix sum；建構後不提供任何可寫 reference。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 303. Range Sum Query - Immutable（區域和檢索：不可變）
+// 題目：以整數陣列建立查詢物件，多次回傳閉區間 [left,right] 總和；[-2,0,3] 的 [0,2] 為 1。
+// 為何使用本章主題：NumberSeries 只暴露 const 查詢，呼應 as_const 的唯讀介面選擇；實作路徑
+// 並未直接呼叫 std::as_const，因此是 const-correctness 的相鄰教學案例。
+// 思路：建構時先放 0；逐項累加 prefix；查詢用 prefix[right+1]-prefix[left]。
+// 複雜度：建構時間 O(N)、空間 O(N)，每次查詢 O(1)，N 是原陣列長度。
+// 易錯點：必須滿足 left<=right<N；at 越界會丟例外，int 前綴和也可能溢位。
+// -----------------------------------------------------------------------------
 class NumberSeries {
 public:
     explicit NumberSeries(const std::vector<int>& values) {
@@ -50,12 +58,19 @@ private:
     std::vector<int> prefix_;
 };
 
-// LeetCode 303：Range Sum Query，查詢介面是 const，不應修改 cache 或來源值。
 int leetcode_range_sum(const NumberSeries& series, std::size_t left, std::size_t right) {
     return series.sum_range(left, right);
 }
 
-// 實務：即使 caller 手上是 mutable object，稽核流程明確只讀，強制選 const overload。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】強制唯讀的稽核查詢
+// 情境：稽核流程收到可修改的 Store 參考，但政策要求只讀第一筆且不能觸發 mutable access 計數。
+// 為何使用本章主題：std::as_const 建立零複製 const view，強制 overload resolution 選 const at；
+// 相較 const_cast 或複製整個 store，意圖明確且不改變 ownership。
+// 設計：接收 mutable store；轉成 const reference view；呼叫 const at 並以值回傳第一筆。
+// 成本：轉換與查詢皆 O(1)，不複製 Store；vector::at 仍包含邊界檢查。
+// 上線注意：空 store 會丟 out_of_range；as_const 是 shallow const，內部指標指向的資料未必不可寫。
+// -----------------------------------------------------------------------------
 int practical_audit_first(OverloadedStore& store) {
     return std::as_const(store).at(0U);
 }

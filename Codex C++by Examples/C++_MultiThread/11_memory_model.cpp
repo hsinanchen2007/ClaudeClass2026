@@ -34,9 +34,14 @@ void basic_demo()
     consumer.join();
 }
 
-// ----------------------------------------------------------------------------
-// LeetCode 1114：Print in Order（atomic stage + acquire/release）
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1114. Print in Order（按序列印）
+// 題目：first、second、third 可能由不同 thread 任意先後呼叫，但結果必須固定為 firstsecondthird。
+// 為何使用本章主題：atomic stage 的 release store/acquire load 串起 happens-before，使前一步對普通 output_ 的寫入在後一步追加前可見。
+// 思路：1. first 追加後 release-store 1。2. second acquire-wait 1。3. 追加後 release-store 2。4. third acquire-wait 2 再追加。
+// 複雜度：控制狀態時間/空間 O(1)，但等待採 busy-yield，wall latency 與 CPU 消耗取決於排程。
+// 易錯點：relaxed stage 不會發布 output_；acquire 必須讀到對應 release，且題目假設三個方法各只呼叫一次。
+// -----------------------------------------------------------------------------
 class OrderedSteps {
 public:
     void first()
@@ -84,9 +89,14 @@ void leetcode_demo()
     assert(steps.result() == "firstsecondthird");
 }
 
-// ----------------------------------------------------------------------------
-// 實務：單 producer 發布 immutable snapshot pointer
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【日常實務範例】單一 Writer 發布不可變設定快照
+// 情境：writer 完整填入 version=7、value=42 後發布 pointer，reader 看到非 null 時必須同時看到兩個普通欄位的新值。
+// 為何使用本章主題：release-store pointer 與讀到它的 acquire-load 發布先前普通寫入；只把 pointer 做 atomic 而用 relaxed 不足以保證可見性。
+// 設計：1. writer 先完成 snapshot 欄位。2. release-store 地址。3. reader acquire-loop 等非 null。4. 取得後只讀 immutable 欄位。
+// 成本：發布與讀取各 O(1)，等待是無界 busy-yield；snapshot 資料空間 O(1)。
+// 上線注意：本例 stack 物件靠 join 保活，正式版需 shared ownership/回收協定；發布後不可再修改，否則仍會 data race。
+// -----------------------------------------------------------------------------
 struct Snapshot {
     int version;
     int value;

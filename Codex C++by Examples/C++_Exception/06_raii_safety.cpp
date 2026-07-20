@@ -47,9 +47,14 @@ void basic_example()
     std::cout << "[基礎] validate-then-swap provides strong guarantee\n";
 }
 
-// LeetCode 208：Trie。unique_ptr 讓 partial insertion 即使 allocation 丟 bad_alloc 也不 leak；
-// operation 至少 basic guarantee。要 strong guarantee（整個 word 要嘛全插要嘛不插）需額外
-// staging/rollback，LeetCode 通常不要求。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 208. Implement Trie (Prefix Tree)（實作前綴樹）
+// 題目：支援 insert、search 與前綴查詢；本檔實作 insert/search 核心，例如插入 apple 後能找到 apple、找不到完整單字 app。
+// 為何使用本章主題：每個 child 由 unique_ptr 擁有，配置失敗 unwinding 時不會洩漏；但已建立的 prefix node 可能保留，只達 basic guarantee。
+// 思路：1. 從 root 逐字元映射 0..25。2. 缺 child 就配置 Node。3. 沿 child 前進。4. 結尾標記完整單字；search 同路徑查找。
+// 複雜度：長度 L 的 insert/search 時間 O(L)，新節點最壞空間 O(L)，整棵樹總空間依所有不同 prefix 數。
+// 易錯點：本例假設只有小寫 a..z；allocation 失敗不 leak 但可能留下 prefix，要整字 strong guarantee 必須 staging/rollback。
+// -----------------------------------------------------------------------------
 class Trie {
 public:
     void insert(const std::string& word)
@@ -88,7 +93,14 @@ void leetcode_208_example()
     std::cout << "[LeetCode 208] RAII nodes prevent leaks during unwinding\n";
 }
 
-// 實務：RAII transaction 預設 rollback，explicit commit 才保留。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】批次資料列的範圍式交易
+// 情境：在既有 rows 後暫加多筆資料，後續驗證若丟例外就回到原大小；只有 explicit commit 才保留新增列。
+// 為何使用本章主題：RAII guard 將 rollback 綁定 lexical lifetime，正常 return 與 stack unwinding 都不會漏掉清理，比散落 catch 更可靠。
+// 設計：1. constructor 記住 rows reference 與原大小。2. add 追加資料。3. commit 設旗標。4. 未 commit 的 destructor 縮回原大小。
+// 成本：add 依 vector append；commit O(1)；rollback 銷毀新增的 R 列，時間 O(R)、額外 guard 空間 O(1)。
+// 上線注意：rows 必須比 Transaction 活得久且期間不可被外部非協調修改；destructor rollback 必須確保不讓例外逸出。
+// -----------------------------------------------------------------------------
 class Transaction {
 public:
     explicit Transaction(std::vector<std::string>& rows)

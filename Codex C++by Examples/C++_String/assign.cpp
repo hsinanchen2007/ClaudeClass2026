@@ -31,7 +31,15 @@ void basic_demo() {
     assert(text == "API");
 }
 
-// LeetCode 344（Reverse String）：題目通常收 vector<char>；這裡展示 string 版本。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 344. Reverse String（反轉字串）
+// 題目：原題要求原地反轉 vector<char>，不可另建同長度陣列；例如 hello 變成 olleh。
+// 為何使用本章主題：本檔把容器教學改為 std::string，但反轉函式本身不呼叫 assign；
+//       assign 的整批覆寫角色留給下方緩衝區案例，這裡只對照既有字串的就地修改。
+// 思路：1. left 指向開頭、right 先設為 size；2. 先遞減 right；3. 兩端交換後向內縮。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 是 value 的字元數。
+// 易錯點：原題簽名是 vector<char>；空字串時不可先算 size()-1，本實作用 right=size 避免下溢。
+// -----------------------------------------------------------------------------
 void leetcode_reverse_string(std::string& value) {
     std::size_t left = 0U;
     std::size_t right = value.size();
@@ -47,7 +55,16 @@ void leetcode_reverse_string(std::string& value) {
     }
 }
 
-// 實務：重用工作緩衝區，明確表示「舊請求內容全部作廢」。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】重載 HTTP 請求本文緩衝區
+// 情境：同一工作字串先含舊請求資料，下一筆收到 pointer 與 byte 長度後必須整批取代。
+// 為何使用本章主題：assign(data, size) 表達「舊內容全部作廢」，可重用既有容量，且不像
+//       assign(data) 依賴 NUL 結尾，因此能保存二進位本文中的內嵌 NUL。
+// 設計：1. null pointer 只接受零長度並清空；2. 其他情況依明確 size 複製；3. 不保留來源指標。
+// 成本：時間 O(S)、結果空間 O(S)，S 是本文 bytes；capacity 不足時另有配置成本。
+// 上線注意：assert 在 release 會消失，正式 API 必須拒絕 nullptr 搭配非零 size、限制本文上限，
+//       並假設 assign 後所有舊 view／iterator 已失效。
+// -----------------------------------------------------------------------------
 void practical_load_request_body(std::string& buffer, const char* data, const std::size_t size) {
     if (data == nullptr) {
         assert(size == 0U);

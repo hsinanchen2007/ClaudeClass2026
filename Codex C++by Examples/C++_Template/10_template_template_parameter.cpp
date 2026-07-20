@@ -27,8 +27,15 @@ private:
     Container<T, Allocator> values_;
 };
 
-// LeetCode 232：Implement Queue using Stacks。
-// Sequence 模板可在 vector 與 deque 間替換，不改 queue 演算法。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 232. Implement Queue using Stacks（用棧實作佇列）
+// 題目：只用 stack 式操作實作 FIFO 的 push、pop、peek、empty；push 1,2 後先 pop 1。
+// 為何使用本章主題：Sequence 是 template-template parameter，可在 vector/deque 間替換，
+// incoming/outgoing 的兩棧演算法不變；正式題目不要求底層容器可注入。
+// 思路：push 追加 incoming；outgoing 空時把 incoming 由尾端逐一搬過去；pop/peek 讀 outgoing 尾端。
+// 複雜度：單次 refill 最壞 O(N)，每元素最多搬一次，push/pop/peek 攤銷 O(1)，空間 O(N)。
+// 易錯點：pop/peek 只在非空時合法；搬移中拋例外會留下部分轉移，peek 參考也可能失效。
+// -----------------------------------------------------------------------------
 template <typename T, template <typename, typename> class Sequence = std::vector>
 class TwoStackQueue {
 public:
@@ -77,7 +84,15 @@ void leetcode_queue_test() {
     assert(!queue.empty());
 }
 
-// 實務：測試環境改用 list 以觀察不同配置特性；公開介面不暴露底層容器。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】可替換儲存容器的工作清單
+// 情境：工作載入流程只需 add/size，測試時想改用 list 觀察逐節點配置而不改公開 Bag 介面。
+// 為何使用本章主題：Storage 以未實體化模板傳入，practical_load_job_count 可建立不同 Bag；
+// 相較把 vector/list 寫成兩個函式，流程只保留一份，但容器參數形狀必須相容。
+// 設計：依 Storage 建立 Bag<string>；加入 index 與 backup；回傳容器報告的工作數。
+// 成本：兩次插入與 size 查詢；一般化為 N 筆時 O(N) 建立、O(N) 空間，配置模式依 Storage 而異。
+// 上線注意：只因語法相容不代表 iterator/配置成本相同；空 Bag 的 first 也沒有防護。
+// -----------------------------------------------------------------------------
 template <template <typename, typename> class Storage>
 std::size_t practical_load_job_count() {
     Bag<std::string, Storage> jobs;

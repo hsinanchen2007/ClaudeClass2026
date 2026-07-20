@@ -64,8 +64,14 @@ void basic_example()
     std::cout << "[基礎] 同一模板產生 Stack<int> 與 Stack<string>\n";
 }
 
-// LeetCode 155：Min Stack。
-// GenericMinStack<T> 可處理任何有 operator< 的 value type；題目以 int instance 執行。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 155. Min Stack（最小棧）
+// 題目：push、pop、top、getMin 都在 O(1) 完成；例如 push -2,0,-3，最小為 -3，pop 後為 -2。
+// 為何使用本章主題：GenericMinStack<T> 將相同雙 stack 技巧套到可比較型別；題目實際 instantiate int。
+// 思路：每次 push 同步保存 value 與截至該層的 minimum；pop 同時移除；兩種查詢讀各自 back。
+// 複雜度：每個操作 O(1)，額外空間 O(N)，N 為元素數。
+// 易錯點：空 stack 不可 pop/top/getMin；T 必須可比較與複製；第二次 push 若拋例外需回滾第一個 vector 才能守 invariant。
+// -----------------------------------------------------------------------------
 template<class T>
 class GenericMinStack {
 public:
@@ -102,7 +108,14 @@ void leetcode_155_example()
     std::cout << "[LeetCode 155] GenericMinStack<int> 通過\n";
 }
 
-// 實務案例：Capacity 是 compile-time value；不同容量是不同型別且不需 heap allocation。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】固定容量的工作環狀佇列
+// 情境：最多同時排兩個工作，滿載時拒絕 deploy；pop 後要能在環狀槽位再次加入並維持 FIFO。
+// 為何使用本章主題：T/Capacity 模板讓容量進入型別，std::array 將槽位內嵌；元素 T 自身仍可能另行配置資源。
+// 設計：head_ 指 front、size_ 計使用量；push 寫 (head+size)%Capacity；pop 推進 head；滿/空明確回報。
+// 成本：push/front/pop O(1)，inline 槽位空間 O(Capacity*sizeof(T))。
+// 上線注意：Capacity 編譯期必須大於零；T 需可預設建構/指定；多 producer/consumer 要同步與明確關閉協定。
+// -----------------------------------------------------------------------------
 template<class T, std::size_t Capacity>
 class BoundedQueue {
 public:

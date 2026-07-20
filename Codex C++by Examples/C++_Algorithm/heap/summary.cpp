@@ -69,6 +69,17 @@ A8｜heap algorithms 要求哪種 iterator？
 #include <utility>
 #include <vector>
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】具 FIFO 同優先權規則的工作排程器
+// 情境：工作帶 priority 與到達順序；高 priority 先派送，同 priority 必須維持先到先做，
+// 空佇列則回 nullopt。
+// 為何使用本章主題：vector heap 提供 O(log N) submit/dispatch；把 sequence 放入
+// comparator，補上標準 heap 本身不保證穩定的缺口。
+// 設計：1. submit 配置單調 sequence 後 push_heap；2. comparator 先比 priority 再比
+// sequence；3. dispatch 以 pop_heap 將最高優先工作移到尾端並 move 出名稱。
+// 成本：每次提交與派送時間 O(log N)、儲存空間 O(N)，N 為待處理工作數。
+// 上線注意：多執行緒呼叫需加鎖；sequence 溢位、名稱 move 例外與持久化恢復順序都要另定政策。
+// -----------------------------------------------------------------------------
 struct Task {
     int priority;
     std::size_t sequence;
@@ -112,7 +123,17 @@ private:
     std::size_t next_sequence_{0};
 };
 
-// LeetCode 1046 的核心操作，用來複習 push/pop 成對規則。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1046. Last Stone Weight（最後一塊石頭的重量）
+// 題目：每輪粉碎兩塊最重石頭；相等時皆消失，否則將重量差放回，最後回唯一重量
+// 或 0，例如 [2,7,4,1,8,1] 回 1。
+// 為何使用本章主題：make_heap、pop_heap 與 push_heap 完整涵蓋批次建堆、取最大值
+// 與差值重入堆，是 heap 家族成對契約的直接題目。
+// 思路：1. 建 max-heap；2. 連續取出 y 與 x；3. y>x 時加入 y-x 並恢復 heap；4. 回
+// 空值 0 或剩餘 front。
+// 複雜度：時間 O(N log N)、額外空間 O(N)，N 為初始石頭數；空間包含按值輸入。
+// 易錯點：pop_heap 後仍須 pop_back；相等時不放回 0；兩次 pop 前要確認至少有兩項。
+// -----------------------------------------------------------------------------
 int leetcode_smash(std::vector<int> stones) {
     std::make_heap(stones.begin(), stones.end());
     while (stones.size() >= 2U) {

@@ -10,7 +10,16 @@
 #include <iostream>
 #include <vector>
 
-// LeetCode 1337：The K Weakest Rows in a Matrix。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1337. The K Weakest Rows in a Matrix（矩陣中戰鬥力最弱的 K 行）
+// 題目：每列 1 表士兵且都在 0 前，按士兵數升冪、相同時按 row index，回最弱 K 行；
+// 範例矩陣取 3 行可得 [2,0,3]。
+// 為何使用本章主題：先把每列轉成 {soldiers,index}，partial_sort_copy 再把最小 K 個
+// 排序寫到固定輸出，不修改 rows 來源。
+// 思路：1. count 每列士兵；2. 建 K 格 weakest；3. 依士兵數/index 選取排序；4. 抽出 index。
+// 複雜度：時間 O(R*C+R log K)、額外空間 O(R+K)，R/C 為列數/欄數。
+// 易錯點：k 必須非負且不超過列數；回傳 output end 可能早於預配置尾端，需 erase 未寫區。
+// -----------------------------------------------------------------------------
 std::vector<int> leetcode_k_weakest_rows(const std::vector<std::vector<int>>& matrix,
                                          int k) {
     struct Row {
@@ -38,7 +47,16 @@ std::vector<int> leetcode_k_weakest_rows(const std::vector<std::vector<int>>& ma
     return answer;
 }
 
-// 實務：從 immutable latency snapshot 複製最快 K 筆，不破壞原報表順序。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】Immutable Latency Snapshot 最快 K 筆
+// 情境：原 latency_ms 排列是報表觀測順序，不可重排；另需一份升冪的最快 K 筆供
+// quick view，K 可大於樣本數。
+// 為何使用本章主題：partial_sort_copy 同時保留來源、選取並排序固定大小輸出，比先
+// 複製全部再 partial_sort 更節省目的空間。
+// 設計：1. 輸出大小=min(K,N)；2. partial_sort_copy 到完整輸出；3. 依回傳 end 清掉未寫尾段。
+// 成本：時間 O(N log K)、額外空間 O(min(K,N))，N 為樣本數。
+// 上線注意：output 必須 resize 而非只 reserve；相同 latency 的先後不應被視為穩定契約。
+// -----------------------------------------------------------------------------
 std::vector<int> practical_fastest_samples(const std::vector<int>& latency_ms,
                                            std::size_t k) {
     std::vector<int> output(std::min(k, latency_ms.size()));

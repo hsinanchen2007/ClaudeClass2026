@@ -60,7 +60,15 @@ concept TwoSumKey = EqualityComparableHashKey<T> && requires(const T& left, cons
     { left - right } -> std::same_as<T>;
 };
 
-// LeetCode 1：Two Sum。需求直接表達 Key 必須可 hash 且可比較。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1. Two Sum（兩數之和）
+// 題目：從 values 找兩個相異索引使其值相加為 target；[2,7,11,15]、9 得 [0,1]。
+// 為何使用本章主題：TwoSumKey 組合可雜湊、相等比較、複製與減法 requirement，讓不合格 T
+// 在呼叫邊界被拒絕；原題只需 int，這是進階 concept 的泛化版。
+// 思路：reserve 雜湊表；逐項算 wanted；先查互補值，命中回索引 pair，否則保存目前值。
+// 複雜度：平均時間 O(N)、額外空間 O(N)，N 是 values 長度；碰撞時最壞可到 O(N^2)。
+// 易錯點：concept 只驗減法型別，不能防 signed overflow 或證明 hash/equality 語意一致；無解回 {N,N}。
+// -----------------------------------------------------------------------------
 template <TwoSumKey T>
 std::pair<std::size_t, std::size_t> leetcode_two_sum(const std::vector<T>& values, T target) {
     std::unordered_map<T, std::size_t> seen;
@@ -75,6 +83,15 @@ std::pair<std::size_t, std::size_t> leetcode_two_sum(const std::vector<T>& value
     return {values.size(), values.size()};
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】受約束的使用者 Repository 註冊
+// 情境：服務要接受可儲存 User 且可依 id 查詢的 repository，支援建立或更新使用者。
+// 為何使用本章主題：WritableRepository 同時使用 type、nested、compound requirements，
+// 把 value_type、save、const find 的完整結構契約放在函式簽名，便於替換測試 repository。
+// 設計：concept 驗 Entity 一致；UserRepository 以 map 實作 save/find；register 移動 id/name 後呼叫 save。
+// 成本：此實作平均 save/find O(1)、儲存 O(U)，U 是使用者數；concept 本身無 runtime 成本。
+// 上線注意：find 回傳 pointer 受 repository/erase 生命週期限制；還需驗證欄位、同步寫入與回報失敗原因。
+// -----------------------------------------------------------------------------
 template <typename Repository, typename Entity>
 concept WritableRepository = requires(Repository& repository, const Repository& read_only,
                                       const Entity& entity, const std::string& id) {
@@ -107,7 +124,6 @@ private:
     std::unordered_map<std::string, User> users_;
 };
 
-// 實務：函式只接受符合完整 repository 契約的型別。
 template <typename Repository>
 requires WritableRepository<Repository, User>
 bool practical_register_user(Repository& repository, std::string id, std::string name) {

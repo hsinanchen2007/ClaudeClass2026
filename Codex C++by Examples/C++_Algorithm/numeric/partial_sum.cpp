@@ -11,14 +11,31 @@
 #include <numeric>
 #include <vector>
 
-// LeetCode 1480：Running Sum of 1d Array。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1480. Running Sum of 1d Array（一維陣列的動態和）
+// 題目：回傳 answer[i]=nums[0]+...+nums[i]；例如 [1,2,3,4] 回 [1,3,6,10]。
+// 為何使用本章主題：std::partial_sum 的預設 inclusive prefix 正好就是 running sum，
+// 並按左到右順序寫入等長輸出。
+// 思路：1. 建立與 nums 等長 answer；2. 對完整範圍做 partial_sum；3. 回傳輸出。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 為 nums 的元素數。
+// 易錯點：輸出範圍必須先有 N 格；累加型別跟隨輸入 int，長序列可能溢位。
+// -----------------------------------------------------------------------------
 std::vector<int> leetcode_running_sum(const std::vector<int>& nums) {
     std::vector<int> answer(nums.size());
     std::partial_sum(nums.begin(), nums.end(), answer.begin());
     return answer;
 }
 
-// 實務：每日流量轉累積值，再以 prefix[right]-prefix[left] 做 O(1) 區間查詢。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】每日流量前綴索引
+// 情境：daily 流量在索引建立後唯讀，服務要反覆回答半開區間 [begin,end) 的總量，
+// 包含空區間也要回 0。
+// 為何使用本章主題：建 n+1 格 prefix 並以 partial_sum 從 prefix[1] 開始寫，可讓每次
+// 查詢只做 prefix[end]-prefix[begin]，適合查多改少資料。
+// 設計：1. prefix[0]=0；2. partial_sum 建累積值；3. 驗證 half-open 邊界；4. 兩前綴相減。
+// 成本：建置時間/空間 O(N)，每次查詢時間 O(1)，N 為 daily 筆數。
+// 上線注意：daily 任一更新都使後續 prefix 過期；高頻更新應改 Fenwick/segment tree，外部索引需 runtime 驗證。
+// -----------------------------------------------------------------------------
 class PracticalTrafficPrefix {
 public:
     explicit PracticalTrafficPrefix(const std::vector<long long>& daily)

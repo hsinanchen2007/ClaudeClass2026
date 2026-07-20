@@ -22,8 +22,15 @@ typename Container::value_type first_or(const Container& values,
     return values.empty() ? std::move(fallback) : values.front();
 }
 
-// LeetCode 876 的容器版：Middle of the Linked List。
-// 使用 typename 宣告相依 iterator 型別；forward iterator 也適用，O(n) 時間、O(1) 空間。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 876. Middle of the Linked List（鏈結串列的中間節點）
+// 題目：回傳串列中點，偶數長度取第二個中點；[1,2,3,4,5,6] 得 4。
+// 為何使用本章主題：本例改接通用 Container，以 typename 指明相依的 value_type/const_iterator；
+// 它回傳中間值而非原題 ListNode*，是為展示相依型別語法的教學改寫。
+// 思路：slow/fast 從 begin 出發；fast 每輪走兩步、slow 走一步；fast 到 end 時 slow 位於中點。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 是元素數；回傳 value_type 時另有一次元素複製。
+// 易錯點：values 必須非空且至少有 forward iterator 能力；release 建置移除 assert 後空輸入會解參考 end。
+// -----------------------------------------------------------------------------
 template <class Container>
 typename Container::value_type leetcode_middle_value(const Container& values) {
     assert(!values.empty());
@@ -40,11 +47,19 @@ typename Container::value_type leetcode_middle_value(const Container& values) {
     return *slow;
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】發票金額批次加總
+// 情境：不同序列容器保存 Invoice，財務摘要要加總所有 cents 而不綁定 vector。
+// 為何使用本章主題：typename Container::value_type 讓模板把相依名稱解析成 Item 型別；
+// 相較硬寫 Invoice，函式可接受具有相同元素欄位的容器，但語法不增加 runtime 成本。
+// 設計：以 Item alias 取得元素型別；逐筆讀取 cents；累加後回傳整數總額。
+// 成本：時間 O(N)、額外空間 O(1)，N 是 invoices 數量。
+// 上線注意：int 累加可能溢位，應使用較寬金額型別；模板未檢查 Item 一定有 cents 成員。
+// -----------------------------------------------------------------------------
 struct Invoice {
     int cents{};
 };
 
-// 實務：型別別名可讓後續宣告易讀；typename 是語法資訊，不會產生執行期成本。
 template <typename Container>
 int practical_total_cents(const Container& invoices) {
     using Item = typename Container::value_type;

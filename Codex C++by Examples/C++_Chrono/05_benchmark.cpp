@@ -40,8 +40,14 @@ void basic_example()
     std::cout << "[基礎] 100 accumulations took " << elapsed.count() << " ns\n";
 }
 
-// LeetCode 704：Binary Search。先驗答案，再示範量測；不可 assertion「一定比 linear 快」，
-// 因小資料、cache、optimizer、環境雜訊都可能反轉單次數據。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 704. Binary Search（二分搜尋）
+// 題目：在升冪且不重複的整數陣列尋找 target index，找不到回 -1；本例在 0..99999 尋找 99999。
+// 為何使用本章主題：二分搜尋本身不需要 chrono；此處誠實地把它當固定工作負載，示範以 steady_clock 批次量測 1000 次。
+// 思路：1. 維持半開區間 [left,right)。2. 比較中點並縮小一半。3. 迴圈結束後驗證候選。4. 累加答案防止工作被消除。
+// 複雜度：單次搜尋時間 O(log N)、額外空間 O(1)；量測 R 次為 O(R log N)，N 為陣列長度、R 為重複次數。
+// 易錯點：中點須用 left+(right-left)/2；計時結果不可斷言必然快於線性搜尋，且必須讓結果在量測後可觀察。
+// -----------------------------------------------------------------------------
 int binary_search_index(const std::vector<int>& nums, int target)
 {
     std::size_t left = 0U;
@@ -64,7 +70,14 @@ void leetcode_704_example()
     std::cout << "[LeetCode 704] 1000 searches took " << elapsed.count() << " ns\n";
 }
 
-// 實務：報 median 比只報 minimum/一次測量穩健；本例量多批並排序。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】微基準多批樣本的中位數報表
+// 情境：短小工作受排程與 CPU 狀態干擾，需要從 7 批量測取代表值，而非發布單次或最佳時間。
+// 為何使用本章主題：nanoseconds 保留量測單位，排序後取 median 對少量離群慢樣本比單次值或 minimum 更穩健。
+// 設計：1. 每批用 measure 執行 1000 次。2. 收集 7 個 duration。3. 排序。4. 取中央樣本並輸出 count。
+// 成本：S 個樣本排序時間 O(S log S)、複製空間 O(S)；主要成本仍是 S 批工作與每批兩次 clock 讀取。
+// 上線注意：空樣本不能只靠 assert；正式效能測試還需 warm-up、optimized build、percentile/variance 與環境資訊。
+// -----------------------------------------------------------------------------
 std::chrono::nanoseconds median(std::vector<std::chrono::nanoseconds> samples)
 {
     assert(!samples.empty());

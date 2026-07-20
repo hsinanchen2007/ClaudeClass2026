@@ -12,7 +12,17 @@
 #include <limits>
 #include <vector>
 
-// LeetCode 53：Maximum Subarray（Kadane）。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 53. Maximum Subarray（最大子陣列）
+// 題目：輸入整數陣列 nums，找總和最大的非空連續子陣列並回其總和；例如
+// [-2,1,-3,4,-1,2,1,-5,4] 回 6，來自 [4,-1,2,1]。
+// 為何使用本章主題：Kadane 以 std::max 在「從目前值重開」與「延續前段」間選擇，
+// 再更新全域最大值，恰好表達兩層最佳狀態。
+// 思路：1. 以首元素初始化 ending_here 與 best；2. 每步選重開或延續；3. 用新局部
+// 最佳更新全域 best；4. 掃描完回傳 best。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 為 nums 的元素數。
+// 易錯點：輸入不可空；初始化為 0 會讓全負陣列錯答 0；加總可能超過 int。
+// -----------------------------------------------------------------------------
 int leetcode_max_sub_array(const std::vector<int>& nums) {
     assert(!nums.empty());
     int ending_here = nums.front();
@@ -24,7 +34,16 @@ int leetcode_max_sub_array(const std::vector<int>& nums) {
     return best;
 }
 
-// 實務：服務的 worker 數量至少為安全下限。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】服務 Worker 最低安全數量
+// 情境：設定檔給 configured worker 數，但系統要求至少 minimum_safe 個，避免低配置
+// 讓健康檢查或背景工作無法執行。
+// 為何使用本章主題：只有單側下限時 std::max 直接選設定值與安全值中較大者，比條件
+// 分支更能表達「至少」；若還有上限則應改用 clamp。
+// 設計：1. 比較 configured 與 minimum_safe；2. 回傳較大值作實際 worker 數。
+// 成本：時間 O(1)、額外空間 O(1)，只需一次比較。
+// 上線注意：負數或 0 是否代表 auto 必須先解析；靜默提高設定應留下 warning/metric。
+// -----------------------------------------------------------------------------
 int practical_effective_workers(int configured, int minimum_safe) {
     return std::max(configured, minimum_safe);
 }

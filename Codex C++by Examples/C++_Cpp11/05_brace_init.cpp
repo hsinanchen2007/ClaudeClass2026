@@ -38,7 +38,14 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 121：Best Time to Buy and Sell Stock。O(n) time / O(1) space。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 121. Best Time to Buy and Sell Stock（買賣股票的最佳時機）
+// 題目：輸入每日價格，只能先買後賣一次，回傳最大獲利；[7,1,5,3,6,4] 的答案是 5。
+// 為何使用本章主題：大括號把 minimum 與 answer 明確初始化，避免未初始化狀態；演算法本身並不依賴 brace init。
+// 思路：1. 保存目前最低買價；2. 對每天計算今日賣出的獲利；3. 更新最低價與最大獲利。
+// 複雜度：N 為天數；時間 O(N)、額外空間 O(1)。
+// 易錯點：空輸入要回 0；必須先買後賣，且價格差若超過 int 範圍就需更寬的型別。
+// -----------------------------------------------------------------------------
 int max_profit(const std::vector<int>& prices) {
     if (prices.empty()) {
         return 0;
@@ -58,8 +65,15 @@ void test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】ServerConfig aggregate：以具名欄位型別表達 host、port、TLS 的完整設定。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】伺服器連線設定初始化
+// 情境：啟動服務時要一次建立 host、port 與 TLS 選項，並辨識空的預設設定。
+// 為何使用本章主題：aggregate brace init 讓三個欄位按宣告順序完整初始化，ServerConfig{} 也會安全地值初始化各欄位。
+// 設計：1. 以大括號建立 production 設定；2. valid 檢查 host 非空與 port 非零；3. 空大括號用來測失敗路徑。
+// 成本：驗證 host 是否為空為 O(1)，設定物件空間隨 host 字串長度 H 成長。
+// 上線注意：欄位順序變更會破壞 aggregate 呼叫點；還要驗 port、主機名稱格式、TLS 憑證與秘密資料來源。
+// -----------------------------------------------------------------------------
 struct ServerConfig {
     std::string host;
     unsigned short port;

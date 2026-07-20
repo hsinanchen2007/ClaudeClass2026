@@ -16,6 +16,16 @@
 #include <sstream>
 #include <vector>
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】批次程式 fast I/O 初始化
+// 情境：大量標準輸入/輸出的 batch main 不混用 stdio，希望取消 C/C++ 同步與 cin 對 cout 的自動 tie。
+// 為何使用本章主題：sync_with_stdio(false) 與 cin.tie(nullptr) 是程序級 buffering policy；
+//       相較每個 parser 個別調整，應由 application entry 統一決定。
+// 設計：1. 在任何標準 I/O 前關閉同步；2. 解除 cin tie；3. library parser 只借用 stream，不改全域政策。
+// 成本：設定本身時間/空間 O(1)；整體收益取決於 token formatting、flush 與底層裝置成本。
+// 上線注意：本教材既有 main 在 basic/LeetCode 輸出後才呼叫此 helper，只能作 API 示意；正式程式
+//       必須移到第一次 I/O 前，且之後不可無規則混用 printf/scanf，互動 prompt 要自行 flush。
+// -----------------------------------------------------------------------------
 void configure_fast_io()
 {
     std::ios::sync_with_stdio(false);
@@ -34,7 +44,15 @@ void basic_example()
     std::cout << "[基礎] fast-I/O flags change buffering, not parsing semantics\n";
 }
 
-// LeetCode 1672：Richest Customer Wealth，模擬大量整數輸入。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1672. Richest Customer Wealth（最富有客戶資產）
+// 題目：accounts 每列是一位客戶各帳戶金額，回傳最大列總和；{{1,5},{7,3},{3,5}} 回 10。
+// 為何使用本章主題：maximum_wealth 是純演算法且不依賴全域 I/O 模式；本例說明 fast I/O
+//       只影響 transport/buffering，不應改變計算語意。
+// 思路：1. 逐客戶將列內金額加總；2. 與目前 maximum 比較；3. 掃完回最大值。
+// 複雜度：時間 O(C)、額外空間 O(1)，C 是 accounts 中所有整數格數。
+// 易錯點：本版 maximum 初值 0 依賴原題金額非負；大額總和一般應使用較寬型別防 overflow。
+// -----------------------------------------------------------------------------
 int maximum_wealth(const std::vector<std::vector<int>>& accounts)
 {
     int maximum = 0;
@@ -53,7 +71,6 @@ void leetcode_1672_example()
     std::cout << "[LeetCode 1672] pure algorithm independent of global I/O mode\n";
 }
 
-// 實務：batch main 可設定 fast I/O；library/header 不應偷偷改 global process state。
 void practical_example()
 {
     configure_fast_io();

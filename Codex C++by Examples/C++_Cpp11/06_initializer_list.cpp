@@ -39,8 +39,14 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 217：Contains Duplicate。set 插入平均 O(log n)，總計 O(n log n)。
-// 這裡接受 initializer_list 方便自包含測試；正式 API 常接受 span/vector view。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 217. Contains Duplicate（是否存在重複元素）
+// 題目：輸入整數序列，只要任一值出現至少兩次就回 true；例如 [1,2,3,1] 回 true。
+// 為何使用本章主題：initializer_list 讓教材直接以大括號傳測資；這是教學介面，正式大量輸入通常改用容器或 view。
+// 思路：1. 建立 seen 集合；2. 逐值插入；3. insert 回報已存在時立刻回 true，走完則回 false。
+// 複雜度：N 為元素數；std::set 版本時間 O(N log N)、額外空間 O(N)。
+// 易錯點：initializer_list 元素唯讀且生命週期只涵蓋呼叫；不可保存其 iterator，且它不適合 move-only 元素。
+// -----------------------------------------------------------------------------
 bool contains_duplicate(std::initializer_list<int> nums) {
     std::set<int> seen;
     for (const int number : nums) {
@@ -57,8 +63,15 @@ void test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】重試策略：constructor 接受易讀的大括號序列，但立即複製以取得 ownership。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】服務重試延遲策略
+// 情境：呼叫端用 {100,500,2000} 設定每次重試等待毫秒數，策略物件需長期保存並供索引查詢。
+// 為何使用本章主題：initializer_list 讓短固定序列易讀；constructor 立即複製到 vector，取得獨立 ownership。
+// 設計：1. 從大括號序列建構 delays_；2. 拒絕空序列或非正值；3. 以 at 依嘗試次數取延遲。
+// 成本：K 為重試階段數；建構與驗證時間 O(K)、持有空間 O(K)，單次 delay 查詢 O(1)。
+// 上線注意：還需限制最大延遲與總等待時間；不能保存 initializer_list 指標，attempt 越界會丟例外。
+// -----------------------------------------------------------------------------
 class RetryPolicy {
 public:
     RetryPolicy(std::initializer_list<int> delays_ms) : delays_(delays_ms) {

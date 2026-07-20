@@ -26,7 +26,15 @@ auto transform_to_vector(const Range& values, Function function) {
     return output;
 }
 
-// LeetCode 349：Intersection of Two Arrays。lambda 模板統一處理可轉成 int 的值。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 349. Intersection of Two Arrays（兩個陣列的交集）
+// 題目：回傳兩陣列中共同且不重複的值；[1,2,2,1] 與 [2,2] 得 [2]。
+// 為何使用本章主題：具顯式模板參數的 lambda 接受任何 convertible_to<int> 的值，並捕獲三個容器；
+// 目前迴圈只傳 int，因此泛型能力是 C++20 lambda 語法示範，而非原題必要條件。
+// 思路：把 left 放入 members；掃 right 並正規化；同時存在且首次 emitted 時追加；最後排序。
+// 複雜度：平均時間 O(L+R+K log K)、額外空間 O(L+K)，L/R 是輸入長度、K 是交集大小。
+// 易錯點：convertible_to<int> 可能窄化不同值成同一 int；雜湊最壞退化，原題不要求輸出順序。
+// -----------------------------------------------------------------------------
 std::vector<int> leetcode_intersection(const std::vector<int>& left,
                                        const std::vector<int>& right) {
     const std::unordered_set<int> members(left.begin(), left.end());
@@ -45,6 +53,15 @@ std::vector<int> leetcode_intersection(const std::vector<int>& left,
     return result;
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】可替換投影的員工報表排序
+// 情境：同一批 Employee 報表要依 score 等欄位排序，再抽出名稱清單。
+// 為何使用本章主題：sort_employees 以模板保留 projection lambda 具體型別，顯式模板 lambda 驗 score 成員；
+// transform_to_vector 再接另一 lambda，避免把 Employee 綁死單一 operator<。
+// 設計：建立 by_score 投影；依投影升冪排序；再把每筆 Employee 轉成 name vector。
+// 成本：排序 O(N log N)、轉換 O(N)、結果空間 O(N)，N 是員工數。
+// 上線注意：projection 必須形成穩定嚴格弱序；transform 的 Result 若為 reference/void 會形成非法 vector。
+// -----------------------------------------------------------------------------
 struct Employee {
     std::string name;
     int level{};
@@ -58,7 +75,6 @@ void sort_employees(std::vector<Employee>& employees, Projection project) {
     });
 }
 
-// 【實務情境】報表可替換排序投影，而不讓 Employee 綁死單一 operator<。
 void practical_projection_test() {
     std::vector<Employee> employees{{"Ada", 3, 90}, {"Linus", 5, 80}, {"Grace", 4, 95}};
 

@@ -47,7 +47,14 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 167：Two Sum II。two pointers，O(n) time / O(1) space。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 167. Two Sum II - Input Array Is Sorted（排序陣列兩數之和）
+// 題目：在遞增陣列找和為 target 的兩個 1-based 索引；[2,7,11,15] 與 9 回傳 (1,2)。
+// 為何使用本章主題：comparisons 是可選診斷計數，[[maybe_unused]] 允許不同 build 不輸出它而不產生警告。
+// 思路：1. 左右指標從兩端開始；2. 和太小移左、太大移右；3. 相等時轉成 1-based 回傳。
+// 複雜度：N 為元素數；時間 O(N)、額外空間 O(1)。
+// 易錯點：輸入必須排序且至少兩項；以 long long 計算和避免 int 溢位，attribute 不應掩蓋真正 dead code。
+// -----------------------------------------------------------------------------
 std::pair<int, int> leetcode_two_sum_sorted(const std::vector<int>& numbers, int target) {
     if (numbers.size() < 2U) return {-1, -1};
     std::size_t left = 0U;
@@ -70,8 +77,15 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】跨 build trace 參數：production 可不使用 trace_id，但 API 簽名維持一致。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】跨建置模式的 trace 參數
+// 情境：debug build 可能記錄 trace_id，production build 關閉追蹤但要維持相同 process API。
+// 為何使用本章主題：參數上的 [[maybe_unused]] 表明某些組態刻意不用 trace_id，而非靠移除參數改變 ABI。
+// 設計：1. 保留 payload 與 trace_id 簽章；2. production 只處理 payload；3. 回傳 payload byte 數的教材結果。
+// 成本：目前 size() 時間 O(1)、額外空間 O(1)；真正 tracing 會增加格式化與 I/O 成本。
+// 上線注意：attribute 不會保護敏感 trace ID 或消除資料；應以 build flag 控制行為並維持可觀測性政策。
+// -----------------------------------------------------------------------------
 int practical_process(const std::string& payload,
                       [[maybe_unused]] const std::string& trace_id) {
     // production build 可能完全不記 trace_id；parameter 仍保留以維持跨 build API 一致。

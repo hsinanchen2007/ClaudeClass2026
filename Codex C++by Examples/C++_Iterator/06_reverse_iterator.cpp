@@ -26,7 +26,14 @@ void basic_example()
     std::cout << "[基礎] reverse range constructs cba\n";
 }
 
-// LeetCode 344：Reverse String，std::reverse 接 normal bidirectional iterators。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 344. Reverse String（反轉字串）
+// 題目：原地反轉字元陣列；本例以 string "hello" 示範，結果為 "olleh"。
+// 為何使用本章主題：本例誠實使用 std::reverse 的雙向正向 iterators；reverse iterator 用於理解反向 view，不是必要解法。
+// 思路：把 begin/end 半開區間交給 reverse；演算法由兩端交換並向中間收斂。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 為字元數。
+// 易錯點：空字串可直接處理；題目要求原地修改；reverse_iterator 只改走訪方向，不會自行改變容器。
+// -----------------------------------------------------------------------------
 void reverse_string(std::string& text) { std::reverse(text.begin(), text.end()); }
 
 void leetcode_344_example()
@@ -37,7 +44,14 @@ void leetcode_344_example()
     std::cout << "[LeetCode 344] reverse algorithm outputs olleh\n";
 }
 
-// 實務：從尾端找最後一個 slash，再正確轉 forward index。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】擷取路徑最後一段檔名
+// 情境：從 "dir/sub/file.txt" 找最後一個 slash，取得分隔位置 7 與檔名 file.txt。
+// 為何使用本章主題：reverse_iterator 從尾端先遇到最後分隔符，避免手寫 unsigned 倒數索引。
+// 設計：在 [rbegin,rend) 找 '/'; 確認命中；由 base() 後退一格換算正向索引；切出後綴。
+// 成本：最壞時間 O(N)、額外空間 O(1)，N 為路徑長度；substr 結果另配置 O(F)。
+// 上線注意：slash 不存在時不可換算；base 指向命中字元後一格；真實路徑還需處理尾斜線與平台分隔符。
+// -----------------------------------------------------------------------------
 void practical_example()
 {
     const std::string path = "dir/sub/file.txt";

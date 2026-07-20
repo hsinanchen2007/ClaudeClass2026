@@ -59,7 +59,14 @@ void basic_example()
     std::cout << "[基礎] 封裝阻止餘額成為負數\n";
 }
 
-// LeetCode 1603：Parking System。剩餘車位只能由 addCar 合法遞減。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1603. Design Parking System（設計停車系統）
+// 題目：初始化大中小車位，addCar(type) 有空位才停入並回 true；例如容量 (1,1,0) 的小車會失敗。
+// 為何使用本章主題：private array 隱藏剩餘車位，所有遞減只經 add_car，防止容量成為負數。
+// 思路：constructor 拒絕負容量；驗證 type 為 1..3；查對應剩餘量；有位才遞減並成功。
+// 複雜度：每次 add_car 時間與額外空間 O(1)，固定保存三個計數。
+// 易錯點：car_type 是 1-based；非法型別不得索引 array；滿位失敗時不可改狀態，多執行緒需原子同步。
+// -----------------------------------------------------------------------------
 class ParkingSystem {
 public:
     ParkingSystem(int big, int medium, int small) : spaces_{big, medium, small}
@@ -100,7 +107,14 @@ void leetcode_1603_example()
     std::cout << "[LeetCode 1603] 車位 invariant 全由 add_car 維護\n";
 }
 
-// 工作案例：ThreadPoolConfig 建構後永遠保證 threads/queue 合理。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】具 invariant 的執行緒池設定
+// 情境：建立 pool 設定時，threads 必須在 1..64，queue_capacity 至少能容納每個 worker 一項工作。
+// 為何使用本章主題：private constructor 加 static create 將驗證集中，呼叫端無法取得半合法設定或直接改欄位。
+// 設計：create 驗證兩參數；合法後呼叫 private constructor；只提供唯讀 observers。
+// 成本：建立與查詢皆 O(1)，無額外配置或 I/O。
+// 上線注意：上限應依硬體與負載設定；例外訊息可攜帶欄位原因，動態 reload 還需原子替換完整設定。
+// -----------------------------------------------------------------------------
 class ThreadPoolConfig {
 public:
     static ThreadPoolConfig create(int threads, int queue_capacity)

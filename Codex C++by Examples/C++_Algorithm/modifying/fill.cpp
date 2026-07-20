@@ -12,7 +12,16 @@
 #include <iostream>
 #include <vector>
 
-// LeetCode 73：Set Matrix Zeroes，示範以 fill 清掉整列。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 73. Set Matrix Zeroes（矩陣置零）
+// 題目：若 m*n 矩陣任一元素為 0，將其整列與整欄設為 0；例如中央為 0 的 3*3
+// 全 1 矩陣，輸出中央列與中央欄皆為 0。
+// 為何使用本章主題：先標記原始零所在列欄，再以 std::fill 一次清掉整列；欄則逐列
+// 指定。本版用 O(R+C) 標記空間，未採原題可達 O(1) 的最佳技巧。
+// 思路：1. 掃描矩陣記錄 zero_row/zero_col；2. fill 所有被標記列；3. 逐格清除被標記欄。
+// 複雜度：時間 O(R*C)、額外空間 O(R+C)，R/C 分別為列數與欄數。
+// 易錯點：不可邊掃原始零邊清除，否則新寫的零會擴散；輸入必須是矩形矩陣。
+// -----------------------------------------------------------------------------
 void leetcode_set_zeroes(std::vector<std::vector<int>>& matrix) {
     if (matrix.empty() || matrix.front().empty()) {
         return;
@@ -43,7 +52,16 @@ void leetcode_set_zeroes(std::vector<std::vector<int>>& matrix) {
     }
 }
 
-// 實務：重用固定大小 byte buffer 前，先清除舊資料避免資訊殘留。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】可重用 Byte Buffer 一般清零
+// 情境：固定大小 buffer 即將交給下一個普通資料處理階段，先把舊 byte 全設為 0，
+// 避免下一次邏輯誤讀殘留內容。
+// 為何使用本章主題：std::fill 對既有儲存空間逐格指定同一值，不改 size，也不需要
+// 重新配置新 vector。
+// 設計：1. 取得整個 buffer 半開區間；2. 以 unsigned char 0 填滿所有位置。
+// 成本：時間 O(B)、額外空間 O(1)，B 為 buffer byte 數；主要成本是記憶體寫入頻寬。
+// 上線注意：這不是密碼金鑰的保證式安全抹除，最佳化器可能移除寫入；秘密資料要用平台 secure-zero API。
+// -----------------------------------------------------------------------------
 void practical_clear_buffer(std::vector<unsigned char>& buffer) {
     std::fill(buffer.begin(), buffer.end(), static_cast<unsigned char>(0));
 }

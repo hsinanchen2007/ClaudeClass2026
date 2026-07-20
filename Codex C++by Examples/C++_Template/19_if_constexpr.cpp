@@ -57,7 +57,15 @@ std::string describe(const T& value) {
     }
 }
 
-// LeetCode 136：Single Number。整數走 XOR；字串示範以計數找唯一值。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 136. Single Number（只出現一次的數字）
+// 題目：恰有一值出現一次、其餘都兩次，找出唯一值；[4,1,2,1,2] 得 4。
+// 為何使用本章主題：if constexpr 對 integral T 編譯 XOR 解法，非整數則編譯相等計數教學分支；
+// 原題只有 int，字串支援是泛化展示而非高效原題解法。
+// 思路：整數分支把所有值 XOR；其他型別逐候選計數並回第一個只出現一次者。
+// 複雜度：整數時間 O(N)、空間 O(1)；非整數時間 O(N^2)、空間 O(1)，N 是 values 長度。
+// 易錯點：輸入必須符合成對契約；非整數找不到時 T{} 可能與合法值混淆，宜回 optional。
+// -----------------------------------------------------------------------------
 template <typename T>
 T leetcode_single_number(const std::vector<T>& values) {
     if constexpr (std::is_integral_v<T>) {
@@ -80,12 +88,20 @@ T leetcode_single_number(const std::vector<T>& values) {
     }
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】健康狀態報告格式化
+// 情境：監控物件若具有 temperature 與 healthy 欄位就輸出完整健康報告，其他值退回通用描述。
+// 為何使用本章主題：if constexpr 搭 requires-expression 只為有適當成員的 T 編譯欄位存取；
+// 相較普通 if，不支援型別不必讓無效成員 expression 通過編譯。
+// 設計：檢查兩成員可轉型；成立時轉成 int/bool 並組字串；否則呼叫 describe。
+// 成本：編譯期分派無 runtime 成本，輸出時間與空間 O(L)，L 是結果字串長度。
+// 上線注意：concept 只能檢查語法，無法驗溫度範圍；to_string 格式、單位與敏感資訊需明訂。
+// -----------------------------------------------------------------------------
 struct Health {
     int temperature{};
     bool healthy{};
 };
 
-// 實務：同一入口依型別產生可讀報告；requires expression 只檢查成員存在。
 template <typename T>
 std::string practical_report(const T& value) {
     if constexpr (requires {

@@ -45,7 +45,14 @@ void demo() {
 namespace leetcode {
 inline constexpr int maximum_fibonacci_input = 46;  // int 不 overflow 的教材上限。
 
-// LeetCode 509：Fibonacci Number。O(n) time / O(1) space。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 509. Fibonacci Number（費波那契數）
+// 題目：回傳 F(n)，其中 F(0)=0、F(1)=1；例如 F(10)=55。
+// 為何使用本章主題：inline constexpr 將 int 安全上限放在可由 header 多個 TU 共用的單一定義；迭代演算法本身不依賴 inline。
+// 思路：1. previous/current 從 0/1 開始；2. 每輪計算下一項並前移；3. 完成 n 輪後回 previous。
+// 複雜度：N 為輸入值；時間 O(N)、額外空間 O(1)。
+// 易錯點：本例以 assert 限制 0..46，release build 可能移除；正式 API 要 runtime 驗證並處理更大數值。
+// -----------------------------------------------------------------------------
 int leetcode_fibonacci(int value) {
     assert(value >= 0 && value <= maximum_fibonacci_input);
     int previous = 0;
@@ -64,8 +71,15 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】header-only 區域與批次上限：跨 translation unit 共享單一定義。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】header-only 區域與批次政策
+// 情境：多個 translation unit 都要查詢支援區域及單批最多 500 筆的共同設定。
+// 為何使用本章主題：inline variables 允許設定直接定義在 header 而不違反 ODR，所有 TU 指向同一 entity。
+// 設計：1. inline const vector 列出兩個區域；2. inline constexpr 保存批次上限；3. 同時驗 region 與 batch_size。
+// 成本：目前固定兩區，查詢字串比較成本 O(L)；共享 vector 儲存空間 O(R*L)。
+// 上線注意：inline 不解決動態初始化順序或 mutable race；區域增多時應改集合並避免可變全域狀態。
+// -----------------------------------------------------------------------------
 inline const std::vector<std::string> supported_regions{"us-west", "us-east"};
 inline constexpr std::size_t maximum_batch_size = 500U;
 

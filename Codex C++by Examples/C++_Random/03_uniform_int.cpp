@@ -30,8 +30,14 @@ void basic_example()
     std::cout << "[基礎] integer distribution is inclusive [1,6]\n";
 }
 
-// LeetCode 398：Random Pick Index。Reservoir sampling 讓每個 target occurrence 等機率，
-// 不需先存所有 indices；第 k 次遇到 target 時以 1/k 機率取代答案。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 398. Random Pick Index（隨機選取索引）
+// 題目：給定可含重複值的陣列，每次 pick(target) 要等機率回傳任一 target 索引；例如三個 3 位於 2、3、4。
+// 為何使用本章主題：uniform_int_distribution(1,seen) 實作 reservoir sampling，使第 k 個命中以 1/k 機率取代，無須另存索引表。
+// 思路：1. 掃描陣列。2. 每遇到 target 遞增 seen。3. 均勻抽 1..seen，抽到 1 就更新 chosen。4. 回傳結果。
+// 複雜度：每次 pick 時間 O(N)、演算法額外空間 O(1)；物件另持有輸入陣列 O(N)，N 為 nums 長度。
+// 易錯點：分布上界是 inclusive；target 不存在時本教材回 -1，而原題保證存在，且 engine 必須跨 pick 呼叫保留狀態。
+// -----------------------------------------------------------------------------
 class Solution {
 public:
     Solution(std::vector<int> nums, unsigned seed)
@@ -65,7 +71,14 @@ void leetcode_398_example()
     std::cout << "[LeetCode 398] reservoir picks only target indices 2..4\n";
 }
 
-// 實務：隨機挑 healthy endpoint index；空清單 fail-fast。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】健康後端的等機率選擇
+// 情境：負載平衡器已過濾出 endpoint_count 個健康節點，要在 [0,count) 中均勻選一個索引。
+// 為何使用本章主題：uniform_int_distribution<size_t> 正確處理閉區間映射，比 engine()%count 少 modulo bias 與 narrowing 風險。
+// 設計：1. 先拒絕空清單。2. 建立 [0,count-1] 分布。3. 以呼叫端長期持有的 engine 取樣。4. 回傳 size_t index。
+// 成本：單次抽樣通常為期望 O(1)、額外空間 O(1)；拒絕映射的確切成本由實作與 engine 範圍決定。
+// 上線注意：健康清單與 count 必須來自同一 snapshot；共享 engine 需同步或每執行緒獨立，且安全流量分配另需權重與熔斷策略。
+// -----------------------------------------------------------------------------
 std::size_t choose_endpoint(std::size_t endpoint_count, std::mt19937& engine)
 {
     if (endpoint_count == 0U) throw std::invalid_argument("no endpoints");

@@ -43,7 +43,14 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 13：Roman to Integer。右側較大時相減，否則相加，O(n)/O(1)。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 13. Roman to Integer（羅馬數字轉整數）
+// 題目：將合法羅馬數字轉為整數；"MCMXCIV" 回傳 1994。
+// 為何使用本章主題：roman_value 使用 switch，但各 case 都直接 return，刻意不使用 [[fallthrough]]；這是避免誤貫穿的對照案例。
+// 思路：1. 將目前與下一符號映射成數值；2. 目前值小於下一值時相減；3. 否則相加。
+// 複雜度：N 為字串長度；時間 O(N)、額外空間 O(1)。
+// 易錯點：本實作依賴題目給合法格式；未知字元映射為 0，production parser 應明確拒絕而非靜默計算。
+// -----------------------------------------------------------------------------
 int roman_value(char symbol) {
     switch (symbol) {
         case 'I': return 1;
@@ -73,8 +80,15 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】告警升級：error 依序 page、記 metric、寫 log，刻意貫穿由 attribute 說清楚。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】分級告警動作累進
+// 情境：info 只寫 log，warning 再記 metric，error 還要 page on-call，嚴重級別需包含較低級動作。
+// 為何使用本章主題：[[fallthrough]] 明確標示 error->warning->info 的刻意貫穿，避免被誤認為漏寫 break。
+// 設計：1. error 先加入 page；2. 貫穿 warning 加 metric；3. 再貫穿 info 加 log 後停止。
+// 成本：最多建立三個短字串，時間與額外空間皆 O(A)，A 為產生的動作數且 A<=3。
+// 上線注意：新增 severity 時要維持順序與 exhaustive switch；實際 page/metric/log 的部分失敗需個別回報與重試。
+// -----------------------------------------------------------------------------
 enum class Severity { info, warning, error };
 
 std::vector<std::string> practical_actions(Severity severity) {

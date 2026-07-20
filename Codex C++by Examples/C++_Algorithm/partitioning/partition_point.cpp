@@ -11,7 +11,17 @@
 #include <iostream>
 #include <vector>
 
-// LeetCode 278：First Bad Version 的一般化；false 表示 bad，找第一個 false。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 278. First Bad Version（第一個錯誤的版本）
+// 題目：版本 1..N 中，從 first_bad 起皆為壞版，要找第一個壞版；例如 N=5、first_bad=4
+// 回 4。本例以已知 first_bad 模擬 isBadVersion。
+// 為何使用本章主題：version<first_bad 形成 true 前綴，partition_point 可找第一個 false；
+// 但本教學先配置 1..N vector，總成本為 O(N)，正式題解應直接對整數索引二分。
+// 思路：1. 建立版本序列；2. predicate 將好版分類為 true；3. 找分界；4. end 回 -1，
+// 否則回該版本值。
+// 複雜度：時間 O(N)、額外空間 O(N)，N=version_count；其中分界搜尋本身為 O(log N)。
+// 易錯點：這不是原題最佳空間解；predicate 必須單調，且 first_bad 模擬值要符合版本範圍。
+// -----------------------------------------------------------------------------
 int leetcode_first_bad_version(int version_count, int first_bad) {
     std::vector<int> versions(static_cast<std::size_t>(version_count));
     for (int version = 1; version <= version_count; ++version) {
@@ -28,7 +38,16 @@ struct Deployment {
     bool healthy;
 };
 
-// 實務：輸入 invariant 為 healthy 前綴；找到第一個需 rollback 的 deployment。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】部署序列第一個不健康版本
+// 情境：Deployment rollout 依 id 排列，契約為 healthy 前綴後接 unhealthy 後綴；要找
+// 第一個需要 rollback 的 deployment id，全部健康則回 -1。
+// 為何使用本章主題：partition_point 利用健康狀態的單調分界做對數 predicate 查詢；
+// debug assert 先以 is_partitioned 驗證 producer invariant。
+// 設計：1. 開發期驗證 healthy 分區；2. 以同 predicate 找第一個 false；3. end 回 -1。
+// 成本：含 assert 時間 O(N)、關閉 assert 後 O(log N)，額外空間 O(1)，N 為部署數。
+// 上線注意：assert 在 release 消失；外部資料需 runtime 驗證或由型別維持 invariant，併發修改需 snapshot。
+// -----------------------------------------------------------------------------
 int practical_first_unhealthy(const std::vector<Deployment>& deployments) {
     assert(std::is_partitioned(deployments.begin(), deployments.end(),
                                [](const Deployment& item) { return item.healthy; }));

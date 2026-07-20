@@ -41,7 +41,14 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 1：Two Sum。CTAD 讓成功/失敗 pair 的 element types 由 arguments 決定。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1. Two Sum（兩數之和）
+// 題目：找出 nums 中相加為 target 的兩個索引；[2,7,11,15] 與 9 回傳 (0,1)。
+// 為何使用本章主題：成功與失敗結果都以 std::pair{...} 由 CTAD 推成 pair<int,int>；演算法刻意採教學用雙迴圈。
+// 思路：1. 枚舉 left；2. 枚舉 left 右側的 right；3. 和等於 target 時回 pair，找不到回 (-1,-1)。
+// 複雜度：N 為元素數；時間 O(N^2)、額外空間 O(1)，不是雜湊表 O(N) 的最佳解。
+// 易錯點：right 必須從 left+1 開始；CTAD 只推型別，不驗索引範圍或保證兩個 initializer 同語意。
+// -----------------------------------------------------------------------------
 std::pair<int, int> leetcode_two_sum(const std::vector<int>& nums, int target) {
     for (std::size_t left = 0; left < nums.size(); ++left) {
         for (std::size_t right = left + 1U; right < nums.size(); ++right) {
@@ -58,8 +65,15 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】typed event envelope：deduction guide 由 payload 推出 Envelope<double>。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】帶型別的事件信封
+// 情境：事件包含 topic 與 payload，希望建立 temperature 事件時自動得到 Envelope<double>。
+// 為何使用本章主題：自訂 deduction guide 由第二個 constructor argument 推導 Payload，呼叫端無須重寫 Envelope<double>。
+// 設計：1. Envelope 同時擁有 topic 與 payload；2. guide 將 Payload 原樣帶入；3. factory 以 CTAD 建立溫度事件。
+// 成本：建立 topic 需 O(L) 字串空間與時間，double payload 為 O(1)。
+// 上線注意：若 payload 是字串 literal，推導可能留下 pointer/decay 語意；需用 guide 明確轉成 owning std::string。
+// -----------------------------------------------------------------------------
 template <class Payload>
 struct Envelope {
     std::string topic;

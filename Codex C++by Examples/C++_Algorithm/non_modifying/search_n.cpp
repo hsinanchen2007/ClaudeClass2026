@@ -12,8 +12,15 @@
 #include <iostream>
 #include <vector>
 
-// LeetCode 485：Max Consecutive Ones。
-// 教學版逐步詢問是否存在長度 best+1 的 run，最壞 O(N^2)；單 loop 可 O(N)。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 485. Max Consecutive Ones（最大連續 1 的個數）
+// 題目：輸入二進位陣列 nums，回最長連續 1 長度；例如 [1,1,0,1,1,1] 回 3。
+// 為何使用本章主題：本教學版反覆用 search_n 詢問是否存在長度 best+1 的 1-run；
+// 行為正確但最壞 O(N^2)，正式解應單趟維護 current/best。
+// 思路：1. best 從 0 開始；2. 若存在 best+1 個連續 1 就遞增；3. 首次不存在時回 best。
+// 複雜度：時間 O(N^2)、額外空間 O(1)，N 為 nums 的元素數。
+// 易錯點：不要把此存在性重複搜尋當最佳解；輸入若不只 0/1，題目語意需先驗證。
+// -----------------------------------------------------------------------------
 int leetcode_find_max_consecutive_ones(const std::vector<int>& nums) {
     int best = 0;
     while (std::search_n(nums.begin(), nums.end(), best + 1, 1) != nums.end()) {
@@ -22,7 +29,16 @@ int leetcode_find_max_consecutive_ones(const std::vector<int>& nums) {
     return best;
 }
 
-// 實務：偵測是否有 threshold 次連續失敗，回第一段 index；無則 size。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】連續失敗門檻告警定位
+// 情境：status 以 0 表失敗、1 表成功；要找第一段至少 threshold 個連續失敗的起點，
+// 未達門檻或 threshold=0 時回 status.size()。
+// 為何使用本章主題：search_n 正好搜尋固定長度的連續相同值，適合回答「是否已達 K 次」
+// 與首段位置，不需手寫 run counter。
+// 設計：1. 業務上拒絕零門檻；2. 搜尋 threshold 個連續 0；3. 將 iterator 轉 offset。
+// 成本：時間 O(N)、額外空間 O(1)，N 為 status 數。
+// 上線注意：threshold 轉 ptrdiff_t 前需確認可表示；跨批次 run 要攜帶上一批尾端狀態。
+// -----------------------------------------------------------------------------
 std::size_t practical_first_failure_streak(const std::vector<int>& status,
                                            std::size_t threshold) {
     if (threshold == 0U) {

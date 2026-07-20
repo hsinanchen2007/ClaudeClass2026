@@ -36,8 +36,14 @@ void basic_example()
     std::cout << "[基礎] move_iterator transferred unique ownership\n";
 }
 
-// LeetCode 56（Merge Intervals）的資料搬移版本：先排序再把結果 move 出去。
-// vector<int> 本身很小，但 API 形狀可直接套到大型 payload。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 56. Merge Intervals（合併區間）
+// 題目：合併所有重疊區間；例如 [[1,3],[2,6],[8,10],[15,18]] 得 [[1,6],[8,10],[15,18]]。
+// 為何使用本章主題：演算法本身是排序掃描；本教學版在新區間出現時 move payload，展示 ownership 搬移而非解題必要技巧。
+// 思路：按起點排序；逐區間判斷是否與末段分離；分離時 move 到結果；重疊時延伸末端。
+// 複雜度：時間 O(N log N)、額外空間 O(N)，N 為區間數；不計回傳結果時排序可能仍需 O(log N) stack。
+// 易錯點：每個區間必須有兩端且 start<=end；moved-from current 不可再依賴其值；vector<int> 很小，效益僅示意。
+// -----------------------------------------------------------------------------
 using Interval = std::vector<int>;
 
 std::vector<Interval> merge_intervals(std::vector<Interval> intervals)
@@ -61,12 +67,19 @@ void leetcode_56_example()
     std::cout << "[LeetCode 56] intervals merged while payloads move into output\n";
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】將 staging 工作批次移交 consumer queue
+// 情境：producer 完成含大型 payload 的一批 Job，要把整批 ownership 交給 queue 而不複製每個字串。
+// 為何使用本章主題：move_iterator 令 range insert 看到 Job&&，比一般 iterator 複製 payload 更符合一次性交接。
+// 設計：先依 staging 大小 reserve；以 move iterators 定義來源 range；insert 到 queue；清除有效但未指定的來源。
+// 成本：時間 O(J)，額外配置由目的 vector 決定；payload 資源通常 O(1) 轉移，J 為工作數。
+// 上線注意：搬移不是交易，中途失敗可能只搬一部分；不可假設 moved-from string 為空，並行交接需同步。
+// -----------------------------------------------------------------------------
 struct Job {
     int id{};
     std::string payload;
 };
 
-// 實務：producer 完成一批 jobs 後，把整批 ownership 交給 consumer queue。
 void practical_example()
 {
     std::vector<Job> staging{{1, std::string(1024, 'A')}, {2, std::string(1024, 'B')}};

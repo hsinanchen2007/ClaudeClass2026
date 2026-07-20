@@ -213,12 +213,14 @@ void basic_demo()
     expect(bad_threshold_rejected, "invalid parallel threshold was accepted");
 }
 
-// ----------------------------------------------------------------------------
-// LeetCode 912：Sort an Array。
-// 契約：接收 nums 的副本並回傳非遞減排列；不改呼叫端原 vector，重複值與負數皆可。
-// 題目 n <= 5*10^4，使用 int 比較而不做加減，因此 value 不會引入 signed overflow。
-// 排序若因資源或 comparator 例外失敗就向上拋出，不回傳看似成功的部分結果。
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 912. Sort an Array（排序陣列）
+// 題目：將含負數與重複值的 nums 依非遞減順序回傳；例如 [5,2,3,1] 得 [1,2,3,5]。
+// 為何使用本章主題：有界 parallel merge sort 對互不重疊的左右半部 fork-join，future 收斂例外，再以 stable inplace_merge 合併。
+// 思路：1. 接收 vector 副本。2. 依 threshold/depth 遞迴排序兩半。3. get 所有分支後 merge。4. 取消則拒絕部分結果，成功才回傳。
+// 複雜度：通常比較 O(N log N)、額外空間最多 O(N)；缺暫存時實作最壞可到 O(N log^2 N)。
+// 易錯點：Compare 必須 strict weak ordering；任何分支失敗仍要 get 另一 future，且取消後 range 可能只局部有序不可當成功。
+// -----------------------------------------------------------------------------
 [[nodiscard]] std::vector<int> sort_array(std::vector<int> numbers)
 {
     const SortStatus status = parallel_merge_sort(
@@ -240,10 +242,14 @@ void leetcode_demo()
     expect(empty.empty(), "LeetCode empty case failed");
 }
 
-// ----------------------------------------------------------------------------
-// 實務：依 score 排序事件；相同 score 必須保留原 sequence，供重播與稽核。
-// 若 stop 已提出，函式明確回 cancelled 且呼叫端丟棄部分結果，不把取消偽裝成成功。
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【日常實務範例】事件稽核的穩定分數排序與取消
+// 情境：事件依 score 排序，但同分時必須保留原 sequence 供重播；若開始前已取消，不得發布部分排序結果。
+// 為何使用本章主題：merge sort 與 inplace_merge 保持 stability，stop_token 在安全點合作取消；比 detach 子 task 更能保證 iterator 生命週期。
+// 設計：1. 以只比較 score 的 comparator 排序。2. 驗證同分輸入次序。3. 對預先 request_stop 的 token 再呼叫。4. 確認 cancelled 且首個安全點前資料未變。
+// 成本：完成排序通常 O(N log N)；取消檢查 O(1) 但已進行的 merge 不強停，空間與一般 parallel merge sort 相同。
+// 上線注意：一般中途取消只保證元素可析構，不保證原順序；需要 strong guarantee 應排序副本，comparator 也不可持外部衝突鎖。
+// -----------------------------------------------------------------------------
 struct Record {
     int score;
     int sequence;

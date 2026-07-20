@@ -280,7 +280,14 @@ void stream_and_move_iterator_demo()
     assert(source[0] == nullptr && source[1] == nullptr); // unique_ptr 的移後狀態有明文保證。
 }
 
-// LeetCode 27：原地移除 target；std::remove 只做搬移與回傳 logical end。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 27. Remove Element（移除元素）
+// 題目：原地移除指定值並回傳保留長度；例如 [0,1,2,2,3,0,4,2] 移除 2 後前五項為 [0,1,3,0,4]。
+// 為何使用本章主題：remove 產生 logical end iterator，erase 以該邊界完成實體刪除並示範失效契約。
+// 思路：以 remove 壓縮非 target 元素；保存 logical_end；erase 尾段；回傳新 size。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 為 vector 長度。
+// 易錯點：std::remove 不縮短容器；erase 後 logical_end 不可再用；題目只保證前 k 項內容有意義。
+// -----------------------------------------------------------------------------
 int remove_element(std::vector<int>& values, int target)
 {
     const auto logical_end = std::remove(values.begin(), values.end(), target);
@@ -295,12 +302,19 @@ void leetcode_demo()
     assert((values == std::vector<int>{0, 1, 3, 0, 4}));
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】安全淘汰過期的向量 session
+// 情境：每輪掃描 session，TTL<=0 者刪除，其他 TTL 減一，並保持剩餘 session 原順序。
+// 為何使用本章主題：vector erase 會使刪除點後方 iterator 失效，必須接住其回傳的新 iterator 才能繼續。
+// 設計：用手動 iterator 迴圈；過期就 it=erase(it)；存活就更新 TTL 後 ++it；最後驗證順序。
+// 成本：最壞時間 O(S^2)、額外空間 O(1)，S 為 session 數，因每次 erase 可能搬移後方元素。
+// 上線注意：大量淘汰應用 erase_if 降至 O(S)；迴圈內不得保存元素 reference，並行存取需外部同步。
+// -----------------------------------------------------------------------------
 struct Session {
     std::string id;
     int ttl{};
 };
 
-// 實務整合：vector erase 使後方 iterators 失效，但 erase 回傳的新 iterator 有效。
 void expire_sessions(std::vector<Session>& sessions)
 {
     for (auto it = sessions.begin(); it != sessions.end();) {

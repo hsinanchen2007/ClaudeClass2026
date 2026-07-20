@@ -172,11 +172,14 @@ void basic_ownership_demo()
     assert(observer.lock() == nullptr);
 }
 
-// ---------------------------------------------------------------------------
-// LeetCode 102：Binary Tree Level Order Traversal
-// Tree 用 unique_ptr 明確擁有 children；BFS queue 只借用 const Node*，不轉移 ownership。
-// 每個 node 入隊一次：O(n) time；queue 最寬層 O(w) space；析構遞迴自動釋放整棵樹。
-// ---------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 102. Binary Tree Level Order Traversal（二元樹的層序遍歷）
+// 題目：逐層輸出二元樹；例如 [3,9,20,null,null,15,7] 得 [[3],[9,20],[15,7]]。
+// 為何使用本章主題：Tree 以 unique_ptr 獨占 children，BFS queue 只暫借 const Node*，不改變 ownership。
+// 思路：root 入隊；每輪記錄目前 width；恰好取出該層節點並加入 children；將 level 移入結果。
+// 複雜度：時間 O(N)、輸出外額外空間 O(W)，N 為節點數、W 為最寬層節點數。
+// 易錯點：空樹回空結果；queue 中 raw pointer 只在 Tree 未修改且存活時有效；極深樹解構深度需評估。
+// -----------------------------------------------------------------------------
 class Tree {
 public:
     struct Node {
@@ -227,10 +230,14 @@ void leetcode_102_demo()
         {3}, {9, 20}, {15, 7}}));
 }
 
-// ---------------------------------------------------------------------------
-// 實務：async callback 不可捕捉延命用的 shared_ptr 形成 cycle。
-// Session factory 建立 shared owner；callback 只保存 weak_ptr，觸發時 lock。
-// ---------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【日常實務範例】不延長 Session 生命的 callback target
+// 情境：非同步 callback 可在 client-7 存活時記錄訊息，但 Session 關閉後不得因 callback registry 而繼續存活。
+// 為何使用本章主題：enable_shared_from_this 提供同 control block 的 weak observer，避免 capture shared_ptr 形成自我 cycle。
+// 設計：factory 建 shared-owned Session；observer 回 weak_ptr；callback 觸發時 lock；成功才更新 message_count。
+// 成本：observer/lock 為常數 control-block 同步成本，session state 更新 O(1)。
+// 上線注意：只能在 shared ownership 建立後呼叫；message_count 非 thread-safe，lock 失敗要有取消/丟棄的可觀測政策。
+// -----------------------------------------------------------------------------
 class Session : public std::enable_shared_from_this<Session> {
 public:
     static std::shared_ptr<Session> create(std::string id)
@@ -253,6 +260,14 @@ private:
     int message_count_{0};
 };
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】具關閉計數的外部 handle
+// 情境：FakeHandle 代表需特殊 close 的 C 資源，owner 離開 scope 時必須恰好關閉一次並記錄 closes。
+// 為何使用本章主題：unique_ptr 的 stateful HandleCloser 把非 delete-only 的釋放流程與唯一 owner 綁定。
+// 設計：建立 handle 與 closer context；unique_ptr 接管；scope 內使用；解構時先記錄關閉再 delete。
+// 成本：ownership 操作 O(1)，實際 close 成本取決於外部 API；deleter state 增加 pointer object 儲存。
+// 上線注意：closed_count 必須比 owner 長壽且並行安全；真實 close 失敗不能由 noexcept destructor 拋出，需另行記錄。
+// -----------------------------------------------------------------------------
 struct FakeHandle {
     int value;
 };

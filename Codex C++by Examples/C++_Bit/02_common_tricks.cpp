@@ -45,7 +45,14 @@ void basic_example()
     std::cout << "[基礎] 0b10110100 有 4 個 1，lowbit=4\n";
 }
 
-// LeetCode 136：Single Number。每個元素兩次、只有答案一次；全部 XOR 即答案。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 136. Single Number（只出現一次的數字）
+// 題目：除一個整數出現一次外，其餘都恰出現兩次，找出單一值；[4,1,2,1,2] 回傳 4。
+// 為何使用本章主題：XOR 的 x^x=0、x^0=x 與交換律，讓所有成對值不論順序都抵消。
+// 思路：1. answer 從 0 開始；2. 逐項 XOR；3. 走訪結束後回傳唯一未抵消的值。
+// 複雜度：N 為元素數；時間 O(N)、額外空間 O(1)。
+// 易錯點：輸入契約必須是「其餘恰兩次」；若有兩個未配對值，結果只會是兩者 XOR。
+// -----------------------------------------------------------------------------
 int single_number(const std::vector<int>& nums)
 {
     int answer = 0;
@@ -60,7 +67,14 @@ void leetcode_136_example()
     std::cout << "[LeetCode 136] paired values XOR 後答案=4\n";
 }
 
-// 實務案例：安全的 power-of-two alignment，先檢查 alignment 與 overflow。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】記憶體位址向上對齊
+// 情境：將 32-bit offset 向上對齊到指定 byte boundary，非法 alignment 或加法溢位要回報失敗。
+// 為何使用本章主題：power-of-two alignment 可用 `(value+a-1)&~(a-1)` 清除低位，比一般除法公式直接。
+// 設計：1. 驗 alignment 非零且為 2 的冪；2. 驗 value+a-1 不溢位；3. 套 mask 並回 optional。
+// 成本：固定次數的值檢查與位元運算，時間 O(1)、額外空間 O(1)。
+// 上線注意：公式不適用任意 alignment；配置 API 還要驗型別寬度、實際位址與平台對齊要求。
+// -----------------------------------------------------------------------------
 std::optional<std::uint32_t> align_up(std::uint32_t value, std::uint32_t alignment)
 {
     if (alignment == 0U || (alignment & (alignment - 1U)) != 0U) return std::nullopt;

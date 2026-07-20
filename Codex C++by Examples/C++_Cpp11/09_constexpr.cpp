@@ -32,14 +32,19 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 70：Climbing Stairs。為符合 C++11 constexpr 的單一 return 限制，這裡採
-// tail-recursive recurrence：O(n) time、O(n) call stack；標準不保證 tail-call elimination。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 70. Climbing Stairs（爬樓梯）
+// 題目：每次可爬 1 或 2 階，求到第 n 階的方法數；n=5 時共有 8 種。
+// 為何使用本章主題：C++11 constexpr 的單一 return 限制促使本例用尾遞迴，讓小 n 可由 static_assert 編譯期驗證。
+// 思路：1. 前兩階答案為 1、2；2. 每階答案等於前兩階相加；3. 以 previous/current 尾遞迴推到剩餘階數。
+// 複雜度：N 為階數；時間 O(N)，標準未保證尾呼叫消除，因此額外呼叫堆疊 O(N)。
+// 易錯點：題目契約是正整數階數；較大 n 會使 int 溢位，runtime 大輸入宜改 iterative O(1) 空間版本。
+// -----------------------------------------------------------------------------
 constexpr int climb_impl(int remaining, int previous, int current) {
     return remaining <= 2 ? current
                           : climb_impl(remaining - 1, current, previous + current);
 }
 
-// Runtime 大 n 應改 iterative O(1) 額外空間；本例只用小 n 示範 compile-time 求值。
 constexpr int climb_stairs(int steps) {
     return steps <= 2 ? steps : climb_impl(steps, 1, 2);
 }
@@ -50,8 +55,15 @@ void test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】worker 記憶體預算：在編譯期完成 KiB 換算並用 static_assert 鎖住結果。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】固定 worker 記憶體預算
+// 情境：服務映像檔在編譯時已知 worker 數與每個 worker 的 KiB 配額，要產生總 byte 預算。
+// 為何使用本章主題：constexpr 讓單位換算與乘法可在常數語境求值，再由 static_assert 鎖住部署常數。
+// 設計：1. 保存 workers 與 kib_per_worker；2. 將 KiB 乘 1024；3. 再乘 worker 數取得 total_bytes。
+// 成本：compile-time 或 runtime 都是 O(1) 值運算，物件空間 O(1)。
+// 上線注意：目前未拒絕負值或乘法溢位；常數求值成功只證明算式可算，不代表資源真的可配置。
+// -----------------------------------------------------------------------------
 struct MemoryBudget {
     int workers;
     int kib_per_worker;

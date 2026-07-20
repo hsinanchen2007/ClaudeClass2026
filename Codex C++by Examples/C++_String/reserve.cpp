@@ -28,7 +28,15 @@ void basic_demo() {
     assert(text.capacity() >= 100U);
 }
 
-// LeetCode 67（Add Binary）：先預留最大輸入長度 + carry。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 67. Add Binary（二進位字串相加）
+// 題目：把兩個非空二進位字串相加並回傳二進位結果；"1111" 加 "1" 得 "10000"。
+// 為何使用本章主題：答案最多 max(N,M)+1 位，reserve 可一次預留 reversed builder 上限，
+//       降低逐位 push_back 時的重新配置，但不改 size。
+// 思路：1. 預留最大位數加 carry；2. 從兩尾逐位與 carry 相加；3. 附加低位；4. 反向建構答案。
+// 複雜度：時間 O(max(N,M))、額外空間 O(max(N,M))，N、M 是兩輸入位數。
+// 易錯點：reserve 後仍不能用尚未建立的索引；max_digits+1 要防 size overflow，輸入只允許 0/1。
+// -----------------------------------------------------------------------------
 std::string leetcode_add_binary(const std::string& a, const std::string& b) {
     std::string reversed;
     const std::size_t max_digits = a.size() > b.size() ? a.size() : b.size();
@@ -46,7 +54,15 @@ std::string leetcode_add_binary(const std::string& a, const std::string& b) {
     return std::string(reversed.rbegin(), reversed.rend());
 }
 
-// 實務：組 CSV 前精確計算可預估部分，避免每欄觸發成長。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】CSV 欄位串接容量預估
+// 情境：已取得多個不需 escaping 的欄位，要以逗號串成一列，包含空欄位且避免反覆成長。
+// 為何使用本章主題：先加總欄位 bytes 與分隔符後 reserve 精確下限，相較盲目預留或每輪配置，
+//       能降低重新配置且不改可見 size。
+// 設計：1. 計算分隔符數；2. 加總每欄長度；3. reserve total；4. 依序加入逗號與欄位。
+// 成本：時間 O(F+T)、額外空間 O(T)，F 是欄位數、T 是最終輸出 bytes。
+// 上線注意：size_t 加總要逐步防 overflow；正式 CSV 必須先計算 quote escaping 後長度並限制 record 大小。
+// -----------------------------------------------------------------------------
 std::string practical_join_csv(const std::vector<std::string>& fields) {
     std::size_t total = fields.empty() ? 0U : fields.size() - 1U;
     for (const std::string& field : fields) {

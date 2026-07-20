@@ -156,6 +156,14 @@ constexpr int popcount(std::uint32_t value) {
 
 static_assert(popcount(0b1011U) == 3, "constexpr popcount 必須正確");
 
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1480. Running Sum of 1d Array（一維陣列動態和）
+// 題目：把 [1,2,3,4] 轉為每一位置的前綴總和 [1,3,6,10]。
+// 為何使用本章主題：auto return 由 vector<int> 結果推導，relaxed C++14 寫法讓 helper 保持簡短；演算法仍是標準線性前綴和。
+// 思路：1. 預留輸出容量；2. 逐值累加；3. 每次將目前總和加入 output。
+// 複雜度：N 為元素數；時間 O(N)，輸出空間 O(N)、額外工作空間 O(1)。
+// 易錯點：int total 可能溢位；若新增不同型別的 return 分支，auto 不會自動找 common_type。
+// -----------------------------------------------------------------------------
 auto leetcode_running_sum(const std::vector<int>& nums) {
     std::vector<int> output;
     output.reserve(nums.size());
@@ -167,6 +175,14 @@ auto leetcode_running_sum(const std::vector<int>& nums) {
     return output;
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】倍率處理器 ownership factory
+// 情境：pipeline 依設定建立倍率處理器，呼叫端應取得唯一擁有權並自動釋放。
+// 為何使用本章主題：make_unique<Scale> 封裝配置，auto factory return 由 unique_ptr<Scale> 推導，不暴露裸 new。
+// 設計：1. Scale 保存 factor；2. apply 對輸入相乘；3. factory 以 make_unique 建立並移交 ownership。
+// 成本：建立有一次動態配置，apply 時間 O(1)，物件與 control handle 空間 O(1)。
+// 上線注意：要檢查 factor 與乘法溢位；unique_ptr 不可複製，跨執行緒移交須明確同步。
+// -----------------------------------------------------------------------------
 class Scale {
 public:
     explicit Scale(int factor) : factor_(factor) {}
@@ -179,6 +195,14 @@ auto practical_make_scale(int factor) {
     return std::make_unique<Scale>(factor);
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】容器首元素可寫存取器
+// 情境：管理程式要取得非空整數容器的首值 reference，讓呼叫端原地更新。
+// 為何使用本章主題：decltype(auto) 保留 front() 的 int&；普通 auto 會複製，修改不會回到 vector。
+// 設計：1. 先拒絕空容器；2. 取得 values.front()；3. 以括號化 lvalue 回傳 reference。
+// 成本：檢查與存取時間、空間皆 O(1)。
+// 上線注意：reference 在 vector reallocation、erase 或解構後失效；API 不應讓借用跨越容器生命週期。
+// -----------------------------------------------------------------------------
 decltype(auto) practical_first(std::vector<int>& values) {
     if (values.empty()) {
         throw std::out_of_range("practical_first requires a nonempty vector");
@@ -186,6 +210,14 @@ decltype(auto) practical_first(std::vector<int>& values) {
     return (values.front());
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】複合權限需求檢查
+// 情境：授權層需確認角色同時具備 read 與 admin 等多個必要 bits。
+// 為何使用本章主題：binary literals 定義欄位，位元 mask 以單一 uint8_t 表示多個布林權限。
+// 設計：1. OR 組合 needed；2. 計算 granted&needed；3. 完全相等才表示所有必要權限都存在。
+// 成本：單次檢查時間與空間皆 O(1)。
+// 上線注意：應拒絕未知 bits 並集中定義 operator；uint8_t 的 integer promotion 需在邊界明確轉型。
+// -----------------------------------------------------------------------------
 bool practical_has_all(std::uint8_t granted, std::uint8_t needed) {
     return (granted & needed) == needed;
 }

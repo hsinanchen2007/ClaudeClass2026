@@ -61,7 +61,15 @@ private:
     std::size_t size_{};
 };
 
-// LeetCode 27：Remove Element。接受任何有 begin/end 且可指定元素的容器。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 27. Remove Element（移除元素）
+// 題目：原地移除所有等於 val 的值並回傳新長度；[3,2,2,3]、val=3 得長度 2，前兩格為 2。
+// 為何使用本章主題：泛型函式使用 StaticVector 提供的 iterator/value_type 配合 std::remove；
+// 這是 mini-STL interoperability 示範，但只計算 logical end，未更新容器 private size_。
+// 思路：std::remove 把保留元素移到前段；取得 new_end；計算 begin 到 new_end 的距離並回傳。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 是 values 的 logical size。
+// 易錯點：回傳 K 後只有前 K 格有效；StaticVector 仍報舊 size，完整容器應提供 erase/resize commit。
+// -----------------------------------------------------------------------------
 template <typename Container>
 std::size_t leetcode_remove_element(Container& values,
                                     const typename Container::value_type& unwanted) {
@@ -69,6 +77,15 @@ std::size_t leetcode_remove_element(Container& values,
     return static_cast<std::size_t>(std::distance(values.begin(), new_end));
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】固定容量近期 Log 緩衝區
+// 情境：嵌入式或熱路徑最多保存三筆近期 log，希望避免 vector runtime 擴容。
+// 為何使用本章主題：StaticVector<LogEntry,3> 將元素型別與容量放進型別，emplace_back 完美轉送欄位；
+// 相較 std::vector 可預知儲存上限，但教學版會預先建構全部三個 LogEntry。
+// 設計：原地加入 INFO/WARN；以索引讀近期訊息；pop_back 減 logical size 並重設被移除槽位。
+// 成本：push/pop/index O(1)、固定空間 O(C)，C 是 Capacity；物件建立時即建構 C 個元素。
+// 上線注意：滿載會丟 length_error，需定義丟棄策略；索引須小於 size，並行讀寫也需同步。
+// -----------------------------------------------------------------------------
 struct LogEntry {
     std::string level;
     std::string message;
@@ -78,7 +95,6 @@ struct LogEntry {
         : level(std::move(log_level)), message(std::move(log_message)) {}
 };
 
-// 【實務情境】嵌入式/熱路徑以固定容量保存近期 log，避免 runtime 重新配置。
 void practical_bounded_log_test() {
     StaticVector<LogEntry, 3> logs;
     logs.emplace_back("INFO", "started");

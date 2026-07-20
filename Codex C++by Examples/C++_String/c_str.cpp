@@ -25,7 +25,15 @@ void basic_demo() {
     assert(pointer[value.size()] == '\0');
 }
 
-// LeetCode 709（To Lower Case）：實作限制在 ASCII，避免把 char 負值交給 cctype。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 709. To Lower Case（轉成小寫）
+// 題目：輸入含英文字母的字串，將大寫 ASCII 字母改成小寫；例如 "HeLLo" 得到 "hello"。
+// 為何使用本章主題：題解直接走訪 owning string，並不需要 c_str()；這是刻意對照，說明純
+//       C++ 轉換不應為了使用 C 指標而繞路，c_str() 真正角色在下方 legacy API 邊界。
+// 思路：1. 複製輸入；2. 掃描每個 byte；3. 只對 'A'..'Z' 做固定 ASCII 位移。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 是 text 長度，空間來自按值回傳的副本。
+// 易錯點：本版只承諾 ASCII，不是 Unicode case folding；不要把 c_str() const_cast 後修改。
+// -----------------------------------------------------------------------------
 std::string leetcode_to_ascii_lower(std::string text) {
     for (char& ch : text) {
         if (ch >= 'A' && ch <= 'Z') {
@@ -35,7 +43,15 @@ std::string leetcode_to_ascii_lower(std::string text) {
     return text;
 }
 
-// 實務：模擬只讀 legacy API。指標只在呼叫期間使用，不保存到全域。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】舊式 C 設定鍵前綴檢查
+// 情境：既有函式只接受 NUL 結尾 const char*，新程式要判斷 std::string 是否以 "cfg." 開頭。
+// 為何使用本章主題：c_str() O(1) 提供符合 C ABI 的唯讀指標，不需配置第二份 NUL 結尾 buffer。
+// 設計：1. wrapper 取得 value.c_str()；2. legacy helper 量測固定 prefix；3. 只在呼叫期間比較。
+// 成本：c_str() O(1)，strncmp 最多 O(P)，P 是 prefix 長度；額外空間 O(1)。
+// 上線注意：legacy helper 若保存指標，owner 必須持續存活且不可修改；輸入含內嵌 NUL 時
+//       C 與 C++ 看到的內容不同，安全敏感設定應先拒絕。
+// -----------------------------------------------------------------------------
 bool legacy_has_prefix(const char* text, const char* prefix) {
     assert(text != nullptr && prefix != nullptr);
     return std::strncmp(text, prefix, std::strlen(prefix)) == 0;

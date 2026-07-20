@@ -149,7 +149,16 @@ NumericReport basic_numeric_report(const std::vector<DailyMetric>& days) {
     return {total, worst, weighted_latency, std::move(prefix)};
 }
 
-// LeetCode 1732：Find the Highest Altitude。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1732. Find the Highest Altitude（找到最高海拔）
+// 題目：騎士從海拔 0 出發，gain[i] 是相鄰點高度差，回旅途中最高海拔；例如
+// [-5,1,5,0,-7] 回 1。
+// 為何使用本章主題：partial_sum 將差分 gain 還原成每站海拔；輸出前置 0 納入起點，
+// max_element 再取所有站點最高值。
+// 思路：1. 建 N+1 格且 altitude[0]=0；2. 對 gain 做 partial_sum 寫到下一格；3. 取最大值。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 為 gain 筆數。
+// 易錯點：起點海拔 0 必須參與最大值；prefix 使用 int，題目約束外要防加總溢位。
+// -----------------------------------------------------------------------------
 int leetcode_largest_altitude(const std::vector<int>& gain) {
     std::vector<int> altitude(gain.size() + 1U, 0);
     std::partial_sum(gain.begin(), gain.end(), altitude.begin() + 1);
@@ -161,7 +170,17 @@ struct UnhealthyReport {
     std::vector<std::size_t> ranked_day_indices;
 };
 
-// 實務：以索引排序保留 metrics，並把 transform_reduce 的失敗總量納入回傳報告。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】不健康日期總量與排名報表
+// 情境：DailyMetric 快照要回失敗總數，並依 failures 降冪列出日期索引；同失敗數
+// 維持原日期順序，原 metrics 不可搬動。
+// 為何使用本章主題：transform_reduce 不建中間容器即可加總 failures；iota 建索引後
+// stable_sort 形成排名 view，兼顧來源不變與 deterministic tie。
+// 設計：1. 驗證每筆 metric；2. map failures 並歸約總量；3. iota 產生日期索引；
+// 4. 依 failures 穩定降冪排序。
+// 成本：時間 O(N log N)、額外空間 O(N)，N 為日期數，排序主導成本。
+// 上線注意：排序索引只對同一 days snapshot 有效；long long 總和與浮點欄位仍需溢位/finite 監控。
+// -----------------------------------------------------------------------------
 UnhealthyReport practical_rank_unhealthy(
     const std::vector<DailyMetric>& days) {
     validate_daily_metrics(days);

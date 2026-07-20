@@ -43,8 +43,14 @@ void basic_example()
     std::cout << "[基礎] explicit engine seed/state gives reproducible raw sequence\n";
 }
 
-// LeetCode 380：Insert Delete GetRandom O(1)。vector+index map；engine 是 object member，
-// 不用 global rand。測試只驗回傳屬於集合，避免綁 standard-library distribution sequence。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 380. Insert Delete GetRandom O(1)（O(1) 插入、刪除與隨機取值）
+// 題目：維護不重複整數集合，insert/remove 回報成功與否，getRandom 等機率回傳現有元素；所有操作要求平均 O(1)。
+// 為何使用本章主題：vector 提供 O(1) 隨機 index，hash map 記錄位置；mt19937 作為物件成員避免全域 rand 狀態並可注入 seed。
+// 思路：1. insert 將值放到 vector 尾端並記 index。2. remove 以尾值覆蓋洞。3. 更新尾值索引後 pop/erase。4. 均勻抽合法 index。
+// 複雜度：三種操作平均時間 O(1)、集合空間 O(N)，N 為元素數；hash 最壞情況可退化。
+// 易錯點：刪除最後元素時仍須維持 map/vector 一致；空集合不可建 [0,size-1]，配置例外也可能讓雙容器更新只完成一半。
+// -----------------------------------------------------------------------------
 class RandomizedSet {
 public:
     explicit RandomizedSet(unsigned seed) : engine_(seed) {}
@@ -121,7 +127,14 @@ void boundary_example()
     expect(!set.remove(-1), "已移除的元素不可再次移除");
 }
 
-// 實務：測試 fixture 注入 seed，失敗時可印 seed 重播。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】可重播的重試成功模擬
+// 情境：測試以每次 70% 成功率模擬最多 10 次請求，失敗報告要能靠 seed=99 重現相同嘗試次數。
+// 為何使用本章主題：局部 mt19937 加 bernoulli_distribution 明確建模成功率；固定 seed 比依賴隱藏全域 state 容易重播。
+// 設計：1. 由輸入 seed 建 engine。2. 建立 p=0.7 的 Bernoulli 分布。3. 失敗便遞增 attempts。4. 成功或達 10 次即回傳。
+// 成本：最多 10 次 draw，時間 O(1)、空間為一個 engine state；若上限改為 K，時間 O(K)。
+// 上線注意：需把 seed、工具鏈與呼叫順序一起記錄；這只是測試模型，不能取代真實 retry deadline、backoff 與錯誤分類。
+// -----------------------------------------------------------------------------
 int simulated_retry_count(unsigned seed)
 {
     std::mt19937 engine(seed);

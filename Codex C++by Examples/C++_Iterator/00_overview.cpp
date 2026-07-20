@@ -25,7 +25,14 @@ void basic_example()
     std::cout << "[基礎] find returns iterator; end is checked before dereference\n";
 }
 
-// LeetCode 704：Binary Search；lower_bound 回第一個 >= target 的 iterator。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 704. Binary Search（二分搜尋）
+// 題目：在升冪且值唯一的陣列找 target 索引，找不到回 -1；例如 target=9 回傳 4。
+// 為何使用本章主題：lower_bound 以 [begin,end) iterator range 回傳第一個不小於 target 的位置。
+// 思路：呼叫 lower_bound；先確認 iterator 不等於 end；再比值；以 iterator 差轉成索引。
+// 複雜度：時間 O(log N)、額外空間 O(1)，N 為 nums 長度。
+// 易錯點：輸入必須排序；end 不可解參考；iterator 差值轉 int 前在大型容器應驗證範圍。
+// -----------------------------------------------------------------------------
 int search(const std::vector<int>& nums, int target)
 {
     const auto found = std::lower_bound(nums.begin(), nums.end(), target);
@@ -39,7 +46,14 @@ void leetcode_704_example()
     std::cout << "[LeetCode 704] lower_bound iterator yields index 4/miss\n";
 }
 
-// 實務：同一 function 接任意 iterators，計算 [first,last) 中正值數。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】泛型資料區間的正值計數
+// 情境：同一統計函式要接受不同容器或子區間，計算 [first,last) 中大於零的量測值數量。
+// 為何使用本章主題：iterator pair 將走訪介面與容器型別分離，不必為 vector、array 各寫 overload。
+// 設計：接收半開區間；以 count_if 逐項套用 value>0；把差值型結果轉成 size_t。
+// 成本：時間 O(N)、額外空間 O(1)，N 為傳入區間長度。
+// 上線注意：first/last 必須來自同一有效 range；函式執行期間 owner 不得析構或做使 iterator 失效的修改。
+// -----------------------------------------------------------------------------
 template<class Iterator>
 std::size_t positive_count(Iterator first, Iterator last)
 {

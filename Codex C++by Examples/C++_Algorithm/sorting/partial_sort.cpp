@@ -11,7 +11,16 @@
 #include <iostream>
 #include <vector>
 
-// LeetCode 973：K Closest Points to Origin；前 K 依距離排序。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 973. K Closest Points to Origin（最接近原點的 K 個點）
+// 題目：輸入平面 points 與 k，回距離原點最近的 k 點，順序不限；例如 (1,3)、(-2,2)、
+// (5,8) 取 2 會包含前兩點。
+// 為何使用本章主題：partial_sort 將距離最小 K 點放到前段並排序；題目雖不要求順序，
+// 此 API 以 O(N log K) 一次完成選取與前 K 排序。
+// 思路：1. 以 long long 計算 squared distance；2. partial_sort 到 begin+k；3. erase 後段。
+// 複雜度：時間 O(N log K)、額外空間 O(N)，N 為點數；空間來自按值輸入副本。
+// 易錯點：x*x 要先升格；middle 是前 K 的尾後位置；同距離順序未明定。
+// -----------------------------------------------------------------------------
 using Point = std::vector<int>;
 
 std::vector<Point> leetcode_k_closest(std::vector<Point> points, int k) {
@@ -35,7 +44,17 @@ struct Alert {
     int severity;
 };
 
-// 實務：只挑最高嚴重度 K 筆，避免完整排序所有 alerts。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】最高嚴重度 Alert Top-K
+// 情境：告警批次只需前 K 筆；severity 高者先，同 severity 以 id 小者先，超過資料量
+// 時回全部告警。
+// 為何使用本章主題：partial_sort 只排序所需前 K，K 遠小於 N 時比完整 sort 少工作，
+// tie-breaker 讓輸出 deterministic。
+// 設計：1. clamp K 到 alerts.size；2. 以 severity 降冪、id 升冪比較；3. partial_sort；
+// 4. erase 非 top-K 後段。
+// 成本：時間 O(N log K)、額外空間 O(N)，N 為告警數；按值副本保留呼叫端資料。
+// 上線注意：K=0 合法且結果空；若 alerts 為無限串流，應改固定大小 heap。
+// -----------------------------------------------------------------------------
 std::vector<Alert> practical_top_alerts(std::vector<Alert> alerts, std::size_t k) {
     k = std::min(k, alerts.size());
     const auto middle = alerts.begin() + static_cast<std::ptrdiff_t>(k);

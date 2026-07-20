@@ -47,7 +47,15 @@ void basic_demo() {
     assert(source == "reused");
 }
 
-// LeetCode 1108（Defanging an IP Address）。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1108. Defanging an IP Address（IP 位址去敏化）
+// 題目：把合法 IPv4 字串中的每個 `.` 替換成 `[.]`；例如 1.1.1.1 得 1[.]1[.]1[.]1。
+// 為何使用本章主題：題解主要以 += 建立新答案，並未使用 operator= 做整體替換；放在本檔
+//       是對照「建構新值」與下方狀態物件以 = 保存最新值的不同角色。
+// 思路：1. 預留原長度加六；2. 逐字元掃描；3. 點附加 `[.]`，其他字元原樣附加。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 是 address 長度，IPv4 題目固定三個點。
+// 易錯點：reserve 的 +6 依賴原題三點契約；一般輸入要驗 IPv4，不能只做文字替換。
+// -----------------------------------------------------------------------------
 std::string leetcode_defang_ip(const std::string& address) {
     std::string answer;
     answer.reserve(address.size() + 6U);
@@ -61,7 +69,16 @@ std::string leetcode_defang_ip(const std::string& address) {
     return answer;
 }
 
-// 實務：狀態機只保留最新錯誤；成功時用空字串清除舊錯誤。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】工作狀態最新錯誤保存
+// 情境：工作失敗時保存一份最新錯誤訊息，下一次成功則清除舊錯誤，查詢者只看目前狀態。
+// 為何使用本章主題：operator= 表達整體取代，fail 複製 caller 訊息取得 ownership，succeed
+//       以空字串重設；相較保存 string_view，不會依賴外部訊息生命週期。
+// 設計：1. fail 時把 message 指派給 member；2. succeed 指派空字串；3. accessor 回 const reference。
+// 成本：fail 時間/空間 O(M)，M 是訊息長度；清空通常 O(1)，但不保證釋放容量。
+// 上線注意：空字串若也是合法錯誤就需 optional/獨立狀態；多執行緒讀寫需同步，accessor reference
+//       不能活過物件或下一次修改。
+// -----------------------------------------------------------------------------
 class JobStatus {
 public:
     void fail(const std::string& message) { last_error_ = message; }

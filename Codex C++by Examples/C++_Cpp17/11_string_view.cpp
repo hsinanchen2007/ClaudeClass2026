@@ -34,8 +34,14 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 28：Find the Index of the First Occurrence in a String。
-// std::string_view::find 直接搜尋 view；平均實務表現依標準庫，介面不保證特定演算法。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 28. Find the Index of the First Occurrence in a String（尋找子字串首次位置）
+// 題目：回傳 needle 首次出現在 haystack 的索引，找不到回 -1；"sadbutsad" 找 "sad" 回 0。
+// 為何使用本章主題：string_view 讓函式借用 literal、string 或切片而不配置；find 直接在兩個 view 上搜尋。
+// 思路：1. 呼叫 haystack.find(needle)；2. npos 映射成 -1；3. 命中位置轉成題目要求的 int。
+// 複雜度：H/N 為兩字串長度；標準未保證特定搜尋演算法，額外空間 O(1)。
+// 易錯點：view 不擁有字元且不保證 NUL 結尾；位置轉 int 前要符合題目大小，空 needle 依 find 契約回 0。
+// -----------------------------------------------------------------------------
 int leetcode_str_str(std::string_view haystack, std::string_view needle) {
     const std::size_t position = haystack.find(needle);
     return position == std::string_view::npos ? -1 : static_cast<int>(position);
@@ -47,8 +53,15 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】HTTP header 切片：零配置回傳 name/value view，並把 owner lifetime 寫入契約。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】HTTP header 零配置切片
+// 情境：將 "Content-Type: text/plain" 拆成 name/value，解析階段不複製字元。
+// 為何使用本章主題：HeaderView 以兩個 string_view 借用原行，substr 與 remove-prefix 式切片不配置新 string。
+// 設計：1. 以 ':' split_once；2. value 非空時略過一個前導空白；3. 回傳兩個借用 view。
+// 成本：尋找分隔符時間 O(L)，切片與回傳空間 O(1)。
+// 上線注意：owned 字串須保持存活且不可 reallocate；還要處理多餘空白、非法 header、內嵌 NUL 與大小上限。
+// -----------------------------------------------------------------------------
 struct HeaderView {
     std::string_view name;
     std::string_view value;

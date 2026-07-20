@@ -15,7 +15,16 @@
 #include <string>
 #include <vector>
 
-// LeetCode 1920：Build Array from Permutation；iota 先建立可追蹤的索引集合。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1920. Build Array from Permutation（基於排列建構陣列）
+// 題目：nums 是 0..N-1 的排列，回 answer[i]=nums[nums[i]]；例如
+// [0,2,1,5,3,4] 回 [0,1,2,4,5,3]。
+// 為何使用本章主題：iota 先建立所有合法索引，再由 transform 將每個 index 映射成
+// nums[nums[index]]；一般索引迴圈更直接，本例展示 index range 用法。
+// 思路：1. 產生 0..N-1 indices；2. 建等長 answer；3. 逐 index 做兩次間接存取。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 為 nums 數量，indices 與 answer 各為 N。
+// 易錯點：nums 每值必須落在 [0,N)；負 int 轉 size_t 會變巨大索引，通用 API 要先驗證。
+// -----------------------------------------------------------------------------
 std::vector<int> leetcode_build_array(const std::vector<int>& nums) {
     std::vector<std::size_t> indices(nums.size());
     std::iota(indices.begin(), indices.end(), std::size_t{0});
@@ -32,7 +41,16 @@ struct Job {
     int priority;
 };
 
-// 實務：排序 index 而非搬動大型 Job；同優先度以原始順序穩定決勝。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】大型 Job 的間接優先序視圖
+// 情境：Job payload 不希望被搬動，但 UI/排程要取得 priority 降冪的索引順序；同優先度
+// 保留原始輸入次序。
+// 為何使用本章主題：iota 產生索引 permutation，再 stable_sort 索引而非 Job；可保留
+// 原資料與建立多種排序 view，代價是後續間接存取。
+// 設計：1. 產生 0..N-1 order；2. comparator 透過 jobs[index] 比 priority；3. 穩定排序 order。
+// 成本：時間 O(N log N)、額外空間 O(N)，N 為 Job 數。
+// 上線注意：order 只在 jobs 未重排/刪除時有效；併發更新需綁定同一 immutable snapshot。
+// -----------------------------------------------------------------------------
 std::vector<std::size_t> practical_priority_order(const std::vector<Job>& jobs) {
     std::vector<std::size_t> order(jobs.size());
     std::iota(order.begin(), order.end(), std::size_t{0});

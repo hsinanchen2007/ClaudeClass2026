@@ -38,8 +38,14 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 1480：Running Sum，時間 O(n)、空間 O(n)。
-// auto 由 vector<int> return expression 推導，不需要重複長型別。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1480. Running Sum of 1d Array（一維陣列動態和）
+// 題目：回傳每個位置以前的元素總和；例如 [1,2,3,4] 轉成 [1,3,6,10]。
+// 為何使用本章主題：函式的 auto 由唯一的 vector<int> return expression 推導回傳型別，避免在簽章重複實作型別。
+// 思路：1. 預留 nums 大小的容量；2. 逐項累加到 total；3. 將每一步的 total 放入 result。
+// 複雜度：N 為元素數；時間 O(N)，輸出空間 O(N)、除輸出外額外空間 O(1)。
+// 易錯點：多個 return 必須推導成同一型別；total 使用 int，輸入總和超出範圍時仍會溢位。
+// -----------------------------------------------------------------------------
 auto leetcode_running_sum(const std::vector<int>& nums) {
     std::vector<int> result;
     result.reserve(nums.size());
@@ -57,14 +63,20 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】監控樣本平均值：實作決定 double 回傳型別，空集合則明確拒絕。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】監控樣本平均值計算
+// 情境：收集一批帶 name 與 double value 的監控樣本，產生單一平均值並拒絕空批次。
+// 為何使用本章主題：auto 由最後的 double 除法推導回傳型別，讓私有 helper 可隨實作自然決定結果型別。
+// 設計：1. 先拒絕空 vector；2. 以 0.0 和 lambda 累加每筆 value；3. 除以樣本數。
+// 成本：N 為樣本數；時間 O(N)、額外空間 O(1)。
+// 上線注意：公開 ABI 若需固定型別應明寫 double；還要定義 NaN、無限值與浮點累加誤差政策。
+// -----------------------------------------------------------------------------
 struct Sample {
     std::string name;
     double value;
 };
 
-// 實務：計算監控樣本平均值；空集合明確丟 exception，不回傳 NaN 掩蓋問題。
 auto practical_average(const std::vector<Sample>& samples) {
     if (samples.empty()) {
         throw std::invalid_argument("samples 不可為空");

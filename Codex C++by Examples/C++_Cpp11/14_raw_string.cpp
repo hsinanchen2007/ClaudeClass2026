@@ -29,7 +29,14 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 125：Valid Palindrome。raw strings 讓測試資料的標點更貼近原文。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 125. Valid Palindrome（驗證回文）
+// 題目：忽略非英數字元與大小寫後判斷是否回文；"A man, a plan, a canal: Panama" 為 true。
+// 為何使用本章主題：演算法不依賴 raw string；raw literal 只讓含標點的測試字串保持原貌而不需額外跳脫。
+// 思路：1. 左右指標跳過非英數；2. 將兩端以 unsigned char 安全轉小寫比較；3. 相同則向中央收縮。
+// 複雜度：N 為字串長度；時間 O(N)、額外空間 O(1)。
+// 易錯點：cctype 參數須先轉 unsigned char；right 採半開區間，取字元時要用 right-1。
+// -----------------------------------------------------------------------------
 bool is_palindrome(const std::string& text) {
     std::size_t left = 0U;
     std::size_t right = text.size();
@@ -53,9 +60,15 @@ void test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】log status 擷取：raw literal 讓 regex 規則可讀，但 parser 仍明確回報失敗。
 namespace practical {
-// 實務：從簡化 log 中抽 status；正式 production parser 應有格式邊界與錯誤處理。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】HTTP 存取紀錄狀態碼擷取
+// 情境：從單行 log 的 status=NNN 欄位擷取三位數狀態碼，格式不符時回傳 -1。
+// 為何使用本章主題：raw string 保留 regex 的括號與反斜線可讀性，避免 C++ 字串跳脫干擾規則審查。
+// 設計：1. 建立 status=([0-9]{3}) 規則；2. regex_search 找第一個命中；3. 將 capture group 轉為整數。
+// 成本：L 為行長；搜尋成本依標準庫 regex 實作與內容而定，另有 match 與字串配置成本。
+// 上線注意：-1 與合法領域要明確區分；需限制行長、防止高成本 regex 輸入，並處理 stoi 例外。
+// -----------------------------------------------------------------------------
 int extract_status(const std::string& line) {
     const std::regex pattern(R"regex(status=([0-9]{3}))regex");
     std::smatch match;

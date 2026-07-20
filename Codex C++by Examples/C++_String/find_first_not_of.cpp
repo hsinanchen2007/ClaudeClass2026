@@ -20,13 +20,30 @@ void basic_demo() {
     assert(std::string(" \n").find_first_not_of(ascii_space) == std::string::npos);
 }
 
-// LeetCode 58（Length of Last Word）的前置 helper：先找第一個非空白來判全空白。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 58. Length of Last Word（最後一個單字的長度，前置 helper）
+// 題目：原題要忽略尾端空格後計算最後一字；本函式只計算開頭空格數，用於辨認全空白，
+//       例如 "   fly" 回 3，因此只是教學拆出的前置步驟，不是完整原題答案。
+// 為何使用本章主題：find_first_not_of(' ') 一次定位第一個非空格，比手寫逐字元前進直接，
+//       並以 npos 明確表示全字串都在排除集合內。
+// 思路：1. 搜尋第一個非空格；2. npos 時以整體長度作為前導空格數；3. 否則回傳該索引。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 是 text 長度。
+// 易錯點：此 helper 沒有計算最後一字；只認 ASCII space，不含 tab/newline，且 size 轉 int 要驗範圍。
+// -----------------------------------------------------------------------------
 int leetcode_count_leading_spaces(const std::string& text) {
     const std::size_t first = text.find_first_not_of(' ');
     return first == std::string::npos ? static_cast<int>(text.size()) : static_cast<int>(first);
 }
 
-// 實務：回傳零拷貝左 trim view；底層 input 必須活得比結果久。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】設定行零拷貝左側 trim
+// 情境：parser 要略過 space、tab、CR、LF 後繼續讀同一行，但不想配置一份新字串。
+// 為何使用本章主題：find_first_not_of 固定集合可直接找保留區段起點，再由 string_view::substr
+//       建立 O(1) 借用視窗；相較 cctype 不受 locale 影響且規格明確。
+// 設計：1. 找第一個不在 ASCII 空白集合的 byte；2. 全空白回空 view；3. 否則回起點到尾端。
+// 成本：搜尋時間 O(N)、額外空間 O(1)，N 是 input 長度，結果不複製字元。
+// 上線注意：回傳 view 依賴來源生命週期；temporary string、owner clear/erase/reallocate 後都不能沿用。
+// -----------------------------------------------------------------------------
 std::string_view practical_ltrim(const std::string_view input) {
     const std::size_t first = input.find_first_not_of(ascii_space);
     return first == std::string_view::npos ? std::string_view{} : input.substr(first);

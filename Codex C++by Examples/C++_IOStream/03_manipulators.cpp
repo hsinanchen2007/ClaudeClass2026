@@ -54,7 +54,15 @@ void basic_example()
     std::cout << "[基礎] formatting state restored after guarded scope\n";
 }
 
-// LeetCode 168：Excel Sheet Column Title；輸出 formatting 與演算法分開。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 168. Excel Sheet Column Title（Excel 欄位標題）
+// 題目：將正整數轉成 Excel 的 1-based 26 進位欄名；1->A、28->AB、701->ZY。
+// 為何使用本章主題：轉換演算法本身只建立 string，沒有使用 manipulator；輸出 wrapper 也只印結果，
+//       這是刻意展示格式狀態不應滲入純演算法。
+// 思路：1. 每輪先將 number 減一修正 1-based；2. 取 `%26` 產生尾字母；3. 除 26；4. 反轉。
+// 複雜度：時間 O(log26 N)、額外空間 O(log26 N)，N 是輸入正整數。
+// 易錯點：若不先減一，Z/AA 邊界會錯；number<=0 不在原題契約，不能輸出空字串冒充有效值。
+// -----------------------------------------------------------------------------
 std::string convert_to_title(int number)
 {
     std::string result;
@@ -75,7 +83,15 @@ void leetcode_168_example()
     std::cout << "[LeetCode 168] titles A, AB, ZY\n";
 }
 
-// 實務：stable tabular report 用 setw/right，但欄寬不是 Unicode display width。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】ASCII 資源表格欄位對齊
+// 情境：報表要把 `GPU` 左對齊到 8 格，使用率 75 右對齊到 4 格，再接 `%`。
+// 為何使用本章主題：left/right/setw 直接表達固定欄寬；local ostringstream 隔離持久 formatting state，
+//       相較修改共用 cout 不會影響後續 caller。
+// 設計：1. 設 left 與寬 8 輸出名稱；2. 切 right 與寬 4 輸出數值；3. 接百分號並取 str。
+// 成本：時間 O(L)、額外空間 O(L)，L 是格式化結果長度；setw 本身近似 O(1)。
+// 上線注意：setw 計算的不是 Unicode 終端顯示寬度；欄位超寬不會截斷，報表需另設長度政策。
+// -----------------------------------------------------------------------------
 void practical_example()
 {
     std::ostringstream output;

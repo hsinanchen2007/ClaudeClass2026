@@ -15,7 +15,16 @@
 #include <string>
 #include <vector>
 
-// LeetCode 953：Verifying an Alien Dictionary；先映射 rank，再做字典序比較。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 953. Verifying an Alien Dictionary（驗證外星語字典）
+// 題目：給 words 與 26 字母的外星順序 order，判斷 words 是否已按該字典序排列；
+// 例如 ["hello","leetcode"] 在指定 h,l 開頭順序下為 true。
+// 為何使用本章主題：先把字母映成 rank，再由 lexicographical_compare 套用第一差異
+// 與 prefix 規則；adjacent_find 則找第一對逆序單字。
+// 思路：1. 建立 26 格 rank；2. 定義外星語 lhs<=rhs；3. 掃描相鄰 words；4. 無逆序回 true。
+// 複雜度：時間 O(C)、額外空間 O(1)，C 為相鄰比較實際檢查的總字元量，rank 固定 26 格。
+// 易錯點：共同前綴時短字必須在前；輸入限定小寫 a-z，否則 rank 索引需驗證。
+// -----------------------------------------------------------------------------
 bool leetcode_is_alien_sorted(const std::vector<std::string>& words,
                               const std::string& order) {
     std::vector<int> rank(26, 0);
@@ -38,7 +47,16 @@ bool leetcode_is_alien_sorted(const std::vector<std::string>& words,
                               }) == words.end();
 }
 
-// 實務：比較 semantic version 的數字段，1.10 > 1.2，不用字串字典序誤判。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】數字段版本大小比較
+// 情境：版本已解析成整數欄位，例如 1.2.9 與 1.10.0；要按第一個不同數字段比較，
+// 避免字串比較把 "10" 排在 "2" 前面。
+// 為何使用本章主題：lexicographical_compare 正好實作欄位序列的第一差異與短前綴規則，
+// 前提是 parser 已將每段轉成正確整數 domain。
+// 設計：1. 比較 lhs/rhs 的完整 fields；2. 第一個不同整數決定結果；3. 全同前綴時短者較小。
+// 成本：時間 O(min(N,M))、額外空間 O(1)，N/M 為兩版本欄位數。
+// 上線注意：這不是完整 SemVer，尚未處理 prerelease、build metadata 與 1.0/1.0.0 等價政策。
+// -----------------------------------------------------------------------------
 bool practical_version_less(const std::vector<int>& lhs,
                             const std::vector<int>& rhs) {
     return std::lexicographical_compare(lhs.begin(), lhs.end(),

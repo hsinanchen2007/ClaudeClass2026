@@ -15,7 +15,17 @@
 #include <string>
 #include <vector>
 
-// LeetCode 1929：Concatenation of Array。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1929. Concatenation of Array（陣列串接）
+// 題目：輸入 nums，回傳長度 2N 且 answer[i]=answer[i+N]=nums[i]；例如
+// [1,2,1] 回 [1,2,1,1,2,1]。
+// 為何使用本章主題：兩次 std::copy 可把同一來源依序寫入預先配置的輸出，第一次
+// 回傳的 output iterator 正好是第二段起點。
+// 思路：1. 建立 2N 個已存在的目的元素；2. 複製 nums 到前半；3. 從回傳 iterator
+// 再複製一次到後半。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 為 nums 的元素數，輸出實際含 2N 項。
+// 易錯點：目的 vector 必須 resize 而非只 reserve；兩次複製的輸出範圍都要有足夠容量。
+// -----------------------------------------------------------------------------
 std::vector<int> leetcode_get_concatenation(const std::vector<int>& nums) {
     std::vector<int> answer(nums.size() * 2U);
     auto out = std::copy(nums.begin(), nums.end(), answer.begin());
@@ -23,7 +33,17 @@ std::vector<int> leetcode_get_concatenation(const std::vector<int>& nums) {
     return answer;
 }
 
-// 實務：只匯出可公開的 log 行；back_inserter 負責 push_back。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】公開日誌匯出過濾
+// 情境：內部 log 可能含 `SECRET` 行，匯出給外部前只保留未命中敏感標記的完整字串，
+// 並維持原始順序。
+// 為何使用本章主題：copy_if 同時表達篩選與穩定複製，back_inserter 讓未知輸出筆數
+// 的 vector 安全成長，比先猜大小後管理尾端簡單。
+// 設計：1. 對每行搜尋敏感標記；2. predicate 只接受未命中的行；3. 由 back_inserter
+// append 到 result。
+// 成本：時間 O(C)、額外空間 O(K)，C 為所有被檢查字元量、K 為匯出內容大小。
+// 上線注意：單純 substring 不能取代結構化脫敏；需涵蓋大小寫、編碼、多行欄位並記錄拒絕筆數。
+// -----------------------------------------------------------------------------
 std::vector<std::string> practical_export_public_logs(
     const std::vector<std::string>& logs) {
     std::vector<std::string> result;

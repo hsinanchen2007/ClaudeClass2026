@@ -31,7 +31,15 @@ struct TrackedMessage {
     TrackedMessage& operator=(const TrackedMessage&) = default;
 };
 
-// LeetCode 49：Group Anagrams。完成 key 分類後，把字串 move 進群組，避免一次額外複製。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 49. Group Anagrams（字母異位詞分組）
+// 題目：把由相同字母重排而成的字串分組；eat、tea、ate 同組，tan、nat 同組。
+// 為何使用本章主題：排序副本 key 後，原 word 已不再需要，std::move 把其字串資源移入群組；
+// 群組完成後再 move 到 result，避免兩輪不必要的深複製。
+// 思路：為每個 word 建立排序 key；按 key 放入 map 群組；最後依 map 順序移出各群組。
+// 複雜度：令 N 為字串數、K 為最大長度，時間 O(N*K*(log K+log N))、結果空間 O(N*K)。
+// 易錯點：move 後 word/group 只能依有效但未指定狀態使用；輸出群組順序原題不保證，本例用 map 固定。
+// -----------------------------------------------------------------------------
 std::vector<std::vector<std::string>>
 leetcode_group_anagrams(std::vector<std::string> words) {
     std::map<std::string, std::vector<std::string>> groups; // map 讓測試順序 deterministic
@@ -49,7 +57,15 @@ leetcode_group_anagrams(std::vector<std::string> words) {
     return result;
 }
 
-// 【實務情境】訊息 ownership 從 producer 明確轉交給 outbox。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】Producer 將訊息移交 Outbox
+// 情境：producer 建立訊息後交給 outbox 排隊，成功移交後不再依賴原訊息內容。
+// 為何使用本章主題：std::move 明確把 ownership 從呼叫端傳入 by-value 參數，再移入 vector；
+// 相較複製大型 body，可重用既有字串資源並讓 API 同時接受 copy 或 move。
+// 設計：enqueue 接收自己的 message；push_back 將它移入容器；測試確認來源已 moved-from 且可重新指定。
+// 成本：單次追加攤銷 O(1)，vector 擴容會搬移既有訊息；字串資源搬移成本依 allocator 契約。
+// 上線注意：不可依賴 moved-from body 為空；併發 producer 需要鎖或專用佇列，並限制 queue 容量。
+// -----------------------------------------------------------------------------
 class Outbox {
 public:
     void enqueue(TrackedMessage message) {

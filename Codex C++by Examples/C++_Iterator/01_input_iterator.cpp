@@ -27,7 +27,14 @@ void basic_example()
     std::cout << "[基礎] istream input range consumed exactly once\n";
 }
 
-// LeetCode 1480：以 input iterators 建 vector，再做 running sum。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1480. Running Sum of 1d Array（一維陣列的動態和）
+// 題目：輸出 answer[i]=nums[0]+...+nums[i]；例如 1 2 3 4 得 [1,3,6,10]。
+// 為何使用本章主題：本例把題目輸入改為 stream，展示 input iterator single-pass 讀取後 materialize 再計算。
+// 思路：建立 stream 的 first/end；一次消耗成 vector；用 partial_sum 原地累加；回傳結果。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 為成功解析的整數數量。
+// 易錯點：istream_iterator 不能重走；格式錯誤與 EOF 都會結束 range；int 累加仍可能溢位。
+// -----------------------------------------------------------------------------
 std::vector<int> running_sum_from_stream(std::istream& input)
 {
     // 先把 iterator 命名，可避開 `vector(first, iterator{})` 被解析成函式宣告的
@@ -46,7 +53,14 @@ void leetcode_1480_example()
     std::cout << "[LeetCode 1480] stream input -> running sums\n";
 }
 
-// 實務：copy_if 可從 stream single-pass 過濾正數到 vector。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】串流量測值的一次性正數過濾
+// 情境：從管線讀取空白分隔量測值，只保存有效的正數，例如 -2 3 0 5 產生 [3,5]。
+// 為何使用本章主題：input iterator 可直接消耗大型 stream，back_inserter 只配置實際通過篩選的結果。
+// 設計：以 istream_iterator 定義輸入；copy_if 判斷 value>0；命中值追加到 vector。
+// 成本：時間 O(N)、結果空間 O(P)，N 為解析值數、P 為正數數量；另有 stream I/O 成本。
+// 上線注意：要在完成後區分正常 EOF 與 failbit；single-pass 來源不可先 distance，且需限制結果記憶體。
+// -----------------------------------------------------------------------------
 void practical_example()
 {
     std::istringstream input("-2 3 0 5");

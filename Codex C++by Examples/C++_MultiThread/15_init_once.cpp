@@ -28,9 +28,14 @@ void basic_demo()
     assert(initialized == 1);
 }
 
-// ----------------------------------------------------------------------------
-// LeetCode 70：Climbing Stairs（一次建立小型 DP table）
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 70. Climbing Stairs（爬樓梯）
+// 題目：每次走 1 或 2 階，求抵達 n 階的方法數；例如 n=5 得 8、n=10 得 89。
+// 為何使用本章主題：固定 0..45 的 DP table 以 function-local static lazy 建立，首次併發呼叫只初始化一次；這是多次查詢的教學改寫。
+// 思路：1. 首次呼叫建立 46 格 table。2. 設 ways[0]=ways[1]=1。3. 依 Fibonacci recurrence 填完。4. 後續 O(1) 查表。
+// 複雜度：一次初始化時間/空間 O(K)，每次查詢 O(1)，K=46；同步只發生在尚未完成的首次初始化。
+// 易錯點：steps 範圍不能只靠 release 會移除的 assert；初始化若丟例外會在下次呼叫重試，int 上限也依題目範圍而定。
+// -----------------------------------------------------------------------------
 int climb_stairs(int steps)
 {
     assert(steps >= 0 && steps <= 45);
@@ -57,9 +62,14 @@ void leetcode_demo()
     assert(first == 8 && second == 89);
 }
 
-// ----------------------------------------------------------------------------
-// 實務：lazy 初始化不可變設定表
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【日常實務範例】支援格式表的執行緒安全 Lazy 初始化
+// 情境：多個 request thread 首次查詢服務支援的 json/yaml/toml 格式，所有人應取得同一份 process-lifetime immutable table。
+// 為何使用本章主題：function-local static 由語言保證只成功初始化一次，比 double-checked locking 或手動 global flag 更安全。
+// 設計：1. 首次進函式建 const vector。2. 其他同時 caller 等待完成。3. 回傳 const reference。4. 後續直接重用同一物件。
+// 成本：首次配置 O(F)，後續呼叫/空間分別 O(1)/O(F)，F 為格式數；實作可能保留輕量 guard 檢查。
+// 上線注意：回傳 reference 依賴 static lifetime 且內容必須保持 immutable；測試替換、動態 reload 或 shutdown ordering 需另設計。
+// -----------------------------------------------------------------------------
 const std::vector<std::string>& supported_formats()
 {
     static const std::vector<std::string> formats{"json", "yaml", "toml"};

@@ -31,7 +31,14 @@ int add(int left, int right) { return left + right; }
 }  // namespace textbook::basic
 
 namespace textbook::leetcode {
-// LeetCode 242：Valid Anagram。固定小寫英文，O(n) time / O(1) alphabet space。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 242. Valid Anagram（有效字母異位詞）
+// 題目：判斷兩字串是否由相同字元以不同順序組成；"anagram" 與 "nagaram" 為 true。
+// 為何使用本章主題：nested namespace 只將題解歸到 textbook::leetcode 名稱層級，不改變計數演算法或提供存取控制。
+// 思路：1. 長度不同先失敗；2. 第一字串的 26 格計數遞增；3. 第二字串遞減並確認全部歸零。
+// 複雜度：N 為字串長度；時間 O(N)、固定字母表額外空間 O(1)。
+// 易錯點：本實作只接受 'a'..'z'；其他字元會造成索引錯誤，Unicode anagram 需不同正規化與計數策略。
+// -----------------------------------------------------------------------------
 bool leetcode_is_anagram(const std::string& first, const std::string& second) {
     if (first.size() != second.size()) return false;
     std::array<int, 26> counts{};
@@ -47,6 +54,14 @@ void leetcode_test() {
 }  // namespace textbook::leetcode
 
 namespace company::billing::v2 {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】計費 v2 發票總額 API
+// 情境：billing v2 模組接收固定三張以 cents 表示的發票，回傳本批總額。
+// 為何使用本章主題：company::billing::v2 清楚標示組織、領域與版本 ownership；語法縮短巢狀 namespace 定義。
+// 設計：1. Invoice 以 cents 保存金額；2. 逐張累加；3. v2 namespace 隔離同名舊版 API。
+// 成本：N 為發票數；時間 O(N)、額外空間 O(1)。
+// 上線注意：namespace 改名會影響符號與 ABI；int 總額可能溢位，且版本預設切換應另用明確相容政策。
+// -----------------------------------------------------------------------------
 struct Invoice {
     int cents;
 };

@@ -19,6 +19,14 @@
 #include <utility>
 #include <vector>
 
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 78. Subsets（子集合）
+// 題目：回傳互異元素陣列的所有子集合；[1,2,3] 有 8 個，並包含空集合與完整集合。
+// 為何使用本章主題：mask 的第 i bit 表示是否選 nums[i]，枚舉 0..2^N-1 即涵蓋所有位置組合。
+// 思路：1. 先驗 N 小於 size_t 位寬；2. 枚舉每個 mask；3. 掃各 bit 並把被選元素加入 subset。
+// 複雜度：N 為元素數；時間與結果空間皆 O(N*2^N)，暫時單一 subset 空間 O(N)。
+// 易錯點：`1<<N` 必須用 size_t 並先驗位寬；輸入有重複值時位置組合仍會產生重複內容。
+// -----------------------------------------------------------------------------
 std::vector<std::vector<int>> subsets(const std::vector<int>& nums)
 {
     if (nums.size() >= std::numeric_limits<std::size_t>::digits) {
@@ -60,7 +68,14 @@ void leetcode_example()
     std::cout << "[LeetCode 78] 3 elements -> 8 subsets\n";
 }
 
-// 實務：小型 feature matrix 測試所有 combinations；features 多時應採 pairwise testing。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】小型功能組合測試矩陣
+// 情境：對 cache、tls 等少量 flags 產生所有開關組合標籤，供整合測試逐一執行。
+// 為何使用本章主題：每個 feature 對應一個 mask bit，完整枚舉能保證小規模 power set 無遺漏。
+// 設計：1. 驗 feature 數不超過 mask 位寬；2. 枚舉所有 masks；3. 串接被選名稱，空集合標為 none。
+// 成本：F 為功能數；時間與結果空間 O(F*2^F)。
+// 上線注意：組合數指數成長，features 多時應採 pairwise/風險導向測試；名稱也要 escape 分隔符。
+// -----------------------------------------------------------------------------
 std::vector<std::string> feature_combinations(const std::vector<std::string>& features)
 {
     if (features.size() >= std::numeric_limits<std::size_t>::digits) {

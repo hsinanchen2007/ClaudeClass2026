@@ -79,8 +79,17 @@ std::vector<std::string> basic_unique_permutations(std::string input) {
     return output;
 }
 
-// LeetCode 567：Permutation in String；256 格 byte frequency 做 O(N) sliding window。
-// 契約：空 pattern 是每個 text（包含空 text）在 index 0 的排列子字串。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 567. Permutation in String（字串的排列）
+// 題目：判斷 text 是否含一段 substring，其字元多重集合等於 pattern；例如
+// pattern="ab"、text="eidbaooo" 為 true。
+// 為何使用本章主題：256 格 frequency 將每個固定長度視窗表示成 permutation 多重集合；
+// 滑動時只增減進出 byte，避免每窗重跑 is_permutation。
+// 思路：1. 處理空 pattern 與長度不足；2. 建 need；3. 逐字更新 window 並移除過期字元；
+// 4. window==need 時回 true。
+// 複雜度：時間 O(P+T)、額外空間 O(1)，P/T 為 pattern/text 長度，陣列固定 256 格。
+// 易錯點：char 當索引前要轉 unsigned char；空 pattern 依本契約回 true；視窗長度必須固定為 P。
+// -----------------------------------------------------------------------------
 bool leetcode_check_inclusion(const std::string& pattern,
                               const std::string& text) {
     if (pattern.empty()) {
@@ -114,7 +123,16 @@ struct Version {
     std::string label;
 };
 
-// 實務：排序 release；數字段優先，完全相同再以 label 字典序決勝。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】Release 版本與標籤排序
+// 情境：Version 已解析數字段與 label；列表要先按 fields 字典序升冪，fields 完全相同
+// 時再以 label 決勝，產生可重現發布順序。
+// 為何使用本章主題：lexicographical_compare 正確處理數字段的第一差異與 prefix；
+// std::sort 加 label tie-break 建立完整 deterministic strict weak ordering。
+// 設計：1. fields 不同時做字典序比較；2. fields 相同時比較 label；3. 原地排序按值副本。
+// 成本：時間 O(N log N*F)、額外空間 O(N)，N 為版本數、F 為平均欄位比較成本；輸入按值複製。
+// 上線注意：需先定義 1.0 與 1.0.0、prerelease、Unicode label normalization 等版本政策。
+// -----------------------------------------------------------------------------
 std::vector<Version> practical_sort_versions(std::vector<Version> versions) {
     std::sort(versions.begin(), versions.end(), [](const Version& lhs,
                                                    const Version& rhs) {

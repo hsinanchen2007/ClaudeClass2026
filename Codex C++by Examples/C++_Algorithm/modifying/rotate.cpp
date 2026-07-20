@@ -16,7 +16,17 @@
 #include <string>
 #include <vector>
 
-// LeetCode 189：Rotate Array，向右旋轉 k。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 189. Rotate Array（輪轉陣列）
+// 題目：將 nums 向右輪轉 k 步；例如 [1,2,3,4,5,6,7]、k=3 變成
+// [5,6,7,1,2,3,4]。
+// 為何使用本章主題：std::rotate 以「尾端 K 項」作 middle，將兩段交換前後位置且
+// 保留段內順序，直接完成原地右輪轉。
+// 思路：1. 空陣列直接回；2. 對 N 取 k 餘數；3. middle 指向 end-k；4. rotate
+// [begin,middle) 與 [middle,end)。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 為 nums 的元素數。
+// 易錯點：空陣列不可做 k%N；向右輪轉的 middle 是 end-k，而不是 begin+k。
+// -----------------------------------------------------------------------------
 void leetcode_rotate_right(std::vector<int>& nums, std::size_t k) {
     if (nums.empty()) {
         return;
@@ -26,7 +36,16 @@ void leetcode_rotate_right(std::vector<int>& nums, std::size_t k) {
     std::rotate(nums.begin(), middle, nums.end());
 }
 
-// 實務：round-robin 排程每輪把已服務的第一位移到尾端。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】Round-robin Worker 輪替
+// 情境：workers 依下一輪服務順序排列；每完成一輪後，把目前第一位移到尾端，讓
+// 下一位成為新的 front。
+// 為何使用本章主題：rotate 能原地把單元素前綴移到尾端，同時維持其餘 worker 的
+// 相對次序，比手寫 erase+push_back 少一次元素生命週期管理。
+// 設計：1. 只有至少兩個 worker 才操作；2. 以 begin+1 為 middle 左旋一格。
+// 成本：時間 O(W)、額外空間 O(1)，W 為 worker 數，字串可能發生 move/swap。
+// 上線注意：這只是等權本機順序；offline、權重與併發修改需要排程器鎖或 immutable snapshot。
+// -----------------------------------------------------------------------------
 void practical_advance_round_robin(std::vector<std::string>& workers) {
     if (workers.size() > 1U) {
         std::rotate(workers.begin(), workers.begin() + 1, workers.end());

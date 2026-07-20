@@ -55,8 +55,14 @@ void basic_example()
     std::cout << "[基礎] weak callback safely handles destroyed Session\n";
 }
 
-// LeetCode 1603：ParkingSystem。addCar 本身完整實作題目契約；再額外加入 deferred callback，
-// 示範 event 只在 object 仍活時呼叫，物件死後不 dereference dangling this。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1603. Design Parking System（設計停車系統）
+// 題目：大中小車依 type 有剩餘空位才停入；例如容量 (1,0,0) 時第一次大車成功、第二次失敗。
+// 為何使用本章主題：addCar 完整解題；deferred_add 是額外教學擴充，以 weak_from_this 防 callback 使用 dangling this。
+// 思路：addCar 取 type 對應 slot並遞減；deferred callback 保存 weak owner；觸發時 lock，存活才呼叫 addCar。
+// 複雜度：addCar 與 callback 觸發皆 O(1)，物件空間 O(1)，另有 control block/callback 常數成本。
+// 易錯點：題目保證 type 1..3 與非負容量，本類未自行驗證；物件必須先由 shared_ptr 管理才有有效 weak_from_this。
+// -----------------------------------------------------------------------------
 class ParkingSystem : public std::enable_shared_from_this<ParkingSystem> {
 public:
     ParkingSystem(int big, int medium, int small) : spaces_{big, medium, small} {}
@@ -91,7 +97,14 @@ void leetcode_1603_example()
     std::cout << "[LeetCode 1603] addCar 契約完整，deferred callback 另防 dangling this\n";
 }
 
-// 實務：async work 常 capture shared_from_this 延長 lifetime，或 weak_from_this 允許取消。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】可在 session 消失後取消的非同步 callback
+// 情境：排程工作可能晚於 Session 解構才執行；存活時回 session:build，已銷毀時應安全回 expired。
+// 為何使用本章主題：Session::callback 由 weak_from_this 取得既有 control block observer，不延長 lifetime 也不建立第二 owner block。
+// 設計：factory 先建立 shared-owned Session；callback capture weak；執行時 lock；依成功與否讀 id 或回 expired。
+// 成本：建立 callback 與每次 lock 為常數 control-block 成本，回傳字串 O(I)。
+// 上線注意：constructor 內不能 shared_from_this；callback 若需保證完成可 capture strong owner，但要檢查 cycle 與取消政策。
+// -----------------------------------------------------------------------------
 void practical_example()
 {
     auto session = Session::create("build");

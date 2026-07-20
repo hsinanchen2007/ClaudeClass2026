@@ -19,6 +19,16 @@
 
 namespace {
 
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 709. To Lower Case（轉成小寫，本檔反向改寫為大寫）
+// 題目：原題將 ASCII 大寫轉成小寫；本例反向把小寫轉大寫，例如 Hello-123 得 HELLO-123，
+//       用來展示相同逐 byte 轉換骨架，不能直接提交原題。
+// 為何使用本章主題：C++23 路徑以 resize_and_overwrite 在同一 string buffer 逐 byte 覆寫並回原長度；
+//       C++20 fallback 用 range-for 保持相同行為。
+// 思路：1. 以原 size 作可寫上限；2. callback 掃描每格；3. 只轉 `a..z`；4. 回傳原 size。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 是 text 長度；按值參數先建立一份結果副本。
+// 易錯點：這是方向相反的教學改寫；callback 不得丟例外、保存 buffer 或回傳大於 writable 的長度。
+// -----------------------------------------------------------------------------
 std::string uppercase_ascii(std::string text) {
 #if defined(__cpp_lib_string_resize_and_overwrite) && \
     __cpp_lib_string_resize_and_overwrite >= 202110L
@@ -38,12 +48,20 @@ std::string uppercase_ascii(std::string text) {
     return text;
 }
 
-// LeetCode 709（To Lower Case）的相反變形；實際可執行且兩路結果一致。
 std::string leetcode_upper(const std::string& text) {
     return uppercase_ascii(text);
 }
 
-// 實務：移除 ASCII 空白；C++23 路徑在同一 buffer 原地壓縮。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】識別碼 ASCII 空格原地壓縮
+// 情境：輸入 `a b  c`，只移除 byte 0x20 並得到 `abc`，tab 與其他 whitespace 不在規格內。
+// 為何使用本章主題：resize_and_overwrite 讓讀游標與寫游標共用同一 buffer，callback 回報壓縮後長度；
+//       相較先建第二份字串可省一個輸出配置，C++20 fallback 明確 resize 收尾。
+// 設計：1. output 索引從 0；2. 掃原範圍；3. 非空格搬到 buffer[output++]；4. 回 output。
+// 成本：時間 O(N)、額外空間 O(N)，N 是輸入長度；按值參數持有結果，壓縮本身 O(1) 額外工作區。
+// 上線注意：只移除 ASCII space，可能改變有意義內容；callback 內來源與目的重疊順序不可反向，
+//       且所有回傳長度內 bytes 都必須已初始化。
+// -----------------------------------------------------------------------------
 std::string practical_remove_ascii_spaces(std::string text) {
 #if defined(__cpp_lib_string_resize_and_overwrite) && \
     __cpp_lib_string_resize_and_overwrite >= 202110L

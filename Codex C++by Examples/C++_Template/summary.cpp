@@ -359,7 +359,15 @@ private:
     std::size_t size_{};
 };
 
-// LeetCode 1：Two Sum；concept 把 unordered_map 與減法所需契約放在呼叫邊界。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1. Two Sum（兩數之和）
+// 題目：找兩個相異索引使其值相加為 target；[2,7,11,15]、9 得 [0,1]，泛化版無解回 {N,N}。
+// 為何使用本章主題：TwoSumKey concept 限定 integral/copy/hash/equality，if constexpr 依 signedness
+// 選安全互補值檢查；模板把原題 int 延伸到其他整數型別。
+// 思路：先判 target-value 是否可由 T 表示；不可表示時只記錄目前值；可表示則查互補值再插入。
+// 複雜度：平均時間 O(N)、額外空間 O(N)，N 是 values 長度；雜湊碰撞時可退化。
+// 易錯點：先查再插避免重用索引；unsigned 的 values[i]>target 不代表錯誤，只代表本輪補數不存在。
+// -----------------------------------------------------------------------------
 template <TwoSumKey T>
 std::pair<std::size_t, std::size_t>
 leetcode_two_sum(const std::vector<T>& values, T target) {
@@ -462,6 +470,15 @@ void fixed_history_exception_test() {
     assert(full.at(0).value == 7); // 測試型別在丟出前未修改舊值；head 也未前進。
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】有限容量的異質任務驗證管線
+// 情境：服務最多保留兩個不同 lambda 任務，拒絕溢位，執行後還要驗證一組異質輸入皆非空值。
+// 為何使用本章主題：FixedHistory 以 NTTP/policy/concept 固定容量，ErasedTask 用 std::function 擦除
+// callable 型別，validate_all 以 variadic fold 搭泛型 lambda 統一驗證多種值。
+// 設計：包裝並 push 兩個任務；確認第三個被 reject；依序 run；最後以 nonempty validator fold 全部輸入。
+// 成本：容量固定時 push/at O(1)，每個 task 有 type-erased 呼叫與可能配置；驗證 O(V)，V 是值數。
+// 上線注意：std::function 只接受可複製 target，任務例外與逾時需隔離；共享 history 也必須同步及觀測拒絕率。
+// -----------------------------------------------------------------------------
 class ErasedTask {
 public:
     ErasedTask() : function_([] { return std::string{}; }) {}
@@ -479,7 +496,6 @@ bool validate_all(Validator validator, const Values&... values) {
     return (validator(values) && ...);
 }
 
-// 實務整合：policy 容器保存 type-erased task，fold 驗證輸入，lambda 作具體工作。
 void practical_task_pipeline_test() {
     FixedHistory<ErasedTask, 2> tasks;
     // push/run 都是教材要實際執行的操作，不可讓 -DNDEBUG 把呼叫本身刪掉。

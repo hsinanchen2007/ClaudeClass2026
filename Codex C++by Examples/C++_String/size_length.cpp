@@ -19,7 +19,14 @@ void basic_demo() {
     assert(binary.length() == binary.size());
 }
 
-// LeetCode 58（Length of Last Word）。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 58. Length of Last Word（最後一個單字的長度）
+// 題目：忽略句尾空格，回傳最後一個單字的字元數；"a " 回 1。
+// 為何使用本章主題：size() 提供 O(1) 尾後索引，兩個由 size 開始的倒序邊界避免空字串下溢。
+// 思路：1. end=size；2. 向左略過尾空格；3. begin 向左走到前一空格；4. 回 end-begin。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 是 text 長度。
+// 易錯點：不可從 size()-1 開始處理空字串；size 是 bytes/code units，轉 int 前應證明不溢位。
+// -----------------------------------------------------------------------------
 int leetcode_length_of_last_word(const std::string& text) {
     std::size_t end = text.size();
     while (end > 0U && text[end - 1U] == ' ') {
@@ -32,7 +39,14 @@ int leetcode_length_of_last_word(const std::string& text) {
     return static_cast<int>(end - begin);
 }
 
-// 實務：協定限制以 bytes 計算；此處假設 payload 已是 UTF-8 bytes。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】協定欄位 byte 上限檢查
+// 情境：wire protocol 的 payload 欄位最多 max_bytes，規格明確按 UTF-8 encoded bytes 而非人眼字數。
+// 為何使用本章主題：string::size() 正好回 char code-unit/byte 數，無需 strlen，且能正確計入內嵌 NUL。
+// 設計：1. 讀 payload.size；2. 與 max_bytes 做無號比較；3. 不修改或重新編碼內容。
+// 成本：時間 O(1)、額外空間 O(1)。
+// 上線注意：若產品限制 code points 或顯示字形，size 不適用；檢查通過後仍要驗編碼合法性與其他協定欄位。
+// -----------------------------------------------------------------------------
 bool practical_fits_protocol_field(const std::string& payload, const std::size_t max_bytes) {
     return payload.size() <= max_bytes;
 }

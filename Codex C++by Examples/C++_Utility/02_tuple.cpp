@@ -21,8 +21,15 @@ std::tuple<std::string, int, bool> basic_user_record() {
     return {"Ada", 42, true};
 }
 
-// LeetCode 1637：Widest Vertical Area Between Two Points。
-// y 不影響答案，但 tuple 仍保留完整座標。排序 O(n log n)、額外空間 O(n)。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1637. Widest Vertical Area Between Two Points Containing No Points（兩點之間不包含任何點的最寬垂直區域）
+// 題目：輸入平面座標，找相鄰 x 座標的最大差；[[8,7],[9,9],[7,4],[9,7]] 的答案為 1。
+// 為何使用本章主題：tuple 同時保存 x、y，排序與計算用 get<0> 取 x；y 不影響本題答案，
+// 因此這是短距離搬運座標的示範，正式幾何 API 用具名 Point struct 更易讀。
+// 思路：依 x 遞增排序所有點；由第二點起計算相鄰 x 差；持續更新最大寬度。
+// 複雜度：時間 O(N log N)、額外空間 O(N)，N 是點數；函式按值接收並排序輸入副本。
+// 易錯點：同 x 的差為 0；題目至少有兩點，若泛化到少於兩點，本實作會回 0。
+// -----------------------------------------------------------------------------
 int leetcode_max_vertical_width(std::vector<Point> points) {
     std::sort(points.begin(), points.end(), [](const Point& left, const Point& right) {
         return std::get<0>(left) < std::get<0>(right);
@@ -36,7 +43,15 @@ int leetcode_max_vertical_width(std::vector<Point> points) {
 
 using DatabaseRow = std::tuple<int, std::string, double>;
 
-// 實務：模擬 DB row -> 顯示文字。std::apply 將 tuple 展開成 callable 引數。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】資料庫查詢列格式化
+// 情境：查詢層回傳固定順序的 id、sku、price，要轉成一行供診斷顯示的文字。
+// 為何使用本章主題：std::apply 依 tuple shape 展開三欄給 callable，避免逐一寫 get<I>；
+// 相較反覆索引更不易打錯，但跨層 schema 仍應使用具名 struct。
+// 設計：以 const reference 接收 row；apply 解包三欄；依固定 key=value 格式串接結果。
+// 成本：時間與空間皆 O(L)，L 是輸出字串長度，串接及 to_string 可能產生多次配置。
+// 上線注意：tuple 欄位順序必須與 DB schema 同步；價格需固定精度與 locale，文字欄位也要轉義。
+// -----------------------------------------------------------------------------
 std::string practical_render_database_row(const DatabaseRow& row) {
     return std::apply([](int id, const std::string& sku, double price) {
         return "id=" + std::to_string(id) + ",sku=" + sku +

@@ -13,7 +13,16 @@
 #include <utility>
 #include <vector>
 
-// LeetCode 908：Smallest Range I。每個值可 +/-k，答案 max(0,max-min-2k)。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 908. Smallest Range I（最小差值 I）
+// 題目：每個 nums[i] 可各自加上 [-k,k] 內的值，求可能的最小最大差；例如
+// [0,10]、k=2 回 6。
+// 為何使用本章主題：答案只依原始最小與最大值，minmax_element 可單趟取得兩端；
+// 可縮短最多 2k，且結果不能小於 0。
+// 思路：1. 找 low/high iterator；2. 計算原範圍 high-low；3. 扣除 2k；4. 與 0 取 max。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 為 nums 的元素數。
+// 易錯點：輸入不可空；high-low-2*k 若約束放寬可能 int 溢位；答案需截在 0。
+// -----------------------------------------------------------------------------
 int leetcode_smallest_range(const std::vector<int>& nums, int k) {
     assert(!nums.empty());
     const auto [low, high] = std::minmax_element(nums.begin(), nums.end());
@@ -25,7 +34,16 @@ struct Reading {
     double temperature;
 };
 
-// 實務：單趟找最低/最高溫發生時刻。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】溫度序列極值發生時刻摘要
+// 情境：監控批次含 minute 與 temperature，要單趟回最低溫與最高溫各自發生的分鐘。
+// 為何使用本章主題：minmax_element 約以 3N/2 次比較同時找兩極，少於各掃一次；
+// 回傳 iterator 可直接取得關聯的 minute 欄位。
+// 設計：1. 以 temperature comparator 掃描 readings；2. 取得第一個最低與最後一個
+// 最高 iterator；3. 回傳兩者 minute。
+// 成本：時間 O(N)、額外空間 O(1)，N 為讀值筆數。
+// 上線注意：輸入不可空且 temperature 應先拒絕 NaN；相同最高值會取最後一筆，需符合告警契約。
+// -----------------------------------------------------------------------------
 std::pair<int, int> practical_temperature_extreme_minutes(
     const std::vector<Reading>& readings) {
     assert(!readings.empty());

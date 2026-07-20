@@ -36,8 +36,15 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 70：Climbing Stairs。std::function 允許 recursive lambda 自我呼叫。
-// memo 讓時間 O(n)、空間 O(n)；純遞迴會退化成 exponential。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 70. Climbing Stairs（爬樓梯）
+// 題目：每次可爬 1 或 2 階，計算到第 n 階的方法數；n=5 時共有 8 種。
+// 為何使用本章主題：std::function 先提供固定 signature，讓捕獲自身參考的 recursive lambda
+// 能遞迴呼叫；這是 type erasure 教學，迭代 Fibonacci 可把空間降為 O(1) 且避免間接呼叫。
+// 思路：remaining<=2 直接回傳；其餘先查 memo；未計算時遞迴加總前兩階並快取。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 是 steps；memo 與遞迴堆疊都隨 N 成長。
+// 易錯點：目前假設 steps>=1，負值會造成 vector 大小轉換問題；大 N 也可能使 int 溢位。
+// -----------------------------------------------------------------------------
 int leetcode_climb_stairs(int steps) {
     std::vector<int> memo(static_cast<std::size_t>(steps + 1), 0);
     std::function<int(int)> solve = [&memo, &solve](int remaining) -> int {
@@ -55,8 +62,16 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】HTTP router：異質 handler 經 type erasure 放進同一 map，支援 runtime 註冊。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】執行期註冊的 HTTP 路由器
+// 情境：服務依 URL path 儲存不同捕獲狀態的 handler，收到 body 後執行對應處理，缺少路由回 404。
+// 為何使用本章主題：std::function 擦除各種 lambda 的 closure 型別，使異質 handler 能放進同一 map；
+// 相較 function pointer，它能保存 prefix 等狀態，代價是間接呼叫與可能配置。
+// 設計：以固定 Handler signature 註冊 path；dispatch 查 map；命中便傳入 body，未命中回 404。
+// 成本：註冊與查找 O(log R)，R 是路由數；每次呼叫有 type erasure 成本，handler 可能配置記憶體。
+// 上線注意：目前重複 path 會被 emplace 靜默拒絕且 add 不回報；還需處理例外、併發註冊與 HTTP 狀態。
+// -----------------------------------------------------------------------------
 using Handler = std::function<std::string(const std::string&)>;
 
 class Router {

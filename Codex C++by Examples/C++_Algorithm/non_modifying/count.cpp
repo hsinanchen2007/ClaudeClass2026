@@ -13,8 +13,15 @@
 #include <string>
 #include <vector>
 
-// LeetCode 1512：Number of Good Pairs。
-// 教學版對每個位置 count 前綴相同值，O(N^2)；hash frequency 可最佳化到平均 O(N)。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1512. Number of Good Pairs（好數對的數目）
+// 題目：計算 i<j 且 nums[i]==nums[j] 的索引對數；例如 [1,2,3,1,1,3] 回 4。
+// 為何使用本章主題：本教學版對每個新元素以 count 計算先前相同值數量，該數量正是
+// 以目前位置為右端的新 pair；正式大資料宜用 frequency map 降到平均 O(N)。
+// 思路：1. 逐位置 it 掃描；2. count [begin,it) 中等於 *it 的值；3. 加到 pairs。
+// 複雜度：時間 O(N^2)、額外空間 O(1)，N 為 nums 的元素數。
+// 易錯點：只數前綴才能避免同一 pair 重複；大 N 時 pair 數可能超過 int。
+// -----------------------------------------------------------------------------
 int leetcode_num_identical_pairs(const std::vector<int>& nums) {
     int pairs = 0;
     for (auto it = nums.begin(); it != nums.end(); ++it) {
@@ -28,7 +35,17 @@ struct Request {
     int latency_ms;
 };
 
-// 實務：報告 5xx 與慢請求數；一次 count_if 各掃一遍，清楚但總共 2N。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】HTTP 錯誤與慢請求計數
+// 情境：Request 快照包含 status_code 與 latency_ms，報表要分別統計 5xx 數量與
+// latency>1000ms 的數量，同一筆可同時屬於兩者。
+// 為何使用本章主題：兩次 count_if 清楚表達兩個獨立 predicate；指標種類少時可讀性
+// 高，種類很多時應改單趟聚合以減少記憶體頻寬。
+// 設計：1. 計數 status_code>=500；2. 計數 latency_ms>1000；3. 將 difference_type
+// 安全轉成 size_t 回傳。
+// 成本：時間 O(N)、額外空間 O(1)，N 為 request 數，實際掃描 2N 次元素。
+// 上線注意：需驗證負 latency 與非法 status；只有 count 沒有總分母，無法直接表示 error rate。
+// -----------------------------------------------------------------------------
 std::vector<std::size_t> practical_request_counts(
     const std::vector<Request>& requests) {
     const auto errors = std::count_if(

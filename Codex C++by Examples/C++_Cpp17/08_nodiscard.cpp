@@ -28,7 +28,14 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 704：Binary Search。O(log n) time / O(1) space。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 704. Binary Search（二分搜尋）
+// 題目：在遞增陣列找 target 的索引，找不到回 -1；[-1,0,3,5,9,12] 找 9 回傳 4。
+// 為何使用本章主題：[[nodiscard]] 提醒呼叫端不能無聲丟棄搜尋結果，因 -1 與索引都承載控制流程資訊。
+// 思路：1. 維持半開區間 [left,right)；2. nums[middle]<target 時移左界，否則收右界；3. 最後驗相等。
+// 複雜度：N 為元素數；時間 O(log N)、額外空間 O(1)。
+// 易錯點：輸入必須排序；half-open 邊界不可混用，size_t 結果轉 int 前需符合題目長度限制。
+// -----------------------------------------------------------------------------
 [[nodiscard]] int leetcode_binary_search(const std::vector<int>& nums, int target) {
     std::size_t left = 0U;
     std::size_t right = nums.size();
@@ -46,8 +53,15 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】儲存結果：強迫 caller 面對 path/content 驗證結果，不讓失敗被靜默忽略。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】報表儲存前置驗證結果
+// 情境：儲存入口要拒絕空 path 或 content，並要求 caller 明確處理成功狀態與訊息。
+// 為何使用本章主題：[[nodiscard]] 標在 SaveResult API，忽略驗證失敗時編譯器可發診斷；它不是 runtime 強制。
+// 設計：1. 依序驗 path 與 content；2. 失敗回 ok=false 與原因；3. 通過回 saved 結果。
+// 成本：空字串檢查為 O(1)，SaveResult 訊息配置依長度 L 為 O(L)；本教材不執行實際 I/O。
+// 上線注意：真正寫檔仍要處理權限、close、原子發布與錯誤碼；不要用 cast<void> 普遍壓掉 nodiscard。
+// -----------------------------------------------------------------------------
 struct SaveResult {
     bool ok;
     std::string message;

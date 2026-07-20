@@ -42,8 +42,14 @@ void basic_example()
     std::cout << "[基礎] streambuf iterators preserve every character\n";
 }
 
-// LeetCode 387：First Unique Character in a String。
-// 這裡刻意從 stream 讀入，示範 single-pass 統計；回傳字元 index，找不到回 -1。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 387. First Unique Character in a String（字串中的第一個唯一字元）
+// 題目：找第一個只出現一次的字元索引，找不到回 -1；例如 "leetcode" 回傳 0。
+// 為何使用本章主題：本例刻意以 streambuf iterator 保留每個原始 char；讀入 string 後再做題目要求的兩趟統計。
+// 思路：逐字讀完整 stream；以 256 格陣列計數；按原順序找頻率 1 的首字元；否則回 -1。
+// 複雜度：時間 O(N)、額外空間 O(N+1)，N 為字元數；固定頻率表為 O(1)。
+// 易錯點：char 作索引前轉 unsigned char；索引轉 int 要驗範圍；本版按 byte 計數，不正確處理 UTF-8 字元。
+// -----------------------------------------------------------------------------
 int first_unique_index(std::istream& input)
 {
     const std::string text = read_all_characters(input);
@@ -69,8 +75,14 @@ void leetcode_387_example()
     std::cout << "[LeetCode 387] first unique character index = 0\n";
 }
 
-// 實務：把 CRLF log 正規化成 LF。真實 ETL 常先逐字保留，再做明確轉換，
-// 而不是依賴 formatted extraction 把空白吃掉。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】將 CRLF 日誌正規化為 LF
+// 情境：跨平台 ETL 收到含空白與 CRLF 的 log，要移除每個 LF 前的 CR 且保留其他所有字元。
+// 為何使用本章主題：streambuf iterator 不做 formatted extraction，不會吞掉空白，適合逐字保真的文字轉換。
+// 設計：讀入全部 raw 字元；預留相同容量；遇到 CRLF 的 CR 就略過；其餘字元照序追加。
+// 成本：時間 O(N)、額外空間 O(N)，N 為輸入字元數；另有 stream I/O 成本。
+// 上線注意：孤立 CR 會保留；大型檔案宜串流處理避免整檔常駐；二進位檔與編碼需使用明確模式與政策。
+// -----------------------------------------------------------------------------
 std::string normalize_crlf(std::istream& input)
 {
     const std::string raw = read_all_characters(input);

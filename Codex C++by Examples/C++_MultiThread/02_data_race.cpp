@@ -36,11 +36,14 @@ void basic_demo()
     assert(counter.load(std::memory_order_relaxed) == 2 * iterations);
 }
 
-// ----------------------------------------------------------------------------
-// LeetCode 1929：Concatenation of Array（安全 partition 寫入）
-// ----------------------------------------------------------------------------
-// 兩 thread 各處理不重疊 index；同一 vector 的不同 int 元素是不同 memory location。
-// 不可在 worker 裡 push_back，因那會同時修改 size/capacity 共享狀態。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1929. Concatenation of Array（陣列串接）
+// 題目：輸入 nums，建立長度 2N 的 ans，使 ans[i]=ans[i+N]=nums[i]；例如 [1,2,1] 得 [1,2,1,1,2,1]。
+// 為何使用本章主題：預配置 vector 後按 input index 分區，兩個 thread 只寫不同 int memory locations，示範以 ownership 避免 data race。
+// 思路：1. 配置 2N 輸出。2. 將 input index 切成左右段。3. 每個 worker 同時填 i 與 i+N。4. join 後回傳。
+// 複雜度：總工作 O(N)、輸出空間 O(N)，另有兩個 thread 的建立、排程與 join 成本。
+// 易錯點：不可改成並行 push_back；要先檢查 2*N 的 size_t/容器上限，vector<bool> 也不具不同 index 即不同 memory location 的保證。
+// -----------------------------------------------------------------------------
 std::vector<int> get_concatenation(const std::vector<int>& numbers)
 {
     std::vector<int> result(numbers.size() * 2U);
@@ -64,9 +67,14 @@ void leetcode_demo()
             std::vector<int>{1, 2, 1, 1, 2, 1}));
 }
 
-// ----------------------------------------------------------------------------
-// 實務：Map 階段只寫 thread-local，Reduce 階段由主 thread 合併
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【日常實務範例】事件批次的偶數計數 Map/Reduce
+// 情境：兩個 worker 掃描事件值的不同分片，各自計算偶數筆數，最後由主執行緒合併結果。
+// 為何使用本章主題：每個 worker 只寫自己的 partial slot，比共享 counter 每次加鎖或 atomic RMW 降低同步與爭用。
+// 設計：1. 以 middle 分割 index。2. 每段逐值判斷偶數。3. 只遞增指定 slot。4. join 後相加兩個 partial。
+// 成本：總工作 O(N)、額外空間 O(1)，但相鄰 partial slots 可能產生 false sharing，且 thread overhead 對小批次不划算。
+// 上線注意：partial 與 values 必須活到 join；若 worker 數動態化應使用 padded per-worker counters，並確保每個 slot 唯一擁有。
+// -----------------------------------------------------------------------------
 std::size_t parallel_count_even(const std::vector<int>& values)
 {
     const std::size_t middle = values.size() / 2U;

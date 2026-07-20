@@ -22,7 +22,15 @@ void basic_demo() {
     assert("file10" < std::string("file2"));
 }
 
-// LeetCode 392（Is Subsequence）：字元相等比較配合雙指標。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 392. Is Subsequence（判斷子序列）
+// 題目：判斷 candidate 是否可由 text 刪除若干字元後取得且順序不變；"abc" 對 "ahbgdc" 為 true。
+// 為何使用本章主題：operator== 比較目前候選字元與掃描字元，配合單向 matched 索引即可完成，
+//       不需要建立 substring 或排序。
+// 思路：1. matched 指向 candidate 下一個需求；2. 掃 text；3. 字元相等就前進；4. 最後看是否全匹配。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 是 text 長度；candidate 只以索引讀取。
+// 易錯點：candidate 為空應回 true；matched 未小於 candidate.size() 時不可再索引。
+// -----------------------------------------------------------------------------
 bool leetcode_is_subsequence(const std::string& candidate, const std::string& text) {
     std::size_t matched = 0U;
     for (const char ch : text) {
@@ -33,7 +41,16 @@ bool leetcode_is_subsequence(const std::string& candidate, const std::string& te
     return matched == candidate.size();
 }
 
-// 實務：版本字串若直接字典序排序會錯；先解析數字元件再比較。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】數值版本排序
+// 情境：要讓 1.9 排在 1.12 前；直接比較字串會因字典序得到錯誤結果。
+// 為何使用本章主題：本例刻意不用字串比較運算子，而是先把版本解析成整數欄位後比較，
+//       展示相對替代方案：operator< 適合 code-unit 字典序，不適合數值版本語意。
+// 設計：1. 先比較 major；2. major 相同再比較 minor；3. 將 comparator 交給 std::sort。
+// 成本：比較一次 O(1)，排序 V 筆為 O(V log V)、額外空間依 std::sort 實作通常 O(log V)。
+// 上線注意：真實 SemVer 還有 prerelease/build metadata 與溢位；parser 必須先驗證，comparator
+//       必須維持 strict weak ordering。
+// -----------------------------------------------------------------------------
 struct Version {
     int major{};
     int minor{};

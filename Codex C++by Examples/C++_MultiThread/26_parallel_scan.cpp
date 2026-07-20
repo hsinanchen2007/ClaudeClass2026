@@ -14,6 +14,14 @@
 #include <thread>
 #include <vector>
 
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1480. Running Sum of 1d Array（一維陣列的動態和）
+// 題目：輸出每個位置以前的 inclusive sum；例如 [3,1,2,10,1] 得 [3,4,6,16,17]。
+// 為何使用本章主題：本例以固定兩 block 實作 parallel scan：各做 local prefix，再把左 block total 當 offset 加回右側。
+// 思路：1. 處理空/單元素。2. 兩 thread 各 scan 一半。3. join 後讀左半最後值。4. 將 offset 加到右半所有輸出。
+// 複雜度：總工作 O(N)、輸出空間 O(N)，critical path 約 O(N/2) 加右半 offset；另有三次 thread 建立/join。
+// 易錯點：不能漏掉右 block offset；每次 int 加法可能 overflow，第二個 thread 建立失敗時也必須先回收第一個 joinable thread。
+// -----------------------------------------------------------------------------
 std::vector<int> parallel_inclusive_scan(const std::vector<int>& input)
 {
     if (input.empty()) return {};
@@ -51,9 +59,6 @@ void basic_demo()
     assert(parallel_inclusive_scan({}).empty());
 }
 
-// ----------------------------------------------------------------------------
-// LeetCode 1480：Running Sum of 1d Array
-// ----------------------------------------------------------------------------
 std::vector<int> running_sum(const std::vector<int>& numbers)
 {
     return parallel_inclusive_scan(numbers);
@@ -65,9 +70,14 @@ void leetcode_demo()
     assert((running_sum({3, 1, 2, 10, 1}) == std::vector<int>{3, 4, 6, 16, 17}));
 }
 
-// ----------------------------------------------------------------------------
-// 實務：每分鐘 request count 轉成累積計數
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【日常實務範例】每分鐘請求量的累積儀表
+// 情境：監控收到 [5,8,2,10,5,1] 每分鐘 request counts，需要累積曲線，第三分鐘為 15、最後為 31。
+// 為何使用本章主題：inclusive scan 直接把分桶增量轉成 cumulative counter；兩 block 示範大型批次可做 local scan 後套 offset。
+// 設計：1. 將 minute buckets 傳入 scan。2. 各 block 算 local cumulative。3. 加跨 block offset。4. 讀任意時間點與最終總量。
+// 成本：N 個 buckets 的總工作/輸出空間 O(N)，同步與 thread overhead 使短時間序列通常不值得平行化。
+// 上線注意：request count 需用足夠寬型別並處理缺值/重置；worker 例外需傳回，浮點或非結合 operation 的重排結果也可能不同。
+// -----------------------------------------------------------------------------
 void practical_demo()
 {
     const std::vector<int> requests_per_minute{5, 8, 2, 10, 5, 1};

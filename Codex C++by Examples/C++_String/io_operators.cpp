@@ -39,7 +39,15 @@ void basic_demo() {
     assert(first == "alpha" && second == "beta");
 }
 
-// LeetCode 58（Length of Last Word）：operator>> 逐 token，最後一個就是答案。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 58. Length of Last Word（最後一個單字的長度）
+// 題目：忽略句首、句中與句尾空格後，回傳最後一個單字長度；"fly me to the moon  " 回 4。
+// 為何使用本章主題：operator>> 自動略過 whitespace 並逐 token 抽取，最後一次成功的 word
+//       就是答案；這是簡潔教學解，會配置 token，索引倒掃通常常數較低。
+// 思路：1. 以 sentence 建 istringstream；2. 持續抽取 word；3. 每次覆寫 last；4. 回 last.size。
+// 複雜度：時間 O(N)、額外空間 O(K)，N 是句長，K 是目前/最後單字長度。
+// 易錯點：不能用 `while(!eof())`；回 int 前一般程式要驗 size，且 locale whitespace 規則可能影響 token。
+// -----------------------------------------------------------------------------
 int leetcode_length_of_last_word(const std::string& sentence) {
     std::istringstream input(sentence);
     std::string word;
@@ -48,7 +56,16 @@ int leetcode_length_of_last_word(const std::string& sentence) {
     return static_cast<int>(last.size());
 }
 
-// 實務：解析 `LEVEL CODE MESSAGE...`；前兩欄 token，剩下以 getline 讀整段。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】結構化單行 log 解析
+// 情境：輸入格式固定為 `LEVEL CODE MESSAGE...`，前兩欄無空白，message 可含空格且不得為空。
+// 為何使用本章主題：operator>> 適合 typed token，getline 適合保留剩餘訊息；先解析 candidate
+//       再一次指派，較直接寫 destination 能保證錯誤時舊紀錄不變。
+// 設計：1. 抽取 level 與 int code；2. `ws+getline` 讀剩餘內容；3. 拒絕空 message；4. move commit。
+// 成本：時間 O(N)、額外空間 O(N)，N 是 line 長度，candidate 暫存完整紀錄。
+// 上線注意：std::ws 會吃掉所有前導 whitespace；要限制行長、驗 level/code 範圍，並區分
+//       malformed、EOF 與底層 I/O 錯誤。
+// -----------------------------------------------------------------------------
 struct LogRecord {
     std::string level;
     int code{};

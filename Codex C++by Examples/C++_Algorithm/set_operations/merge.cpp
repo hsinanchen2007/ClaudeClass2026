@@ -13,7 +13,16 @@
 #include <string>
 #include <vector>
 
-// LeetCode 21：Merge Two Sorted Lists 的 vector 對應版。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 21. Merge Two Sorted Lists（合併兩個有序鏈結串列）
+// 題目：原題合併兩條升冪 linked list；例如 [1,2,4] 與 [1,3,4] 得
+// [1,1,2,3,4,4]。本 helper 使用 vector，是 iterator API 對應版。
+// 為何使用本章主題：std::merge 以雙 iterator 穩定合併兩個獨立 sorted ranges，完整
+// 保留兩邊 duplicate，正好對應 linked-list merge 的值語意。
+// 思路：1. 驗證兩輸入升冪；2. 預留 N+M；3. merge 到 back_inserter。
+// 複雜度：時間 O(N+M)、額外空間 O(N+M)，N/M 為兩序列長度。
+// 易錯點：這不是原題 ListNode 原地 relink 解；reserve 不建立元素，因此輸出使用 back_inserter。
+// -----------------------------------------------------------------------------
 std::vector<int> leetcode_merge_two_sorted(const std::vector<int>& lhs,
                                            const std::vector<int>& rhs) {
     assert(std::is_sorted(lhs.begin(), lhs.end()));
@@ -30,7 +39,16 @@ struct Record {
     std::string source;
 };
 
-// 實務：合併兩個 immutable shard snapshot，來源仍可供 audit 使用。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】Immutable Shard 事件時間線合併
+// 情境：first/second 是兩個不可修改的 shard snapshot，各自依 timestamp 排序；下游
+// 要一條完整合併時間線供查詢，來源仍保留給 audit。
+// 為何使用本章主題：std::merge 線性讀兩個 sorted ranges 並穩定輸出；相同 timestamp
+// 時第一 shard 先出，無需重排來源副本。
+// 設計：1. 預留兩邊總數；2. comparator 只比 timestamp；3. merge 到新 output。
+// 成本：時間 O(N+M)、額外空間 O(N+M)，N/M 為兩 shard 筆數。
+// 上線注意：若 tie 順序不能依來源，需加入全域 sequence；載入邊界要驗證兩邊確實按同 comparator 排序。
+// -----------------------------------------------------------------------------
 std::vector<Record> practical_merge_shards(const std::vector<Record>& first,
                                            const std::vector<Record>& second) {
     std::vector<Record> output;

@@ -20,7 +20,15 @@ void basic_demo() {
     assert(text == "cap");
 }
 
-// LeetCode 387（First Unique Character in a String）；題目保證小寫英文字母。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 387. First Unique Character in a String（第一個不重複字元）
+// 題目：輸入小寫英文字串，回傳第一個出現一次的字元索引，若不存在回 -1；loveleetcode 回 2。
+// 為何使用本章主題：operator[] 在第二輪以已由 `i<text.size()` 證明合法的索引 O(1) 讀字元，
+//       再查固定 26 格計數；無需 at 的例外路徑。
+// 思路：1. 第一輪累加每個字母次數；2. 第二輪按原順序走索引；3. 首個 count==1 即回傳。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 是 text 長度，字母表固定為 26。
+// 易錯點：題目小寫契約不可省略；一般輸入中 `ch-'a'` 可能越界，索引轉 int 前也要驗範圍。
+// -----------------------------------------------------------------------------
 int leetcode_first_unique_char(const std::string& text) {
     std::array<int, 26U> counts{};
     for (const char ch : text) {
@@ -34,7 +42,15 @@ int leetcode_first_unique_char(const std::string& text) {
     return -1;
 }
 
-// 實務：解析固定格式 "L:payload"，先驗證長度與分隔符再用 []。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】固定前綴紀錄快速驗證
+// 情境：紀錄格式至少為 `L:x`，level 只能 I/W/E，第二個 byte 必須是冒號。
+// 為何使用本章主題：完成 `size>=3` 前置驗證後，operator[] 直接讀固定位置，較 substr 或 stream
+//       解析更適合這個短且位置固定的協定。
+// 設計：1. 先拒絕過短輸入；2. 讀 index 0 的 level；3. 驗 level 白名單與 index 1 冒號。
+// 成本：時間 O(1)、額外空間 O(1)，不掃描 payload。
+// 上線注意：目前只確認結構前兩 bytes，未驗 payload 非空白、編碼或長度；所有 [] 必須留在 size guard 後。
+// -----------------------------------------------------------------------------
 bool practical_is_valid_record(const std::string& line) {
     if (line.size() < 3U) {
         return false;

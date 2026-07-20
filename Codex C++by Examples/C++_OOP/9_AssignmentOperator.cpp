@@ -88,9 +88,14 @@ void basic_example()
     std::cout << "[基礎] copy-and-swap 深複製並安全處理 self-assignment\n";
 }
 
-// LeetCode 706：Design HashMap。
-// Judge 的 put/get/remove 之外，本實作底層 OwnedArray 也能正確 copy-assign，
-// 因此可在測試或 speculative update 前建立獨立副本。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 706. Design HashMap（設計雜湊映射）
+// 題目：不使用內建 hash map，支援 put/get/remove；缺 key 回 -1，例如 put(1,10) 後 get(1)=10。
+// 為何使用本章主題：本例用直接位址陣列簡化題目，額外透過 OwnedArray copy assignment 示範 map 備份互不共享資源。
+// 思路：constructor 將所有 slots 設 -1；checked 驗 key；put/get/remove 直接讀寫；backup 以深複製 assignment 建立。
+// 複雜度：初始化/複製 O(R)、每次 map 操作 O(1)、空間 O(R)，R 為示範 key range 10,001。
+// 易錯點：這不是一般 hash table；-1 必須不在合法 value 域；copy-and-swap 要交換所有 state 且安全處理 self-assignment。
+// -----------------------------------------------------------------------------
 class MyHashMap {
 public:
     MyHashMap() : values_(kRange)
@@ -129,7 +134,14 @@ void leetcode_706_example()
     std::cout << "[LeetCode 706] map 備份與原物件互不共享 array\n";
 }
 
-// 實務案例：transaction staging。先複製目前 limits，驗證成功後才 assignment commit。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】驗證後提交資源限制設定
+// 情境：先複製 active limits 成 candidate，修改並驗證不超過 32，成功才完整替換目前設定。
+// 為何使用本章主題：copy assignment 只在候選完整有效後執行，copy-and-swap 可讓配置失敗時 active 保持原狀。
+// 設計：copy-construct candidate；套用修改；驗證；通過後 assignment commit；讀回 active 驗證。
+// 成本：候選複製與提交各 O(N) 且各需暫存配置，N 為 limit 數量。
+// 上線注意：這只保證單物件的例外安全，不是跨執行緒或持久化交易；發布給 readers 仍需鎖或 immutable swap。
+// -----------------------------------------------------------------------------
 void practical_example()
 {
     OwnedArray active(2);

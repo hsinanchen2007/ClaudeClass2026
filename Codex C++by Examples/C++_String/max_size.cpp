@@ -20,7 +20,15 @@ void basic_demo() {
     assert(text.max_size() > 0U);
 }
 
-// LeetCode 1614（Maximum Nesting Depth）：先用 size 檢查索引資料是否合理。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1614. Maximum Nesting Depth of the Parentheses（括號最大巢狀深度）
+// 題目：輸入合法括號字串，回傳任一位置的最大開括號深度；`(1+(2*3)+((8)/4))+1` 回 3。
+// 為何使用本章主題：此演算法只掃描字元，沒有使用 max_size；它是對照案例，說明理論容量上限
+//       與括號深度邏輯無關，不能為了題目預先配置到 max_size。
+// 思路：1. depth/best 歸零；2. 遇 '(' 增加並更新 best；3. 遇 ')' 減少；4. 回 best。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 是 text 長度。
+// 易錯點：原題保證括號有效；一般 parser 要拒絕 depth 負值與結束時非零，且不可 reserve(max_size)。
+// -----------------------------------------------------------------------------
 int leetcode_max_parenthesis_depth(const std::string& text) {
     int depth = 0;
     int best = 0;
@@ -37,7 +45,15 @@ int leetcode_max_parenthesis_depth(const std::string& text) {
     return best;
 }
 
-// 實務：檢查相加是否 overflow，並套用真正業務上限。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】訊息追加大小閘門
+// 情境：現有訊息要追加 incoming bytes，既不能超過 string 可表示上限，也不能超過較小的業務上限。
+// 為何使用本章主題：max_size()-size() 先以減法檢查容器上限，避免 `size+incoming` 無號溢位；
+//       再套 domain_limit，而不是把 max_size 誤當可用 RAM 或安全輸入上限。
+// 設計：1. 先判 incoming 是否超過容器剩餘表示範圍；2. 安全後才相加；3. 與 domain limit 比較。
+// 成本：時間 O(1)、額外空間 O(1)，不配置也不修改 current。
+// 上線注意：domain_limit 若小於 current.size() 也會拒絕；通過只代表長度可接受，後續配置仍可能 bad_alloc。
+// -----------------------------------------------------------------------------
 bool practical_can_append(const std::string& current, const std::size_t incoming,
                 const std::size_t domain_limit) {
     if (incoming > current.max_size() - current.size()) {

@@ -36,8 +36,14 @@ void basic_example()
     std::cout << "[基礎] vector::at reports out_of_range\n";
 }
 
-// LeetCode 20：Valid Parentheses。題目只有 bracket chars；production 版對未知輸入丟
-// invalid_argument，配對不合法則正常回 false（這是預期答案，不是 exceptional failure）。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 20. Valid Parentheses（有效的括號）
+// 題目：輸入只含 ()[]{}，判斷括號種類與順序是否正確；例如 ()[]{} 為 true，(] 與 ([)] 為 false。
+// 為何使用本章主題：配對失敗是題目正常答案而回 false；只有 production 版收到契約外字元時才丟 invalid_argument。
+// 思路：1. 開括號 push。2. 閉括號先確認 stack 非空。3. pop 並比對種類。4. 掃描後要求 stack 為空。
+// 複雜度：字串長度 N 的時間 O(N)、最壞額外空間 O(N)。
+// 易錯點：不能用 exception 表示普通 mismatch；閉括號遇空 stack 要立即 false，未知字元與不匹配括號是不同契約狀態。
+// -----------------------------------------------------------------------------
 bool is_valid(const std::string& text)
 {
     std::vector<char> stack;
@@ -64,7 +70,14 @@ void leetcode_20_example()
     std::cout << "[LeetCode 20] false is normal mismatch; unknown chars throw\n";
 }
 
-// 實務：設定錯誤用 invalid_argument；I/O failure 則會是 runtime/system error 類。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】Worker 數量設定驗證
+// 情境：服務接受 worker_count 設定，但部署允許範圍只有 1..256；0 或過大值代表呼叫端輸入違約。
+// 為何使用本章主題：invalid_argument 精確表達參數不符合前置條件，比籠統 runtime_error 或 sentinel 0 更方便 caller 分類。
+// 設計：1. 接收 requested。2. 檢查上下界。3. 違約時丟 invalid_argument。4. 合法時原值回傳。
+// 成本：成功判斷時間 O(1)、空間 O(1)；失敗另有建立 exception 與 unwinding 成本。
+// 上線注意：訊息可供人讀但控制流程應看型別；若設定來自檔案，還要在較高層附加 key、來源與安全過濾後的值。
+// -----------------------------------------------------------------------------
 int worker_count(int requested)
 {
     if (requested < 1 || requested > 256) throw std::invalid_argument("workers must be 1..256");

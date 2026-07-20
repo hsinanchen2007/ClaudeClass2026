@@ -25,14 +25,19 @@ void basic_example()
     std::cout << "[基礎] -2.5F round-trips through uint32 representation\n";
 }
 
-// LeetCode 191：Number of 1 Bits 的正式介面接 uint32_t，直接 popcount 即可。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 191. Number of 1 Bits（二進位中 1 的個數）
+// 題目：計算 32-bit unsigned 值中 set bit 數；0b1011 回傳 3，0xFFFFFFFD 回傳 31。
+// 為何使用本章主題：正式介面直接 popcount；額外 adapter 以 bit_cast 保留 int32_t representation，誠實區分 bits 與 numeric conversion。
+// 思路：1. uint32_t 直接 popcount；2. signed 教學輸入先 bit_cast<uint32_t>；3. 再對保留的 bits 計數。
+// 複雜度：固定 32-bit 值，時間 O(1)、額外空間 O(1)。
+// 易錯點：signed adapter 不是 LeetCode 必要解；bit_cast 要求同大小，且 -1 的 32 個 1 依賴 int32_t 表示契約。
+// -----------------------------------------------------------------------------
 int hamming_weight(std::uint32_t value)
 {
     return std::popcount(value);
 }
 
-// 額外 bit_cast 教學：若 application 持有 int32_t，而需求是計算 object representation
-// 中的 1，bit_cast<uint32_t> 可明確表達「保留 bits」，不是 numeric conversion。
 int representation_popcount(std::int32_t value)
 {
     return std::popcount(std::bit_cast<std::uint32_t>(value));
@@ -46,7 +51,14 @@ void leetcode_191_example()
     std::cout << "[LeetCode 191] uint32 正式題解與 signed representation adapter 均驗證\n";
 }
 
-// 實務：明確輸出 float 的 little-independent big-endian bytes。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】浮點 wire format 編解碼
+// 情境：把 float 編成四個 big-endian bytes，接收端再重組成完全相同的 float 值。
+// 為何使用本章主題：bit_cast 在 float/uint32_t 間複製 representation；shift 明確處理 wire endian，避免 aliasing。
+// 設計：1. encode 時 bit_cast 後拆高到低四 bytes；2. decode 時重組 uint32_t；3. 再 bit_cast 回 float。
+// 成本：固定四 byte，encode/decode 時間與額外空間皆 O(1)。
+// 上線注意：協定要保證 32-bit IEEE-754；NaN payload、版本與錯誤長度也需定義，bit_cast 不負責驗證。
+// -----------------------------------------------------------------------------
 std::array<std::uint8_t, 4> encode_float_big_endian(float value)
 {
     const std::uint32_t bits = std::bit_cast<std::uint32_t>(value);

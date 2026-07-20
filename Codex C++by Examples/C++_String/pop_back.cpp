@@ -18,7 +18,14 @@ void basic_demo() {
     assert(text == "done");
 }
 
-// LeetCode 2390（Removing Stars From a String）；題目保證每顆星前有可刪字元。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 2390. Removing Stars From a String（移除星號）
+// 題目：每個 `*` 會刪除自己與左側最近尚未刪除的字元；"leet**cod*e" 得 "lecoe"。
+// 為何使用本章主題：把 output 當 char stack，遇星號以 pop_back O(1) 刪除尾端；一般字元 push_back。
+// 思路：1. 從左掃 input；2. 非星號入 stack；3. 星號刪除 stack 尾；4. 最終 stack 即答案。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 是 input 長度。
+// 易錯點：原題保證每顆星前有可刪字元；一般輸入不能只靠 assert，空 stack 呼叫 pop_back 是 UB。
+// -----------------------------------------------------------------------------
 std::string leetcode_remove_stars(const std::string& input) {
     std::string output;
     for (const char ch : input) {
@@ -32,7 +39,15 @@ std::string leetcode_remove_stars(const std::string& input) {
     return output;
 }
 
-// 實務：去掉 URL/path 尾端多餘 slash，但保留根目錄單一 slash。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】路徑尾端斜線正規化
+// 情境：將 `/srv/data///` 正規化為 `/srv/data`，但根目錄 `/` 必須保留。
+// 為何使用本章主題：back() 檢查目前最後字元、pop_back() 原地刪一格，適合未知數量的尾端重複字元，
+//       不需重新建立整條路徑。
+// 設計：1. 以 size>1 保護根目錄與非空條件；2. 尾端為 `/` 就 pop；3. 直到條件不成立。
+// 成本：時間 O(K)、額外空間 O(1)，K 是被移除的尾斜線數。
+// 上線注意：這不是完整 path canonicalization，不處理空字串、`//` 特殊語意、`.`/`..` 或 Windows 分隔符。
+// -----------------------------------------------------------------------------
 void practical_trim_trailing_slashes(std::string& path) {
     while (path.size() > 1U && path.back() == '/') {
         path.pop_back();

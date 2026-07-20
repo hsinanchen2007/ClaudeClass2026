@@ -19,7 +19,15 @@ void basic_demo() {
     assert(text.find_last_of("0123456789") == std::string::npos);
 }
 
-// LeetCode 58（Length of Last Word），用 find_last_of 找前一個空白。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 58. Length of Last Word（最後一個單字的長度）
+// 題目：忽略句尾空格，計算最後一個單字長度；例如 "fly me to the moon  " 回 4。
+// 為何使用本章主題：先找最後非空格，再用 find_last_of(' ', end) 找該單字前的空格，
+//       以索引差完成而不配置切片。
+// 思路：1. 定位最後有效字元；2. 全空白回 0；3. 往左找空格；4. 依是否找到決定起點。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 是 text 長度。
+// 易錯點：find_last_of 的參數是字元集合；npos 分支要先處理，避免無號 `npos+1` wrap。
+// -----------------------------------------------------------------------------
 int leetcode_length_of_last_word(const std::string& text) {
     const std::size_t end = text.find_last_not_of(' ');
     if (end == std::string::npos) return 0;
@@ -27,7 +35,15 @@ int leetcode_length_of_last_word(const std::string& text) {
     return static_cast<int>(end - (separator == std::string::npos ? 0U : separator + 1U) + 1U);
 }
 
-// 實務：跨 Windows/Unix 顯示 basename；不修改輸入、不配置中間 substring。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】跨分隔符 basename 顯示
+// 情境：診斷介面同時收到 Unix `/` 與 Windows `\` 路徑，只需顯示最後一個 component。
+// 為何使用本章主題：find_last_of("/\\") 一次找到兩種分隔符中最右者，再從下一位置建立結果；
+//       相較先正規化整條路徑少一次中間修改。
+// 設計：1. 找最後一個 slash/backslash；2. 沒找到就從 0 開始；3. 複製尾端 component 回傳。
+// 成本：時間 O(N)、額外空間 O(B)，N 是 path 長度，B 是 basename 長度。
+// 上線注意：尾端分隔符會得到空名稱，且這不處理 drive root、UNC、`.`/`..`；正式路徑操作用 filesystem。
+// -----------------------------------------------------------------------------
 std::string practical_basename(const std::string_view path) {
     const std::size_t separator = path.find_last_of("/\\");
     const std::size_t begin = separator == std::string_view::npos ? 0U : separator + 1U;

@@ -38,7 +38,15 @@ void basic_demo() {
     assert(format_user("Ada", 7) == "user=Ada score=0007");
 }
 
-// LeetCode 412（Fizz Buzz）：一般數字以 format/to_string 產生。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 412. Fizz Buzz（Fizz Buzz）
+// 題目：產生 1..n 的字串；3 的倍數用 Fizz、5 的倍數用 Buzz、同時為倍數用 FizzBuzz，否則輸出數字。
+// 為何使用本章主題：非倍數分支需把 int 轉成 string；標準庫支援時用 format("{}", value)，
+//       否則以 to_string fallback，格式化不是倍數判斷本身的演算法。
+// 思路：1. 逐一走 1..n；2. 先判 15；3. 再判 3/5；4. 其他值格式化成十進位。
+// 複雜度：時間 O(N*D)、額外空間 O(N*D)，D 是數值輸出平均位數，空間主要是答案集合。
+// 易錯點：15 必須先於 3 與 5；feature-test 分支要保持輸出一致，n<=0 時答案為空。
+// -----------------------------------------------------------------------------
 std::vector<std::string> leetcode_fizz_buzz(const int n) {
     std::vector<std::string> answer;
     for (int value = 1; value <= n; ++value) {
@@ -56,7 +64,15 @@ std::vector<std::string> leetcode_fizz_buzz(const int n) {
     return answer;
 }
 
-// 實務：固定欄位順序的 log，格式化改善可讀性；資料 escaping 仍需額外處理。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】工作耗時紀錄格式化
+// 情境：把 job id 與秒數輸出成固定欄位順序，elapsed 一律顯示三位小數，例如 1.25 成為 1.250s。
+// 為何使用本章主題：std::format 將欄位、型別與精度放在同一格式字串，較手動串接清楚；
+//       fallback 用 local ostringstream 隔離 flags，避免污染 caller stream。
+// 設計：1. 依 feature test 選格式器；2. 寫 job 整數；3. 以 fixed/三位小數寫 seconds。
+// 成本：時間與輸出字元數 O(L)、額外空間 O(L)，L 是結果長度；格式器可能配置。
+// 上線注意：格式化不會做 JSON/HTML escaping；浮點 round policy、非有限值與 runtime format_error 要明定。
+// -----------------------------------------------------------------------------
 std::string practical_log_record(const int job_id, const double seconds) {
 #if defined(__cpp_lib_format) && __cpp_lib_format >= 201907L
     return std::format("job={} elapsed={:.3f}s", job_id, seconds);

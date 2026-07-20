@@ -43,8 +43,14 @@ void basic_example()
     std::cout << "[基礎] const Notebook 只能唯讀 pages\n";
 }
 
-// LeetCode 303：Range Sum Query - Immutable。
-// 建構後 prefix_ 不再改；sum_range 是純查詢，所以明確標 const。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 303. Range Sum Query - Immutable（區域和檢索：不可變）
+// 題目：預處理整數陣列後，多次查 [left,right] 總和；例如 [-2,0,3,-5,2,-1] 的 [0,2] 為 1。
+// 為何使用本章主題：prefix_ 建構後不變，sum_range 標 const，讓同一唯讀 NumArray 可重複查詢。
+// 思路：建立前置零的 prefix；prefix[i+1] 累加 nums[i]；查詢以 prefix[right+1]-prefix[left]。
+// 複雜度：建構時間/空間 O(N)，每次查詢 O(1)，N 為元素數。
+// 易錯點：left<=right 且 right<N；right+1 要防溢位；int 前綴和可能溢位，正式版本宜用較寬型別。
+// -----------------------------------------------------------------------------
 class NumArray {
 public:
     explicit NumArray(const std::vector<int>& nums) : prefix_(nums.size() + 1U, 0)
@@ -72,7 +78,14 @@ void leetcode_303_example()
     std::cout << "[LeetCode 303] const sum_range 可安全重複查詢\n";
 }
 
-// 實務案例：logical const cache。計算 checksum 不改 payload 語意，但可快取結果。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】封包 checksum 的 logical-const 快取
+// 情境：不可變 Packet 可能多次查 checksum，首次線性計算後要重用結果而不改變外界看到的 payload 語意。
+// 為何使用本章主題：checksum() 可維持 const API，mutable 只允許更新內部 cache，避免把快取暴露成 domain state。
+// 設計：cached_ 為 false 時 accumulate bytes；保存結果並設旗標；後續直接回 cached_checksum_。
+// 成本：首次時間 O(N)、後續 O(1)，額外空間 O(1)，N 為 byte 數。
+// 上線注意：目前 mutable cache 有 data race；多執行緒需同步，總和要防溢位，若 payload 可改則必須失效 cache。
+// -----------------------------------------------------------------------------
 class Packet {
 public:
     explicit Packet(std::vector<int> bytes) : bytes_(std::move(bytes)) {}

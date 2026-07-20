@@ -12,7 +12,16 @@
 #include <numeric>
 #include <vector>
 
-// LeetCode 977：Squares of a Sorted Array；此處示範平方總和這個衍生查詢。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 977. Squares of a Sorted Array（有序陣列的平方）
+// 題目：原題要回平方後的升冪陣列；本 helper 只計算所有平方值總和，例如
+// [-4,-1,0,3,10] 回 126，是衍生查詢而非完整 LC977 題解。
+// 為何使用本章主題：transform_reduce 融合「升格後平方」與「加總」，不建立平方
+// vector；原題仍需雙指標或排序來產生有序輸出。
+// 思路：1. 將每個 int 升為 long long；2. 平方；3. 以 0LL 與 plus 歸約所有結果。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 為 nums 的元素數。
+// 易錯點：不得把單一總和當作 LC977 回傳；要先升格再平方，避免 int multiplication 溢位。
+// -----------------------------------------------------------------------------
 long long leetcode_sum_of_squares(const std::vector<int>& nums) {
     return std::transform_reduce(
         nums.begin(), nums.end(), 0LL, std::plus<>{},
@@ -27,7 +36,16 @@ struct Sample {
     double actual;
 };
 
-// 實務：不配置 error vector，直接計算 mean squared error。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】模型批次 Mean Squared Error
+// 情境：Sample 含 predicted 與 actual，要計算平均平方誤差供模型監控，且不希望配置
+// 中間 error vector；空批次依本 API 回 0.0。
+// 為何使用本章主題：transform_reduce 將每筆誤差平方 mapping 與總和 reduction 融合，
+// 可減少一份暫存與一次記憶體掃描。
+// 設計：1. 空輸入先回 0；2. 計算 error=predicted-actual；3. 歸約 error^2；4. 除以筆數。
+// 成本：時間 O(N)、額外空間 O(1)，N 為樣本數。
+// 上線注意：浮點加法可因重排產生末位差異；NaN/Infinity、空批次語意與可重現需求都要明定。
+// -----------------------------------------------------------------------------
 double practical_mean_squared_error(const std::vector<Sample>& samples) {
     if (samples.empty()) {
         return 0.0;

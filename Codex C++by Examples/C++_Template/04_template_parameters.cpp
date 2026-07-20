@@ -64,7 +64,15 @@ private:
     Storage<T, N> data_{};
 };
 
-// LeetCode 1480：Running Sum，以 array 大小作 NTTP，回傳型別保留相同長度。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1480. Running Sum of 1d Array（一維陣列的動態和）
+// 題目：回傳每個位置的前綴和；[1,2,3,4] 變成 [1,3,6,10]，空輸入仍為空。
+// 為何使用本章主題：T 是型別參數、N 是由 std::array 推導的 NTTP，輸入與回傳在型別層保留
+// 相同固定長度；原題使用動態 vector，這是編譯期尺寸的教學改寫。
+// 思路：按值取得可修改副本；由索引 1 起把前一個前綴和加到目前元素；回傳同一 array。
+// 複雜度：時間 O(N)、回傳資料空間 O(N)，N 是編譯期陣列長度；演算法本身只用 O(1) 暫存。
+// 易錯點：T 必須支援 += 與複製；有號累加可能溢位，N=0 時迴圈必須安全略過。
+// -----------------------------------------------------------------------------
 template <typename T, std::size_t N>
 constexpr std::array<T, N> leetcode_running_sum(std::array<T, N> values) {
     for (std::size_t i = 1; i < N; ++i) {
@@ -73,9 +81,17 @@ constexpr std::array<T, N> leetcode_running_sum(std::array<T, N> values) {
     return values;
 }
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】固定容量稽核 Ring Log
+// 情境：裝置只保留兩筆稽核值，滿載時依部署用途選擇拒絕新值或循環覆寫最舊值。
+// 為何使用本章主題：T、容量 N 與 OverflowPolicy 分別是型別、值與策略模板參數；
+// 相較 runtime capacity/policy，不需額外欄位或每次判斷兩種策略，但每種組合是不同型別。
+// 設計：未滿時寫下一槽；reject 滿載回 false；overwrite 寫 next_ 並循環前進；newest 計算最新槽位。
+// 成本：append/newest 時間 O(1)、物件空間 O(N)，所有 N 個 T 在建構 RingLog 時即建立。
+// 上線注意：N 必須大於零；T assignment 失敗可能留下部分變更，且讀寫共享物件時需要同步。
+// -----------------------------------------------------------------------------
 enum class OverflowPolicy { reject, overwrite_oldest };
 
-// 實務：編譯期容量與策略；物件不需額外保存 capacity/policy 欄位。
 template <typename T, std::size_t N, OverflowPolicy Policy>
 class RingLog {
     static_assert(N > 0U, "RingLog 容量必須大於零");

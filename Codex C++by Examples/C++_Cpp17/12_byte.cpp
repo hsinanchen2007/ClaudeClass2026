@@ -31,7 +31,14 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 191：Number of 1 Bits。以四個 byte 表達 32-bit input，逐 byte 計數。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 191. Number of 1 Bits（二進位中 1 的個數）
+// 題目：計算 32-bit unsigned 值的 set bit 數；...1011 的答案為 3。
+// 為何使用本章主題：本檔將官方 uint32_t 教學改寫成四個 std::byte，展示 raw byte 必須先 to_integer 才能做數值計數。
+// 思路：1. 每個 byte 轉 unsigned；2. 以 n&=n-1 計數該 byte；3. 累加四個 byte 的結果。
+// 複雜度：K 為四個 byte 中的 set bit 總數；時間 O(K)、額外空間 O(1)。
+// 易錯點：byte order 不影響總 bit 數但會影響其他數值解讀；std::byte 不能直接做算術，輸入也必須恰有四格。
+// -----------------------------------------------------------------------------
 int count_byte(std::byte value) {
     unsigned number = std::to_integer<unsigned>(value);
     int count = 0;
@@ -55,14 +62,20 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】協定 header：逐欄做 big-endian encode，不把 padding/ABI 當成 wire format。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】三 byte 協定 header 編碼
+// 情境：將 8-bit version 與 16-bit length 編成固定三 byte 的 big-endian wire format。
+// 為何使用本章主題：std::byte 表達 raw wire storage，逐欄 shift/cast 避免把 struct padding、ABI 或 native endian 當協定。
+// 設計：1. 第一格放 version；2. length 高 8 bits 放第二格；3. 低 8 bits 放第三格。
+// 成本：固定三格，時間與輸出空間皆 O(1)。
+// 上線注意：還需實作驗證過的 decode、版本/長度上限與封包完整性；不可直接 memcpy Header。
+// -----------------------------------------------------------------------------
 struct Header {
     std::uint8_t version;
     std::uint16_t length;
 };
 
-// 實務：顯式 big-endian encode，不 memcpy struct（避免 padding/endian/ABI 問題）。
 std::array<std::byte, 3> practical_encode_header(const Header& header) {
     return {std::byte{header.version},
             std::byte{static_cast<std::uint8_t>((header.length >> 8U) & 0xFFU)},

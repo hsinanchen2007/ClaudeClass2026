@@ -102,12 +102,30 @@ std::vector<Candidate> basic_select_top(const std::vector<Candidate>& input,
     return output;
 }
 
-// LeetCode 75：Sort Colors；本章用 sort 作 correctness baseline。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 75. Sort Colors（顏色分類）
+// 題目：原地將只含 0、1、2 的 nums 排成同色相鄰且依 0、1、2 順序；例如
+// [2,0,2,1,1,0] 變 [0,0,1,1,2,2]。
+// 為何使用本章主題：本章以 std::sort 作 correctness baseline，時間 O(N log N)；
+// 正式最佳解應用 counting 或 Dutch national flag 達 O(N)。
+// 思路：1. 對完整 nums 直接 sort；2. 原地得到非遞減顏色序列。
+// 複雜度：時間 O(N log N)、額外空間通常 O(log N)，N 為 nums 的元素數。
+// 易錯點：這不是題目期望的一趟最佳解；通用函式若不信任輸入，應驗證只含 0、1、2。
+// -----------------------------------------------------------------------------
 void leetcode_sort_colors(std::vector<int>& nums) {
     std::sort(nums.begin(), nums.end());
 }
 
-// 實務：p50/p95 latency。契約採 floor((n-1)*p)、不插值，且在副本操作。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】Latency p50/p95 摘要
+// 情境：唯讀 latency samples 要產生 p50 與 p95，採 floor((N-1)*p) 且不插值；空值、
+// 非有限樣本或非法 p 必須拒絕。
+// 為何使用本章主題：select_quantile 在副本上以 nth_element 平均線性定位單一分位；
+// practical wrapper 呼叫兩次，保留原輸入順序並明確固定 quantile 定義。
+// 設計：1. 驗證樣本與 p；2. 計算 floor index；3. nth_element 取得值；4. 分別求 p50/p95。
+// 成本：平均時間 O(N)、額外空間 O(N)，N 為樣本數；實際建立兩份副本並各選取一次。
+// 上線注意：大量 quantile 應考慮一次 sort 或 sketch；NaN 會破壞排序契約，API 目前以例外拒絕。
+// -----------------------------------------------------------------------------
 struct LatencySummary {
     double p50;
     double p95;

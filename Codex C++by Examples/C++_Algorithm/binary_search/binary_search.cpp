@@ -26,8 +26,17 @@
 #include <string>
 #include <vector>
 
-// LeetCode 704：Binary Search。
-// 題目要索引，因此用 lower_bound 找候選，再驗證是否真的相等。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 704. Binary Search（二分搜尋）
+// 題目：輸入升冪整數陣列 nums 與 target，找到時回傳索引，否則回 -1；例如
+// nums=[-1,0,3,5,9,12]、target=9 時回 4。
+// 為何使用本章主題：題目要索引而 std::binary_search 只回 bool，因此以
+// std::lower_bound 找第一個不小於 target 的候選，再驗證是否真的相等。
+// 思路：1. 對已排序 nums 求最左插入點；2. 排除 end 與值不等的情況；3. 將
+// iterator 與 begin 的距離轉成題目要求的 int 索引。
+// 複雜度：時間 O(log N)、額外空間 O(1)，N 為 nums 的元素數。
+// 易錯點：nums 必須升冪；不得解參考 end；lower_bound 回插入點，不保證 target 存在。
+// -----------------------------------------------------------------------------
 int leetcode_search_index(const std::vector<int>& nums, int target) {
     const auto it = std::lower_bound(nums.begin(), nums.end(), target);
     if (it == nums.end() || *it != target) {
@@ -50,8 +59,17 @@ struct ProductSkuLess {
     }
 };
 
-// 實務：後端收到 SKU，先快速判斷商品主檔是否存在。
-// vector 必須按 sku 排序；透明 lambda 允許 Product 與 int 比較，不必造假 Product。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】商品主檔 SKU 存在性查詢
+// 情境：後端收到整數 SKU，要在已按 sku 升冪載入的商品快照中判斷是否存在，且不需
+// 取得商品內容。
+// 為何使用本章主題：std::binary_search 直接回 bool，並以異質比較器讓 Product 與
+// int 比較，省去建造只含查詢鍵的假 Product；相較線性 find 可將查詢降為對數級。
+// 設計：1. ProductSkuLess 同時定義 Product/key 與 key/Product 的順序；2. 搜尋整個
+// catalog；3. 將布林結果直接交給呼叫端。
+// 成本：時間 O(log N)、額外空間 O(1)，N 為 catalog 商品數；載入時排序成本另計。
+// 上線注意：catalog 與比較器必須使用同一升冪規則，查詢期間快照不可被併發重排。
+// -----------------------------------------------------------------------------
 bool practical_has_sku(const std::vector<Product>& catalog, int sku) {
     return std::binary_search(catalog.begin(), catalog.end(), sku,
                               ProductSkuLess{});

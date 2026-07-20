@@ -16,7 +16,16 @@
 #include <string>
 #include <vector>
 
-// LeetCode 26：Remove Duplicates from Sorted Array。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 26. Remove Duplicates from Sorted Array（刪除排序陣列中的重複項）
+// 題目：原地讓已排序 nums 的每個值只保留一次並回新長度 k；例如
+// [0,0,1,1,1,2,2,3,3,4] 得 k=5、前段 [0,1,2,3,4]。
+// 為何使用本章主題：排序保證相同值相鄰，std::unique 可穩定壓縮每段重複；本教材
+// 再 erase 尾段，超出原題只驗前 k 格的最低要求。
+// 思路：1. unique 取得 logical new_end；2. 算出 k；3. erase 未指定尾段；4. 回 k。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 為 nums 的元素數。
+// 易錯點：輸入必須已排序；unique 只處理相鄰重複且本身不改 vector size。
+// -----------------------------------------------------------------------------
 int leetcode_remove_duplicates(std::vector<int>& nums) {
     const auto new_end = std::unique(nums.begin(), nums.end());
     const int size = static_cast<int>(std::distance(nums.begin(), new_end));
@@ -24,7 +33,16 @@ int leetcode_remove_duplicates(std::vector<int>& nums) {
     return size;
 }
 
-// 實務：壓縮連續重複狀態，保留真正的狀態轉換序列。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】遙測狀態轉換壓縮
+// 情境：heartbeat 會連續回報 idle/idle/running/running/idle；下游只需真正的狀態
+// 轉換，因此輸出 idle/running/idle，來源紀錄仍保留。
+// 為何使用本章主題：unique_copy 只壓縮相鄰等價群，正好保留稍後再次出現的 idle；
+// 相較全域 set 去重，不會遺失回到舊狀態的事件。
+// 設計：1. 建立空 result；2. 依來源順序比較相鄰狀態；3. 每段只 append 第一項。
+// 成本：時間 O(N)、額外空間 O(K)，N 為輸入筆數、K 為狀態 run 數。
+// 上線注意：若 timestamp/count 也有意義，不能只保留字串，應改為 run-length encoding 保存區間資訊。
+// -----------------------------------------------------------------------------
 std::vector<std::string> practical_compress_states(
     const std::vector<std::string>& states) {
     std::vector<std::string> result;

@@ -20,6 +20,14 @@
 #include <stdexcept>
 #include <vector>
 
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 528. Random Pick with Weight（按權重隨機選取）
+// 題目：輸入正整數權重 w，pickIndex 回傳 i 的機率須為 w[i]/sum(w)；例如 [1,3] 長期抽樣比例約為 1:3。
+// 為何使用本章主題：uniform_int_distribution 均勻抽 ticket，prefix sum 把每個 index 映射到與權重等長的整數區間。
+// 思路：1. 驗證權重並建 uint64 prefix。2. 均勻抽 [1,total]。3. lower_bound 找第一個 >= ticket 的 prefix。4. 回傳距離。
+// 複雜度：K 個權重的建構時間與空間 O(K)，每次 pick 時間 O(log K)。
+// 易錯點：權重必須為正且總和不能溢位；ticket 區間兩端都包含，不能用 engine()%total 引入 modulo bias。
+// -----------------------------------------------------------------------------
 class Solution {
 public:
     Solution(const std::vector<int>& weights, unsigned seed) : engine_(seed)
@@ -73,7 +81,14 @@ void leetcode_example()
     std::cout << "[LeetCode 528] observed weight ratio=" << ratio << '\n';
 }
 
-// 實務：weighted backend routing；高容量 server 得更多 tickets。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】依容量加權的後端路由
+// 情境：三台健康 server 的容量權重為 2:1:1，每個 request 要按比例選擇 index 0..2，讓高容量節點接收較多流量。
+// 為何使用本章主題：同一 prefix-ticket picker 可重用於靜態加權路由，比複製節點清單或以浮點累積機率更節省且邊界明確。
+// 設計：1. 以容量建立 prefix。2. 每次請求抽一張 ticket。3. 二分定位後端。4. 驗證回傳 index 屬於 snapshot。
+// 成本：建立 O(K)；每次路由 O(log K)、沒有網路 I/O，K 為後端數。
+// 上線注意：健康狀態與權重更新必須原子發布一致 snapshot；還要處理零容量、連線失敗、重試與多執行緒 engine 同步。
+// -----------------------------------------------------------------------------
 void practical_example()
 {
     Solution backends({2, 1, 1}, 8U);

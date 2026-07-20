@@ -49,8 +49,14 @@ void basic_example()
     std::cout << "[基礎] " << employee.label() << '\n';
 }
 
-// LeetCode 622：Design Circular Queue。
-// initializer list 一次建立固定容量 vector 與所有 index/count invariant。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 622. Design Circular Queue（設計循環佇列）
+// 題目：固定容量 queue 支援 EnQueue、DeQueue、Front、Rear、isEmpty、isFull；滿時新增回 false。
+// 為何使用本章主題：member initializer list 依宣告順序一次建立 data_、head_、count_，物件開始即符合環狀 invariant。
+// 思路：以 head+count 算 tail；入列寫 tail 並加 count；出列循環前進 head；front/rear 由狀態算索引。
+// 複雜度：每個操作時間 O(1)，空間 O(K)，K 為固定容量。
+// 易錯點：capacity 必須大於零才可取模；空 queue 的 -1 是題目 sentinel；索引與 count 必須同步更新。
+// -----------------------------------------------------------------------------
 class MyCircularQueue {
 public:
     explicit MyCircularQueue(int capacity)
@@ -119,7 +125,14 @@ void leetcode_622_example()
               << " rear=" << queue.rear() << '\n';
 }
 
-// 實務案例：Job 建構時就取得不可變 id，payload 則 move 進 member，避免多一次 copy。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】不可變識別碼的批次工作
+// 情境：Job 建立時必須綁定永久 id，並接收可能很大的 payload；建立後只查 id 與資料量。
+// 為何使用本章主題：const id_ 必須在 initializer list 初始化，payload_ 也可從按值參數直接 move，避免先預設建構再指定。
+// 設計：constructor 依 member 宣告順序初始化 id_ 與 payload_；提供 const observers；不暴露可改 id 的 API。
+// 成本：id 初始化 O(1)，payload move 通常 O(1)，但建立傳值參數的 copy 成本由呼叫形式決定。
+// 上線注意：id 唯一性仍需外部服務保證；moved-in payload 驗證應在發布工作前完成，並留意 allocator 造成的搬移成本。
+// -----------------------------------------------------------------------------
 class Job {
 public:
     Job(unsigned long id, std::vector<int> payload)

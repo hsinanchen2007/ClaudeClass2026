@@ -37,7 +37,15 @@ void demo() {
 }  // namespace basic
 
 namespace leetcode {
-// LeetCode 56：Merge Intervals。sort O(n log n)，merge O(n)。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 56. Merge Intervals（合併區間）
+// 題目：合併所有重疊區間；例如 [[1,3],[2,6],[8,10]] 變成 [[1,6],[8,10]]。
+// 為何使用本章主題：std::sort 使用 lambda 就地定義依起點排序的 comparator，讓後續線性掃描
+// 只需比較目前區間與最後一個合併結果。
+// 思路：先依 start 遞增排序；遇到不重疊區間便追加；重疊時把最後 end 擴張到兩者最大值。
+// 複雜度：時間 O(N log N)、額外空間 O(N)，N 是區間數；排序主導時間，回傳結果最壞 N 筆。
+// 易錯點：comparator 必須滿足 strict weak ordering，不能用 <=；端點相接在本實作視為重疊。
+// -----------------------------------------------------------------------------
 using Interval = std::pair<int, int>;
 
 std::vector<Interval> leetcode_merge(std::vector<Interval> intervals) {
@@ -64,8 +72,16 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 【實務案例】慢工作診斷：algorithm 管走訪，lambda capture 門檻並收集工作名稱。
 namespace practical {
+// -----------------------------------------------------------------------------
+// 【日常實務範例】慢工作診斷清單
+// 情境：從工作名稱與耗時資料中，依毫秒門檻列出所有需要調查的工作，並維持原順序。
+// 為何使用本章主題：for_each 管理走訪，lambda 以值捕獲固定門檻、以參考捕獲輸出；
+// 相較手寫迴圈，篩選副作用被集中在呼叫點，但 copy_if 再 transform 也可提供更純的流程。
+// 設計：先為最壞結果預留空間；逐筆比較 duration_ms；達門檻便把 name 追加到結果。
+// 成本：時間 O(N)、結果空間 O(K)，N 是工作數、K 是慢工作數；目前 reserve 會先配置 N 個容量。
+// 上線注意：需拒絕負耗時與不合理門檻；多執行緒收集不可共享未同步的 names，並應保留追蹤 ID。
+// -----------------------------------------------------------------------------
 struct Job {
     std::string name;
     int duration_ms;

@@ -49,7 +49,14 @@ void basic_example()
     std::cout << "[基礎] " << ada.description() << '\n';
 }
 
-// LeetCode 1480：把「累積狀態 + 加入數字」包成物件。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1480. Running Sum of 1d Array（一維陣列的動態和）
+// 題目：令 answer[i] 等於 nums[0..i] 總和；例如 [1,2,3,4] 產生 [1,3,6,10]。
+// 為何使用本章主題：題目本可用區域變數完成；此處是教學改寫，以 RunningSum 物件封裝累積 state 與 add 行為。
+// 思路：total_ 初始為 0；每讀一值就由 add 累加；立即把目前總和放入輸出。
+// 複雜度：每次 add 時間 O(1)、額外空間 O(1)；處理 N 個輸入總時間 O(N)，輸出 O(N)。
+// 易錯點：total_ 必須初始化；int 累加可能溢位；同一物件會延續舊狀態，重算前需建立新物件或提供 reset。
+// -----------------------------------------------------------------------------
 class RunningSum {
 public:
     int add(int value)
@@ -73,7 +80,14 @@ void leetcode_1480_example()
     std::cout << "[LeetCode 1480] running sum=1,3,6,10\n";
 }
 
-// 工作案例：Sensor 同時保存 id 與校正值，讀值操作永遠套同一校正。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】CPU 感測器讀值校正
+// 情境：每個 Sensor 保存硬體 id 與固定 offset，所有 raw 溫度都要套用同一校正後才對外提供。
+// 為何使用本章主題：class 把感測器 identity、校正常數與 calibrate 行為放在同一物件，避免呼叫端配錯 offset。
+// 設計：constructor 設定 id/offset；id() 查 identity；calibrate(raw) 回 raw+offset 且不改狀態。
+// 成本：每次校正時間與空間皆 O(1)，每個物件只多保存一個 int 與 double。
+// 上線注意：應驗證 id、offset 與 NaN/Inf；若校正常數可熱更新，要定義同步與版本可觀測性。
+// -----------------------------------------------------------------------------
 class Sensor {
 public:
     Sensor(int sensor_id, double offset) : id_(sensor_id), offset_(offset) {}

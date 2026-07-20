@@ -244,11 +244,14 @@ void basic_value_demo()
     assert(rejected_empty);
 }
 
-// ---------------------------------------------------------------------------
-// LeetCode 146：LRU Cache
-// list front=最近使用，back=最久未用；map 儲存 key -> list iterator。
-// list::splice 不配置、不複製 node，iterator 仍有效，因此 get/put average O(1)。
-// ---------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 146. LRU Cache（LRU 快取）
+// 題目：固定容量下以平均 O(1) 完成 get/put，命中會更新最近使用；容量 2 的官方序列淘汰 key 2、再淘汰 1。
+// 為何使用本章主題：LruCache 綜合封裝、RAII 與 identity semantics；list 排 recency，unordered_map 保存穩定 node iterator。
+// 思路：命中以 splice 移前端；新 key 先建 list node，再建 map index；索引失敗回滾；超量刪尾端。
+// 複雜度：平均 get/put O(1)、hash 最壞 O(N)，空間 O(C)，C 為容量。
+// 易錯點：兩容器須一一對應；get 非 const；含內部 iterator 的預設 copy 會指回來源，因此本類明確禁 copy/move。
+// -----------------------------------------------------------------------------
 class LruCache {
 public:
     explicit LruCache(std::size_t capacity) : capacity_(capacity)
@@ -336,10 +339,14 @@ void leetcode_146_demo()
     assert(key_4.value() == 4);
 }
 
-// ---------------------------------------------------------------------------
-// 實務：runtime interface + Factory + composition + unique ownership。
-// 呼叫端依賴 Reporter abstraction；factory 封裝具體 constructor，回 unique_ptr 表示單一 owner。
-// ---------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 【日常實務範例】可選格式的報表服務
+// 情境：同一批 compile/test 訊息要依設定輸出 text 或 JSON，Service 不應知道 concrete renderer。
+// 為何使用本章主題：Reporter virtual interface、factory、composition 與 unique_ptr 合作，集中建構並表達單一 ownership。
+// 設計：factory 依 kind 建 concrete Reporter；ReportService 接管 owner；run 逐訊息動態派發 render；服務可整體 move。
+// 成本：建立含一次 heap allocation；run 時間/輸出空間 O(N*M)，N 為訊息數、M 為平均長度。
+// 上線注意：JSON 必須用成熟 library escaping；unknown kind/null owner 要拒絕，I/O 失敗與跨執行緒使用需另定契約。
+// -----------------------------------------------------------------------------
 class Reporter {
 public:
     virtual ~Reporter() = default;

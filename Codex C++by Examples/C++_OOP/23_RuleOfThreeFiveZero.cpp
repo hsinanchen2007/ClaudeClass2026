@@ -87,8 +87,14 @@ void basic_example()
     std::cout << "[基礎] 手寫 Rule of Five copy/move 都保有 ownership\n";
 }
 
-// LeetCode 208：Implement Trie。
-// Node 用 array<unique_ptr>，Trie 不需 destructor/copy/move 實作，就是 Rule of Zero。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 208. Implement Trie (Prefix Tree)（實作 Trie 前綴樹）
+// 題目：支援 insert、完整字 search、prefix startsWith；例如插入 apple 後 search(app)=false、startsWith(app)=true。
+// 為何使用本章主題：Node 以 array<unique_ptr> 擁有子節點，Trie 不手寫 destructor/copy/move 即由 RAII 完成 Rule of Zero。
+// 思路：insert 逐字建立缺少 child；末節點標 word；find 逐字沿 child；兩種查詢再判節點/word 狀態。
+// 複雜度：每次操作時間 O(L)，新增最多 O(L) 節點，L 為字串長度；總空間 O(總節點數*26 pointers)。
+// 易錯點：只接受 a..z，assert 在 release 不可當輸入驗證；search 與 startsWith 的 word flag 契約不同。
+// -----------------------------------------------------------------------------
 class Trie {
 public:
     void insert(const std::string& word)
@@ -150,7 +156,14 @@ void leetcode_208_example()
     std::cout << "[LeetCode 208] Rule-of-Zero Trie operations 通過\n";
 }
 
-// 實務案例：Config 只含 Rule-of-Zero members，compiler-generated operations 已正確。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】可安全複製的部署設定值
+// 情境：從 production 設定建立 staging 副本，修改 staging 名稱後，原設定與 limits 都應保持獨立且有效。
+// 為何使用本章主題：Config 只含 string/vector RAII members，compiler-generated special members 已提供正確 value semantics。
+// 設計：定義純值 members；以 production copy-construct staging；修改副本；比較原名稱與 limits。
+// 成本：copy 時間與額外空間 O(N+S)，N 為 limits 數、S 為字串長度；move 通常較便宜。
+// 上線注意：加入 raw pointer、iterator 或外部 handle 後要重新審視 copy 語意；設定驗證仍須由 constructor/factory 負責。
+// -----------------------------------------------------------------------------
 struct Config {
     std::string name;
     std::vector<int> limits;

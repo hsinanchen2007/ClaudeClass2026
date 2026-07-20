@@ -25,7 +25,14 @@ void basic_demo() {
     assert(view.data() == owner.data() + 7);
 }
 
-// LeetCode 125（Valid Palindrome）：零拷貝參數與雙索引。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 125. Valid Palindrome（驗證回文）
+// 題目：忽略非英數與大小寫後判斷是否回文；Panama 句為 true，race a car 為 false。
+// 為何使用本章主題：string_view 以 pointer+length 借用輸入，雙索引直接讀原資料，不建立過濾後副本。
+// 思路：1. 左右邊界由兩端開始；2. 跳過非英數；3. 轉小寫比較；4. 相同就往中央縮。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 是 text byte 數。
+// 易錯點：cctype 參數先轉 unsigned char；這只符合原題 ASCII 語意，view 也不能超過 owner 生命週期。
+// -----------------------------------------------------------------------------
 bool leetcode_valid_palindrome(const std::string_view text) {
     std::size_t left = 0U;
     std::size_t right = text.size();
@@ -44,7 +51,15 @@ bool leetcode_valid_palindrome(const std::string_view text) {
     return true;
 }
 
-// 實務：零配置切割第一個 delimiter；兩個 view 都依賴 input 來源生命週期。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】設定 token 零拷貝 split-once
+// 情境：把 `timeout=30` 在第一個 `=` 切成 key/value，value 若再含 delimiter 仍完整保留。
+// 為何使用本章主題：兩個 string_view::substr 只建立借用範圍，相較回 pair<string,string> 不複製內容，
+//       適合同一設定 buffer 內立即解析。
+// 設計：1. find 第一個 delimiter；2. npos 回 nullopt；3. 回傳左右兩個半開切片。
+// 成本：搜尋時間 O(N)、額外空間 O(1)，N 是 input 長度。
+// 上線注意：結果全部借用 input；temporary/已修改 owner 會讓 view 懸空，且空 key/value 是否合法要另驗。
+// -----------------------------------------------------------------------------
 std::optional<std::pair<std::string_view, std::string_view>>
 practical_split_once(const std::string_view input, const char delimiter) {
     const std::size_t position = input.find(delimiter);

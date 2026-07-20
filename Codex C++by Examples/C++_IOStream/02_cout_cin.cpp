@@ -34,7 +34,15 @@ void basic_example()
     std::cout << "[基礎] extraction treats spaces/newlines as whitespace\n";
 }
 
-// LeetCode 1480：Running Sum。模擬競賽 stdin：先讀 n，再讀 n 個值，驗讀取成功。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1480. Running Sum of 1d Array（一維陣列動態總和）
+// 題目：輸出每個位置之前綴和；[1,2,3,4] 變成 [1,3,6,10]。
+// 為何使用本章主題：running_sum 保持純容器演算法，example 用 formatted extraction 模擬競賽
+//       `n` 加 n 個值的 stdin；iostream 只負責 transport，不參與 prefix sum 計算。
+// 思路：1. 讀 count；2. 配置同長 vector 並逐值讀取；3. partial_sum 原地覆寫副本；4. 回傳結果。
+// 複雜度：時間 O(N)、額外空間 O(N)，N 是元素數，按值 nums 為輸出工作副本。
+// 易錯點：不可信 count 需先設上限；I/O 不能只放在 assert，否則 NDEBUG 會刪除讀取副作用。
+// -----------------------------------------------------------------------------
 std::vector<int> running_sum(std::vector<int> nums)
 {
     std::partial_sum(nums.begin(), nums.end(), nums.begin());
@@ -52,7 +60,15 @@ void leetcode_1480_example()
     std::cout << "[LeetCode 1480] parsed n values, running sums=1,3,6,10\n";
 }
 
-// 實務：不接受中途 malformed token，回傳 false 並不使用 partial result。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】三欄整數 parse-then-commit
+// 情境：紀錄必須恰有三個整數；`1 2 3` 成功，`1 x 3` 失敗且 destination 維持前次有效值。
+// 為何使用本章主題：operator>> 依 int 型別驗 token，stream state 回報格式錯誤；先寫 candidate
+//       再 move 指派，比逐欄直接改 destination 提供清楚的提交邊界。
+// 設計：1. 建三格 candidate；2. 每格 extraction 失敗即返回；3. 再讀 extra，存在則拒絕；4. commit。
+// 成本：固定三欄時時間與工作空間 O(1)；解析成本仍與 token 位數成正比。
+// 上線注意：`input >> extra` 失敗可能是 clean EOF 或 badbit，嚴格 I/O API 應分辨；整數溢位也會設 failbit。
+// -----------------------------------------------------------------------------
 bool parse_exact_three(std::istream& input, std::vector<int>& destination)
 {
     std::vector<int> candidate(3U);

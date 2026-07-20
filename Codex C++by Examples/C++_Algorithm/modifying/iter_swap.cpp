@@ -12,7 +12,17 @@
 #include <string>
 #include <vector>
 
-// LeetCode 283：Move Zeroes。write 指向下一個非零應放的位置；iter_swap 保序。
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 283. Move Zeroes（移動零）
+// 題目：原地把所有 0 移到陣列尾端，維持非零元素相對順序；例如
+// [0,1,0,3,12] 變成 [1,3,12,0,0]。
+// 為何使用本章主題：iter_swap 將 read 找到的非零值交換到 write 位置；對 iterator
+// 操作可支援代理 reference，且不用另開輸出陣列。
+// 思路：1. write 指向下一個非零目的位置；2. read 線性掃描；3. 命中非零時交換
+// write/read 並推進 write。
+// 複雜度：時間 O(N)、額外空間 O(1)，N 為 nums 的元素數。
+// 易錯點：write/read 必須可解參考；只在非零時推進 write，才能維持非零相對順序。
+// -----------------------------------------------------------------------------
 void leetcode_move_zeroes(std::vector<int>& nums) {
     auto write = nums.begin();
     for (auto read = nums.begin(); read != nums.end(); ++read) {
@@ -31,7 +41,16 @@ void selection_sort(std::vector<int>& values) {
     }
 }
 
-// 實務：原地把選中的 active record 移到目前處理位置。
+// -----------------------------------------------------------------------------
+// 【日常實務範例】啟用紀錄原地前移
+// 情境：Record 批次含 active 狀態，要把啟用項目移到前半供立即處理，並保留 active
+// 項目的原始先後次序。
+// 為何使用本章主題：iter_swap 可在同一 vector 以雙 iterator 原地整理，額外空間
+// 固定；相較建立第二個容器可減少配置。
+// 設計：1. out 指向下一個 active 槽；2. 掃描所有紀錄；3. active 時交換到 out 並推進。
+// 成本：時間 O(N)、額外空間 O(1)，N 為 records 筆數。
+// 上線注意：inactive 區的次序不應視為契約；若兩區都要穩定，應使用 stable_partition 或獨立輸出。
+// -----------------------------------------------------------------------------
 struct Record {
     std::string id;
     bool active;
