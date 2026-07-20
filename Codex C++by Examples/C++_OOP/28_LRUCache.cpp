@@ -185,3 +185,12 @@ int main()
 // 清 map entry。容量 0、重複 put、get 更新 recency 都是 LRU 高頻邊界測試。
 // 練習：改成 template<class Key,class Value>，讓 optional<Value> 契約適用其他 value type。
 // 生命週期：map 保存 list iterators，splice 不使其失效；erase node 後對應 iterator 必須同步移除。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '28_LRUCache.cpp' -o '/tmp/codex_cpp_C_OOP_28_LRUCache' && '/tmp/codex_cpp_C_OOP_28_LRUCache'
+//
+// === 預期輸出（節錄）===
+// [實務] model metadata cache 正確回報 hit/miss
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

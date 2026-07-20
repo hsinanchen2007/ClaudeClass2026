@@ -114,3 +114,12 @@ int main()
 
 // 練習：把 GraphNode edges 改 shared_ptr，說明為何清空外部 owners 後 nodes 仍不解構。
 // 複雜度：shared_ptr copy/reset 通常 O(1) control-block 操作；graph clone 為 O(V+E)。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '21_SharedPtr.cpp' -o '/tmp/codex_cpp_C_OOP_21_SharedPtr' && '/tmp/codex_cpp_C_OOP_21_SharedPtr'
+//
+// === 預期輸出（節錄）===
+// [實務] 兩 requests 共享 immutable llama model
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

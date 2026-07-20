@@ -72,3 +72,12 @@ int main() {
  * 實務延伸：資料庫結果頁可用 index permutation 建立不同排序視圖；ML batching
  * 可先 iota 再 shuffle。練習：以索引完成 top-k，且不複製原始 Job。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'iota.cpp' -o '/tmp/codex_cpp_C_Algorithm_numeric_iota' && '/tmp/codex_cpp_C_Algorithm_numeric_iota'
+//
+// === 預期輸出（節錄）===
+// iota：連續值、索引排序與排列建構測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -68,3 +68,12 @@ int main() { basic_example(); leetcode_704_example(); practical_example(); }
 // 誤當連續記憶體保證；用 vector/array/span 並明確維護 lifetime。
 // 若資料本身未排序，binary-search iterator arithmetic 再漂亮也不正確；前置條件優先。
 // 練習：證明 deque iterator random-access，但 &deque[0]+n 不保證跨 block contiguous。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '05_random_access_iterator.cpp' -o '/tmp/codex_cpp_C_Iterator_05_random_access_iterator' && '/tmp/codex_cpp_C_Iterator_05_random_access_iterator'
+//
+// === 預期輸出（節錄）===
+// [實務] lower_bound found sorted insertion position
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

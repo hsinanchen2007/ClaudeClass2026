@@ -104,3 +104,12 @@ int main()
 // 練習：把 Student 的 score 改 private，新增只接受 0..100 的 set_score。
 // 複雜度：簡單 field access O(1)，但 member function 的成本由實作決定，class 不代表自動變慢。
 // 生命週期：每個 object 各自擁有 data members；reference/pointer 只在該 object 存活時有效。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '1_ClassAndObject.cpp' -o '/tmp/codex_cpp_C_OOP_1_ClassAndObject' && '/tmp/codex_cpp_C_OOP_1_ClassAndObject'
+//
+// === 預期輸出（節錄）===
+// [實務] sensor 7 校正後=78.5C
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -99,3 +99,12 @@ int main()
 // 練習：模擬 read-only/不存在路徑，分辨 open failure 與 clean EOF。
 // 複雜度：逐行讀寫是 O(total bytes)；每行 string allocation 與 flush policy 也影響常數成本。
 // 生命週期：fstream 擁有 OS handle，解構會 close；由 local line 取得的 string_view 不可帶出迴圈。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '05_fstream_text.cpp' -o '/tmp/codex_cpp_C_IOStream_05_fstream_text' && '/tmp/codex_cpp_C_IOStream_05_fstream_text'
+//
+// === 預期輸出（節錄）===
+// [實務] app mode preserved existing audit line
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

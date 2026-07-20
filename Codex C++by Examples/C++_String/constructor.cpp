@@ -89,3 +89,12 @@ int main() {
  *
  * 【練習】新增一個從 std::array<char, N> 建立字串的函式，並測試陣列含 '\0'。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'constructor.cpp' -o '/tmp/codex_cpp_C_String_constructor' && '/tmp/codex_cpp_C_String_constructor'
+//
+// === 預期輸出（節錄）===
+// constructor: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

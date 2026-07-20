@@ -68,3 +68,20 @@ int main() {
  * 練習：做 min/max pair reduction，設計 associative combine；證明任意分組仍得到
  * 同結果，並處理空範圍 identity。
  */
+
+/*
+ * 【教科書補充：reduce 能重排，契約比 accumulate 嚴格】
+ * - binary operation 必須能接受 T/value 的各種分組結果，且每次結果都可轉回 T。
+ * - 因分組與順序可變，想要可重現結果時 operation 應具結合律；浮點加法通常做不到 bitwise 重現。
+ * - 位元 mask 的 shift count 必須小於型別寬度；字元先驗證在 'a'..'z'，不能把任意 byte 拿來位移。
+ * - 標準 execution-policy overload 中 callback 拋出的例外可能導致 terminate；平行路徑另需無 data race。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'reduce.cpp' -o '/tmp/codex_cpp_C_Algorithm_numeric_reduce' && '/tmp/codex_cpp_C_Algorithm_numeric_reduce'
+//
+// === 預期輸出（節錄）===
+// reduce：可重排歸約、pangram 與分片計數測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

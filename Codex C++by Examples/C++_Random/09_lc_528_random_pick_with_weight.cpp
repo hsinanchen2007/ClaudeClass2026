@@ -109,3 +109,12 @@ Q3：若權重頻繁更新，為何不能每次重建 prefix？
 A：靜態權重建表 O(N)、抽樣 O(log N)；每次更新重建是 O(N)。Fenwick/segment tree 可把單點更新
 與按累積權重尋找都做到 O(log N)，代價是更複雜的不變式與同步。
 */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '09_lc_528_random_pick_with_weight.cpp' -o '/tmp/codex_cpp_C_Random_09_lc_528_random_pick_with_weight' && '/tmp/codex_cpp_C_Random_09_lc_528_random_pick_with_weight'
+//
+// === 預期輸出（節錄）===
+// [實務] weighted router always returns backend 0..2
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -112,3 +112,20 @@ int main()
 // 練習：把 duplicate detection 改成 file_size prefilter + SHA-256，而非直接讀全部內容。
 // 複雜度：樹掃描 O(files)，內容 hash 再加 O(total bytes)；先以 size 分組可省不必要讀取。
 // 生命週期：回傳的 path/value 自行擁有文字，但它指向的檔案可能隨時被其他程序改動或刪除。
+
+/*
+ * 【教科書補充：檔名 parser 與 copy 驗證】
+ * - 解析 duplicate suffix 前要驗 `(`/`)`、數字、空檔名與尾隨垃圾；不可對 npos 直接做算術。
+ * - 若契約要求 regular file，程式本身要檢查，不可只在註解假設 caller 已驗證。
+ * - source fixture 寫入也要檢查 close；copy 後只比 size 不能證明內容一致，重要資料應比 hash/bytes。
+ * - symlink、權限、既有 destination 與部分失敗策略都要在 API 層明確選擇。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '08_practical_tools.cpp' -o '/tmp/codex_cpp_C_Filesystem_08_practical_tools' && '/tmp/codex_cpp_C_Filesystem_08_practical_tools'
+//
+// === 預期輸出（節錄）===
+// [實務] explicit single-file copy and size verification passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

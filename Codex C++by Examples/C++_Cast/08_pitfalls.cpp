@@ -94,6 +94,23 @@ int main()
     practical_example();
 }
 
+// 面試快問快答：
+// Q：static_cast 可以防止整數窄化造成資料遺失嗎？
+// A：不可以。它只明確表達轉型意圖；若來源值超出目的型別可表示範圍，資料仍會改變。
+//    正確流程是先用 numeric_limits 驗證數學範圍，再做最小範圍的 static_cast。
+// Q：為什麼不能把所有 conversion warning 都用 cast 消掉？
+// A：warning 往往揭露 API 型別或邊界檢查不足；cast 只讓編譯器停止提醒，不會建立 range、
+//    alignment、dynamic type、object lifetime 或 ownership 的正確性證明。
+
 // 練習：開啟 -Wconversion/-Wsign-conversion，逐一判斷哪些 warning 應改 type 而非加 cast。
 // 複雜度：checked parsing 是 O(D)，D 為輸入 digits；最後的 cast 通常 O(1)，不可取代驗證。
 // 生命週期：任何 cast 得到的 view/pointer 都受來源 storage 約束，compiler 不會替你追 owner。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '08_pitfalls.cpp' -o '/tmp/codex_cpp_C_Cast_08_pitfalls' && '/tmp/codex_cpp_C_Cast_08_pitfalls'
+//
+// === 預期輸出（節錄）===
+// [實務] wire timeout checked before signed narrowing
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

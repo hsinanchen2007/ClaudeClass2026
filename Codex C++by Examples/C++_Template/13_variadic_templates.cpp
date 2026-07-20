@@ -71,3 +71,12 @@ int main() {
  * 【面試】sizeof...(Ts) 是編譯期常數，不等於物件所占 byte 數。
  * 【練習】以 index_sequence 將 tuple 每個欄位輸出；比較與 std::apply 的差異。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '13_variadic_templates.cpp' -o '/tmp/codex_cpp_C_Template_13_variadic_templates' && '/tmp/codex_cpp_C_Template_13_variadic_templates'
+//
+// === 預期輸出（節錄）===
+// deploy:search,42,1
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -70,3 +70,12 @@ int main() {
  * 【面試速查】沒有 suffix 的 literal 是陣列；`s` 建 owning string；`sv` 建 non-owning view。
  * 【陷阱】自訂 literal namespace 不會自動開啟，需明確 `using namespace std::string_literals`。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'string_literals.cpp' -o '/tmp/codex_cpp_C_String_string_literals' && '/tmp/codex_cpp_C_String_string_literals'
+//
+// === 預期輸出（節錄）===
+// string literals: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

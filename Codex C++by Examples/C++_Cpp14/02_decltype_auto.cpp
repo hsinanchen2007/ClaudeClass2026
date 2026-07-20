@@ -65,7 +65,7 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】可寫設定 accessor：decltype(auto) 保留 map::at 回傳的 std::string&。
 namespace practical {
 struct Configuration {
     std::map<std::string, std::string> values;
@@ -88,3 +88,12 @@ int main() {
     practical::practical_test();
     std::cout << "decltype(auto)：參考保留、前綴和、設定更新測試通過\n";
 }
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++14 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '02_decltype_auto.cpp' -o '/tmp/codex_cpp_C_Cpp14_02_decltype_auto' && '/tmp/codex_cpp_C_Cpp14_02_decltype_auto'
+//
+// === 預期輸出（節錄）===
+// decltype(auto)：參考保留、前綴和、設定更新測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

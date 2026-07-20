@@ -93,3 +93,12 @@ int main() {
  * 【面試段落】optional 是否配置 heap？通常 T 直接內嵌，sizeof 會包含 T 加狀態/對齊成本。
  * 【練習】把 parse 改為 expected<int,string>，保留 invalid_argument/out_of_range 原因。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '03_optional.cpp' -o '/tmp/codex_cpp_C_Utility_03_optional' && '/tmp/codex_cpp_C_Utility_03_optional'
+//
+// === 預期輸出（節錄）===
+// optional 測試完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

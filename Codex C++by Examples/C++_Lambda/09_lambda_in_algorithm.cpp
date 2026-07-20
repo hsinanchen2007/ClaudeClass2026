@@ -64,7 +64,7 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】慢工作診斷：algorithm 管走訪，lambda capture 門檻並收集工作名稱。
 namespace practical {
 struct Job {
     std::string name;
@@ -106,3 +106,14 @@ int main() {
  * 【面試追問】何時避免 reference capture？callback 可能逃離 scope，或平行執行會共享可變狀態時。
  * 【面試追問】lambda 是否讓 sort 更快？不必然；它只利於 inline，總成本仍含比較器每次工作的成本。
  */
+
+// 【延伸練習】把收集改成 copy_if+transform，並比較單次走訪與兩階段 pipeline。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '09_lambda_in_algorithm.cpp' -o '/tmp/codex_cpp_C_Lambda_09_lambda_in_algorithm' && '/tmp/codex_cpp_C_Lambda_09_lambda_in_algorithm'
+//
+// === 預期輸出（節錄）===
+// algorithm lambda：sort/filter、Merge Intervals、job filter 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

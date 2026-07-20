@@ -164,3 +164,20 @@ int main() {
  * 【面試】NTTP 的優點？尺寸可進入型別系統、利於最佳化；缺點是每個值可能產生新實體。
  * 【練習】為 RingLog 加 static_assert(N > 0) 與 newest() 查詢。
  */
+
+/*
+ * 【教科書補充：固定容量不等於自動強例外保證】
+ * - `data_[used_++] = value` 會先增加 used_；若 T 的 assignment 拋出，logical size 可能與內容不一致。
+ * - overwrite 路徑同樣取決於 T 的 assignment guarantee，不能無條件宣稱 transaction/rollback。
+ * - 本檔以 C++20 建置；其中 std::array 的 constexpr equality 不應被誤認為所有舊標準都支援。
+ * - production container 應先完成可能失敗的寫入，再 commit 索引，或以 guard 回復 metadata。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '04_template_parameters.cpp' -o '/tmp/codex_cpp_C_Template_04_template_parameters' && '/tmp/codex_cpp_C_Template_04_template_parameters'
+//
+// === 預期輸出（節錄）===
+// 型別參數與值參數測試完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

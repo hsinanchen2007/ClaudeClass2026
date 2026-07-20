@@ -94,3 +94,12 @@ int main() {
  * 【面試】為何一定檢查 ptr？ec 成功只代表有合法前綴；"123abc" 仍可能解析出 123。
  * 【練習】用 to_chars(base=16) 輸出無前綴的小寫十六進位，再自行加 "0x"。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'charconv.cpp' -o '/tmp/codex_cpp_C_String_charconv' && '/tmp/codex_cpp_C_String_charconv'
+//
+// === 預期輸出（節錄）===
+// charconv: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

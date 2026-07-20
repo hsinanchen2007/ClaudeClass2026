@@ -89,3 +89,20 @@ int main()
 // 練習：讀失敗後用 clear()+ignore() 恢復互動輸入；說明 batch parser 為何常直接失敗。
 // 複雜度：formatted extraction 與 token 長度成正比；flush 可能額外觸發昂貴裝置 I/O。
 // 生命週期：cin/cout 是 static-lifetime streams；函式借用 reference，不應保存 local streambuf 指標。
+
+/*
+ * 【教科書補充：stream state 是 parser 結果的一部分】
+ * - extraction 不能只放在 assert：NDEBUG 會連讀取副作用一起刪除；先讀值，再驗結果。
+ * - eofbit 表示碰到結尾，failbit 表示格式/讀取失敗，badbit 表示底層嚴重 I/O 錯誤；可同時存在。
+ * - malformed token 前成功讀到的部分資料不應無聲當成完整結果，API 要回錯誤位置或狀態。
+ * - clear() 只重設 state，不會移除造成失敗的輸入；若要繼續，還需 ignore/讀走錯誤 token。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '02_cout_cin.cpp' -o '/tmp/codex_cpp_C_IOStream_02_cout_cin' && '/tmp/codex_cpp_C_IOStream_02_cout_cin'
+//
+// === 預期輸出（節錄）===
+// [實務] parse-then-commit preserves destination on failure
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

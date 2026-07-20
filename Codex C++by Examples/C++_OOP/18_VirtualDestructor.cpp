@@ -132,3 +132,12 @@ int main()
 // 練習：查看 `std::has_virtual_destructor_v<Worker>`，並解釋為何結果應為 true。
 // 複雜度：polymorphic delete 的 dispatch 常數時間，總解構成本是 derived/base/member cleanup 總和。
 // 生命週期：透過 Base* 刪除時必須由 virtual destructor 走完整 derived chain，否則是 UB/資源漏。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '18_VirtualDestructor.cpp' -o '/tmp/codex_cpp_C_OOP_18_VirtualDestructor' && '/tmp/codex_cpp_C_OOP_18_VirtualDestructor'
+//
+// === 預期輸出（節錄）===
+// [實務] plugin 經 base owner 正確 shutdown
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

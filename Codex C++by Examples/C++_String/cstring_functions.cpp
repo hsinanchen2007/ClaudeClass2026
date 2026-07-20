@@ -75,3 +75,12 @@ int main() {
  *
  * 【練習】寫一個接收 `span<const byte>` 的 packet prefix 比較，取代 memcmp 裸指標介面。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'cstring_functions.cpp' -o '/tmp/codex_cpp_C_String_cstring_functions' && '/tmp/codex_cpp_C_String_cstring_functions'
+//
+// === 預期輸出（節錄）===
+// cstring: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

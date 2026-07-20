@@ -68,3 +68,12 @@ int main() {
  * 若 command 數量大且頻繁查詢，建 unordered_map，而不是每次線性 find_if。
  * 練習：比較線性表與 hash index 在更新頻繁時的維護成本。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'find.cpp' -o '/tmp/codex_cpp_C_Algorithm_non_modifying_find' && '/tmp/codex_cpp_C_Algorithm_non_modifying_find'
+//
+// === 預期輸出（節錄）===
+// find：LeetCode 217 與實務 command lookup 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

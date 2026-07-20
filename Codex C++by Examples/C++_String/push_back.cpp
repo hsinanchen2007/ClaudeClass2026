@@ -68,3 +68,12 @@ int main() {
  * - capacity growth 是實作細節，不能假設固定倍數。
  * 【面試題】攤銷分析不代表每次延遲固定；低延遲系統仍可能預留上限。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'push_back.cpp' -o '/tmp/codex_cpp_C_String_push_back' && '/tmp/codex_cpp_C_String_push_back'
+//
+// === 預期輸出（節錄）===
+// push_back: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -141,3 +141,12 @@ int main()
 // 練習：把 Settings 改成普通 object，由 constructor injection 傳給兩個 services。
 // 複雜度：function-local static 首次初始化後 access O(1)；hidden global contention 仍可能昂貴。
 // 生命週期：singleton 通常 static lifetime，解構順序跨 translation units 是設計風險。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '26_Singleton.cpp' -o '/tmp/codex_cpp_C_OOP_26_Singleton' && '/tmp/codex_cpp_C_OOP_26_Singleton'
+//
+// === 預期輸出（節錄）===
+// [實務] process telemetry jobs=2
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

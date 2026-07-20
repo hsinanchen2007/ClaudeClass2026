@@ -58,7 +58,7 @@ void test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】ServerConfig aggregate：以具名欄位型別表達 host、port、TLS 的完整設定。
 namespace practical {
 struct ServerConfig {
     std::string host;
@@ -87,3 +87,14 @@ int main() {
     practical_test();
     std::cout << "brace init：零初始化、股票題、伺服器設定測試通過\n";
 }
+
+// 【延伸練習】列出 vector<int>(3, 9) 與 vector<int>{3, 9} 的內容，再設計不易誤讀的 factory。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++11 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '05_brace_init.cpp' -o '/tmp/codex_cpp_C_Cpp11_05_brace_init' && '/tmp/codex_cpp_C_Cpp11_05_brace_init'
+//
+// === 預期輸出（節錄）===
+// brace init：零初始化、股票題、伺服器設定測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

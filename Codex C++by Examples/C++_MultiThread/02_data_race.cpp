@@ -105,3 +105,12 @@ int main()
 // 【面試】data race 與 race condition 不同：前者有標準定義且為 UB；後者泛指時序
 //         影響邏輯結果，即使全用 mutex 仍可能有高階 race condition。
 // 【練習】用 ThreadSanitizer 在私人壞例子驗證報告，再還原成正確版本。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '02_data_race.cpp' -o '/tmp/codex_cpp_C_MultiThread_02_data_race' && '/tmp/codex_cpp_C_MultiThread_02_data_race'
+//
+// === 預期輸出（節錄）===
+// data race：atomic 與 ownership partition 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

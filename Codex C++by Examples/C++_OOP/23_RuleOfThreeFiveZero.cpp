@@ -177,3 +177,12 @@ int main()
 // 練習：把 LegacyBuffer 改成 vector<int>，刪掉全部 five special members。
 // 複雜度：手寫 deep copy O(N)、move O(1)；Rule of Zero 讓 member type 自己提供相同語意。
 // 生命週期：每個 resource 應只有清楚 owner；自行宣告 destructor 會影響 implicit move generation。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '23_RuleOfThreeFiveZero.cpp' -o '/tmp/codex_cpp_C_OOP_23_RuleOfThreeFiveZero' && '/tmp/codex_cpp_C_OOP_23_RuleOfThreeFiveZero'
+//
+// === 預期輸出（節錄）===
+// [實務] Config 採 Rule of Zero，不需 boilerplate
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

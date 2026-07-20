@@ -199,3 +199,12 @@ int main() {
  * 中寫出能編譯但空範圍解參考、reference 懸空的答案更重要。
  * 練習完成後，以 sanitizer 與極端值測試重新驗證所有假設。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'summary.cpp' -o '/tmp/codex_cpp_C_Algorithm_min_max_summary' && '/tmp/codex_cpp_C_Algorithm_min_max_summary'
+//
+// === 預期輸出（節錄）===
+// Min/Max 家族整合複習完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -80,3 +80,12 @@ int main() {
  * 字元或 iterator 範圍時 assign 的意圖較精準。
  * 【練習】用 assign(source, pos, count) 取出 URL 的 host，並處理 pos 超界例外。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'assign.cpp' -o '/tmp/codex_cpp_C_String_assign' && '/tmp/codex_cpp_C_String_assign'
+//
+// === 預期輸出（節錄）===
+// assign: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

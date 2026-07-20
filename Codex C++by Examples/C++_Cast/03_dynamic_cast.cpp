@@ -176,3 +176,12 @@ Q3：大量 `dynamic_cast` chain 暗示什麼？
 A：可能表示 base interface 缺少行為、需要 Visitor、variant 或 capability interface。本課 optional
 capability 的單點檢查可合理；若每個 operation 都 switch concrete type，應重審多型邊界。
 */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '03_dynamic_cast.cpp' -o '/tmp/codex_cpp_C_Cast_03_dynamic_cast' && '/tmp/codex_cpp_C_Cast_03_dynamic_cast'
+//
+// === 預期輸出（節錄）===
+// [實務] optional reload capability invoked once
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

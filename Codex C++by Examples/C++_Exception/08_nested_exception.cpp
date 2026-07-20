@@ -116,3 +116,20 @@ int main()
 // 練習：為 parser 加位置欄位，讓 nested chain 顯示 byte offset。
 // 複雜度：建立/列印 nested chain 是 O(D)，D 為 context 層數；每層可能另配置 message。
 // 生命週期：nested exception 由 exception_ptr 類機制保存，即使原 catch scope 結束仍可重拋檢視。
+
+/*
+ * 【教科書補充：parser 的資源上限】
+ * - repeat 數字累積、展開後長度與遞迴深度都需上限；overflow/stack exhaustion 不是普通 parse error。
+ * - grammar 應拒絕 stray bracket、缺右括號、尾隨垃圾與空數字，不可只解析可辨識前綴。
+ * - nested_exception 保留原因鏈，但每層 context 也要限長，避免錯誤訊息本身耗盡記憶體。
+ * - production 可改 iterative stack parser，以顯式 depth/size budget 取代未受控 recursion。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '08_nested_exception.cpp' -o '/tmp/codex_cpp_C_Exception_08_nested_exception' && '/tmp/codex_cpp_C_Exception_08_nested_exception'
+//
+// === 預期輸出（節錄）===
+// [實務] decode failure retains input and root cause
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

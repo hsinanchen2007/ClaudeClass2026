@@ -91,3 +91,12 @@ int main()
 // 練習：寫 checked_narrow<T>(U)，同時檢查 signedness 與上下界。
 // 複雜度與生命週期：built-in static_cast 是 O(1) 值轉換；轉成新 value 不借用來源，
 // 但 downcast pointer 只改 static type，既不驗 dynamic object 也不延長 pointee 生命。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '02_static_cast.cpp' -o '/tmp/codex_cpp_C_Cast_02_static_cast' && '/tmp/codex_cpp_C_Cast_02_static_cast'
+//
+// === 預期輸出（節錄）===
+// [實務] 1.25 seconds -> 1250ms after range check
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

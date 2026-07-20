@@ -156,3 +156,20 @@ Q3：RAII temporary-directory destructor 應如何處理清理失敗？
 A：destructor 不應讓例外逃出，尤其 stack unwinding 時會 terminate。可用 error_code best-effort cleanup，
 同時提供顯式 `close/remove` 回報錯誤，或保留路徑與 log 讓使用者後續處理。
 */
+
+/*
+ * 【教科書補充：lexical path 檢查不是安全 sandbox】
+ * - exists 後再 remove 有 TOCTOU；另一 process 可在兩步間替換路徑或 symlink。
+ * - lexical prefix 無法防 symlink/root directory 被置換，本例只適用受信任、無敵對並行者的教材目錄。
+ * - 重要寫入要明確 flush/close 並回報錯誤；ofstream destructor 不提供可由 caller 處理的 close 結果。
+ * - cleanup 可能部分成功，API 應列出每個路徑的結果，不可用單一 bool 暗示交易原子性。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '04_create_remove.cpp' -o '/tmp/codex_cpp_C_Filesystem_04_create_remove' && '/tmp/codex_cpp_C_Filesystem_04_create_remove'
+//
+// === 預期輸出（節錄）===
+// [實務] remove_all guarded by explicit marker
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

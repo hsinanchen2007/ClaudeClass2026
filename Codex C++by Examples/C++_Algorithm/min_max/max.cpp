@@ -68,3 +68,12 @@ int main() {
  * 實務監控要保留足夠 metadata，而不是只有單一最大值。
  * 完成後再以 std::max_element 當小型資料 oracle，交叉驗證最佳值。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'max.cpp' -o '/tmp/codex_cpp_C_Algorithm_min_max_max' && '/tmp/codex_cpp_C_Algorithm_min_max_max'
+//
+// === 預期輸出（節錄）===
+// max：基本、Kadane、worker 下限測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

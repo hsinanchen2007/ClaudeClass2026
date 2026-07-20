@@ -53,7 +53,7 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】編譯期 lookup table：用 C++14 loop 建表，並避開當版 std::array 的 constexpr 限制。
 namespace practical {
 // 實務：編譯期建立簡單 CRC-like lookup（教學版，不是正式 CRC 規格）。
 // C++14 標準尚未要求 std::array 的 mutable operator[] 為 constexpr；該能力由 C++17
@@ -85,3 +85,12 @@ int main() {
     practical::practical_test();
     std::cout << "C++14 constexpr：loop、Climbing Stairs、lookup table 測試通過\n";
 }
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++14 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '03_constexpr_relaxed.cpp' -o '/tmp/codex_cpp_C_Cpp14_03_constexpr_relaxed' && '/tmp/codex_cpp_C_Cpp14_03_constexpr_relaxed'
+//
+// === 預期輸出（節錄）===
+// C++14 constexpr：loop、Climbing Stairs、lookup table 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

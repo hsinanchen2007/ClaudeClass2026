@@ -109,3 +109,12 @@ Q3：`setw` 能否正確對齊中文或 emoji？
 A：不能保證。iostream width 以字元序列/locale 規則處理，不等於終端顯示欄寬；UTF-8 一個 glyph
 可能多 bytes，combining/wide characters 又不同。正式表格要用 Unicode display-width aware library。
 */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '03_manipulators.cpp' -o '/tmp/codex_cpp_C_IOStream_03_manipulators' && '/tmp/codex_cpp_C_IOStream_03_manipulators'
+//
+// === 預期輸出（節錄）===
+// [實務] fixed ASCII columns formatted predictably
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

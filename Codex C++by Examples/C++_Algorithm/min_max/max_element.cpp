@@ -68,3 +68,12 @@ int main() {
  * partial_sort、nth_element 或 heap。LeetCode 小資料可線性掃，實務要依查詢頻率選型。
  * 易錯：空 endpoints 時絕不能解參考；本例以 -1 表示缺席，型別更完整可用 optional。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'max_element.cpp' -o '/tmp/codex_cpp_C_Algorithm_min_max_max_element' && '/tmp/codex_cpp_C_Algorithm_min_max_max_element'
+//
+// === 預期輸出（節錄）===
+// max_element：位置、LC747、endpoint 選擇測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

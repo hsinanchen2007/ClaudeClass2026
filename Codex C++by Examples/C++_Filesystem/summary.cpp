@@ -451,3 +451,14 @@ int main()
     practical_demo();
     std::cout << "Filesystem summary: all checks passed\n";
 }
+
+// 【章末自測】寫安全原子更新流程：同目錄暫存、flush/close、rename、錯誤清理與權限策略。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'summary.cpp' -o '/tmp/codex_cpp_C_Filesystem_summary' && '/tmp/codex_cpp_C_Filesystem_summary'
+//
+// === 預期輸出（節錄）===
+// Filesystem summary: all checks passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

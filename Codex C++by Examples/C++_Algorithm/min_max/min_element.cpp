@@ -68,3 +68,12 @@ int main() {
  * 實務回傳 server id 前，也要確認該 server 沒有被健康檢查標為 unavailable。
  * 練習：回傳 optional<int> 取代空表 assert，並加入 health 欄位過濾。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'min_element.cpp' -o '/tmp/codex_cpp_C_Algorithm_min_max_min_element' && '/tmp/codex_cpp_C_Algorithm_min_max_min_element'
+//
+// === 預期輸出（節錄）===
+// min_element：位置、LC153 基線、負載平衡測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

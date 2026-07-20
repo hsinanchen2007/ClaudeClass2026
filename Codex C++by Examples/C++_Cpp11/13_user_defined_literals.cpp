@@ -67,7 +67,7 @@ void test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】buffer 配額：64_KiB 把單位寫進呼叫點，避免裸整數究竟是 byte 或 KiB。
 namespace practical {
 using namespace units;
 
@@ -98,3 +98,14 @@ int main() {
     practical_test();
     std::cout << "UDL：容量單位、Last Word、buffer budget 測試通過\n";
 }
+
+// 【延伸練習】加入 _MiB 並做 overflow 檢查；說明為何 literal 不應偷偷讀檔或查網路。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++11 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '13_user_defined_literals.cpp' -o '/tmp/codex_cpp_C_Cpp11_13_user_defined_literals' && '/tmp/codex_cpp_C_Cpp11_13_user_defined_literals'
+//
+// === 預期輸出（節錄）===
+// UDL：容量單位、Last Word、buffer budget 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

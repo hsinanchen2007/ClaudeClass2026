@@ -79,3 +79,12 @@ int main() {
  * 【面試】為何編譯器不能自行猜？模板定義時尚不知道 T，T::x 可能是值也可能是型別。
  * 【練習】寫一個回傳 Container::const_reference 的 last()，並處理空容器契約。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '08_typename_vs_class.cpp' -o '/tmp/codex_cpp_C_Template_08_typename_vs_class' && '/tmp/codex_cpp_C_Template_08_typename_vs_class'
+//
+// === 預期輸出（節錄）===
+// typename 相依名稱測試完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

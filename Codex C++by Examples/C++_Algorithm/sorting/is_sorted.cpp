@@ -70,3 +70,12 @@ int main() {
  * 生命週期：回傳 iterator 只在容器未被重配置/銷毀時有效；實務函式回 index，較
  * 適合跨 API 邊界。練習：回傳 regression 前後兩筆及錯誤訊息，處理空範圍。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'is_sorted.cpp' -o '/tmp/codex_cpp_C_Algorithm_sorting_is_sorted' && '/tmp/codex_cpp_C_Algorithm_sorting_is_sorted'
+//
+// === 預期輸出（節錄）===
+// is_sorted：單調陣列與時間序列 invariant 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

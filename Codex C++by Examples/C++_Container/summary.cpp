@@ -359,3 +359,12 @@ int main()
 // 2. 用 vector + sort 改寫 top_k_frequent，比較 n log n 與 u log k。
 // 3. 在 debug STL/ASan 下觀察 vector reallocation 後使用舊 iterator 的錯誤；危險碼
 //    只放私人實驗，不要提交到預設執行路徑。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'summary.cpp' -o '/tmp/codex_cpp_C_Container_summary' && '/tmp/codex_cpp_C_Container_summary'
+//
+// === 預期輸出（節錄）===
+// Container summary：選擇、Top-K 與事件管線全部通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

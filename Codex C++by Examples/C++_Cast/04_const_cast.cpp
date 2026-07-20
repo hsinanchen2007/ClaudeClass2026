@@ -105,3 +105,12 @@ Q3：為呼叫錯誤的 legacy `char*` API 去 const 是否合理？
 A：若 API 契約保證不修改，可在很窄 adapter 中使用並記錄原因；若可能修改，應建立 mutable copy。
 長期最佳修法是把 API 簽章改成 `const char*`，而不是把 UB 風險散到每個 caller。
 */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '04_const_cast.cpp' -o '/tmp/codex_cpp_C_Cast_04_const_cast' && '/tmp/codex_cpp_C_Cast_04_const_cast'
+//
+// === 預期輸出（節錄）===
+// [實務] mutating legacy API receives a safe copy
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

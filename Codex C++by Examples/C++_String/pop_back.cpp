@@ -68,3 +68,12 @@ int main() {
  * - 用 string 當 char stack 時，push_back/back/pop_back 是核心三件組。
  * 【面試題】為何不自動在空時 no-op？標準容器偏向由 caller 維護明確前置條件。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'pop_back.cpp' -o '/tmp/codex_cpp_C_String_pop_back' && '/tmp/codex_cpp_C_String_pop_back'
+//
+// === 預期輸出（節錄）===
+// pop_back: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

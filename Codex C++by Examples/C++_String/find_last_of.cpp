@@ -68,3 +68,12 @@ int main() {
  * 最壞 O(n*m)。取得位置後若接著 erase/replace，修改操作才可能造成失效。
  * pos 不是「倒數第幾個」，而是正向索引上界；這是常見 off-by-one 來源。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'find_last_of.cpp' -o '/tmp/codex_cpp_C_String_find_last_of' && '/tmp/codex_cpp_C_String_find_last_of'
+//
+// === 預期輸出（節錄）===
+// find_last_of: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

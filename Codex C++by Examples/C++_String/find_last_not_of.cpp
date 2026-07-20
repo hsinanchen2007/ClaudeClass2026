@@ -68,3 +68,12 @@ int main() {
  * 才適合 find_last_not_of。前者反覆迴圈也是 O(n)，後者較直接回分界索引。
  * 若結果要保存且來源很快銷毀，回 string 副本；若只在當前呼叫鏈使用，可回 view。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'find_last_not_of.cpp' -o '/tmp/codex_cpp_C_String_find_last_not_of' && '/tmp/codex_cpp_C_String_find_last_not_of'
+//
+// === 預期輸出（節錄）===
+// find_last_not_of: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

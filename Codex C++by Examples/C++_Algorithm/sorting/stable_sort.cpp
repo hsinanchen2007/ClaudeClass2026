@@ -73,3 +73,20 @@ int main() {
  * 生命週期與 sort 相同：容器 size 不變但值被搬動。練習：讓 Message 不可複製但
  * 可 noexcept move，驗證 stable_sort；再比較排序 index 的成本。
  */
+
+/*
+ * 【教科書補充：stable_sort 的保證與成本】
+ * - 有足夠額外記憶體時比較次數 O(N log N)；配置不到 buffer 時仍可完成，但可達 O(N log^2 N)。
+ * - 標準沒有承諾固定 O(N) 額外空間；實作可嘗試配置再退回原地演算法。
+ * - comparator 必須是 strict weak ordering；含 NaN 的一般 `<` 需先定義 domain ordering。
+ * - execution-policy 版本要求 callable 無資料競爭；標準 policy 下未處理例外可能終止程序。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'stable_sort.cpp' -o '/tmp/codex_cpp_C_Algorithm_sorting_stable_sort' && '/tmp/codex_cpp_C_Algorithm_sorting_stable_sort'
+//
+// === 預期輸出（節錄）===
+// stable_sort：LC1122 與 priority FIFO 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

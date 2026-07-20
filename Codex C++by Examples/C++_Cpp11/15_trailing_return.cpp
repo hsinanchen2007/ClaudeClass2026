@@ -53,7 +53,7 @@ void test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】泛型 normalization adapter：trailing return 由物件的 normalized() 決定結果型別。
 namespace practical {
 struct Reading {
     double value;
@@ -80,3 +80,14 @@ int main() {
     practical_test();
     std::cout << "trailing return：泛型運算、running sum、normalize 測試通過\n";
 }
+
+// 【延伸練習】替 normalize 加 const/non-const accessor，逐一寫出 decltype 推導與 lifetime。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++11 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '15_trailing_return.cpp' -o '/tmp/codex_cpp_C_Cpp11_15_trailing_return' && '/tmp/codex_cpp_C_Cpp11_15_trailing_return'
+//
+// === 預期輸出（節錄）===
+// trailing return：泛型運算、running sum、normalize 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

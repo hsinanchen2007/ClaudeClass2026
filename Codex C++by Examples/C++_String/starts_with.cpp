@@ -70,3 +70,12 @@ int main() {
  * 【面試題】starts_with 是不是 regex anchor `^`？效果類似簡單 literal 前綴，但沒有
  * regex 語法、capture 或 character class，成本與風險更低。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'starts_with.cpp' -o '/tmp/codex_cpp_C_String_starts_with' && '/tmp/codex_cpp_C_String_starts_with'
+//
+// === 預期輸出（節錄）===
+// starts_with: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

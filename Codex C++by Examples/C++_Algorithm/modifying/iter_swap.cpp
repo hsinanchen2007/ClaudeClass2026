@@ -79,3 +79,12 @@ int main() {
  * active_first 的寫法會保留 active 元素相對順序，但 inactive 區的順序未明確作為
  * 契約；若兩區都必須穩定，直接使用 stable_partition 表意更清楚但可能用額外空間。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'iter_swap.cpp' -o '/tmp/codex_cpp_C_Algorithm_modifying_iter_swap' && '/tmp/codex_cpp_C_Algorithm_modifying_iter_swap'
+//
+// === 預期輸出（節錄）===
+// iter_swap：LC283、selection sort、record 分區測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

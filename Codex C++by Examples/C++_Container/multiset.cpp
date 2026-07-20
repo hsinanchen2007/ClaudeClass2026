@@ -89,3 +89,12 @@ int main()
 // 【面試】只需 frequency 時 unordered_map<T,count> 通常更直接；需要 order statistic
 //         才考慮 multiset，但標準 multiset 不提供 O(log n) 第 k 個元素。
 // 【練習】實作固定長度 3 的窗口，每滑一步刪一值、加一值並輸出 median。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'multiset.cpp' -o '/tmp/codex_cpp_C_Container_multiset' && '/tmp/codex_cpp_C_Container_multiset'
+//
+// === 預期輸出（節錄）===
+// multiset：重複值、交集與中位數測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -115,3 +115,20 @@ int main() {
  * 【面試】這版為何不是 production-quality？預先建構 N 個 T、無 allocator、無完整 erase/copy 策略。
  * 【練習】用 raw storage + construct_at/destroy_at 改寫，並寫好 rule of five。
  */
+
+/*
+ * 【教科書補充：logical size 必須由容器本身維護】
+ * - remove_element 目前只回傳 logical size，沒有更新 StaticVector::size_；呼叫者後續迭代仍看見舊尾端。
+ * - 因此它是 remove algorithm 示範，不是完整 erase；名稱/文件要明示 caller 尚未 commit 新 size。
+ * - operator[] 的合法範圍是 index<size()，底層 capacity 尚有槽位不代表其中存在 logical element。
+ * - 元素 assignment 拋出時，槽位可能已部分改變；除非 T 提供更強保證，不能宣稱整體 rollback。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '28_capstone_mini_stl.cpp' -o '/tmp/codex_cpp_C_Template_28_capstone_mini_stl' && '/tmp/codex_cpp_C_Template_28_capstone_mini_stl'
+//
+// === 預期輸出（節錄）===
+// mini STL capstone 測試完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

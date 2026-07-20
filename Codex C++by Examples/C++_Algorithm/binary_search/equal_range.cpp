@@ -81,3 +81,20 @@ int main() {
  * 實務查詢時，先確認索引真的是依 user_id 排序，不能只看測試資料剛好有序。
  * 練習：讓 Event 先按 user_id、再按 timestamp 排序，查某人指定時間區間。
  */
+
+/*
+ * 【教科書補充：equal_range 是兩個分界的組合契約】
+ * - 它等價於 lower_bound/upper_bound 的半開區間，因此異質 comparator 要支援兩種參數方向。
+ * - 範圍須同時滿足兩側 partition 且比較不可讓 comp(a,b) 與 comp(b,a) 同時為 true；否則 UB。
+ * - 對 ForwardIterator，即使比較約 O(log N)，逐步前進仍可能 O(N)；不要只看 distance 的成本。
+ * - 回傳空區間仍有兩種語意：key 不存在但可插入於該位置，或查詢在 begin/end 邊界。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'equal_range.cpp' -o '/tmp/codex_cpp_C_Algorithm_binary_search_equal_range' && '/tmp/codex_cpp_C_Algorithm_binary_search_equal_range'
+//
+// === 預期輸出（節錄）===
+// equal_range：重複值與事件群組查詢測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

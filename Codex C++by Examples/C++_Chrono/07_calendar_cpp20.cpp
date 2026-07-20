@@ -86,3 +86,12 @@ int main()
 // 練習：測試 leap year 的 Jan 31 -> Feb 29，以及 Dec -> next January。
 // 複雜度與生命週期：固定日期的 calendar/sys_days 轉換是 O(1) 值運算；year_month_day 可
 // 獨立保存但可能是 invalid value，所以跨 API 邊界仍要以 ok() 驗證。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '07_calendar_cpp20.cpp' -o '/tmp/codex_cpp_C_Chrono_07_calendar_cpp20' && '/tmp/codex_cpp_C_Chrono_07_calendar_cpp20'
+//
+// === 預期輸出（節錄）===
+// [實務] monthly billing clamps Jan 31 -> Feb 28
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -83,3 +83,12 @@ int main() {
  * move assignment 是另一份契約：不 propagate 且 allocator 不等時仍有定義，但可能線性搬移。
  * 交換後重新取得 iterator/view/pointer，是避免歸屬誤判的簡單規則。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'swap.cpp' -o '/tmp/codex_cpp_C_String_swap' && '/tmp/codex_cpp_C_String_swap'
+//
+// === 預期輸出（節錄）===
+// member swap: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

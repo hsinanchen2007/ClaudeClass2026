@@ -159,3 +159,20 @@ int main()
 // 【陷阱】只 notify 不保存 state，早到的 notification 不會排隊等待未來 waiter。
 // 【面試】為何 wait 需要 unique_lock 而非 lock_guard？必須暫時 unlock/relock。
 // 【練習】為 BlockingQueue 加容量上限與 not_full condition。
+
+/*
+ * 【教科書補充：BlockingQueue 的關閉契約】
+ * - push 與 close 在同一 mutex 下線性化：先取得鎖者決定該筆資料被接受或拒絕。
+ * - 本例 close 後 push 只以 assert 阻擋；release 會失去檢查，production 應回 bool 或丟例外。
+ * - close 應定義為冪等、喚醒所有 waiter，consumer 則 drain 已接受項目後回 false。
+ * - 解構 condition/mutex/queue 前，所有 producer/consumer 必須停止並 join；仍在 wait 的 thread 會造成 UB。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '05_condition_variable.cpp' -o '/tmp/codex_cpp_C_MultiThread_05_condition_variable' && '/tmp/codex_cpp_C_MultiThread_05_condition_variable'
+//
+// === 預期輸出（節錄）===
+// condition_variable：predicate、FooBar 與 blocking queue 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

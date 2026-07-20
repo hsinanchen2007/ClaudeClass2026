@@ -71,3 +71,12 @@ int main() {
  * 自己會追蹤容器 append。練習：用 priority_queue 合併 K 個 sorted shards，分析
  * O(total log K)，並保留 deterministic tie-breaker。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'merge.cpp' -o '/tmp/codex_cpp_C_Algorithm_set_operations_merge' && '/tmp/codex_cpp_C_Algorithm_set_operations_merge'
+//
+// === 預期輸出（節錄）===
+// merge：LC21 與穩定 shard 合併測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

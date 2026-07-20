@@ -77,3 +77,12 @@ int main() {
  * LeetCode 平均薪資若有重複 min/max，題目仍只排除各一筆，不能 remove 所有同值。
  * 練習：用 long long 重寫總和，並以 tolerance 測試非整數平均。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'minmax.cpp' -o '/tmp/codex_cpp_C_Algorithm_min_max_minmax' && '/tmp/codex_cpp_C_Algorithm_min_max_minmax'
+//
+// === 預期輸出（節錄）===
+// minmax：邊界、LC1491、區間正規化測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

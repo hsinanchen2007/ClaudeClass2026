@@ -82,3 +82,20 @@ int main() {
  * 用 view；若需 NUL 結尾、保存參考或與擁有權互動，const string& 更合適。
  * 【練習】寫 value_part(line)，回傳冒號後略過前導空白的 view。
  */
+
+/*
+ * 【教科書補充：view 失效不只發生在 reallocation】
+ * - owner 的 clear/erase/resize 可能讓 view 涵蓋已不再存在的元素，即使 capacity 與 data() 沒變。
+ * - owner 原地修改字元時，view 會看到新內容，但 view 自己的長度不會跟著 owner 自動調整。
+ * - `practical_header_name(std::string{"X: y"})` 回傳後立即懸空；參數改 const string& 也不會延長到 call 之後。
+ * - 回傳借用 view 的 API 應在名稱/文件標示 owner 契約；需要保存時回傳 owning string。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'operator_string_view.cpp' -o '/tmp/codex_cpp_C_String_operator_string_view' && '/tmp/codex_cpp_C_String_operator_string_view'
+//
+// === 預期輸出（節錄）===
+// operator string_view: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

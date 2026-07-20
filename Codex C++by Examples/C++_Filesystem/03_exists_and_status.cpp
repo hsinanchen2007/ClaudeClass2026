@@ -116,3 +116,12 @@ int main()
 // 練習：在支援 symlink 的系統建立 dangling link，比較 status/symlink_status。
 // 複雜度：每次 status/exists 通常至少一次 filesystem 查詢，批次時應避免同一路徑重複查。
 // 生命週期：file_status 是當下 snapshot；路徑可能在下一條指令前被刪除/替換，不能當永久保證。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '03_exists_and_status.cpp' -o '/tmp/codex_cpp_C_Filesystem_03_exists_and_status' && '/tmp/codex_cpp_C_Filesystem_03_exists_and_status'
+//
+// === 預期輸出（節錄）===
+// [實務] metadata check plus actual open validates input
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

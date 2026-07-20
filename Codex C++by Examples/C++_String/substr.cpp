@@ -72,3 +72,12 @@ int main() {
  * owning 結果不受來源後續修改影響；代價是 O(k) 複製/可能配置。
  * 【面試題】parser 為何偏好 string_view::substr？O(1) 切片；但 API 邊界需處理生命週期。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'substr.cpp' -o '/tmp/codex_cpp_C_String_substr' && '/tmp/codex_cpp_C_String_substr'
+//
+// === 預期輸出（節錄）===
+// substr: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -280,3 +280,12 @@ int main() {
  * temporary vector 再取 iterator；即使內容相同，它們仍屬不同範圍。main 中的
  * 空範圍測試特別使用具名 `empty`，讓 iterator 的來源與生命週期清楚可見。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'summary.cpp' -o '/tmp/codex_cpp_C_Algorithm_numeric_summary' && '/tmp/codex_cpp_C_Algorithm_numeric_summary'
+//
+// === 預期輸出（節錄）===
+// Numeric summary：八類演算法整合測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

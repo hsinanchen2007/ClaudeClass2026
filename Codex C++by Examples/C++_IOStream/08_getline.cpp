@@ -77,3 +77,12 @@ int main()
 // stale/empty data；應把讀取操作本身放在 while condition。
 // 易錯：Windows CRLF 經 text stream 不一定跨所有環境自動去掉 `\r`，wire parser 要明定。
 // 練習：支援 Windows CRLF 時觀察 getline 留下的 `\r`，並設計 normalization。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '08_getline.cpp' -o '/tmp/codex_cpp_C_IOStream_08_getline' && '/tmp/codex_cpp_C_IOStream_08_getline'
+//
+// === 預期輸出（節錄）===
+// [實務] blank middle line preserved as data
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

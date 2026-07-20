@@ -68,3 +68,12 @@ int main() {
  * 若資料是 input stream，只能走一次，應在同一 loop 同時累積全部 counters。
  * 練習完成後比較兩版結果，並用不同 N 量測 O(N^2) 與 O(N) 成長差距。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'count.cpp' -o '/tmp/codex_cpp_C_Algorithm_non_modifying_count' && '/tmp/codex_cpp_C_Algorithm_non_modifying_count'
+//
+// === 預期輸出（節錄）===
+// count：LeetCode 1512 與實務 request 指標測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -70,3 +70,12 @@ int main() {
  * 練習：訂單比對改成同 sku 的 quantity 可拆成多行，需先 aggregate 後比較，說明
  * 為何目前 pair-level permutation 無法把 {sku10,1}+{sku10,1} 視為 {sku10,2}。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'is_permutation.cpp' -o '/tmp/codex_cpp_C_Algorithm_permutation_is_permutation' && '/tmp/codex_cpp_C_Algorithm_permutation_is_permutation'
+//
+// === 預期輸出（節錄）===
+// is_permutation：anagram 與冪等訂單驗證測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

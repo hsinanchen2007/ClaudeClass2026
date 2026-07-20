@@ -76,3 +76,12 @@ int main() {
  * 易錯陷阱：make_heap 後直接 sort 會得到排序，但此後不能再假設仍是 heap；若要
  * 保持排程狀態，應透過 pop_heap 逐筆消費，或使用 priority_queue 封裝。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'make_heap.cpp' -o '/tmp/codex_cpp_C_Algorithm_heap_make_heap' && '/tmp/codex_cpp_C_Algorithm_heap_make_heap'
+//
+// === 預期輸出（節錄）===
+// make_heap：建堆、第 K 大、deadline 佇列測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

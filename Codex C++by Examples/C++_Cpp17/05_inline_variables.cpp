@@ -64,7 +64,7 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】header-only 區域與批次上限：跨 translation unit 共享單一定義。
 namespace practical {
 inline const std::vector<std::string> supported_regions{"us-west", "us-east"};
 inline constexpr std::size_t maximum_batch_size = 500U;
@@ -87,3 +87,12 @@ int main() {
     practical::practical_test();
     std::cout << "inline variables：ODR、Fibonacci、共享設定測試通過\n";
 }
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++17 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '05_inline_variables.cpp' -o '/tmp/codex_cpp_C_Cpp17_05_inline_variables' && '/tmp/codex_cpp_C_Cpp17_05_inline_variables'
+//
+// === 預期輸出（節錄）===
+// inline variables：ODR、Fibonacci、共享設定測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -239,3 +239,12 @@ int main() {
  * 4. 用兩次 nth_element 求偶數 median，避免中間值相加 overflow。
  * 5. property-test comparator 的 irreflexive/asymmetric/transitive。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'summary.cpp' -o '/tmp/codex_cpp_C_Algorithm_sorting_summary' && '/tmp/codex_cpp_C_Algorithm_sorting_summary'
+//
+// === 預期輸出（節錄）===
+// Sorting summary：top-K、LC75、quantile 與穩定排序測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

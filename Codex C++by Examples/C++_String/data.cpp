@@ -71,3 +71,12 @@ int main() {
  * 會改長度，必須由回傳值同步 resize。任何可能重配的 string 操作都使舊 data pointer
  * 失效。若 API 只讀且要求 NUL，c_str 的意圖通常比 data 更清楚。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'data.cpp' -o '/tmp/codex_cpp_C_String_data' && '/tmp/codex_cpp_C_String_data'
+//
+// === 預期輸出（節錄）===
+// data: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

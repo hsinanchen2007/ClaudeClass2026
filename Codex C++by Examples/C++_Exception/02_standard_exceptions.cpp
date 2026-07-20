@@ -92,3 +92,12 @@ int main()
 // 練習：比較 stoi 可能丟的 invalid_argument/out_of_range，分別提供不同錯誤訊息。
 // 複雜度：選 exception subclass 不改解題 Big-O；throw 成本仍取決於 stack 深度與 cleanup。
 // 生命週期：catch(const exception&) 在 handler 期間引用 exception object，離開 handler 不得保存 reference。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '02_standard_exceptions.cpp' -o '/tmp/codex_cpp_C_Exception_02_standard_exceptions' && '/tmp/codex_cpp_C_Exception_02_standard_exceptions'
+//
+// === 預期輸出（節錄）===
+// [實務] invalid configuration has a typed failure
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

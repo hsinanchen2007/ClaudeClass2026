@@ -208,3 +208,12 @@ int main() {
  * 4. 以 mismatch-counter 優化 check_inclusion，避免每步比較完整 256 格陣列。
  * 5. 實作 rank/unrank permutation，直接跳到第 k 個排列而不枚舉前 k-1 個。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'summary.cpp' -o '/tmp/codex_cpp_C_Algorithm_permutation_summary' && '/tmp/codex_cpp_C_Algorithm_permutation_summary'
+//
+// === 預期輸出（節錄）===
+// Permutation summary：比較、枚舉與滑動視窗測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

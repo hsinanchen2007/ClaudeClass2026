@@ -129,3 +129,12 @@ int main() {
  * 【面試】tag dispatch 與 virtual dispatch 差異？前者編譯期選 overload，後者執行期選 virtual。
  * 【練習】為 contiguous iterator 加專屬 tag 路徑，並解釋它與 random-access 的關係。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '18_tag_dispatch.cpp' -o '/tmp/codex_cpp_C_Template_18_tag_dispatch' && '/tmp/codex_cpp_C_Template_18_tag_dispatch'
+//
+// === 預期輸出（節錄）===
+// tag dispatch 測試完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

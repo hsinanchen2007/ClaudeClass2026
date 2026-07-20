@@ -68,3 +68,12 @@ int main() {
  * 【面試題】空 suffix 為何 true？空序列是任何序列的前綴與後綴。
  * 【練習】處理 `.tar.gz` 複合副檔名白名單，不只看最後一個點。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'ends_with.cpp' -o '/tmp/codex_cpp_C_String_ends_with' && '/tmp/codex_cpp_C_String_ends_with'
+//
+// === 預期輸出（節錄）===
+// ends_with: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

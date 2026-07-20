@@ -93,3 +93,12 @@ int main() {
  * 不是保證零複製，也不會延長 temporary 的生命週期。
  * 【練習】寫 invoke_and_log(F&&, Args&&...)；回傳型別用 decltype(auto)，並處理 void。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '08_forward.cpp' -o '/tmp/codex_cpp_C_Utility_08_forward' && '/tmp/codex_cpp_C_Utility_08_forward'
+//
+// === 預期輸出（節錄）===
+// forward 測試完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

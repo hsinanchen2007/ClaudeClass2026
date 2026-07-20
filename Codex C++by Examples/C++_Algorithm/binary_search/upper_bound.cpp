@@ -74,3 +74,20 @@ int main() {
  * LeetCode 測試要包含 target 位於頭、尾、重複區與不存在四種情況。
  * 實務費率表還應在載入時驗證 maximum 嚴格遞增，否則二分前置條件不成立。
  */
+
+/*
+ * 【教科書補充：upper_bound 的 comparator 方向】
+ * - 範圍前段須滿足 `!comp(key,element)`，答案是第一個 `comp(key,element)` 的位置。
+ * - 這個參數方向與 lower_bound 的 comp(element,key) 相反；異質查詢型 comparator 特別容易漏寫。
+ * - 未依同一 predicate partitioned 時行為未定義；不能把錯 comparator 當成「找不到」處理。
+ * - ForwardIterator 的 iterator increments 可為 O(N)，只有比較次數維持對數級。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'upper_bound.cpp' -o '/tmp/codex_cpp_C_Algorithm_binary_search_upper_bound' && '/tmp/codex_cpp_C_Algorithm_binary_search_upper_bound'
+//
+// === 預期輸出（節錄）===
+// upper_bound：最右邊界、LC34、階梯費率測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

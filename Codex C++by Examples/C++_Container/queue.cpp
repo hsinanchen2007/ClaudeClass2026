@@ -143,3 +143,12 @@ int main()
 // 【面試追問】為何 pop 不回值？把可能拋例外的取值與移除分開，避免元素已刪卻拿不到結果。
 // 【面試追問】能否用 vector 當底層？不行，vector 沒有 queue 所需的 pop_front。
 // 【練習】用 queue 實作二元樹 level-order traversal。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'queue.cpp' -o '/tmp/codex_cpp_C_Container_queue' && '/tmp/codex_cpp_C_Container_queue'
+//
+// === 預期輸出（節錄）===
+// queue：FIFO、輪轉模擬與工作處理測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

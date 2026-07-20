@@ -294,3 +294,14 @@ int main()
     practical_callback_and_deleter_demo();
     std::cout << "SmartPointers summary: all assertions passed\n";
 }
+
+// 【章末自測】從 ownership graph 判定 unique/shared/weak/raw observer，並找出可能的 cycle。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'summary.cpp' -o '/tmp/codex_cpp_C_SmartPointers_summary' && '/tmp/codex_cpp_C_SmartPointers_summary'
+//
+// === 預期輸出（節錄）===
+// SmartPointers summary: all assertions passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

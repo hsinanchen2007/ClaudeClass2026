@@ -47,7 +47,7 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】傳輸配額：數字分隔符讓 750 GB 級常數可審查，且不改變型別或數值。
 namespace practical {
 struct TransferLimit {
     std::uint64_t bytes_per_second;
@@ -73,3 +73,12 @@ int main() {
     practical::practical_test();
     std::cout << "digit separator：數值可讀性、Palindrome Number、傳輸配額測試通過\n";
 }
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++14 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '05_digit_separator.cpp' -o '/tmp/codex_cpp_C_Cpp14_05_digit_separator' && '/tmp/codex_cpp_C_Cpp14_05_digit_separator'
+//
+// === 預期輸出（節錄）===
+// digit separator：數值可讀性、Palindrome Number、傳輸配額測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -149,3 +149,12 @@ int main() {
  * 【面試】subsumption 是什麼？較受約束 overload 可優先，但依 constraint 正規化而非人類直覺。
  * 【練習】加入 ReadOnlyRepository concept，設計 overload 讓 WritableRepository 版本更特化。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '21_concepts_advanced.cpp' -o '/tmp/codex_cpp_C_Template_21_concepts_advanced' && '/tmp/codex_cpp_C_Template_21_concepts_advanced'
+//
+// === 預期輸出（節錄）===
+// 進階 concepts 測試完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

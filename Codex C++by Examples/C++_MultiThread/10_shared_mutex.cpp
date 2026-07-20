@@ -286,3 +286,12 @@ int main()
 // 【面試追問】shared_mutex 一定避免 writer starvation 嗎？否，標準沒有公平性保證。
 // 【面試追問】為何 snapshot 回傳副本？因為鎖釋放後，內部 reference 不再受保護。
 // 【練習】量測 50/90/99% 讀比例與不同 critical-section 長度，再和 mutex/CoW 比較。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '10_shared_mutex.cpp' -o '/tmp/codex_cpp_C_MultiThread_10_shared_mutex' && '/tmp/codex_cpp_C_MultiThread_10_shared_mutex'
+//
+// === 預期輸出（節錄）===
+// shared_mutex：同步、TimeMap 與一致快照測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

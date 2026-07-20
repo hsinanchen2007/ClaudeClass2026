@@ -151,3 +151,20 @@ int main()
 // 相同 seed 的跨標準庫 distribution 結果未必相同；需要長期 replay 時要記工具鏈/演算法。
 // 練習：serialize mt19937 到 stringstream，再 restore 並驗下一個 raw output 相同。
 // 生命週期：engine object 擁有完整 state；copy 會複製序列位置，temporary engine 每次重建會重播。
+
+/*
+ * 【教科書補充：RandomizedSet 是雙容器交易】
+ * - vector 與 index map 必須維持一一對應；先改 map、後 push vector 時，配置失敗會留下壞索引。
+ * - production insert/remove 應安排 commit 順序與 rollback guard，並對 allocator failure 做 fault injection。
+ * - engine 決定狀態序列，distribution 把序列映射到目標範圍；不要用 `% size` 取代 distribution。
+ * - engine seed 相同利於測試重現，不代表不同標準庫的 distribution 轉換結果 bitwise 相同。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '02_engines.cpp' -o '/tmp/codex_cpp_C_Random_02_engines' && '/tmp/codex_cpp_C_Random_02_engines'
+//
+// === 預期輸出（節錄）===
+// [LeetCode 380] member engine + O(1) vector/map operations
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

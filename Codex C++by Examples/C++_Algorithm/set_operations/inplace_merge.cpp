@@ -71,3 +71,12 @@ int main() {
  * 練習：手寫從尾端 merge 的 LC88，再比較插入第二段造成的 reallocation 與
  * inplace_merge buffer 成本；大型物件可考慮 indirect index merge。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'inplace_merge.cpp' -o '/tmp/codex_cpp_C_Algorithm_set_operations_inplace_merge' && '/tmp/codex_cpp_C_Algorithm_set_operations_inplace_merge'
+//
+// === 預期輸出（節錄）===
+// inplace_merge：LC88 與穩定事件 run 合併測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

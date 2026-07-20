@@ -194,3 +194,12 @@ Q3：為何 `release()` 很危險？
 A：它只交出 raw pointer，不呼叫 deleter；若接收端沒有立即納入另一個 owner，資源就洩漏。大多數
 ownership 轉移應直接 move `unique_ptr`，只有必須把責任交給明確接管的 C API 時才用 release。
 */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '20_UniquePtr.cpp' -o '/tmp/codex_cpp_C_OOP_20_UniquePtr' && '/tmp/codex_cpp_C_OOP_20_UniquePtr'
+//
+// === 預期輸出（節錄）===
+// [實務] Service 獨占 db-primary repository
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

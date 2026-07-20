@@ -60,7 +60,7 @@ void test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】C 風格 optional callback：nullptr 明確表示呼叫者不要求完成通知。
 namespace practical {
 using Callback = void (*)(int);
 int observed = 0;
@@ -91,3 +91,12 @@ int main() {
     practical_test();
     std::cout << "nullptr：overload、鏈結串列、optional callback 測試通過\n";
 }
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++11 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '03_nullptr.cpp' -o '/tmp/codex_cpp_C_Cpp11_03_nullptr' && '/tmp/codex_cpp_C_Cpp11_03_nullptr'
+//
+// === 預期輸出（節錄）===
+// nullptr：overload、鏈結串列、optional callback 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -93,3 +93,12 @@ int main()
 // 練習：設計 Result<T,Error>，比較它與 exception 在連續三層呼叫中的樣板碼。
 // 複雜度：binary search O(log N)；cache lookup 平均 O(1)，正常 miss 不該支付 unwinding 成本。
 // 生命週期：optional 以值擁有結果；自訂 exception 的 what() storage 則由 exception object 擁有。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '03_what_to_throw.cpp' -o '/tmp/codex_cpp_C_Exception_03_what_to_throw' && '/tmp/codex_cpp_C_Exception_03_what_to_throw'
+//
+// === 預期輸出（節錄）===
+// [實務] optional expresses ordinary cache miss
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

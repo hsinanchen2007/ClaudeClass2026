@@ -71,3 +71,12 @@ int main() {
  * - 數字不會自動轉字串；使用 to_chars、format 或 to_string。
  * 【面試題】`"abc" + 1` 是什麼？array 退化 pointer 後位移，得到指向 "bc" 的 pointer。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'operator_plus.cpp' -o '/tmp/codex_cpp_C_String_operator_plus' && '/tmp/codex_cpp_C_String_operator_plus'
+//
+// === 預期輸出（節錄）===
+// operator+: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

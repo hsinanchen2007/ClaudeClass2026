@@ -68,3 +68,20 @@ int main() {
  * snapshot 或接受 eventual result。練習：不用配置 versions vector，手寫 LC278 的
  * 整數索引二分，並避免 mid=(lo+hi)/2 overflow。
  */
+
+/*
+ * 【教科書補充：partition_point 的 invariant】
+ * - 輸入必須是「true 前綴、false 後綴」，而且使用與查詢完全相同的 predicate。
+ * - 若資料未 partitioned，或 predicate capture 在查詢期間改變，行為未定義而非單純答案不可信。
+ * - 併發 writer 即使沒有改 size，也可能破壞 predicate 分界並造成 data race；查詢要看一致快照。
+ * - ForwardIterator 的比較可為 O(log N)，但 iterator increments 仍可能 O(N)。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'partition_point.cpp' -o '/tmp/codex_cpp_C_Algorithm_partitioning_partition_point' && '/tmp/codex_cpp_C_Algorithm_partitioning_partition_point'
+//
+// === 預期輸出（節錄）===
+// partition_point：分界二分、LC278 與部署診斷測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

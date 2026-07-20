@@ -99,3 +99,12 @@ int main()
 
 // 面試自問：istreambuf_iterator<char> 與 istream_iterator<char> 為何讀空白不同？
 // 練習：加入計算行數、最長一行長度的 single-pass log analyzer。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '08b_streambuf_iterators.cpp' -o '/tmp/codex_cpp_C_Iterator_08b_streambuf_iterators' && '/tmp/codex_cpp_C_Iterator_08b_streambuf_iterators'
+//
+// === 預期輸出（節錄）===
+// [實務] CRLF log normalized without losing spaces
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

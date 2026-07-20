@@ -71,3 +71,12 @@ int main() {
  * clear 常保留 capacity；shrink_to_fit 只提出縮減請求；reserve 只保證下限。
  * 【面試題】為何標準不規定 growth factor？讓實作依 allocator 與平台調整。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'capacity.cpp' -o '/tmp/codex_cpp_C_String_capacity' && '/tmp/codex_cpp_C_String_capacity'
+//
+// === 預期輸出（節錄）===
+// capacity: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

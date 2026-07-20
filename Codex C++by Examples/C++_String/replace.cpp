@@ -70,3 +70,12 @@ int main() {
  * 【面試題】pos 合法但 count 過長？count 自動截到尾端；pos>size 才 out_of_range。
  * 【安全】模板替換不等於 HTML/SQL/shell escaping，輸出邊界仍要專用 encoder。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'replace.cpp' -o '/tmp/codex_cpp_C_String_replace' && '/tmp/codex_cpp_C_String_replace'
+//
+// === 預期輸出（節錄）===
+// replace: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -87,3 +87,20 @@ int main() {
  * 【面試】constinit 只保證靜態物件初始化期，不代表物件之後不可修改。
  * 【練習】用 constexpr 建立 0..255 的 byte parity lookup table。
  */
+
+/*
+ * 【教科書補充：編譯期運算仍受整數規則限制】
+ * - uint64_t climb-stairs 只有 N<=92 才容納正確結果；consteval 不會自動提供任意精度。
+ * - power<int> 超出 int 範圍仍是 signed-overflow UB；constant evaluation 會拒絕該表達式，runtime 更需驗證。
+ * - checksum 將 Character 截為 byte，只適合 byte-oriented protocol；寬字元需另定 encoding。
+ * - FNV 使用 unsigned wrap 是演算法刻意的一部分，應和 signed overflow 明確區分。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '27_constexpr_templates.cpp' -o '/tmp/codex_cpp_C_Template_27_constexpr_templates' && '/tmp/codex_cpp_C_Template_27_constexpr_templates'
+//
+// === 預期輸出（節錄）===
+// constexpr templates 測試完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

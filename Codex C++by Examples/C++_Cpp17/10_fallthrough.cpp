@@ -73,7 +73,7 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】告警升級：error 依序 page、記 metric、寫 log，刻意貫穿由 attribute 說清楚。
 namespace practical {
 enum class Severity { info, warning, error };
 
@@ -105,3 +105,12 @@ int main() {
     practical::practical_test();
     std::cout << "fallthrough：累進權限、Roman numeral、告警動作測試通過\n";
 }
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++17 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '10_fallthrough.cpp' -o '/tmp/codex_cpp_C_Cpp17_10_fallthrough' && '/tmp/codex_cpp_C_Cpp17_10_fallthrough'
+//
+// === 預期輸出（節錄）===
+// fallthrough：累進權限、Roman numeral、告警動作測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -150,3 +150,12 @@ int main()
 // 練習：故意調換 member 宣告與 initializer 順序，以 -Wreorder 觀察 compiler 提醒。
 // 複雜度：initializer list 可直接建構 member，避免「先 default 再 assignment」的額外成本。
 // 生命週期：初始化永遠依 member 宣告順序，不依 list 書寫順序；reference member 的來源須更長壽。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '7_InitializerList.cpp' -o '/tmp/codex_cpp_C_OOP_7_InitializerList' && '/tmp/codex_cpp_C_OOP_7_InitializerList'
+//
+// === 預期輸出（節錄）===
+// [實務] job 42 payload size=3
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -165,3 +165,12 @@ int main()
 // 練習：為 RandomList 加 copy assignment；注意 exception safety 與 self-assignment。
 // 複雜度：deep copy 是 O(owned nodes/elements)，額外空間同樣線性；shallow pointer copy 才 O(1)。
 // 生命週期與易錯：副本必須擁有獨立資源；兩個 owner 指同一 raw allocation 會 double delete。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '8_CopyConstructor.cpp' -o '/tmp/codex_cpp_C_OOP_8_CopyConstructor' && '/tmp/codex_cpp_C_OOP_8_CopyConstructor'
+//
+// === 預期輸出（節錄）===
+// [實務] audit snapshot 保留舊設定 4
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

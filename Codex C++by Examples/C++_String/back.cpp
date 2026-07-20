@@ -72,3 +72,12 @@ int main() {
  * 【陷阱】即使上一行剛判非空，若中間呼叫可能 clear 字串，也要重新確認前置條件。
  * 【面試題】為何不寫 `s[s.size()-1]`？back 意圖清楚，但仍必須先判空。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'back.cpp' -o '/tmp/codex_cpp_C_String_back' && '/tmp/codex_cpp_C_String_back'
+//
+// === 預期輸出（節錄）===
+// back: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

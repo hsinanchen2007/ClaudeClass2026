@@ -95,3 +95,20 @@ int main()
 // 【陷阱】修改已在 heap 內物件的比較欄位會破壞 heap invariant；通常 push 新版本。
 // 【面試】Top-K 為何用大小 k 的 min-heap，而非把 n 個元素全排序？
 // 【練習】實作 LeetCode 703 Kth Largest in a Stream。
+
+/*
+ * 【教科書補充：heap adapter 的公開契約】
+ * - kth_largest 的 k 必須在 [1,n]；assert 消失後，非法 k 可能在空 heap 呼叫 top()。
+ * - Compare 必須是 strict weak ordering；可變 comparator state 或 NaN key 會破壞 heap invariant。
+ * - top() 回傳底層元素的 const reference，後續 push/pop 可能使它失效，不能長期保存。
+ * - push/pop 或 comparator 拋例外時的保證依底層容器與元素型別而定，不能概括為永遠 rollback。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'priority_queue.cpp' -o '/tmp/codex_cpp_C_Container_priority_queue' && '/tmp/codex_cpp_C_Container_priority_queue'
+//
+// === 預期輸出（節錄）===
+// priority_queue：heap、Top-K 與穩定 tie-break 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

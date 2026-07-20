@@ -90,3 +90,12 @@ int main() {
  * 【面試段落】bitset.count 的複雜度標準不保證常數；實作通常按 machine words 掃描。
  * 【練習】實作 Permission mask 的 union/intersection，測試角色權限合併。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '11_bitset.cpp' -o '/tmp/codex_cpp_C_Utility_11_bitset' && '/tmp/codex_cpp_C_Utility_11_bitset'
+//
+// === 預期輸出（節錄）===
+// bitset 測試完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

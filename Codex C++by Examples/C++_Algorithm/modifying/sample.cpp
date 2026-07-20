@@ -75,3 +75,20 @@ int main() {
  * sentinel；一般實務 API 應用 optional 而非 size() sentinel。
  * 練習：抽 k 個 stream 元素，證明不需事先知道總長度。
  */
+
+/*
+ * 【教科書補充：sample 的 iterator 契約】
+ * - count 必須非負，destination 至少能接收 min(count,N) 個輸出元素，來源與目的不得形成非法重疊。
+ * - 本例 vector 是 ForwardIterator，故 back_inserter 合法且樣本保持來源相對順序。
+ * - 若 population 只有 InputIterator，標準另要求 sample iterator 為 RandomAccessIterator；不能照抄本例。
+ * - 固定 seed 只保證同一實作內便於重現；標準不保證跨標準庫得到同一抽樣序列。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'sample.cpp' -o '/tmp/codex_cpp_C_Algorithm_modifying_sample' && '/tmp/codex_cpp_C_Algorithm_modifying_sample'
+//
+// === 預期輸出（節錄）===
+// sample：LeetCode reservoir 與實務稽核抽樣測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -112,3 +112,12 @@ int main()
 //         不可照搬一般 sequential exception handling 心智模型。
 // 【面試】為何 parallel sort 小資料可能更慢？partition、排程、同步與 cache overhead。
 // 【練習】在有 TBB/backend 的環境將 seq 換 par，驗證正確後 benchmark crossover size。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '09_parallel_stl.cpp' -o '/tmp/codex_cpp_C_MultiThread_09_parallel_stl' && '/tmp/codex_cpp_C_MultiThread_09_parallel_stl'
+//
+// === 預期輸出（節錄）===
+// Parallel STL：execution policy 與獨立 transform 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

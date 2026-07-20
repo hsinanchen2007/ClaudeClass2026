@@ -75,3 +75,12 @@ int main() {
  * 比較結果不配置，最壞檢查到第一個不同字元或較短字串結尾。
  * 【面試題】"Z" < "a" 是否符合語系字典？它按 char traits/code units，不按人類語系。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'comparison_operators.cpp' -o '/tmp/codex_cpp_C_String_comparison_operators' && '/tmp/codex_cpp_C_String_comparison_operators'
+//
+// === 預期輸出（節錄）===
+// comparison operators: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

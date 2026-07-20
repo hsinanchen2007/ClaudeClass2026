@@ -101,3 +101,12 @@ int main()
 // 【陷阱】thread 只能 move、不可 copy；join/detach 只能成功執行一次。
 // 【面試】join 提供什麼同步保證？worker 結束前的副作用 happens-before join 返回。
 // 【練習】用 RAII wrapper 保證 exception 發生時也 join，之後比較 jthread。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '01_hello_thread.cpp' -o '/tmp/codex_cpp_C_MultiThread_01_hello_thread' && '/tmp/codex_cpp_C_MultiThread_01_hello_thread'
+//
+// === 預期輸出（節錄）===
+// thread：啟動、join 與資料分片測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

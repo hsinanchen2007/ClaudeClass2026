@@ -88,3 +88,12 @@ int main()
 // 用 `sort` 搭隨機 key 不是無偏 Fisher-Yates，collision 與排序代價也讓它不合適。
 // 練習：手寫 Fisher-Yates，與 std::shuffle 比較 permutation invariant。
 // 生命週期：shuffle 原地修改 range；iterators 必須在操作期間有效，engine state 由 caller 持有。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '06_shuffle.cpp' -o '/tmp/codex_cpp_C_Random_06_shuffle' && '/tmp/codex_cpp_C_Random_06_shuffle'
+//
+// === 預期輸出（節錄）===
+// [實務] seed 2026 exactly replays test order
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

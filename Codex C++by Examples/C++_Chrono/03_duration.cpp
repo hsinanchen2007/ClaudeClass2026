@@ -88,3 +88,12 @@ int main()
 // 練習：強化 parse_time，拒絕格式錯誤與 24:00/12:60。
 // 複雜度與生命週期：duration conversion/arithmetic 對固定 rep 是 O(1)；duration 按值擁有
 // count，不引用原變數，但 integral rep 仍可能 overflow，需在 boundary 先驗範圍。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '03_duration.cpp' -o '/tmp/codex_cpp_C_Chrono_03_duration' && '/tmp/codex_cpp_C_Chrono_03_duration'
+//
+// === 預期輸出（節錄）===
+// [實務] typed exponential backoff capped at 6400ms
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

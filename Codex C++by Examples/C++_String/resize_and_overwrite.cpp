@@ -79,3 +79,12 @@ int main() {
  * 都違反契約；保存 buffer 指標供 callback 後使用也錯。
  * 【練習】用此模式把每 byte 轉兩位十六進位（預留 input.size()*2）。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'resize_and_overwrite.cpp' -o '/tmp/codex_cpp_C_String_resize_and_overwrite' && '/tmp/codex_cpp_C_String_resize_and_overwrite'
+//
+// === 預期輸出（節錄）===
+// resize_and_overwrite: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

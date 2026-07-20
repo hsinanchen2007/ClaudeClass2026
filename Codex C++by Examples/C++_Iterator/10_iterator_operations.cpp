@@ -83,3 +83,12 @@ int main()
 // 易錯：iterator 不知道 range 邊界；next/advance 超過 end 不會自動 clamp，而是 UB。
 // 面試自問：為何 distance(list.begin(), list.end()) 放在每次 loop 會造成 O(N²)？
 // 練習：用 std::ranges::advance(it, n, end) 重寫分頁邊界（C++20）。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '10_iterator_operations.cpp' -o '/tmp/codex_cpp_C_Iterator_10_iterator_operations' && '/tmp/codex_cpp_C_Iterator_10_iterator_operations'
+//
+// === 預期輸出（節錄）===
+// [實務] bounded iterator arithmetic produced safe pagination
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

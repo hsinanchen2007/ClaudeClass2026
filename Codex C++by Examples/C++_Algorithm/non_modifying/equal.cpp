@@ -68,3 +68,12 @@ int main() {
  * 再加入空 magic、完全相等、payload 較短與較長四組測試。
  * 面試回答時先指出比較的是 sequence equality，不是物件 identity。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'equal.cpp' -o '/tmp/codex_cpp_C_Algorithm_non_modifying_equal' && '/tmp/codex_cpp_C_Algorithm_non_modifying_equal'
+//
+// === 預期輸出（節錄）===
+// equal：LeetCode 242 與實務 signature 比較測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -83,3 +83,12 @@ int main()
 // 易錯：formatted extraction 遇非法 token 設 failbit 並停止；不等於「檔案正常讀完」。
 // 面試自問：解析到非法 token 時，如何區分正常 EOF 與 failbit？
 // 練習：將輸入 "1 2 x 3" 改成逐 token parser，回報 x 的位置而非靜默停止。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '08_stream_iterators.cpp' -o '/tmp/codex_cpp_C_Iterator_08_stream_iterators' && '/tmp/codex_cpp_C_Iterator_08_stream_iterators'
+//
+// === 預期輸出（節錄）===
+// [實務] command metrics parsed and exported line by line
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

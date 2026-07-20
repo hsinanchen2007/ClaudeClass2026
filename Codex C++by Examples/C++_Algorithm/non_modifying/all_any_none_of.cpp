@@ -70,3 +70,12 @@ int main() {
  * 更能表意。LeetCode 本例為教 all_of 建 index vector，最佳實作可單 loop 且 O(1)
  * 空間。練習：用 ranges::views::iota 移除 index 配置，並處理 C++20 lifetime。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'all_any_none_of.cpp' -o '/tmp/codex_cpp_C_Algorithm_non_modifying_all_any_none_of' && '/tmp/codex_cpp_C_Algorithm_non_modifying_all_any_none_of'
+//
+// === 預期輸出（節錄）===
+// 量詞演算法：LeetCode 896 與實務健康摘要測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

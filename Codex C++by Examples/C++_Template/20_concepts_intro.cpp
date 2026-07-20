@@ -129,3 +129,12 @@ int main() {
  * 【面試】concept 是型別嗎？不是；它是可被布林求值的編譯期 predicate。
  * 【練習】改用 std::ranges::random_access_range 與 std::totally_ordered 約束二分搜尋。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '20_concepts_intro.cpp' -o '/tmp/codex_cpp_C_Template_20_concepts_intro' && '/tmp/codex_cpp_C_Template_20_concepts_intro'
+//
+// === 預期輸出（節錄）===
+// gpu=87.500000
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

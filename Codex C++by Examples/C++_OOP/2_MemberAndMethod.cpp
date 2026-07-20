@@ -111,3 +111,12 @@ int main()
 // 實務提醒：query member 應標 const；修改 invariant 的 member 集中驗證，別讓 caller 直改欄位。
 // 練習：讓 BatchStats 以 O(1) 回 average，不每次重新 accumulate，並維持 invariant。
 // 生命週期：method 中的 this 只在 member call 有效；回傳 member reference 會受 owning object 約束。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '2_MemberAndMethod.cpp' -o '/tmp/codex_cpp_C_OOP_2_MemberAndMethod' && '/tmp/codex_cpp_C_OOP_2_MemberAndMethod'
+//
+// === 預期輸出（節錄）===
+// [實務] samples=2 average=15
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

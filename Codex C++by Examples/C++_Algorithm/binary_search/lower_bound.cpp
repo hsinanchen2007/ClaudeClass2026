@@ -72,3 +72,20 @@ int main() {
  * cache locality 也更好。lower_bound 回 end 是正常結果，不是錯誤或例外。
  * 實務 API 應把「none」改成 optional/version result，避免字串 sentinel 與真資料衝突。
  */
+
+/*
+ * 【教科書補充：lower_bound 的分界模型】
+ * - 最小前置條件是範圍依 comp(element,key) 分割；不必完整排序，但違反分割條件是未定義行為。
+ * - 答案是第一個 `!comp(element,key)`，演算法不靠 operator== 判斷「相等」。
+ * - RandomAccessIterator 有 O(log N) 比較與前進；ForwardIterator 比較仍是 O(log N)，前進可達 O(N)。
+ * - 以回傳 iterator 做插入前，仍須遵守該容器 insert/reallocation 的失效規則。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'lower_bound.cpp' -o '/tmp/codex_cpp_C_Algorithm_binary_search_lower_bound' && '/tmp/codex_cpp_C_Algorithm_binary_search_lower_bound'
+//
+// === 預期輸出（節錄）===
+// lower_bound：最左邊界與插入點測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

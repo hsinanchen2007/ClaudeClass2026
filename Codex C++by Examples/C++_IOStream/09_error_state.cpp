@@ -124,3 +124,20 @@ int main()
 // 練習：設定 input.exceptions(failbit|badbit)，觀察 EOF loop 應如何改寫。
 // 複雜度：查/清 state bits 是 O(1)，真正 retry/ignore 則與丟棄字元數成正比。
 // 生命週期：fail/eof/bad 狀態屬於 stream object 並持續存在，直到 clear 或 stream 被解構。
+
+/*
+ * 【教科書補充：state bits 可組合】
+ * - eofbit、failbit、badbit 不是互斥 enum；只看 eof() 可能把 badbit|eofbit 誤認成正常結束。
+ * - 核心 extraction 要先執行再 assert，否則 NDEBUG 會讓教材完全沒測到狀態轉移。
+ * - exceptions(mask) 會在對應 bit 被設定時丟 ios_base::failure；仍可用 rdstate() 取得原因組合。
+ * - clear(new_state) 只設定狀態，底層錯誤或壞 token 若未處理，下一次讀取仍可能立刻失敗。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '09_error_state.cpp' -o '/tmp/codex_cpp_C_IOStream_09_error_state' && '/tmp/codex_cpp_C_IOStream_09_error_state'
+//
+// === 預期輸出（節錄）===
+// [實務] malformed stream not mistaken for clean EOF
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

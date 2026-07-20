@@ -79,3 +79,12 @@ int main() {
  * 練習：把 practical_total_cents 改成同時產生總額與發票筆數的 Summary 結構；
  * 再思考 callback 每次複製 Summary 的成本，以及能否用 move 或一般 for loop 改善。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'accumulate.cpp' -o '/tmp/codex_cpp_C_Algorithm_numeric_accumulate' && '/tmp/codex_cpp_C_Algorithm_numeric_accumulate'
+//
+// === 預期輸出（節錄）===
+// accumulate：左摺疊、LeetCode 與帳務彙總測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

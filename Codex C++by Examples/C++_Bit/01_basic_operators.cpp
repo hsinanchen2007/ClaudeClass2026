@@ -83,3 +83,12 @@ int main()
 
 // 練習：寫 set_bit/clear_bit/toggle_bit/test_bit，並拒絕超過 31 的 index。
 // 複雜度與生命週期：固定寬度整數的單次 &,|,^,~,shift 是 O(1) 值運算；結果不借用 operand。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '01_basic_operators.cpp' -o '/tmp/codex_cpp_C_Bit_01_basic_operators' && '/tmp/codex_cpp_C_Bit_01_basic_operators'
+//
+// === 預期輸出（節錄）===
+// [實務] permission mask 最後為 read+execute
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -249,3 +249,14 @@ int main()
     practical_demo();
     std::cout << "Bit summary: all assertions passed\n";
 }
+
+// 【章末自測】不用查資料，實作 popcount、single number 與 power-of-two，並說明 signed shift 風險。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'summary.cpp' -o '/tmp/codex_cpp_C_Bit_summary' && '/tmp/codex_cpp_C_Bit_summary'
+//
+// === 預期輸出（節錄）===
+// Bit summary: all assertions passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

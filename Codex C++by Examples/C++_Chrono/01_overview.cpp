@@ -110,3 +110,12 @@ Q3：`count()` 回傳值能否離開單位直接儲存？
 A：能編譯但容易丟失語意。跨 API 優先傳 duration；只有序列化/顯示邊界才取 count，並把單位寫進
 欄位名稱與協定，例如 `timeout_ms`，同時檢查目標整數範圍。
 */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '01_overview.cpp' -o '/tmp/codex_cpp_C_Chrono_01_overview' && '/tmp/codex_cpp_C_Chrono_01_overview'
+//
+// === 預期輸出（節錄）===
+// [實務] typed timeout=5000ms
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

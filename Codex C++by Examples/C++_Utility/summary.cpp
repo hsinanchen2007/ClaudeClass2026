@@ -429,3 +429,12 @@ int main() {
  * 4. 為 PermissionSet 加 union/intersection，說明 bitset 運算複雜度。
  * 5. 將 leetcode_two_sum 的回傳改 named struct，和 optional<pair> 比較可讀性。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'summary.cpp' -o '/tmp/codex_cpp_C_Utility_summary' && '/tmp/codex_cpp_C_Utility_summary'
+//
+// === 預期輸出（節錄）===
+// Utility summary：所有整合測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -99,3 +99,20 @@ Q3：`mt19937` 可否產生密碼、token 或 session ID？
 A：不可。它是可預測的非密碼學 PRNG，觀察足夠輸出可推回狀態。安全 token 應使用作業系統 CSPRNG
 或經審核的密碼函式庫；`random_device` 的品質也必須依平台文件確認。
 */
+
+/*
+ * 【教科書補充：hash bucket 不等於 random distribution】
+ * - bucket 數必須大於零；assert 在 release 消失，`value % 0` 仍是 UB。
+ * - 固定 mixer 請用 uint64_t 與明確 64-bit 常數；unsigned long 在 LLP64 平台只有 32 bit。
+ * - deterministic shard 要求跨版本穩定算法；隨機抽樣則要求分布品質，兩者不是同一問題。
+ * - `% buckets` 可能有 modulo bias；均勻抽樣應使用 uniform_int_distribution。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '01_why_not_rand.cpp' -o '/tmp/codex_cpp_C_Random_01_why_not_rand' && '/tmp/codex_cpp_C_Random_01_why_not_rand'
+//
+// === 預期輸出（節錄）===
+// [實務] A/B assignment uses stable hash, not rand global state
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

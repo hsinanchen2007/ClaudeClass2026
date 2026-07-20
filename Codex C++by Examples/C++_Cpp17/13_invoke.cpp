@@ -66,7 +66,7 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】通用 job runner：同一入口處理 lambda/member pointer，並保留 reference 與 noexcept。
 namespace practical {
 struct Job {
     int value;
@@ -106,3 +106,14 @@ int main() {
     practical::practical_test();
     std::cout << "std::invoke：member pointer、inorder visitor、job runner 測試通過\n";
 }
+
+// 【延伸練習】加入 overloaded member function，使用 static_cast 消除取址歧義並驗證 traits。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++17 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '13_invoke.cpp' -o '/tmp/codex_cpp_C_Cpp17_13_invoke' && '/tmp/codex_cpp_C_Cpp17_13_invoke'
+//
+// === 預期輸出（節錄）===
+// std::invoke：member pointer、inorder visitor、job runner 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

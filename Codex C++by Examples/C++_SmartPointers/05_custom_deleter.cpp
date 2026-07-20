@@ -121,3 +121,12 @@ Q3：deleter 應滿足哪些工程條件？
 A：必須與取得資源的 API 成對（`malloc/free`、`fopen/fclose` 等），其捕捉狀態要活在 smart pointer
 內，且通常不得讓清理例外逃出 destructor。錯配 `new[]/delete` 或 `malloc/delete` 是未定義行為。
 */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '05_custom_deleter.cpp' -o '/tmp/codex_cpp_C_SmartPointers_05_custom_deleter' && '/tmp/codex_cpp_C_SmartPointers_05_custom_deleter'
+//
+// === 預期輸出（節錄）===
+// [實務] stateful deleter invoked exactly once
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -68,3 +68,20 @@ int main() {
  * 面試延伸：unique predicate 通常比較相鄰兩值；若它不是對稱/傳遞的等價關係，
  * 代表選擇可能依走訪順序。測試需含 A,A,B,A，確認最後 A 應保留。
  */
+
+/*
+ * 【教科書補充：unique 只壓縮相鄰等價群】
+ * - predicate 必須建立 equivalence relation；不具反身/對稱/傳遞性時行為未定義。
+ * - 元素需可移動指定；回傳 new_end 後，[new_end,end) 的值未指定，必須 erase 才真正縮短容器。
+ * - unique 本身不讓容器 iterator 失效，但後續 vector::erase 會依容器規則使位置後方 handle 失效。
+ * - unique_copy 的來源與輸出不可重疊；若需要原地整理，使用 unique + erase。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'unique.cpp' -o '/tmp/codex_cpp_C_Algorithm_modifying_unique' && '/tmp/codex_cpp_C_Algorithm_modifying_unique'
+//
+// === 預期輸出（節錄）===
+// unique：LeetCode 26 與實務狀態壓縮測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -477,3 +477,12 @@ int main()
 // 【面試追問】怎麼做 bounded queue？增加容量、not_full predicate 與 producer cancellation，
 // 且 close 必須同時喚醒 blocked producer/consumer；不能只在 push 前讀一次 size。
 // 【練習】加入 per-shard metrics，量測 1/2/4/8/16 shards 的吞吐與 p99 latency。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '17_mpmc_sharded.cpp' -o '/tmp/codex_cpp_C_MultiThread_17_mpmc_sharded' && '/tmp/codex_cpp_C_MultiThread_17_mpmc_sharded'
+//
+// === 預期輸出（節錄）===
+// sharded MPMC：close/drain、例外傳遞與 exactly-once 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

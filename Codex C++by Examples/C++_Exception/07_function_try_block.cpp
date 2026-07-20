@@ -129,3 +129,20 @@ int main()
 // 練習：移除 function-try-block，說明 constructor body try 為何抓不到 member failure。
 // 複雜度：function-try-block 不改成功路徑 Big-O；失敗成本包含已建 base/member 的反向解構。
 // 生命週期：進入 constructor handler 時 object 未完成，不能把 `this` 當完整物件繼續使用。
+
+/*
+ * 【教科書補充：prepare-then-commit】
+ * - `values_.at(next_++)` 可能先推進 next_，之後配置/格式化拋出時便永久跳過資料。
+ * - 強保證做法是用暫存 index 準備完整 chunk，所有可失敗工作成功後才 commit next_。
+ * - function-try-block 適合攔 constructor initializer 的例外，不會自動替一般 state mutation rollback。
+ * - 若輸出 sink 也可失敗，要把「來源 cursor」與「已發布結果」視為同一交易設計。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '07_function_try_block.cpp' -o '/tmp/codex_cpp_C_Exception_07_function_try_block' && '/tmp/codex_cpp_C_Exception_07_function_try_block'
+//
+// === 預期輸出（節錄）===
+// [實務] constructor metrics counted failed initialization
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

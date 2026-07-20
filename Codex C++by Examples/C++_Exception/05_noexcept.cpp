@@ -94,3 +94,12 @@ int main()
 // 練習：移除 move noexcept，以 type trait 觀察 vector 可能選 copy 的理由。
 // 複雜度：noexcept 是 compile-time 契約/查詢，本身 O(1)；vector relocation 的總成本仍 O(N)。
 // 生命週期：noexcept function 若讓 exception 逸出會 terminate，stack unwinding 不保證完成到 caller。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '05_noexcept.cpp' -o '/tmp/codex_cpp_C_Exception_05_noexcept' && '/tmp/codex_cpp_C_Exception_05_noexcept'
+//
+// === 預期輸出（節錄）===
+// [實務] ADL swap preserves noexcept
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -98,3 +98,20 @@ int main()
 // 練習：加入 overflow 檢查；不要讓 signed arithmetic UB 發生後才期待 exception。
 // 複雜度：正常路徑的 try 通常低成本；真正 throw/unwind 成本與展開 stack frames、destructors 有關。
 // 生命週期：unwinding 會依反向建構順序解構已完成物件；尚未建構完成的 object 不會解構。
+
+/*
+ * 【教科書補充：例外抓不到 undefined behavior】
+ * - checked parser 要驗 stoi consumed position；"12x" 不應因成功解析前綴 12 就算合法 token。
+ * - 有號 +、-、* 溢位與 INT_MIN/-1 除法都是 UB，不會自動變成可 catch 的 exception。
+ * - 先用寬型別/邊界公式做 checked arithmetic，再執行運算；catch(...) 不是數值安全措施。
+ * - 外部輸入錯誤是預期 control flow 時，也可用 expected/error code，避免每個壞 token 都靠 throw。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '01_basics.cpp' -o '/tmp/codex_cpp_C_Exception_01_basics' && '/tmp/codex_cpp_C_Exception_01_basics'
+//
+// === 預期輸出（節錄）===
+// [實務] boundary translates exception to failure result
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

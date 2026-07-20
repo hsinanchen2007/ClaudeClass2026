@@ -238,3 +238,14 @@ int main()
     practical_simulation_demo();
     std::cout << "Random summary: all assertions passed\n";
 }
+
+// 【章末自測】設計可重現測試與 production seed 策略，並用統計而非固定序列驗證分布。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'summary.cpp' -o '/tmp/codex_cpp_C_Random_summary' && '/tmp/codex_cpp_C_Random_summary'
+//
+// === 預期輸出（節錄）===
+// Random summary: all assertions passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -88,3 +88,12 @@ int main() {
  * 【前置條件】front/back/pop_back 必須在緊鄰呼叫處用 empty guard，避免空容器 UB。
  * 【泛型程式】不要假設所有 range 都有 size；empty/ranges::empty 更能表達真正需求。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'empty.cpp' -o '/tmp/codex_cpp_C_String_empty' && '/tmp/codex_cpp_C_String_empty'
+//
+// === 預期輸出（節錄）===
+// empty: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

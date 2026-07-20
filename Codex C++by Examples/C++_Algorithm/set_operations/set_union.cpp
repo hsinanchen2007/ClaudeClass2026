@@ -70,3 +70,12 @@ int main() {
  * 練習：Audience 改為結構 `{id, cohort}`，同 id 衝突時不能靠 set_union 解決；
  * 寫明確 conflict resolver，並測試來源優先級。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'set_union.cpp' -o '/tmp/codex_cpp_C_Algorithm_set_operations_set_union' && '/tmp/codex_cpp_C_Algorithm_set_operations_set_union'
+//
+// === 預期輸出（節錄）===
+// set_union：distinct/multiset 聯集與 rollout audience 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

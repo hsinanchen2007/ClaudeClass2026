@@ -83,3 +83,12 @@ int main() {
  *
  * 【練習】實作只接受 `[A-Za-z_][A-Za-z0-9_]*` 的 identifier validator。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'cctype_functions.cpp' -o '/tmp/codex_cpp_C_String_cctype_functions' && '/tmp/codex_cpp_C_String_cctype_functions'
+//
+// === 預期輸出（節錄）===
+// cctype: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

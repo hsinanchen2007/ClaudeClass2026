@@ -241,3 +241,12 @@ int main() {
     review::integrated_test();
     std::cout << "C++17 面試總複習：scope、推導、attributes、view、byte、invoke 皆通過\n";
 }
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++17 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'summary.cpp' -o '/tmp/codex_cpp_C_Cpp17_summary' && '/tmp/codex_cpp_C_Cpp17_summary'
+//
+// === 預期輸出（節錄）===
+// C++17 面試總複習：scope、推導、attributes、view、byte、invoke 皆通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

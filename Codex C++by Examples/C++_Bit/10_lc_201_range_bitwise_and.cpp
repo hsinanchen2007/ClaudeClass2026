@@ -82,3 +82,12 @@ int main()
 // 面試追問：為何 right &= right-1 也成立？它逐次清掉 right 超過 left 的變動低位。
 // 生命週期：演算法只處理 value copies；回傳 pair 也按值擁有結果，沒有 reference 失效問題。
 // 練習：改用反覆 `right &= right-1` 直到 right<=left 的另一標準解法。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '10_lc_201_range_bitwise_and.cpp' -o '/tmp/codex_cpp_C_Bit_10_lc_201_range_bitwise_and' && '/tmp/codex_cpp_C_Bit_10_lc_201_range_bitwise_and'
+//
+// === 預期輸出（節錄）===
+// [實務] 192.168.1.0..255 共同 prefix=/24
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

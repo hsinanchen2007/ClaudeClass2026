@@ -68,3 +68,12 @@ int main() {
  *
  * 易錯：initializer_list 中各元素仍需同型別，且大物件版本會產生回傳值複製。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'min.cpp' -o '/tmp/codex_cpp_C_Algorithm_min_max_min' && '/tmp/codex_cpp_C_Algorithm_min_max_min'
+//
+// === 預期輸出（節錄）===
+// min：基本、LC121、限額合併測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -80,3 +80,12 @@ int main()
 // 生命週期：序列化的是值，不是 clock object/reference；steady_clock time_point 不可跨程序保存。
 // 易錯與面試：timestamp 不含時區名稱，顯示成 local civil time 時仍需要明確 timezone policy。
 // 練習：定義 milliseconds wire format，測試負 timestamp 與 int64 range。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '09_unix_timestamp.cpp' -o '/tmp/codex_cpp_C_Chrono_09_unix_timestamp' && '/tmp/codex_cpp_C_Chrono_09_unix_timestamp'
+//
+// === 預期輸出（節錄）===
+// [實務] serialized signed 64-bit unix seconds=1700000000
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

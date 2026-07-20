@@ -91,3 +91,12 @@ int main()
 // 易錯：右側 absolute path 的 operator/ 語意可能捨棄 root；接外部輸入前先驗 is_absolute。
 // 練習：比較 `/`、`concat`/`+=`；前者加入 path separator，後者直接串字元。
 // 複雜度：lexical path 操作約隨 component/字元數線性成長；真正 canonical 查詢另受 I/O 影響。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '02_path_ops.cpp' -o '/tmp/codex_cpp_C_Filesystem_02_path_ops' && '/tmp/codex_cpp_C_Filesystem_02_path_ops'
+//
+// === 預期輸出（節錄）===
+// [實務] artifact sidecar=model.bin.sha256
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

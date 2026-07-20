@@ -117,3 +117,20 @@ Q3：binary parser 最重要的安全檢查是什麼？
 A：先驗 magic/version，再對外部 length 做上限與算術 overflow 檢查，確認剩餘 bytes 足夠後才配置。
 錯誤要攜帶 offset/context；不要信任檔案內的 size 直接配置數 GB 記憶體。
 */
+
+/*
+ * 【教科書補充：binary I/O 的完成邊界】
+ * - open/read/write 必須先執行再檢查，不能藏在 assert；release build 仍需保留 I/O 與錯誤處理。
+ * - gcount 只能告知本次抽取字元數，還要分辨正常 EOF、truncated record 與 badbit。
+ * - destructor close 無法把錯誤可靠回傳給 caller；重要輸出應明確 flush/close 並檢查 stream state。
+ * - size_t 轉 streamsize 前要驗範圍，wire format 也需明定 endian，不能直接寫 native struct。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '06_fstream_binary.cpp' -o '/tmp/codex_cpp_C_IOStream_06_fstream_binary' && '/tmp/codex_cpp_C_IOStream_06_fstream_binary'
+//
+// === 預期輸出（節錄）===
+// [實務] truncated binary record rejected
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

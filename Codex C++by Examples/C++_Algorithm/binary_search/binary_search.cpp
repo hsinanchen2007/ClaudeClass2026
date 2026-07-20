@@ -90,3 +90,20 @@ int main() {
  * 陷阱總結：未排序、比較器方向不一致、直接解參考 end，三者都必須靠測試防止。
  * 練習：把 Product 版本改成 descending sku，並同步修改排序與搜尋比較器。
  */
+
+/*
+ * 【教科書補充：binary_search 的真正契約】
+ * - 完整排序是最常見的充分條件；標準真正要求的是範圍對查詢 key 同時形成兩側 partition。
+ * - 若該 partition 關係或比較的非對稱性不成立，行為未定義，不只是「可能回錯答案」。
+ * - heterogeneous comparator 要能處理 comp(element,key) 與 comp(key,element)，兩者語意須一致。
+ * - 降冪資料必須配對降冪 comparator；資料與 comparator 任一方改變，都要重建同一 invariant。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'binary_search.cpp' -o '/tmp/codex_cpp_C_Algorithm_binary_search_binary_search' && '/tmp/codex_cpp_C_Algorithm_binary_search_binary_search'
+//
+// === 預期輸出（節錄）===
+// binary_search：基礎、LeetCode、商品查詢測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

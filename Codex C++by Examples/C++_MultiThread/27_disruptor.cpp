@@ -154,3 +154,12 @@ int main()
 // 【陷阱】busy-spin 低 latency 但吃 CPU；blocking/yield/sleep wait strategy 要依 workload。
 // 【面試】為何用 unsigned position 而非 signed++？unsigned wrap 有定義，模距可表示 lag。
 // 【練習】加入 batch consume：一次讀到 published snapshot 的所有可用序號。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '27_disruptor.cpp' -o '/tmp/codex_cpp_C_MultiThread_27_disruptor' && '/tmp/codex_cpp_C_MultiThread_27_disruptor'
+//
+// === 預期輸出（節錄）===
+// Disruptor-style ring：sequence、publish 與 gating 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

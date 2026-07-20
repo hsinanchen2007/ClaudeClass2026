@@ -92,3 +92,12 @@ int main()
 // alignment、strict aliasing 與 object representation 規則。
 // 複雜度：reinterpret_cast 通常只是 O(1) 位址/型別解讀；危險發生在後續 dereference。
 // 生命週期：新 pointer 不開始目標型別物件生命，也不延長原 storage 或 callback context 存活。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '05_reinterpret_cast.cpp' -o '/tmp/codex_cpp_C_Cast_05_reinterpret_cast' && '/tmp/codex_cpp_C_Cast_05_reinterpret_cast'
+//
+// === 預期輸出（節錄）===
+// [實務] C callback user_data calls=2
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -70,3 +70,12 @@ int main() {
  * 邊界速記：A-空=A、空-B=空、A-A=空（在同一等價規則下）。若只要計數而不要
  * materialize，可用手寫雙指標累計，避免配置輸出容器。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'set_difference.cpp' -o '/tmp/codex_cpp_C_Algorithm_set_operations_set_difference' && '/tmp/codex_cpp_C_Algorithm_set_operations_set_difference'
+//
+// === 預期輸出（節錄）===
+// set_difference：LC2215 與 pending jobs 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

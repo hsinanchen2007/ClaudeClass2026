@@ -69,3 +69,12 @@ int main() {
     company::billing::v2::practical_test();
     std::cout << "nested namespace：名稱組織、anagram、billing API 測試通過\n";
 }
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++17 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '07_nested_namespace.cpp' -o '/tmp/codex_cpp_C_Cpp17_07_nested_namespace' && '/tmp/codex_cpp_C_Cpp17_07_nested_namespace'
+//
+// === 預期輸出（節錄）===
+// nested namespace：名稱組織、anagram、billing API 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

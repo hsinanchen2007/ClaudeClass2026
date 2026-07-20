@@ -87,3 +87,12 @@ int main()
 // 練習：補 JSON escaping（backslash/tab/control Unicode），或改用成熟 JSON library。
 // 複雜度：格式化一筆 log 是 O(message bytes)；同步 sink 的 lock/I/O latency 可能主導成本。
 // 生命週期：logger 借用 ostream 時，sink 必須比 logger 活更久；osyncstream 解構時才提交 chunk。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '10_practical_log.cpp' -o '/tmp/codex_cpp_C_IOStream_10_practical_log' && '/tmp/codex_cpp_C_IOStream_10_practical_log'
+//
+// === 預期輸出（節錄）===
+// [實務] injectable ostream makes logger testable
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

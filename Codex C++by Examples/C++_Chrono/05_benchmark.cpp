@@ -108,3 +108,15 @@ Q3：只報最好的一次時間有何問題？
 A：單次受 warm-up、cache、frequency scaling、scheduler、page fault 影響；minimum 又偏向理想路徑。
 應固定環境、量多批，報 median/percentiles/variance 與輸入規模，並確認結果正確後才談速度。
 */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '05_benchmark.cpp' -o '/tmp/codex_cpp_C_Chrono_05_benchmark' && '/tmp/codex_cpp_C_Chrono_05_benchmark'
+//
+// === 預期輸出（節錄）===
+// [基礎] 100 accumulations took <依本機與當下負載而異> ns
+// [LeetCode 704] 1000 searches took <依本機與當下負載而異> ns
+// [實務] median of 7 batches=<依本機與當下負載而異> ns
+// 注意：時間值會因 CPU、編譯器、系統負載與排程而不同。
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

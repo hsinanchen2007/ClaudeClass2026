@@ -113,3 +113,12 @@ Q3：輸入有重複值時，mask 法會自動去重嗎？
 A：不會；它區分 positions，因此相同值可形成重複 subsets。若題目要求 unique subsets，可先排序，
 在 backtracking 同一層跳過重複值，或生成後去重，但後者浪費時間/空間。
 */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '11_lc_78_subsets.cpp' -o '/tmp/codex_cpp_C_Bit_11_lc_78_subsets' && '/tmp/codex_cpp_C_Bit_11_lc_78_subsets'
+//
+// === 預期輸出（節錄）===
+// [實務] feature matrix: none/cache/tls/cache+tls
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

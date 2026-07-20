@@ -72,3 +72,12 @@ int main() {
  * 【面試題】結果為何不能判 `== -1`？標準只保證負、零、正。
  * 【實務】自然語言、版本、數字排序都應先定義語意，不能直接套 compare。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'compare.cpp' -o '/tmp/codex_cpp_C_String_compare' && '/tmp/codex_cpp_C_String_compare'
+//
+// === 預期輸出（節錄）===
+// compare: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

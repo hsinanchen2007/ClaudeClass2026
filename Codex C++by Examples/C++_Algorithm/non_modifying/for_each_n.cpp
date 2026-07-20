@@ -68,3 +68,12 @@ int main() {
  * 測試 batch_size=0、剛好 size、大於 size；practical 函式先 min，確保永不越界。
  * 練習：讓函式接 start index，處理多輪 batch 且不重複處理。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'for_each_n.cpp' -o '/tmp/codex_cpp_C_Algorithm_non_modifying_for_each_n' && '/tmp/codex_cpp_C_Algorithm_non_modifying_for_each_n'
+//
+// === 預期輸出（節錄）===
+// for_each_n：LeetCode 1480 與實務 batch 處理測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

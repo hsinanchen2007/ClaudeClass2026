@@ -71,3 +71,12 @@ int main() {
  * 與 at(0) 相比，front 語意更清楚但沒有檢查。若先 trim 成 string_view，也必須先
  * 確認 view 非空才 front。修改 string 的 front 不改 size/capacity。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'front.cpp' -o '/tmp/codex_cpp_C_String_front' && '/tmp/codex_cpp_C_String_front'
+//
+// === 預期輸出（節錄）===
+// front: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

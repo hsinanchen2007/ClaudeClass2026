@@ -93,3 +93,20 @@ int main() {
  * 【面試】type erasure 與 inheritance 差異？來源型別不需繼承共同 base，wrapper 內部代為適配。
  * 【練習】加入 clone() 讓 Command 可複製，並處理不可複製 callable 的限制。
  */
+
+/*
+ * 【教科書補充：erased wrapper 也要定義空狀態】
+ * - Command move 後來源 self_ 為空；目前 execute() 只允許在非 moved-from 物件呼叫，否則解參考 null。
+ * - 完整 wrapper 應提供 bool/empty 檢查或讓空呼叫丟明確例外，並約束 callable 回傳可轉成 string。
+ * - first_bad 另要求 count>=1、predicate 可呼叫且結果在版本序列上單調；type erasure 不會驗這些語意。
+ * - callable 若 capture reference，Command 擁有 closure 仍不等於擁有被 capture 的外部物件。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '24_type_erasure.cpp' -o '/tmp/codex_cpp_C_Template_24_type_erasure' && '/tmp/codex_cpp_C_Template_24_type_erasure'
+//
+// === 預期輸出（節錄）===
+// type erasure 測試完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

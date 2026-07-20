@@ -98,3 +98,20 @@ int main() {
  * 【面試】何時發生實體化？需要完整定義或 code generation 的使用點；部分語境只需宣告。
  * 【練習】拆成 accumulator.hpp/.cpp/main.cpp，使用 extern template class Accumulator<int> 驗證。
  */
+
+/*
+ * 【教科書補充：單一 translation unit 看不到的 ODR 邊界】
+ * - 完整特化宣告必須在任何可能觸發 implicit instantiation 的使用點之前可見。
+ * - extern template declaration 通常放 header，唯一 explicit-instantiation definition 放某個 .cpp。
+ * - header 中定義非模板 specialization 仍要處理 inline/ODR，不能因它源自模板主題就自動多重定義安全。
+ * - 本檔是單 TU 模型，只能解釋語法；真正 linker 行為需拆成至少 header + 兩個 source 驗證。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '25_template_compilation_model.cpp' -o '/tmp/codex_cpp_C_Template_25_template_compilation_model' && '/tmp/codex_cpp_C_Template_25_template_compilation_model'
+//
+// === 預期輸出（節錄）===
+// 模板編譯模型測試完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

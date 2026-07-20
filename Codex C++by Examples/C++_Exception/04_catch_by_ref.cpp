@@ -116,3 +116,12 @@ int main()
 // 練習：把 `throw;` 改 `throw error;`，觀察 custom type/fields 是否還保留。
 // 複雜度：catch by reference 避免複製 exception；重拋成本仍與後續 stack unwinding 深度相關。
 // 生命週期：caught reference 只在 handler 有效；bare `throw;` 重拋同一 active exception object。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '04_catch_by_ref.cpp' -o '/tmp/codex_cpp_C_Exception_04_catch_by_ref' && '/tmp/codex_cpp_C_Exception_04_catch_by_ref'
+//
+// === 預期輸出（節錄）===
+// [LeetCode 8] prefix parsing、sign 與雙向 clamp 完整驗證
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

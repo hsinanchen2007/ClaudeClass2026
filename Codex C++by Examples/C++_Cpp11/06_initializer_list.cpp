@@ -57,7 +57,7 @@ void test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】重試策略：constructor 接受易讀的大括號序列，但立即複製以取得 ownership。
 namespace practical {
 class RetryPolicy {
 public:
@@ -90,3 +90,12 @@ int main() {
     practical_test();
     std::cout << "initializer_list：overload、重複偵測、重試策略測試通過\n";
 }
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++11 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '06_initializer_list.cpp' -o '/tmp/codex_cpp_C_Cpp11_06_initializer_list' && '/tmp/codex_cpp_C_Cpp11_06_initializer_list'
+//
+// === 預期輸出（節錄）===
+// initializer_list：overload、重複偵測、重試策略測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -98,3 +98,12 @@ int main() {
  * move constructor 才定義資源如何轉移。
  * 【練習】用 exchange 寫 TrackedMessage move constructor，明確設定來源狀態。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '07_move.cpp' -o '/tmp/codex_cpp_C_Utility_07_move' && '/tmp/codex_cpp_C_Utility_07_move'
+//
+// === 預期輸出（節錄）===
+// move 測試完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

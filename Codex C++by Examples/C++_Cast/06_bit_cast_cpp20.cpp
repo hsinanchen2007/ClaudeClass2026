@@ -87,3 +87,12 @@ int main()
 // 練習：加 static_assert(sizeof(float)==4)，並說明它仍不能單獨保證 IEEE-754。
 // 複雜度與生命週期：成本與 sizeof(T) 成正比且常被最佳化成 register move；回傳值是新物件，
 // 不像 reinterpret pointer 那樣依賴來源 storage 繼續存活。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '06_bit_cast_cpp20.cpp' -o '/tmp/codex_cpp_C_Cast_06_bit_cast_cpp20' && '/tmp/codex_cpp_C_Cast_06_bit_cast_cpp20'
+//
+// === 預期輸出（節錄）===
+// [實務] float wire format=3f 80 00 00
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

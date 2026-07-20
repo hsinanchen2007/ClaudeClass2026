@@ -68,3 +68,12 @@ int main() {
  * 應移除或只在抽樣診斷時開啟。實務監控可另外計數修復次數。
  * 練習：回傳包含 child index、parent index 與兩值的診斷 struct。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'is_heap.cpp' -o '/tmp/codex_cpp_C_Algorithm_heap_is_heap' && '/tmp/codex_cpp_C_Algorithm_heap_is_heap'
+//
+// === 預期輸出（節錄）===
+// is_heap：不變量診斷與 LC2558 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

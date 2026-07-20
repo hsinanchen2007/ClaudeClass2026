@@ -47,7 +47,7 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】HTTP header 切片：零配置回傳 name/value view，並把 owner lifetime 寫入契約。
 namespace practical {
 struct HeaderView {
     std::string_view name;
@@ -73,3 +73,14 @@ int main() {
     practical::practical_test();
     std::cout << "string_view：借用/lifetime、substring search、header parse 測試通過\n";
 }
+
+// 【延伸練習】寫會保存 header 的版本：先示範 dangling 風險，再改成 owning std::string。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++17 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '11_string_view.cpp' -o '/tmp/codex_cpp_C_Cpp17_11_string_view' && '/tmp/codex_cpp_C_Cpp17_11_string_view'
+//
+// === 預期輸出（節錄）===
+// string_view：借用/lifetime、substring search、header parse 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

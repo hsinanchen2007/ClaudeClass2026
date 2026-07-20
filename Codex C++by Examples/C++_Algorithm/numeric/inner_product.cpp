@@ -70,3 +70,12 @@ int main() {
  * 練習：實作 cosine similarity，處理零向量、型別升格與 sqrt；再比較單次掃描
  * 同時計算 dot/norm，和三次 inner_product 在 cache locality 上的差異。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'inner_product.cpp' -o '/tmp/codex_cpp_C_Algorithm_numeric_inner_product' && '/tmp/codex_cpp_C_Algorithm_numeric_inner_product'
+//
+// === 預期輸出（節錄）===
+// inner_product：點積、矩陣對角線與訂單總額測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

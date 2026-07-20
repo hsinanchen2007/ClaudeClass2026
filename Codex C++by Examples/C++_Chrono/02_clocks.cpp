@@ -99,3 +99,12 @@ Q3：`now()` 是不是免費的 O(1) 操作？
 A：語意上為常數次操作，但實際可能走 vDSO、system call 或平台 clock source；解析度也不等於精確度。
 熱路徑應 profile，不要每個元素都讀 clock 後再宣稱演算法成本只有 O(N)。
 */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '02_clocks.cpp' -o '/tmp/codex_cpp_C_Chrono_02_clocks' && '/tmp/codex_cpp_C_Chrono_02_clocks'
+//
+// === 預期輸出（節錄）===
+// [實務] wall stamp for logs + steady stamp for elapsed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

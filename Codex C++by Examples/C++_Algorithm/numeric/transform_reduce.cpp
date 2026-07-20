@@ -70,3 +70,12 @@ int main() {
  * 練習：實作 cosine similarity，一次取得 dot product 與兩個 norm；比較三次
  * transform_reduce、單次結構歸約及數值穩定性的取捨。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'transform_reduce.cpp' -o '/tmp/codex_cpp_C_Algorithm_numeric_transform_reduce' && '/tmp/codex_cpp_C_Algorithm_numeric_transform_reduce'
+//
+// === 預期輸出（節錄）===
+// transform_reduce：融合 map/reduce、平方和與 MSE 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

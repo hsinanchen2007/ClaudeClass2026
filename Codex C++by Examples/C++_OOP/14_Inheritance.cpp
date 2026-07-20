@@ -132,3 +132,12 @@ int main()
 // 練習：嘗試寫 `Employee sliced = engineer;`，列出會遺失哪些 state。
 // 複雜度：繼承本身無演算法 Big-O；virtual dispatch 常是常數開銷但標準不保證實作方式。
 // 生命週期：derived 建構先 base、解構先 derived；base reference 只是 alias，不延長 derived 存活。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '14_Inheritance.cpp' -o '/tmp/codex_cpp_C_OOP_14_Inheritance' && '/tmp/codex_cpp_C_OOP_14_Inheritance'
+//
+// === 預期輸出（節錄）===
+// [LeetCode 303] inherited prefix-sum implementation 正確
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

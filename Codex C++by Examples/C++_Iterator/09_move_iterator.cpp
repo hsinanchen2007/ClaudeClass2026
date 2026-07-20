@@ -89,3 +89,12 @@ int main()
 
 // 面試自問：std::move 為何本身不搬任何資料？move_iterator 又在哪一步觸發 move？
 // 練習：替 Job 加 copy/move counter，比較普通 iterator 與 move_iterator 的建構次數。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '09_move_iterator.cpp' -o '/tmp/codex_cpp_C_Iterator_09_move_iterator' && '/tmp/codex_cpp_C_Iterator_09_move_iterator'
+//
+// === 預期輸出（節錄）===
+// [實務] staging batch moved into work queue without payload copies
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

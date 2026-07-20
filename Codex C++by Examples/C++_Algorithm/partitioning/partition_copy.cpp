@@ -73,3 +73,12 @@ int main() {
  * 一次 partition_copy 不夠，考慮 map<key,vector> 的單次 routing loop。
  * 練習：回傳 rejected reason，避免只分流後失去失敗原因。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'partition_copy.cpp' -o '/tmp/codex_cpp_C_Algorithm_partitioning_partition_copy' && '/tmp/codex_cpp_C_Algorithm_partitioning_partition_copy'
+//
+// === 預期輸出（節錄）===
+// partition_copy：穩定雙路分流與 log routing 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

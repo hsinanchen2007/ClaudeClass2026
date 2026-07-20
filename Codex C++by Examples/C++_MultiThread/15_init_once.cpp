@@ -90,3 +90,20 @@ int main()
 // 【陷阱】call_once callable 若遞迴呼叫同一 once_flag，可能 deadlock。
 // 【面試】Meyers singleton 的初始化安全，但 global lifetime、測試替換與依賴仍是設計問題。
 // 【練習】讓 call_once 首次故意丟 exception，驗證第二次會重試且成功。
+
+/*
+ * 【教科書補充：call_once 的重試與生命週期】
+ * - 若 active call 拋例外，once_flag 不會標成完成；後續呼叫可再嘗試，成功者才發布初始化結果。
+ * - 對同一 flag 的 active calls 有標準定義的順序，成功返回會同步到所有 passive callers。
+ * - 同一初始化函式遞迴呼叫相同 once_flag 可能自我死鎖；flag 與被保護資料須活過所有 caller。
+ * - LeetCode steps 是 runtime input，assert 在 release 消失；正式邊界要明確限制可索引範圍。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '15_init_once.cpp' -o '/tmp/codex_cpp_C_MultiThread_15_init_once' && '/tmp/codex_cpp_C_MultiThread_15_init_once'
+//
+// === 預期輸出（節錄）===
+// init once：call_once 與 local static 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

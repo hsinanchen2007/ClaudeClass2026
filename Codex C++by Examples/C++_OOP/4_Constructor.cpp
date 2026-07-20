@@ -133,3 +133,12 @@ int main()
 // 練習：移除 explicit，觀察 `void connect(Port); connect(80);` 為何會偷偷轉型。
 // 複雜度：constructor 成本是各 base/member 建構成本總和；vector sizing 例如是 O(N)。
 // 生命週期：base 與 members 依宣告順序先完成，之後才進 constructor body；失敗則反向解構。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '4_Constructor.cpp' -o '/tmp/codex_cpp_C_OOP_4_Constructor' && '/tmp/codex_cpp_C_OOP_4_Constructor'
+//
+// === 預期輸出（節錄）===
+// [LeetCode 1656] constructor 預配置 5 個 stream slots
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -68,3 +68,12 @@ int main() {
  * 練習：手寫上述四步並以 std::next_permutation 作 oracle，property-test 所有長度
  * <=8 且含重複值的輸入。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'next_permutation.cpp' -o '/tmp/codex_cpp_C_Algorithm_permutation_next_permutation' && '/tmp/codex_cpp_C_Algorithm_permutation_next_permutation'
+//
+// === 預期輸出（節錄）===
+// next_permutation：LC31 與重複旗標枚舉測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

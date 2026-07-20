@@ -194,3 +194,12 @@ int main() {
  * 最後陷阱：O(log N) 描述的是比較/跳躍成本，不包含前置 sort、key 建構、昂貴
  * comparator 或 I/O。面試回答複雜度時要說清楚假設。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'summary.cpp' -o '/tmp/codex_cpp_C_Algorithm_binary_search_summary' && '/tmp/codex_cpp_C_Algorithm_binary_search_summary'
+//
+// === 預期輸出（節錄）===
+// Binary Search 家族整合複習完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -112,3 +112,12 @@ int main()
 
 // 練習：不用枚舉 hour/minute，改枚舉 10-bit mask 後過濾非法時間。
 // 複雜度與生命週期：單次 flags 組合/查詢是 O(1)；enum value 自行保存 bits，無 owner/borrow。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '12_practical_flags.cpp' -o '/tmp/codex_cpp_C_Bit_12_practical_flags' && '/tmp/codex_cpp_C_Bit_12_practical_flags'
+//
+// === 預期輸出（節錄）===
+// [實務] audit log 需同時具 read 與 audit
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

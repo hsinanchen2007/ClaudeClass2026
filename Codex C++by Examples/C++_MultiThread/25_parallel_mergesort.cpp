@@ -328,3 +328,12 @@ int main()
 // 【面試追問】如何改善 allocation？預先配置 O(n) scratch buffer，按 disjoint offset 分給
 // 子 task，並以 ping-pong source/destination merge，可固定 O(n log n) 時間但實作更複雜。
 // 【練習】以硬體核心數推導 depth 上限，並 benchmark threshold、資料型別大小與 NUMA。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '25_parallel_mergesort.cpp' -o '/tmp/codex_cpp_C_MultiThread_25_parallel_mergesort' && '/tmp/codex_cpp_C_MultiThread_25_parallel_mergesort'
+//
+// === 預期輸出（節錄）===
+// parallel mergesort：fork-join、stable、取消與例外測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

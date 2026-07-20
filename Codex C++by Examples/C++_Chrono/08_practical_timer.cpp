@@ -105,3 +105,12 @@ int main()
 // 練習：加入 stop()，保證 callback 最多一次，並測試 move semantics。
 // 複雜度：timer 本體 start/stop O(1)，callback 成本另計；大量細粒度 scope 可能反客為主。
 // 生命週期：RAII timer 在 scope exit 執行 callback；callback 捕獲的 reference 必須仍存活。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '08_practical_timer.cpp' -o '/tmp/codex_cpp_C_Chrono_08_practical_timer' && '/tmp/codex_cpp_C_Chrono_08_practical_timer'
+//
+// === 預期輸出（節錄）===
+// [實務] scope timer collected 3 job samples
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

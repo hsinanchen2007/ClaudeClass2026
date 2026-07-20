@@ -119,3 +119,20 @@ int main() {
  * 【面試】CRTP 與 virtual 的選擇：封閉型別集合/效能敏感用 CRTP；開放外掛/異質集合用 virtual。
  * 【練習】加一個 CRTP Comparable，自動由 derived().key() 實作 operator== 與 operator<。
  */
+
+/*
+ * 【教科書補充：CRTP 不會自動驗證 domain input】
+ * - range query 需同時保證 left<=right 且 right<size；只用 assert 在 release 會失去安全邊界。
+ * - operator[] 越界是 UB，production API 應用例外/optional/expected 或先做持續存在的檢查。
+ * - CRTP base 常以 protected constructor/destructor 限制直接建立，明示它只能作 derived 的實作基底。
+ * - static polymorphism 消除 virtual dispatch，但會增加實體數與 compile-time coupling，並非一律較好。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '22_crtp.cpp' -o '/tmp/codex_cpp_C_Template_22_crtp' && '/tmp/codex_cpp_C_Template_22_crtp'
+//
+// === 預期輸出（節錄）===
+// CRTP 測試完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

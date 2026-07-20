@@ -88,3 +88,12 @@ int main()
 // 【陷阱】before_begin() 不可解參考，它只作為第一元素的前驅位置。
 // 【面試】為何 erase_after 而非 erase？單向節點無法由目前節點 O(1) 找到前驅。
 // 【練習】手寫 erase_after 迴圈移除偶數，和 remove_if 結果比對。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'forward_list.cpp' -o '/tmp/codex_cpp_C_Container_forward_list' && '/tmp/codex_cpp_C_Container_forward_list'
+//
+// === 預期輸出（節錄）===
+// forward_list：after API、反轉與過期清理測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

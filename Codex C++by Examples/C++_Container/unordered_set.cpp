@@ -120,3 +120,12 @@ int main()
 // 【邊界】對 signed int 做 value±1 前必須確認不是 INT_MIN/INT_MAX，否則是 UB。
 // 【面試】為何最差 O(n)？許多 key 可能落同 bucket，退化成線性搜尋。
 // 【練習】實作 LeetCode 349 Intersection of Two Arrays。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'unordered_set.cpp' -o '/tmp/codex_cpp_C_Container_unordered_set' && '/tmp/codex_cpp_C_Container_unordered_set'
+//
+// === 預期輸出（節錄）===
+// unordered_set：membership、連續序列與 request 去重測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -118,3 +118,20 @@ int main()
 // 【陷阱】atomic<shared_ptr> 操作本身可能非 lock-free；正確性不代表零成本。
 // 【面試】COW 適合讀多寫少；寫多時 copy amplification 與舊版本滯留會失控。
 // 【練習】加入 version number，讓讀者記錄自己讀到哪一版。
+
+/*
+ * 【教科書補充：copy-on-write snapshot 的重試語意】
+ * - CAS 失敗會重做 mutator；因此 mutator 必須無外部副作用，否則 log/I/O/計數可能重複執行。
+ * - 舊 snapshot 由 reader 的 shared_ptr 延長生命，換得 lock-free read，但更新頻繁時記憶體峰值可能上升。
+ * - sum_range 需持續驗證兩端邊界；assert 消失後形成非法 iterator 不是可接受的錯誤處理。
+ * - 多 writer 競爭可能反覆 CAS 失敗而飢餓；lock-free 不等於 wait-free 或公平。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '18_cow_snapshot.cpp' -o '/tmp/codex_cpp_C_MultiThread_18_cow_snapshot' && '/tmp/codex_cpp_C_MultiThread_18_cow_snapshot'
+//
+// === 預期輸出（節錄）===
+// COW snapshot：immutable 版本與原子發布測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

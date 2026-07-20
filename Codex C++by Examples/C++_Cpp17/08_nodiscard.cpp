@@ -46,7 +46,7 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】儲存結果：強迫 caller 面對 path/content 驗證結果，不讓失敗被靜默忽略。
 namespace practical {
 struct SaveResult {
     bool ok;
@@ -73,3 +73,14 @@ int main() {
     practical::practical_test();
     std::cout << "nodiscard：結果契約、Binary Search、save result 測試通過\n";
 }
+
+// 【延伸練習】列出可合理忽略與不可忽略的 API，各決定是否 nodiscard，避免 warning fatigue。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++17 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '08_nodiscard.cpp' -o '/tmp/codex_cpp_C_Cpp17_08_nodiscard' && '/tmp/codex_cpp_C_Cpp17_08_nodiscard'
+//
+// === 預期輸出（節錄）===
+// nodiscard：結果契約、Binary Search、save result 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

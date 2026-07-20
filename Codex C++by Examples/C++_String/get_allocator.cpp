@@ -108,3 +108,12 @@ int main() {
  *   長於所有仍使用它配置記憶體的容器。
  * - 初學者不應為一般字串手動 allocate；本例只是解釋 container 底層契約。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'get_allocator.cpp' -o '/tmp/codex_cpp_C_String_get_allocator' && '/tmp/codex_cpp_C_String_get_allocator'
+//
+// === 預期輸出（節錄）===
+// get_allocator: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -77,3 +77,12 @@ int main() {
  * 面試應說出 O(N log K) 與 heap intuition；實務 tie-breaker 要 deterministic，避免
  * 同 severity 每次順序不同。練習：大量 streaming alerts 改固定大小 min-heap。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'partial_sort.cpp' -o '/tmp/codex_cpp_C_Algorithm_sorting_partial_sort' && '/tmp/codex_cpp_C_Algorithm_sorting_partial_sort'
+//
+// === 預期輸出（節錄）===
+// partial_sort：LC973 與 top-K alerts 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

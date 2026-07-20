@@ -113,3 +113,12 @@ int main()
 // 練習：比較 callback capture shared_from_this 與 weak_from_this 對 lifetime/cancellation。
 // 複雜度：shared_from_this/weak_from_this 是 O(1) control-block 操作，不會複製整個 object。
 // 生命週期：constructor 期間尚未接上 shared owner；此時呼叫 shared_from_this 會丟 bad_weak_ptr。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '04_enable_shared_from_this.cpp' -o '/tmp/codex_cpp_C_SmartPointers_04_enable_shared_from_this' && '/tmp/codex_cpp_C_SmartPointers_04_enable_shared_from_this'
+//
+// === 預期輸出（節錄）===
+// [實務] async-style callback uses existing control block
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

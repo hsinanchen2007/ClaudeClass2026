@@ -68,3 +68,12 @@ int main() {
  * 練習：把 permission 改為 enum class，避免字串拼字與 locale 問題；建立
  * SortedPermissions 型別，constructor 排序去重，讓 includes 前置條件由型別保證。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'includes.cpp' -o '/tmp/codex_cpp_C_Algorithm_set_operations_includes' && '/tmp/codex_cpp_C_Algorithm_set_operations_includes'
+//
+// === 預期輸出（節錄）===
+// includes：multiset 包含、供應與權限驗證通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

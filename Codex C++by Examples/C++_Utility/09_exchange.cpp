@@ -100,3 +100,12 @@ int main() {
  * 【面試段落】exchange 與 swap：exchange 用新值替換一方並回舊值；swap 對稱交換兩方。
  * 【練習】完成 FileHandle destructor/move assignment，使用假的 close counter 驗證不重複關閉。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '09_exchange.cpp' -o '/tmp/codex_cpp_C_Utility_09_exchange' && '/tmp/codex_cpp_C_Utility_09_exchange'
+//
+// === 預期輸出（節錄）===
+// exchange 測試完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -552,3 +552,12 @@ int main()
 // 2. 讓 practical task 接 stop_token，區分 cancel pending 與 drain accepted。
 // 3. 畫出 submit、worker pop、packaged_task set、future.get 的 happens-before 圖。
 // 4. 不改正確性前提下，以 per-worker queue/work stealing 降低中央 mutex contention。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'summary.cpp' -o '/tmp/codex_cpp_C_MultiThread_summary' && '/tmp/codex_cpp_C_MultiThread_summary'
+//
+// === 預期輸出（節錄）===
+// MultiThread summary：同步、FooBar 與 executor drain 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

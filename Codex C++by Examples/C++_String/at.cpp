@@ -107,3 +107,12 @@ int main() {
  * 【面試追問】為何不能保存 at 回傳值？保存 reference 可以，但必須同步管理字串生命週期。
  * 【練習】讓 leetcode_interpret_goal 回傳 optional<string>，把格式錯誤變成一般解析失敗。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'at.cpp' -o '/tmp/codex_cpp_C_String_at' && '/tmp/codex_cpp_C_String_at'
+//
+// === 預期輸出（節錄）===
+// at: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

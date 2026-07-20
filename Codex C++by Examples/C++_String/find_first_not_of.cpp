@@ -68,3 +68,12 @@ int main() {
  * （只要 pos 在範圍）；產品程式若不允許空 set 要先驗證。
  * 【練習】用回傳位置直接 erase 前綴，並對全排除字元輸入明確 clear。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'find_first_not_of.cpp' -o '/tmp/codex_cpp_C_String_find_first_not_of' && '/tmp/codex_cpp_C_String_find_first_not_of'
+//
+// === 預期輸出（節錄）===
+// find_first_not_of: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

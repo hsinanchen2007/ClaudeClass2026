@@ -68,3 +68,12 @@ int main() {
  * LeetCode-style 測試還應含沒有 -1 與全部 -1。實務匯出則測來源完全未修改。
  * 練習：比較 replace_copy_if 與 transform 回傳 optional 的資料建模差異。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'replace.cpp' -o '/tmp/codex_cpp_C_Algorithm_modifying_replace' && '/tmp/codex_cpp_C_Algorithm_modifying_replace'
+//
+// === 預期輸出（節錄）===
+// replace：原地/複製替換與資料清理測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

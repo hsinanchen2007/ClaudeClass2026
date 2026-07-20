@@ -69,3 +69,12 @@ int main() {
  * 練習：以 rotate 寫無額外配置的穩定分區，分析最壞 O(N log N)；再 benchmark
  * 大型 movable object，觀察 partition 與 stable_partition 的搬移差異。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'stable_partition.cpp' -o '/tmp/codex_cpp_C_Algorithm_partitioning_stable_partition' && '/tmp/codex_cpp_C_Algorithm_partitioning_stable_partition'
+//
+// === 預期輸出（節錄）===
+// stable_partition：穩定分區、LC283 與 FIFO 優先權測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -71,3 +71,12 @@ int main() {
  * 【面試題】c_str 與 const data 在 C++17 後用途相近；c_str 更明確表示呼叫端需要
  * C-style NUL termination。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'c_str.cpp' -o '/tmp/codex_cpp_C_String_c_str' && '/tmp/codex_cpp_C_String_c_str'
+//
+// === 預期輸出（節錄）===
+// c_str: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

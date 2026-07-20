@@ -217,3 +217,12 @@ int main()
 // 【陷阱】unbounded queue 在 producer 過快時耗盡記憶體；production 要 backpressure。
 // 【面試】為何 task 在鎖外執行？否則 submit/其他 worker 全被長任務阻塞。
 // 【練習】加入 bounded queue 與 submit timeout，定義拒絕策略。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '08_thread_pool.cpp' -o '/tmp/codex_cpp_C_MultiThread_08_thread_pool' && '/tmp/codex_cpp_C_MultiThread_08_thread_pool'
+//
+// === 預期輸出（節錄）===
+// thread pool：submit、future 與 shutdown drain 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

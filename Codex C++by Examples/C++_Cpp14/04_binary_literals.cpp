@@ -47,7 +47,7 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】權限 mask：二進位 literal 讓 read/write/execute 所占 bit 一眼可見。
 namespace practical {
 enum Permission : std::uint8_t {
     read = 0b001,
@@ -73,3 +73,14 @@ int main() {
     practical::practical_test();
     std::cout << "binary literal：mask、Hamming Weight、權限測試通過\n";
 }
+
+// 【延伸練習】新增 admin mask，實作 has_any/has_all/remove，並避免 integer promotion 誤判。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++14 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '04_binary_literals.cpp' -o '/tmp/codex_cpp_C_Cpp14_04_binary_literals' && '/tmp/codex_cpp_C_Cpp14_04_binary_literals'
+//
+// === 預期輸出（節錄）===
+// binary literal：mask、Hamming Weight、權限測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

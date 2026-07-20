@@ -92,3 +92,12 @@ int main() {
  * list-initialization 的 overload resolution 對可行 initializer_list constructor 給優先級。
  * 【練習】設計支援 move-only Endpoint 的 variadic factory，避免 initializer_list const 元素限制。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '13_initializer_list.cpp' -o '/tmp/codex_cpp_C_Utility_13_initializer_list' && '/tmp/codex_cpp_C_Utility_13_initializer_list'
+//
+// === 預期輸出（節錄）===
+// initializer_list 測試完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

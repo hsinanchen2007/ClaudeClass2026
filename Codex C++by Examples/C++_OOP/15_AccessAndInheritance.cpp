@@ -142,3 +142,12 @@ Q3：composition 一定優於 inheritance 嗎？
 A：不是口號。當 Derived 真能在所有 Base 契約位置替代 Base，public inheritance 合理；只有「使用某
 功能」或 ownership 關係則選 composition。面試要用 Liskov/invariant 說明，而非只回答「少用繼承」。
 */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '15_AccessAndInheritance.cpp' -o '/tmp/codex_cpp_C_OOP_15_AccessAndInheritance' && '/tmp/codex_cpp_C_OOP_15_AccessAndInheritance'
+//
+// === 預期輸出（節錄）===
+// [實務] composition: JobQueue has Metrics
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

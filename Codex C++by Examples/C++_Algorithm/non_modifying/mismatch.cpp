@@ -91,3 +91,12 @@ int main() {
  * 面試：Buddy Strings 為何相同字串仍可能 true？交換兩個相同字元後字串不變，故需
  * 至少一個重複字元。LeetCode 字元集若固定 26 可用 array count。練習：回所有差異。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'mismatch.cpp' -o '/tmp/codex_cpp_C_Algorithm_non_modifying_mismatch' && '/tmp/codex_cpp_C_Algorithm_non_modifying_mismatch'
+//
+// === 預期輸出（節錄）===
+// mismatch：LeetCode 859 與實務 schema 差異測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

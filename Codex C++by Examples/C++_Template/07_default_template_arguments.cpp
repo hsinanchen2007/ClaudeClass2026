@@ -108,3 +108,20 @@ int main() {
  * 【面試】預設函式引數與預設模板引數何時決定？兩者皆在編譯期，但參與規則不同。
  * 【練習】替 KthLargest 加 static_assert 或例外，拒絕 k == 0。
  */
+
+/*
+ * 【教科書補充：預設參數不取代 runtime 契約】
+ * - KthLargest 的 k 是 runtime constructor argument；k==0 時會 pop 後再 top 空 heap，正式版須丟例外。
+ * - static_assert 只能檢查模板常數，不能驗證這個 runtime k；兩種檢查不要混用。
+ * - Compare 必須和「第 k 大/小」的定義成對；換 comparator 可能同時翻轉 heap top 的語意。
+ * - 改公開模板的預設型別會改呼叫端實體化出的型別，可能影響 ABI、效能與序列化名稱。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '07_default_template_arguments.cpp' -o '/tmp/codex_cpp_C_Template_07_default_template_arguments' && '/tmp/codex_cpp_C_Template_07_default_template_arguments'
+//
+// === 預期輸出（節錄）===
+// 預設模板引數測試完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

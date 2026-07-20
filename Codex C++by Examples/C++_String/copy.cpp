@@ -68,3 +68,12 @@ int main() {
  * 【面試題】copy 會改來源嗎？不會，它是 const member。
  * 【練習】讓 fixed-width encoder 回報截斷，而不是默默丟掉尾端資料。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'copy.cpp' -o '/tmp/codex_cpp_C_String_copy' && '/tmp/codex_cpp_C_String_copy'
+//
+// === 預期輸出（節錄）===
+// copy: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

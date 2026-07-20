@@ -79,3 +79,12 @@ int main()
 // `std::endian::native` 描述編譯目標的 native byte order，不會在 runtime 幫資料換 endian。
 // 面試時應說明 rotation 與 shift 的差別：rotation 把移出的 bits 繞回，shift 則丟棄。
 // 練習：用 std::countr_zero 找 power-of-two alignment 對應的 exponent。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '03_bit_header_cpp20.cpp' -o '/tmp/codex_cpp_C_Bit_03_bit_header_cpp20' && '/tmp/codex_cpp_C_Bit_03_bit_header_cpp20'
+//
+// === 預期輸出（節錄）===
+// [實務] requested 1000 -> hash capacity 1024
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

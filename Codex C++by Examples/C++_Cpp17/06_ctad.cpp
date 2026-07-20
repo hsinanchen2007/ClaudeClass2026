@@ -58,7 +58,7 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】typed event envelope：deduction guide 由 payload 推出 Envelope<double>。
 namespace practical {
 template <class Payload>
 struct Envelope {
@@ -87,3 +87,22 @@ int main() {
     practical::practical_test();
     std::cout << "CTAD：deduction guide、Two Sum、event envelope 測試通過\n";
 }
+
+// 【延伸練習】加入 const char* payload，觀察 decay 結果；再寫 guide 讓它擁有 std::string。
+
+/*
+ * 【教科書補充：CTAD 的版本與儲存型別】
+ * - 本例 Box 在 C++17 需要明寫 deduction guide；一般 aggregate CTAD 是 C++20 才加入。
+ * - 編譯器也會考慮 copy deduction candidate，因此由既有 template object 建立新物件時結果可能不同。
+ * - array/string literal 常經 guide 參數型別發生 decay；若要擁有字元，guide 應明確推導 std::string。
+ * - guide 只是選出 class specialization，不會替你驗證 ownership；推成 pointer/view 仍可能懸空。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++17 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '06_ctad.cpp' -o '/tmp/codex_cpp_C_Cpp17_06_ctad' && '/tmp/codex_cpp_C_Cpp17_06_ctad'
+//
+// === 預期輸出（節錄）===
+// CTAD：deduction guide、Two Sum、event envelope 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

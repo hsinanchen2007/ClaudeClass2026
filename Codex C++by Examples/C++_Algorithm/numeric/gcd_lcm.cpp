@@ -74,3 +74,12 @@ int main() {
  * LCM 很快成長；production API 應讓「超出上限」有明確型別，而非以 0 混淆合法值。
  * 練習：改用 std::optional<long long> 表達 overflow，並為空 periods 定義 identity=1。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'gcd_lcm.cpp' -o '/tmp/codex_cpp_C_Algorithm_numeric_gcd_lcm' && '/tmp/codex_cpp_C_Algorithm_numeric_gcd_lcm'
+//
+// === 預期輸出（節錄）===
+// gcd/lcm：整數契約、LC1979 與排程週期測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

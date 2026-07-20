@@ -80,3 +80,12 @@ int main() {
  * 【面試】為何不要 `while (!in.eof())`？EOF 只在讀取失敗後設定，會多處理一次舊資料。
  * 【練習】讓 config parser trim key/value，並拒絕重複 key。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'getline.cpp' -o '/tmp/codex_cpp_C_String_getline' && '/tmp/codex_cpp_C_String_getline'
+//
+// === 預期輸出（節錄）===
+// getline: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

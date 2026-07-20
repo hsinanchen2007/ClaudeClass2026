@@ -75,3 +75,12 @@ int main() {
  * 【面試】fold 是否保證順序？&&、||、逗號保有其語意；其他運算要看運算子求值規則。
  * 【練習】寫 print_with_separator(separator, args...)，避免最後多一個 separator。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '14_fold_expressions.cpp' -o '/tmp/codex_cpp_C_Template_14_fold_expressions' && '/tmp/codex_cpp_C_Template_14_fold_expressions'
+//
+// === 預期輸出（節錄）===
+// fold expression 測試完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

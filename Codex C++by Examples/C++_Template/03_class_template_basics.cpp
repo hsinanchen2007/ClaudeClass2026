@@ -115,3 +115,12 @@ int main() {
  * 【面試】為何成員函式定義通常要放 header？編譯器在實體化點需要看見完整定義。
  * 【練習】加入 emplace(Args&&...) 並用 perfect forwarding 直接建構 T。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '03_class_template_basics.cpp' -o '/tmp/codex_cpp_C_Template_03_class_template_basics' && '/tmp/codex_cpp_C_Template_03_class_template_basics'
+//
+// === 預期輸出（節錄）===
+// 類別模板測試完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -124,3 +124,12 @@ int main()
 // 練習：不用 operator<，改傳 lambda 讓 Employee 依 name 排序。
 // 複雜度：sort O(N log N)、unordered lookup 平均 O(1)；custom class 不改 container guarantee。
 // 生命週期：container 按值擁有 elements；iterator/reference 仍受 reallocation、erase 規則約束。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '25_StlWithCustomClass.cpp' -o '/tmp/codex_cpp_C_OOP_25_StlWithCustomClass' && '/tmp/codex_cpp_C_OOP_25_StlWithCustomClass'
+//
+// === 預期輸出（節錄）===
+// [實務] unordered_map<AssetId,size> lookup=4096
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

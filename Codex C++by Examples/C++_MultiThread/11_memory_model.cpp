@@ -123,3 +123,20 @@ int main()
 // 【陷阱】acquire 必須讀到對應 release 或其 release sequence 才完成同步。
 // 【面試】atomicity、visibility、ordering 是三件事；memory order 解決後兩者的契約。
 // 【練習】改用 atomic::wait/notify，消除 busy waiting，並保持 release/acquire。
+
+/*
+ * 【教科書補充：memory model 因果鏈】
+ * - 同一 thread 內是 sequenced-before；release 被 acquire 讀到時建立 synchronizes-with，兩者合成 happens-before。
+ * - acquire 並非看到「任意較早 release」就同步，必須讀到對應 release 或其 release sequence 所發布的值。
+ * - seq_cst 另建立只涵蓋 seq_cst atomic 操作的單一全序，不能替 non-atomic data race 擦屁股。
+ * - yield busy-wait 沒有公平或最長等待保證；C++20 atomic::wait/notify 或 condition_variable 通常更合適。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '11_memory_model.cpp' -o '/tmp/codex_cpp_C_MultiThread_11_memory_model' && '/tmp/codex_cpp_C_MultiThread_11_memory_model'
+//
+// === 預期輸出（節錄）===
+// memory model：release/acquire 發布測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

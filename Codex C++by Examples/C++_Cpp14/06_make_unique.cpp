@@ -2,8 +2,11 @@
  * C++14 教科書：std::make_unique
  *
  * make_unique<T>(args...) 配置 T 並立即包進 unique_ptr，表達單一 ownership。相較
- * `unique_ptr<T>(new T(...))` 更短，也避免在複雜 function-call argument evaluation 中
- * raw pointer 尚未被接管就遇到 exception 的風險。C++14 同時支援動態陣列 T[]。
+ * `unique_ptr<T>(new T(...))` 更短。在本章採用的 C++14 規則下，它也避免
+ * `consume(unique_ptr<T>(new T), may_throw())` 的引數評估交錯，使 raw pointer 尚未
+ * 被 unique_ptr 接管前另一引數就拋例外。C++17 起，各函式引數的求值彼此
+ * indeterminately sequenced，已消除這個特定交錯漏洞；make_unique 仍因簡潔、單一
+ * ownership 與避免重複型別名稱而是首選。C++14 同時支援動態陣列 T[]。
  *
  * 【ownership】unique_ptr 不可複製、可 move；離開 scope 自動 delete。observer 用 T* 或 T&。
  * 【polymorphism】unique_ptr<Derived> 可 move 成 unique_ptr<Base>，Base destructor 要 virtual。
@@ -59,7 +62,7 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】多型處理 pipeline：vector<unique_ptr<Stage>> 明確擁有每個 stage，無手動 delete。
 namespace practical {
 class Stage {
 public:
@@ -96,3 +99,22 @@ int main() {
     practical::practical_test();
     std::cout << "make_unique：ownership、tree depth、pipeline 測試通過\n";
 }
+
+// 【延伸練習】加入會在 constructor 拋例外的 Stage，驗證已建立物件仍由 RAII 正確釋放。
+
+/*
+ * 【教科書補充：make_unique 的陣列與 deleter 邊界】
+ * - `make_unique<T[]>(n)` 配置動態陣列並 value-initialize n 個元素；固定長度 `T[N]` overload 被刪除。
+ * - 它不能在呼叫點指定 custom deleter；需特殊釋放策略時明確建構 unique_ptr<T,Deleter>。
+ * - make_unique 只處理 ownership，不改變 Base 必須有 virtual destructor 的多型刪除契約。
+ * - C++17 修掉的是特定引數交錯洩漏，並沒有指定不同函式引數誰先求值。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++14 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '06_make_unique.cpp' -o '/tmp/codex_cpp_C_Cpp14_06_make_unique' && '/tmp/codex_cpp_C_Cpp14_06_make_unique'
+//
+// === 預期輸出（節錄）===
+// make_unique：ownership、tree depth、pipeline 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

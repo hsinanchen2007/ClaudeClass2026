@@ -148,3 +148,12 @@ int main() {
  * 「邊走訪、邊 append」則仍可能因 reallocation 讓來源 iterator 失效。
  * 【練習】加入只提供 sentinel end 的自訂 input_range，驗證 fallback 不要求 common range。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'range_modifiers.cpp' -o '/tmp/codex_cpp_C_String_range_modifiers' && '/tmp/codex_cpp_C_String_range_modifiers'
+//
+// === 預期輸出（節錄）===
+// range modifiers: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

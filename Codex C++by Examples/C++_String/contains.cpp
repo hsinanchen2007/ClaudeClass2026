@@ -81,3 +81,12 @@ int main() {
  * 為 true；若產品把空 pattern 視為錯誤，應在業務層先拒絕。
  * 【面試題】contains 是否比 find 快？沒有額外複雜度承諾，主要改善可讀性。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'contains.cpp' -o '/tmp/codex_cpp_C_String_contains' && '/tmp/codex_cpp_C_String_contains'
+//
+// === 預期輸出（節錄）===
+// contains: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

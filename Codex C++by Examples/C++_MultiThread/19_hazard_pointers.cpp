@@ -148,3 +148,20 @@ int main()
 // 【面試】為何 shared_ptr 不總能直接取代 hazard pointer？control block 原子成本、API
 //         layout 與 lock-free progress 需求不同，但優先使用成熟 library 而非手刻。
 // 【練習】設計 retired vector，累積到門檻才掃所有 hazard slots。
+
+/*
+ * 【教科書補充：本例只展示 protocol 形狀】
+ * - practical_demo 先 join reader 才 retire，沒有真正建立「已發布 hazard、並行移除」的回收競態測試。
+ * - 完整測試需用 latch/barrier 固定 load/publish/validate/retire/scan 的交錯，不能靠 scheduler 運氣。
+ * - 本類只允許單 reader/單 retirer；解構前必須 quiescent，且沒有證明所有 atomic 實作皆 lock-free。
+ * - production 應採成熟 hazard-pointer library，並另外處理 slot 註冊、batch scan、ABA 與 memory-order proof。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '19_hazard_pointers.cpp' -o '/tmp/codex_cpp_C_MultiThread_19_hazard_pointers' && '/tmp/codex_cpp_C_MultiThread_19_hazard_pointers'
+//
+// === 預期輸出（節錄）===
+// hazard pointer：保護、重查與延後回收概念測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

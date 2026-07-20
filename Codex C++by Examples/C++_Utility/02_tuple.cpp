@@ -82,3 +82,12 @@ int main() {
  * 【面試段落】tuple 與 variant 差異？tuple 同時擁有所有欄；variant 同一時間只擁有其中一型。
  * 【練習】用 index_sequence 寫自己的 apply，並說明 std::invoke 的必要性。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '02_tuple.cpp' -o '/tmp/codex_cpp_C_Utility_02_tuple' && '/tmp/codex_cpp_C_Utility_02_tuple'
+//
+// === 預期輸出（節錄）===
+// tuple 測試完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

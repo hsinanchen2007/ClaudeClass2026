@@ -68,3 +68,12 @@ int main() { basic_example(); leetcode_1480_example(); practical_example(); }
 // `istream_iterator<int>` 遇格式錯誤會停在 fail state；production parser 必須另查 fail/eof。
 // 同一 iterator 的 `*it` 可重讀目前值，但一旦 ++，舊的 stream position 就不可回復。
 // 練習：解釋為何 std::sort 不能接受 input iterators。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '01_input_iterator.cpp' -o '/tmp/codex_cpp_C_Iterator_01_input_iterator' && '/tmp/codex_cpp_C_Iterator_01_input_iterator'
+//
+// === 預期輸出（節錄）===
+// [實務] one-pass stream filter produced 3,5
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

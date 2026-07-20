@@ -141,3 +141,12 @@ int main()
 // 練習：讓 Rectangle 拒絕負數；思考 setter 回 reference 時 exception safety。
 // 複雜度：取得/回傳 this 是 O(1)；fluent chain 的成本是各 member call 成本相加。
 // 生命週期：回傳 `*this` 是 borrow，不能對 temporary chain 保存 reference 到 full-expression 之後。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '6_ThisPointer.cpp' -o '/tmp/codex_cpp_C_OOP_6_ThisPointer' && '/tmp/codex_cpp_C_OOP_6_ThisPointer'
+//
+// === 預期輸出（節錄）===
+// [LeetCode 1472] browser state 由同一個 this 維護
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

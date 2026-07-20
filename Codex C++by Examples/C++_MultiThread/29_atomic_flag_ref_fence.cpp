@@ -122,3 +122,12 @@ int main()
 // 【注意】本例 wait 可能先 spin 再 park；若移除 wait 改成空迴圈，才是持續耗 CPU 的純 spin。
 // 【面試】fence-fence synchronization 仍需 atomic value 串起 reads-from 關係。
 // 【練習】用 atomic<bool> acquire/release 改寫 practical，說明為何更容易 review。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '29_atomic_flag_ref_fence.cpp' -o '/tmp/codex_cpp_C_MultiThread_29_atomic_flag_ref_fence' && '/tmp/codex_cpp_C_MultiThread_29_atomic_flag_ref_fence'
+//
+// === 預期輸出（節錄）===
+// atomic low-level：flag/ref/fence 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -55,7 +55,7 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】HTTP router：異質 handler 經 type erasure 放進同一 map，支援 runtime 註冊。
 namespace practical {
 using Handler = std::function<std::string(const std::string&)>;
 
@@ -89,3 +89,22 @@ int main() {
     practical::practical_test();
     std::cout << "std::function：type erasure、recursive DP、router 測試通過\n";
 }
+
+// 【延伸練習】比較 template callback、function pointer、std::function 的 ownership、配置與 inline。
+
+/*
+ * 【教科書補充：type erasure 不會替演算法驗證輸入】
+ * - Fibonacci 類示範須拒絕負 steps，並在 int 溢位前設定上限；std::function 不會捕捉 signed-overflow UB。
+ * - recursive closure 若 capture 外層 std::function&，只能在該物件原位且存活時呼叫；搬移或逃離 scope 會破壞借用。
+ * - 每層遞迴都經 type-erased 間接呼叫；教學可讀性可以接受，hot path 宜用迴圈或自遞迴 lambda。
+ * - empty std::function 與 target 拋出的例外是兩個不同 failure channel，都應在介面契約中處理。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '06_std_function.cpp' -o '/tmp/codex_cpp_C_Lambda_06_std_function' && '/tmp/codex_cpp_C_Lambda_06_std_function'
+//
+// === 預期輸出（節錄）===
+// std::function：type erasure、recursive DP、router 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -84,3 +84,12 @@ int main() {
  * 【面試追問】是否每次都 reserve？只有可估算且追加量夠大時，收益才通常高於額外判斷。
  * 【練習】為 CSV 加上 quote escaping，重新計算預估容量。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'reserve.cpp' -o '/tmp/codex_cpp_C_String_reserve' && '/tmp/codex_cpp_C_String_reserve'
+//
+// === 預期輸出（節錄）===
+// reserve: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

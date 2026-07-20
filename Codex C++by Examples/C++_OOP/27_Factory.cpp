@@ -140,3 +140,12 @@ int main()
 // 練習：新增 JsonParser，說明 Open/Closed Principle 與 switch factory 的取捨。
 // 複雜度：switch factory O(1)，registry lookup 常 O(log N)/平均 O(1)，建立成本含 allocation。
 // 生命週期：回傳 unique_ptr 讓 caller 成為 owner；factory 不應留下指向已移交 object 的 raw pointer。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '27_Factory.cpp' -o '/tmp/codex_cpp_C_OOP_27_Factory' && '/tmp/codex_cpp_C_OOP_27_Factory'
+//
+// === 預期輸出（節錄）===
+// [實務] value factory 建 batch retry policy
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

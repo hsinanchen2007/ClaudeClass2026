@@ -75,3 +75,12 @@ int main() {
  * - 多次前端 insert 容易 O(n^2)；反向建立再 reverse 通常更好。
  * - 自我來源與目的重疊不要用失效中的 iterator/pointer，先釐清 overload 契約。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'insert.cpp' -o '/tmp/codex_cpp_C_String_insert' && '/tmp/codex_cpp_C_String_insert'
+//
+// === 預期輸出（節錄）===
+// insert: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

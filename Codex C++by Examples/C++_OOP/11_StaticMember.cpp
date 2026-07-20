@@ -111,3 +111,12 @@ int main()
 // 練習：把 next_id_ 改成 std::atomic<int>，思考 relaxed ordering 是否足夠。
 // 複雜度：static counter increment 通常 O(1)；atomic 版仍 O(1) API 但有同步常數成本。
 // 生命週期：inline static member 具 static storage duration，所有 instances 共用且活到程序結束。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '11_StaticMember.cpp' -o '/tmp/codex_cpp_C_OOP_11_StaticMember' && '/tmp/codex_cpp_C_OOP_11_StaticMember'
+//
+// === 預期輸出（節錄）===
+// [實務] static named factory 建立 batch retry policy
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

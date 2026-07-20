@@ -85,7 +85,7 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】API 遷移：舊 send 產生編譯警告，新 API 以結果值明確回報成功或失敗。
 namespace practical {
 struct Request {
     std::string payload;
@@ -110,3 +110,14 @@ int main() {
     practical::practical_test();
     std::cout << "deprecated：安全遷移、First Bad Version、send API 測試通過\n";
 }
+
+// 【延伸練習】規劃兩階段 API 遷移：先警告與替代訊息，再於 major release 移除舊函式。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++14 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '07_deprecated_attribute.cpp' -o '/tmp/codex_cpp_C_Cpp14_07_deprecated_attribute' && '/tmp/codex_cpp_C_Cpp14_07_deprecated_attribute'
+//
+// === 預期輸出（節錄）===
+// deprecated：安全遷移、First Bad Version、send API 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -90,3 +90,20 @@ int main()
 // 練習：讓 callback 同時寫入 thread-local error message，但避免 global data race。
 // 複雜度：destructor/callback 的錯誤轉譯通常 O(1)，但 logging/cleanup I/O 成本另計。
 // 生命週期：destructor 執行時物件已在結束生命；不可讓 callback 保存指向即將消失成員的 pointer。
+
+/*
+ * 【教科書補充：noexcept 邊界仍須先排除 UB】
+ * - `target-nums[i]` 與 `value*2` 可能 signed overflow；UB 發生後，任何 catch-all 都無法提供恢復保證。
+ * - C ABI/noexcept wrapper 應先做 checked arithmetic，再把可預期錯誤轉成狀態碼。
+ * - 測試需包含 INT_MIN/INT_MAX，而不只一般正數；邊界值才能驗證運算前檢查真的有效。
+ * - `noexcept` 的承諾是例外不得逃出；若內部 throw 未捕捉，結果是 terminate，不是自動錯誤碼。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '09_pitfalls.cpp' -o '/tmp/codex_cpp_C_Exception_09_pitfalls' && '/tmp/codex_cpp_C_Exception_09_pitfalls'
+//
+// === 預期輸出（節錄）===
+// [實務] C ABI boundary translates exception to -1
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

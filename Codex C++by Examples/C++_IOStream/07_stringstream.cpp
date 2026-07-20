@@ -92,3 +92,12 @@ int main()
 // 練習：改用 from_chars 寫不受 locale 影響且不配置的 parse_int_exact。
 // 複雜度：parse/format 是 O(characters)，str() 通常還會複製完整 buffer。
 // 生命週期：stringstream 擁有內部 string；取得的 view/pointer 在修改 buffer 或 stream 解構後失效。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '07_stringstream.cpp' -o '/tmp/codex_cpp_C_IOStream_07_stringstream' && '/tmp/codex_cpp_C_IOStream_07_stringstream'
+//
+// === 預期輸出（節錄）===
+// [實務] simplified CSV preserves trailing empty field
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

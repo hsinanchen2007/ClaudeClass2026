@@ -68,3 +68,12 @@ int main() {
  * 練習：用雙指標把 LC977 最佳化為 O(N)，保留相同測試。
  * LeetCode 最佳解要從絕對值較大的兩端反向填入輸出，避免額外 sort。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'transform.cpp' -o '/tmp/codex_cpp_C_Algorithm_modifying_transform' && '/tmp/codex_cpp_C_Algorithm_modifying_transform'
+//
+// === 預期輸出（節錄）===
+// transform：LeetCode 977 與實務含稅價格測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

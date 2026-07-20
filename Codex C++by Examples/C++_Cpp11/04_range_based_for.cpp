@@ -57,7 +57,7 @@ void test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】部署設定正規化：用 auto& 修改原 Service，而不是誤改迴圈副本。
 namespace practical {
 struct Service {
     std::string name;
@@ -89,3 +89,14 @@ int main() {
     practical_test();
     std::cout << "range-for：複製/參考、財富統計、設定正規化測試通過\n";
 }
+
+// 【延伸練習】對 vector<bool>、vector<string> 各比較 auto、auto&、const auto& 與 auto&& 的型別/效果。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++11 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '04_range_based_for.cpp' -o '/tmp/codex_cpp_C_Cpp11_04_range_based_for' && '/tmp/codex_cpp_C_Cpp11_04_range_based_for'
+//
+// === 預期輸出（節錄）===
+// range-for：複製/參考、財富統計、設定正規化測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

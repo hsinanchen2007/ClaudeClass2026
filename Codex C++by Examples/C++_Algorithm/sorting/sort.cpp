@@ -73,3 +73,12 @@ int main() {
  * 練習：用 std::tie 寫相同多鍵 comparator；注意 descending 欄位不能直接全部 tie。
  * 為 comparator 寫 property test：irreflexive、asymmetric、transitive。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'sort.cpp' -o '/tmp/codex_cpp_C_Algorithm_sorting_sort' && '/tmp/codex_cpp_C_Algorithm_sorting_sort'
+//
+// === 預期輸出（節錄）===
+// sort：LC912 與 deterministic 多鍵排名測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

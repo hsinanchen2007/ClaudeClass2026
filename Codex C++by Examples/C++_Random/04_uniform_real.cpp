@@ -86,3 +86,12 @@ int main()
 // 練習：解釋為何 radius=U*R 會讓點過度集中在圓心。
 // 複雜度：每個圓內 sample 需要固定數量 draws/math，通常 O(1)；trig 常數成本不可忽略。
 // 生命週期：sampler 擁有 engine；回傳 point 是 value，不借用 distribution 或 engine 內部狀態。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '04_uniform_real.cpp' -o '/tmp/codex_cpp_C_Random_04_uniform_real' && '/tmp/codex_cpp_C_Random_04_uniform_real'
+//
+// === 預期輸出（節錄）===
+// [實務] retry jitter stays within 80%-120%
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

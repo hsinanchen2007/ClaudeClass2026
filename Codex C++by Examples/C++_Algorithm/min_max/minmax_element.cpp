@@ -68,3 +68,12 @@ int main() {
  * LeetCode 計算 2*k 與 range 時，輸入若大應升 long long 防 signed overflow。
  * 練習：以 optional 回傳空讀值，並明確決定相同極值的時間 tie 規則。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'minmax_element.cpp' -o '/tmp/codex_cpp_C_Algorithm_min_max_minmax_element' && '/tmp/codex_cpp_C_Algorithm_min_max_minmax_element'
+//
+// === 預期輸出（節錄）===
+// minmax_element：單趟雙極值與 LC908 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -91,3 +91,12 @@ int main() {
  * LeetCode 測試透過 wrapper 一次驗證多筆串流輸出；實務監控則最後只為顯示而
  * 排序。熱路徑若不需完整排序，可以直接保留 heap，避免額外 O(k log k)。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'push_heap.cpp' -o '/tmp/codex_cpp_C_Algorithm_heap_push_heap' && '/tmp/codex_cpp_C_Algorithm_heap_push_heap'
+//
+// === 預期輸出（節錄）===
+// push_heap：串流第 K 大與 top-k 監控測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

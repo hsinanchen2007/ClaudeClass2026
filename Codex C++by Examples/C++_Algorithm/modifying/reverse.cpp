@@ -68,3 +68,12 @@ int main() {
  * 進階：用 reverse_iterator 產生唯讀輸出，確認沒有複製元素。
  * 測試：UTF-8 範例應刻意展示 byte reverse 為何錯，再交由 Unicode library 處理。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'reverse.cpp' -o '/tmp/codex_cpp_C_Algorithm_modifying_reverse' && '/tmp/codex_cpp_C_Algorithm_modifying_reverse'
+//
+// === 預期輸出（節錄）===
+// reverse：子範圍、LC344、breadcrumb 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

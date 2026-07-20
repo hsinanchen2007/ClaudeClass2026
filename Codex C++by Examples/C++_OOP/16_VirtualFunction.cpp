@@ -134,3 +134,12 @@ int main()
 // 練習：故意把 override 的參數改成 unsigned，觀察 compiler 如何阻止 silent overload。
 // 複雜度：一次 virtual call 通常常數時間，但真正 Big-O 由 override body 決定，勿只談 vtable。
 // 生命週期：virtual dispatch 需要仍存活的 polymorphic object；constructor/destructor 中 dispatch 受限。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '16_VirtualFunction.cpp' -o '/tmp/codex_cpp_C_OOP_16_VirtualFunction' && '/tmp/codex_cpp_C_OOP_16_VirtualFunction'
+//
+// === 預期輸出（節錄）===
+// [LeetCode 70] 兩個 virtual strategies 都得到 8
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

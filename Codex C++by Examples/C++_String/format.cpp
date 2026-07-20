@@ -87,3 +87,12 @@ int main() {
  * - `{:04}` 的 4 是最小寬度，不是截斷上限。
  * 【練習】格式化十六進位 ID（`0x{:08x}`）並加入邊界測試。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'format.cpp' -o '/tmp/codex_cpp_C_String_format' && '/tmp/codex_cpp_C_String_format'
+//
+// === 預期輸出（節錄）===
+// format: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

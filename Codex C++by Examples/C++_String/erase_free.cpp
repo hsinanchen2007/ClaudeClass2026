@@ -68,3 +68,12 @@ int main() {
  * 【練習】讓 sanitizer 回傳「刪除數 + 清理後內容」的結果 struct。
  * 【注意】刪除後任何保存的 element reference 都不應繼續使用。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'erase_free.cpp' -o '/tmp/codex_cpp_C_String_erase_free' && '/tmp/codex_cpp_C_String_erase_free'
+//
+// === 預期輸出（節錄）===
+// std::erase: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -125,3 +125,12 @@ int main() {
  * 【面試】trait 的結果何時決定？模板實體化時的編譯期；通常可被 if constexpr 消除分支。
  * 【練習】以 is_nothrow_move_constructible_v 決定容器 relocation 策略。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '17_type_traits.cpp' -o '/tmp/codex_cpp_C_Template_17_type_traits' && '/tmp/codex_cpp_C_Template_17_type_traits'
+//
+// === 預期輸出（節錄）===
+// type traits 測試完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

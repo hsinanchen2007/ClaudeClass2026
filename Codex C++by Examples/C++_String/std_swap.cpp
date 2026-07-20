@@ -69,3 +69,20 @@ int main() {
  * namespace 定義 free swap，內部呼叫 member swap。
  * 【面試題】member swap 與 std::swap(string) 結果相同，前者直接；後者適合泛型語境。
  */
+
+/*
+ * 【教科書補充：string swap 與 allocator】
+ * - 在合法 allocator 前置條件下，basic_string::swap 為常數複雜度，不逐字元交換內容。
+ * - 若 allocator 不會隨 swap 傳播且兩 allocator 不相等，呼叫 swap 是 UB，不存在自動線性 fallback。
+ * - noexcept 性質與 allocator traits/標準版本相關；泛型 code 應查 `is_nothrow_swappable_v<T>`。
+ * - swap 後不要依賴舊 iterator/view/pointer 所屬的物件身分；最清楚的做法是重新取得 handle。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'std_swap.cpp' -o '/tmp/codex_cpp_C_String_std_swap' && '/tmp/codex_cpp_C_String_std_swap'
+//
+// === 預期輸出（節錄）===
+// std::swap: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

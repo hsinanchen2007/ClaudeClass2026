@@ -109,3 +109,12 @@ int main()
 // 【陷阱】pin 多個 compute threads 到同一 CPU 可能比不 pin 更慢。
 // 【面試】affinity 與 NUMA memory placement 是兩件事；只 pin CPU 不保證資料 locality。
 // 【練習】列出 allowed CPU mask，做 opt-in CLI，而不是 library 默默改 caller affinity。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '23_thread_affinity.cpp' -o '/tmp/codex_cpp_C_MultiThread_23_thread_affinity' && '/tmp/codex_cpp_C_MultiThread_23_thread_affinity'
+//
+// === 預期輸出（節錄）===
+// thread affinity：可攜 fallback 與 Linux mask 路徑測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

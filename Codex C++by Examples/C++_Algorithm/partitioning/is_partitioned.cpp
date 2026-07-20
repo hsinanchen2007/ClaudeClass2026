@@ -68,3 +68,12 @@ int main() {
  * 練習：讓 Request 增加 `cancelled`，定義 urgent 且未取消才在前；思考 predicate
  * 是業務分類還是排序規則，以及相同群組內是否需要穩定順序。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'is_partitioned.cpp' -o '/tmp/codex_cpp_C_Algorithm_partitioning_is_partitioned' && '/tmp/codex_cpp_C_Algorithm_partitioning_is_partitioned'
+//
+// === 預期輸出（節錄）===
+// is_partitioned：奇偶與請求批次驗證通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

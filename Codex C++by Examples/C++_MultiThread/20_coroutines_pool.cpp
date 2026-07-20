@@ -343,3 +343,12 @@ int main()
 // 【陷阱】executor 必須活得比所有 pending IntTask 久；State 內的 executor pointer 不擁有它。
 // 【面試】coroutine 解決 control-flow suspension，不自動提供 parallelism 或 thread safety。
 // 【練習】把 IntTask 擴成 template<T>，並以 continuation 取代 reentrant queue helping。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '20_coroutines_pool.cpp' -o '/tmp/codex_cpp_C_MultiThread_20_coroutines_pool' && '/tmp/codex_cpp_C_MultiThread_20_coroutines_pool'
+//
+// === 預期輸出（節錄）===
+// coroutine executor：schedule、resume、nested wait 與 frame 回收測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

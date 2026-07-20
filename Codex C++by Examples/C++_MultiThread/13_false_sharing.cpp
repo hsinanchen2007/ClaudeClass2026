@@ -93,3 +93,12 @@ int main()
 // 【陷阱】alignas(64) 保證 alignment 至少 64，不證明目標 CPU cache line 正好 64。
 // 【面試】false sharing 沒有同址 data race，為何仍慢？coherence 追蹤 line 而非 C++ object。
 // 【練習】以 perf stat 比較 padded/unpadded cache miss；不可只看單次 wall clock。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '13_false_sharing.cpp' -o '/tmp/codex_cpp_C_MultiThread_13_false_sharing' && '/tmp/codex_cpp_C_MultiThread_13_false_sharing'
+//
+// === 預期輸出（節錄）===
+// false sharing：padding 與 per-thread reduction 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

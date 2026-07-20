@@ -71,3 +71,12 @@ int main() {
  * 搜尋起點 pos 可避免建立 substr；pos>=size 且 set 非空時通常找不到。
  * 【面試題】此 API 能找 emoji 集合嗎？它以 char code unit 比對，UTF-8 emoji 是多 bytes。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'find_first_of.cpp' -o '/tmp/codex_cpp_C_String_find_first_of' && '/tmp/codex_cpp_C_String_find_first_of'
+//
+// === 預期輸出（節錄）===
+// find_first_of: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

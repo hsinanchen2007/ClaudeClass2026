@@ -74,3 +74,12 @@ int main() {
  * - 反向走訪不修改字串；用它建構新 string 才會 O(n) 複製。
  * 【陷阱】先對 rend().base() 做 -1 會跑到 begin 前方；必須先確認 rit!=rend。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'rbegin_rend.cpp' -o '/tmp/codex_cpp_C_String_rbegin_rend' && '/tmp/codex_cpp_C_String_rbegin_rend'
+//
+// === 預期輸出（節錄）===
+// rbegin/rend: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

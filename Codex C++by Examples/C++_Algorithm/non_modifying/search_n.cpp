@@ -68,3 +68,12 @@ int main() {
  * 面試時清楚區分「是否存在長度 k」與「求最大長度」兩種需求。
  * 實務跨批狀態至少要保存上一批尾端 run 長度與是否已告警。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'search_n.cpp' -o '/tmp/codex_cpp_C_Algorithm_non_modifying_search_n' && '/tmp/codex_cpp_C_Algorithm_non_modifying_search_n'
+//
+// === 預期輸出（節錄）===
+// search_n：LeetCode 485 與實務 failure streak 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

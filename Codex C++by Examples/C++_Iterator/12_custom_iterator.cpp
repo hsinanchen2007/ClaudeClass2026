@@ -158,3 +158,12 @@ int main()
 // 易錯：宣告比實作更強的 category 會讓 algorithm 的正確性或複雜度假設失真。
 // 面試自問：iterator_category 與 iterator_concept 為何可能不同？
 // 練習：加入 sentinel type，讓 end 不必與 iterator 同型別（C++20 ranges 模型）。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '12_custom_iterator.cpp' -o '/tmp/codex_cpp_C_Iterator_12_custom_iterator' && '/tmp/codex_cpp_C_Iterator_12_custom_iterator'
+//
+// === 預期輸出（節錄）===
+// [實務] lazy order-id range works with std::find
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

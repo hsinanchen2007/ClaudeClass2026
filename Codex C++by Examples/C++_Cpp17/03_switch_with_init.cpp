@@ -58,7 +58,7 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】事件分派：先把 raw code 轉成 scoped enum，再限制 event 只活在 switch。
 namespace practical {
 enum class Event { start = 1, stop = 2, heartbeat = 3 };
 
@@ -83,3 +83,14 @@ int main() {
     practical::practical_test();
     std::cout << "switch-init：HTTP、Baseball Game、event dispatch 測試通過\n";
 }
+
+// 【延伸練習】傳入 99，驗證 unknown 分支；再比較 switch-init 與先宣告 event 的作用域。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++17 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '03_switch_with_init.cpp' -o '/tmp/codex_cpp_C_Cpp17_03_switch_with_init' && '/tmp/codex_cpp_C_Cpp17_03_switch_with_init'
+//
+// === 預期輸出（節錄）===
+// switch-init：HTTP、Baseball Game、event dispatch 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -105,3 +105,20 @@ int main()
 // 練習：為 overwrite destination 寫 Linux/Windows 分流，並研究 fsync durability。
 // 複雜度：copy/read/write 是 O(bytes)；rename 常只改同 filesystem metadata，但跨 filesystem 不保證。
 // 生命週期：fstream 以 RAII 持有 file descriptor，離開 scope 會 close；close 成功仍不等於 durable fsync。
+
+/*
+ * 【教科書補充：atomic visibility 不等於 durability】
+ * - iterator 讀檔可能把 I/O error 表現成提早結束；完成後仍要檢查 stream state。
+ * - 固定 `.tmp` 名稱會碰撞，且 rename 失敗會留下垃圾；production 用同目錄唯一 temp + scope cleanup。
+ * - rename 的覆寫與原子可見性細節受平台/檔案系統影響；跨 filesystem 通常不是原子 rename。
+ * - 即使 rename 成功，斷電 durability 仍可能需要檔案與目錄 fsync；「看到新名稱」不是持久化證明。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '07_with_fstream.cpp' -o '/tmp/codex_cpp_C_Filesystem_07_with_fstream' && '/tmp/codex_cpp_C_Filesystem_07_with_fstream'
+//
+// === 預期輸出（節錄）===
+// [實務] temp file renamed into published manifest
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

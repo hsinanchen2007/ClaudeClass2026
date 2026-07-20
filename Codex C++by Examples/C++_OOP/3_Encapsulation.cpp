@@ -140,3 +140,12 @@ int main()
 // 練習：新增 deposit，拒絕 <=0；不要提供可修改 balance reference。
 // 複雜度：private/public 是 compile-time access policy、無 runtime 成本；操作成本仍由資料結構決定。
 // 生命週期：封裝不自動解決 borrow；若 getter 回 reference，caller 不得比 Account 活得更久。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '3_Encapsulation.cpp' -o '/tmp/codex_cpp_C_OOP_3_Encapsulation' && '/tmp/codex_cpp_C_OOP_3_Encapsulation'
+//
+// === 預期輸出（節錄）===
+// [實務] pool threads=8 queue=100
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

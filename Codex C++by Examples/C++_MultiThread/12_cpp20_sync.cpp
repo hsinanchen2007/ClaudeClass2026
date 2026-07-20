@@ -117,3 +117,12 @@ int main()
 // 【陷阱】barrier participant 提早退出要 arrive_and_drop，否則其他人永遠等待。
 // 【面試】latch 與 barrier 差異：一次性 vs 可重複 phase；semaphore 不綁 thread ownership。
 // 【練習】用 counting_semaphore<2> 驗證同時進入 critical resource 最多兩人。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '12_cpp20_sync.cpp' -o '/tmp/codex_cpp_C_MultiThread_12_cpp20_sync' && '/tmp/codex_cpp_C_MultiThread_12_cpp20_sync'
+//
+// === 預期輸出（節錄）===
+// C++20 sync：latch/atomic wait/semaphore/barrier 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

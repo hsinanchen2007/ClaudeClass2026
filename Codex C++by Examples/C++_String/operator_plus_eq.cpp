@@ -84,3 +84,12 @@ int main() {
  * 【面試追問】reserve 後 pointer 永遠有效嗎？只有沒有後續重新配置且原字串仍存活才成立。
  * 【練習】加入 URL encoding，並定義 base 已含 query 時要接 '&' 還是拒絕輸入。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'operator_plus_eq.cpp' -o '/tmp/codex_cpp_C_String_operator_plus_eq' && '/tmp/codex_cpp_C_String_operator_plus_eq'
+//
+// === 預期輸出（節錄）===
+// operator+=: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

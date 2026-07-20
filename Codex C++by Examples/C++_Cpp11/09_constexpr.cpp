@@ -50,7 +50,7 @@ void test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】worker 記憶體預算：在編譯期完成 KiB 換算並用 static_assert 鎖住結果。
 namespace practical {
 struct MemoryBudget {
     int workers;
@@ -77,3 +77,14 @@ int main() {
     practical_test();
     std::cout << "constexpr：編譯期計算、爬樓梯、記憶體預算測試通過\n";
 }
+
+// 【延伸練習】讓 MemoryBudget 拒絕負數與乘法溢位，分別測 compile-time 與 runtime 輸入。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++11 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '09_constexpr.cpp' -o '/tmp/codex_cpp_C_Cpp11_09_constexpr' && '/tmp/codex_cpp_C_Cpp11_09_constexpr'
+//
+// === 預期輸出（節錄）===
+// constexpr：編譯期計算、爬樓梯、記憶體預算測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -77,3 +77,12 @@ int main()
 // 生命週期：回傳 vector 以值擁有 table；caller 可安全保存，函式內沒有逸出的暫存 reference。
 // 面試追問：若只要單一 n 的答案，為何不該建立 0..n 整張 DP table？
 // 練習：改用 x&(x-1) recurrence，比較產生的 table 是否逐項相同。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '08_lc_338_counting_bits.cpp' -o '/tmp/codex_cpp_C_Bit_08_lc_338_counting_bits' && '/tmp/codex_cpp_C_Bit_08_lc_338_counting_bits'
+//
+// === 預期輸出（節錄）===
+// [實務] byte lookup: F0=4, FF=8
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

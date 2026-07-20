@@ -84,3 +84,20 @@ int main()
 // 易錯：reserve 只保證到該 capacity 前不 reallocate，不代表 erase/insert 後方位置穩定。
 // 面試自問：unordered_map::rehash 後 iterator 與 reference 哪一個失效？
 // 練習：比較 vector、list、map 的 erase loop 寫法與複雜度。
+
+/*
+ * 【教科書補充：失效必須分四種 handle】
+ * - iterator、reference、pointer 與 past-the-end 不一定同時失效；例如 unordered rehash 使 iterator 失效，元素 reference/pointer 仍有效。
+ * - vector 未重配 insert/erase 仍影響操作點後方與舊 end；deque 中間操作通常比端點操作破壞更多 handle。
+ * - list splice/insert 通常保留元素 handle，erase 只使被刪節點失效；但 iterator 可能改屬另一 container。
+ * - 測試不得比較、解參考或遞增已失效 iterator；一旦失效，連「看看是否還能用」都可能是 UB。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '11_iterator_invalidation.cpp' -o '/tmp/codex_cpp_C_Iterator_11_iterator_invalidation' && '/tmp/codex_cpp_C_Iterator_11_iterator_invalidation'
+//
+// === 預期輸出（節錄）===
+// [實務] erase-return loop safely removed expired sessions
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

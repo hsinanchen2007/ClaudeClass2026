@@ -70,3 +70,12 @@ int main() {
  * 練習：回傳 tagged drift `{id, only_primary}`，一次雙指標完成；再加入相同 id 但
  * checksum 不同的 changed 狀態，形成實際檔案同步 plan。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'set_symmetric_difference.cpp' -o '/tmp/codex_cpp_C_Algorithm_set_operations_set_symmetric_difference' && '/tmp/codex_cpp_C_Algorithm_set_operations_set_symmetric_difference'
+//
+// === 預期輸出（節錄）===
+// set_symmetric_difference：LC2215 與 manifest drift 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

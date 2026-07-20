@@ -83,3 +83,12 @@ int main() {
  * 易錯陷阱：fill_n 的負 count 在新標準與舊實作語意需避免，API 邊界直接用
  * size_t/先驗證。面試時要能說 fill 不配置、不改 size，只做 assignment。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'fill.cpp' -o '/tmp/codex_cpp_C_Algorithm_modifying_fill' && '/tmp/codex_cpp_C_Algorithm_modifying_fill'
+//
+// === 預期輸出（節錄）===
+// fill：區間填值、LC73、buffer 清理測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

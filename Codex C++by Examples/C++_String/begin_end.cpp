@@ -70,3 +70,12 @@ int main() {
  * 相鄰範圍 `[a,b)` 與 `[b,c)` 不重疊，組合演算法較一致。
  * 【練習】用 iterator 寫只保留 ASCII printable bytes 的 filter。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'begin_end.cpp' -o '/tmp/codex_cpp_C_String_begin_end' && '/tmp/codex_cpp_C_String_begin_end'
+//
+// === 預期輸出（節錄）===
+// begin/end: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

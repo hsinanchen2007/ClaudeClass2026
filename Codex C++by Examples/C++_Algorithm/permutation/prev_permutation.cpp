@@ -68,3 +68,12 @@ int main() {
  * comparator 的「最大排列」定義建立，不能混用預設 std::less 的排序結果。
  * 元素 swap 若拋例外，演算法不提供回滾保證，production 型別宜提供 noexcept swap。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'prev_permutation.cpp' -o '/tmp/codex_cpp_C_Algorithm_permutation_prev_permutation' && '/tmp/codex_cpp_C_Algorithm_permutation_prev_permutation'
+//
+// === 預期輸出（節錄）===
+// prev_permutation：前序 oracle 與 fallback 枚舉測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

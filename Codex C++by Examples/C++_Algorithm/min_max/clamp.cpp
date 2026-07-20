@@ -68,3 +68,12 @@ int main() {
  * 若先做亮度加法再 clamp，必須先用較寬型別避免加法已溢位。
  * 練習：實作回傳 {normalized,was_clamped} 的 page-size API。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'clamp.cpp' -o '/tmp/codex_cpp_C_Algorithm_min_max_clamp' && '/tmp/codex_cpp_C_Algorithm_min_max_clamp'
+//
+// === 預期輸出（節錄）===
+// clamp：像素與 API page size 邊界測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

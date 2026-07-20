@@ -100,3 +100,12 @@ int main() {
  * 【面試】Strategy pattern 與 policy 差異？前者常用執行期多型，後者通常編譯期組合。
  * 【練習】新增 ExponentialBackoff policy，但測試中不要真的 sleep，改注入 clock/sleeper。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '23_policy_based_design.cpp' -o '/tmp/codex_cpp_C_Template_23_policy_based_design' && '/tmp/codex_cpp_C_Template_23_policy_based_design'
+//
+// === 預期輸出（節錄）===
+// policy-based design 測試完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

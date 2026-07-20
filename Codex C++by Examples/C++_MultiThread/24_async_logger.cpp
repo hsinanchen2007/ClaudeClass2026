@@ -186,3 +186,12 @@ int main()
 // 【注意】close 可與 log/close 並行；destructor 與其他 member call 仍不可重疊。
 // 【面試】滿 queue 策略：block、drop newest/oldest、sample，各自對 latency/durability 影響。
 // 【練習】加入 monotonic sequence number，測試 written records 可依 sequence 重排。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '24_async_logger.cpp' -o '/tmp/codex_cpp_C_MultiThread_24_async_logger' && '/tmp/codex_cpp_C_MultiThread_24_async_logger'
+//
+// === 預期輸出（節錄）===
+// async logger：queue、drain 與 rate limiter 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

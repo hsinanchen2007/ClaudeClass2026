@@ -99,3 +99,12 @@ int main() {
  * virtual 適合開放擴充，但操作分散在各 derived class。
  * 【練習】為 Notification visitor 回傳實際 payload 長度，確保三種型別都有測試。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '04_variant.cpp' -o '/tmp/codex_cpp_C_Utility_04_variant' && '/tmp/codex_cpp_C_Utility_04_variant'
+//
+// === 預期輸出（節錄）===
+// variant 測試完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

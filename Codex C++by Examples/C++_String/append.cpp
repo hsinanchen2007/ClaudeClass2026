@@ -70,3 +70,12 @@ int main() {
  * - 迴圈大量附加前先算總長度 reserve，正確性仍不可依賴 capacity 精確值。
  * 【面試延伸】如何證明 builder 不會 size overflow？先檢查新增長度 <= max_size-size。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'append.cpp' -o '/tmp/codex_cpp_C_String_append' && '/tmp/codex_cpp_C_String_append'
+//
+// === 預期輸出（節錄）===
+// append: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

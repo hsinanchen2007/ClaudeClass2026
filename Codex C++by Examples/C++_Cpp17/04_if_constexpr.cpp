@@ -51,7 +51,7 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】型別導向 encoder：編譯期只保留 string 或 arithmetic 對應的合法分支。
 namespace practical {
 template <class T>
 std::string practical_encode(const T& value) {
@@ -77,3 +77,14 @@ int main() {
     practical::practical_test();
     std::cout << "if constexpr：型別分流、Single Number、encode 測試通過\n";
 }
+
+// 【延伸練習】以 dependent_false 改善 unsupported type 診斷，並比較 C++20 requires。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++17 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '04_if_constexpr.cpp' -o '/tmp/codex_cpp_C_Cpp17_04_if_constexpr' && '/tmp/codex_cpp_C_Cpp17_04_if_constexpr'
+//
+// === 預期輸出（節錄）===
+// if constexpr：型別分流、Single Number、encode 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

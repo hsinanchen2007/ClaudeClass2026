@@ -110,3 +110,12 @@ int main()
 // 練習：故意把 const at() 改回 std::string&，觀察如何由 const object 改到內部資料。
 // 複雜度：const qualification 沒有 runtime 成本；at/find 的 Big-O 仍由內部 container 決定。
 // 生命週期：const reference getter 仍是 borrow，不能超過 object 或會使 container reallocate 的修改。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '10_ConstMember.cpp' -o '/tmp/codex_cpp_C_OOP_10_ConstMember' && '/tmp/codex_cpp_C_OOP_10_ConstMember'
+//
+// === 預期輸出（節錄）===
+// [實務] const checksum=10，cache 屬內部實作細節
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

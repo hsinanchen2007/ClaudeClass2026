@@ -81,3 +81,12 @@ int main() {
  * 臨時、局部、兩欄語意明顯可用 pair；跨 API 或欄位需要名稱/驗證時選 struct。
  * 【練習】把 practical 回傳值改為 HttpValidation struct，比較呼叫端可讀性。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '01_pair.cpp' -o '/tmp/codex_cpp_C_Utility_01_pair' && '/tmp/codex_cpp_C_Utility_01_pair'
+//
+// === 預期輸出（節錄）===
+// pair 測試完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

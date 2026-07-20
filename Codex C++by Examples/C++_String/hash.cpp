@@ -71,3 +71,20 @@ int main() {
  * - 對外可重現 shard 應指定演算法、seed、byte order 與版本。
  * 【練習】比較 array<26> 與 unordered_map<char,int> 解 Ransom Note 的空間/常數成本。
  */
+
+/*
+ * 【教科書補充：hash table 的必要 invariant】
+ * - shard_count 必須大於零；assert 在 release 會消失，正式 API 要用持續存在的驗證避免 `% 0` UB。
+ * - KeyEqual(a,b)==true 必須推出 hash(a)==hash(b)，否則查找可能永遠找不到已存在的 key。
+ * - rehash 會使 iterator 失效，但未被 erase 元素的 reference/pointer 仍有效；兩者不要混為一談。
+ * - std::hash 結果不承諾跨程序、版本或平台穩定，不能直接當持久化 shard/協定格式。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'hash.cpp' -o '/tmp/codex_cpp_C_String_hash' && '/tmp/codex_cpp_C_String_hash'
+//
+// === 預期輸出（節錄）===
+// hash: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

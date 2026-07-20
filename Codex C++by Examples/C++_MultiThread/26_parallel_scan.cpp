@@ -88,3 +88,20 @@ int main()
 // 【陷阱】非 associative operation（如減法）不能任意樹狀重排仍期待相同語意。
 // 【面試】scan 是 stream compaction、radix sort、histogram prefix、GPU allocator 的基礎。
 // 【練習】擴充成 k blocks，先遞迴 scan block totals 再加 offsets。
+
+/*
+ * 【教科書補充：thread 例外與 rollback】
+ * - 建立第二個 thread 若失敗，第一個仍 joinable；未先 join/guard 就離開 scope 會 terminate。
+ * - worker function 例外不可跨 thread entry 傳回，需 exception_ptr/future 或明確錯誤 channel。
+ * - local prefix 與 offset 加法仍可能 signed overflow；平行化不會改變數值型別上限。
+ * - production 版本需 join guard/cancellation，並測空、單元素、奇數長度與建立 thread 失敗。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '26_parallel_scan.cpp' -o '/tmp/codex_cpp_C_MultiThread_26_parallel_scan' && '/tmp/codex_cpp_C_MultiThread_26_parallel_scan'
+//
+// === 預期輸出（節錄）===
+// parallel scan：兩 block local scan + offset 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

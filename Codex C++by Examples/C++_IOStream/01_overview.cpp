@@ -79,3 +79,12 @@ int main()
 // pointer；ostringstream::str() 回傳 value，可在 stream 解構後繼續保存。
 // 練習：讓 sum_two 接 trailing garbage 時回報，而非靜默接受 `1 2 xyz`。
 // 複雜度：解析/輸出成本至少 O(處理字元數)，formatted conversion 還包含 locale/數值轉換。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '01_overview.cpp' -o '/tmp/codex_cpp_C_IOStream_01_overview' && '/tmp/codex_cpp_C_IOStream_01_overview'
+//
+// === 預期輸出（節錄）===
+// [實務] parser accepts generic istream dependency
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

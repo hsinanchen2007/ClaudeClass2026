@@ -68,3 +68,12 @@ int main() {
  * 練習：擴充為二維 prefix sum，回答矩形總和；清楚定義四個邊界是 inclusive 還是
  * half-open，並為空矩形與第一列/欄寫測試。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'partial_sum.cpp' -o '/tmp/codex_cpp_C_Algorithm_numeric_partial_sum' && '/tmp/codex_cpp_C_Algorithm_numeric_partial_sum'
+//
+// === 預期輸出（節錄）===
+// partial_sum：running sum 與 O(1) 區間查詢測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

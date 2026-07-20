@@ -140,3 +140,12 @@ Q3：abstract class 與 type erasure/templates 怎麼選？
 A：virtual interface 適合 runtime 可替換、穩定 ABI 邊界；templates 提供 compile-time polymorphism，
 可 inline 但會擴大編譯依賴；type erasure（如 function）可保留 value-like API。先依替換時機與 ownership 選擇。
 */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '17_AbstractClass.cpp' -o '/tmp/codex_cpp_C_OOP_17_AbstractClass' && '/tmp/codex_cpp_C_OOP_17_AbstractClass'
+//
+// === 預期輸出（節錄）===
+// [實務] Storage abstraction 讀回 resnet50
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

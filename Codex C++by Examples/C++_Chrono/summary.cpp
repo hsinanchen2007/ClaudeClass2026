@@ -343,3 +343,14 @@ int main()
     practical_demo();
     std::cout << "Chrono summary: all assertions passed\n";
 }
+
+// 【章末自測】設計 timeout API：選 steady_clock、明確 duration 單位，並處理 deadline 已過。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'summary.cpp' -o '/tmp/codex_cpp_C_Chrono_summary' && '/tmp/codex_cpp_C_Chrono_summary'
+//
+// === 預期輸出（節錄）===
+// Chrono summary: all assertions passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

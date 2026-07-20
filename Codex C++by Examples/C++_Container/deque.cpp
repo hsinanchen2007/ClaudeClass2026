@@ -104,3 +104,20 @@ int main()
 // 【陷阱】對空 deque 呼叫 front/back/pop 是 UB，先檢查 empty。
 // 【面試】為何 std::queue 預設底層是 deque？因為需要 O(1) back push/front pop。
 // 【練習】用 deque 實作固定容量 ring-like buffer，滿時先 pop_front。
+
+/*
+ * 【教科書補充：deque 不是「永遠不失效的 vector」】
+ * - take/front 要求非空；assert 不可作為 release 的輸入驗證。
+ * - 端點與中間 insert/erase 對 iterator/reference/past-the-end 的規則不同，寫 API 前要逐操作查表。
+ * - RecentCounter 依賴 timestamp 單調遞增；若資料可亂序，deque front 不再代表最舊可淘汰事件。
+ * - `timestamp-3000` 對極小整數可能溢位；時間 domain/型別與範圍要先定義。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'deque.cpp' -o '/tmp/codex_cpp_C_Container_deque' && '/tmp/codex_cpp_C_Container_deque'
+//
+// === 預期輸出（節錄）===
+// deque：兩端操作、滑動窗口與工作佇列測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

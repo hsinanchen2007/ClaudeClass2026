@@ -141,3 +141,12 @@ int main()
 // 練習：把 IntBuffer 改用 std::vector<int>，刪除自訂 destructor，體會 Rule of Zero。
 // 複雜度：destructor 成本為成員/資源釋放總和，container 解構通常 O(element count)。
 // 生命週期：destructor body 後才逆序解構 members/bases；不要從 destructor 洩漏 this 給非同步工作。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '5_Destructor.cpp' -o '/tmp/codex_cpp_C_OOP_5_Destructor' && '/tmp/codex_cpp_C_OOP_5_Destructor'
+//
+// === 預期輸出（節錄）===
+// [實務] scope 結束後 active sessions=0
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

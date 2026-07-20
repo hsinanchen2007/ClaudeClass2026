@@ -70,3 +70,20 @@ int main() {
  * non-const [] 回 char& 可修改；任何重配後舊 reference 可能失效。
  * 【面試題】為何 size_type 與 int 混用有風險？負 int 轉無號會變巨大索引。
  */
+
+/*
+ * 【教科書補充：operator[] 的 size 邊界】
+ * - 在本教材 C++20 基準，pos<size() 才是一般元素；pos>size() 為未定義行為。
+ * - pos==size() 可讀到 CharT{} 的特殊終止值，但它不是字串元素；寫入非 CharT{} 是 UB。
+ * - 因此空字串 s[0] 也只可當上述終止值讀取，不能拿來寫第一個元素。
+ * - at(size()) 不採這個特殊規則，會丟 out_of_range；外部索引優先使用 at 或先驗證。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'operator_subscript.cpp' -o '/tmp/codex_cpp_C_String_operator_subscript' && '/tmp/codex_cpp_C_String_operator_subscript'
+//
+// === 預期輸出（節錄）===
+// operator[]: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

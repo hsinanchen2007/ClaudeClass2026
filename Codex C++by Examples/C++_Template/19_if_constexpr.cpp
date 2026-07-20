@@ -1,5 +1,5 @@
 /*
- * 第 19 章：if constexpr（C++17）
+ * 第 19 章：if constexpr（語法始於 C++17；本檔完整範例需 C++20）
  *
  * if constexpr 的條件在編譯期決定；未選分支在該模板實體中被 discard，因此可放入
  * 只對另一類型合法的程式碼。普通 if 兩邊仍須能編譯。這讓許多 tag dispatch/SFINAE
@@ -123,3 +123,18 @@ int main() {
  * 【面試】是否有 runtime branch？條件是常數表達式，未選分支不進該實體，通常沒有。
  * 【練習】讓 describe 支援有 begin/end 的 range，並避免 string 被當一般 range。
  */
+
+/*
+ * 【版本釐清】if constexpr 本身是 C++17；本檔同時使用 concepts、requires-expression、
+ * remove_cvref_t 與 constrained requirement，因此整個可執行範例的最低標準是 C++20。
+ * 若必須維持 C++17，需改用 detection idiom/void_t，而不是只移除 <concepts> include。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '19_if_constexpr.cpp' -o '/tmp/codex_cpp_C_Template_19_if_constexpr' && '/tmp/codex_cpp_C_Template_19_if_constexpr'
+//
+// === 預期輸出（節錄）===
+// temp=72,healthy=true
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

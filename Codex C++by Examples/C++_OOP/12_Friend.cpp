@@ -137,3 +137,12 @@ int main()
 // 練習：改成只 friend 一個 free serialize function，比較授權範圍。
 // 複雜度：friend 只改 compile-time access，沒有 runtime dispatch；函式成本由其實作決定。
 // 生命週期：friend 不獲得 ownership 特權；保存 private member reference 仍受原 object 存活約束。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '12_Friend.cpp' -o '/tmp/codex_cpp_C_OOP_12_Friend' && '/tmp/codex_cpp_C_OOP_12_Friend'
+//
+// === 預期輸出（節錄）===
+// [實務] friend serializer=build-agent#42
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

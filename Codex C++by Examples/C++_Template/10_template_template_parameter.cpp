@@ -109,3 +109,20 @@ int main() {
  * 【面試】template-template parameter 接的是什麼？未實體化的模板，而不是 vector<int> 型別。
  * 【練習】加入 Container policy，讓 Bag 支援 reserve（僅對有 reserve 的容器呼叫）。
  */
+
+/*
+ * 【教科書補充：容器 policy 的隱藏契約】
+ * - Bag::first、TwoStackQueue::pop/peek 都要求非空；本例由測試先 push，正式 API 應持續驗證。
+ * - Sequence 必須提供 push_back/back/pop_back/empty，且 allocator 參數形狀相容；名稱相容不代表語意相容。
+ * - refill 搬移一半時若 T move/配置拋出，incoming/outgoing 可能是部分轉移狀態，只能承諾有限保證。
+ * - peek 回傳的 reference 在後續 pop/refill 或底層容器操作後可能失效，caller 不可長期保存。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '10_template_template_parameter.cpp' -o '/tmp/codex_cpp_C_Template_10_template_template_parameter' && '/tmp/codex_cpp_C_Template_10_template_template_parameter'
+//
+// === 預期輸出（節錄）===
+// template-template parameter 測試完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

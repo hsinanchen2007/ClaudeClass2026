@@ -68,3 +68,12 @@ int main() {
  * 實務若要求相同 key 保留原順序，sort_heap 不合適，應改 stable_sort。
  * LeetCode 大輸入還要評估遞迴限制；heap sort 本身可完全迭代完成。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'sort_heap.cpp' -o '/tmp/codex_cpp_C_Algorithm_heap_sort_heap' && '/tmp/codex_cpp_C_Algorithm_heap_sort_heap'
+//
+// === 預期輸出（節錄）===
+// sort_heap：heap sort 與批次輸出測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

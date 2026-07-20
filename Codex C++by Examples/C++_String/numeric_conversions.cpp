@@ -93,3 +93,20 @@ int main() {
  * - to_string 浮點輸出格式不適合精密序列化；用 format/to_chars 並定義精度。
  * 【練習】解析百分比 "87.5" 到 double，要求完整消耗且範圍 0..100。
  */
+
+/*
+ * 【教科書補充：sto* parser 的完整輸入邊界】
+ * - stoul/stoull 仍接受前導正負號；unsigned 目的型別不代表字串 "-1" 會自動被拒絕。
+ * - runtime base 的合法值只有 0 或 2..36；0 會依前綴自動判定，必須是刻意選擇。
+ * - pos 必須檢查是否消耗完整輸入，否則 "42junk" 會被當成成功前綴；另測空白、空字串與溢位。
+ * - 外部格式要求「純十進位非負整數」時，from_chars 加完整消耗通常比 stoul 的 locale/符號語意清楚。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'numeric_conversions.cpp' -o '/tmp/codex_cpp_C_String_numeric_conversions' && '/tmp/codex_cpp_C_String_numeric_conversions'
+//
+// === 預期輸出（節錄）===
+// numeric conversions: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

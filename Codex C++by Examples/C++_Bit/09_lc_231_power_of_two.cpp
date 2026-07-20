@@ -76,3 +76,12 @@ int main()
 // 複雜度與生命週期：判斷及 mask index 都是 O(1)，純值運算且不保存任何借用資料。
 // API 選型：已有 C++20 時優先 has_single_bit；手寫 expression 則必須把 `n>0` 放在契約中。
 // 練習：LC 342 Power of Four 除了單一 bit，還要限制 bit 只出現在偶數位置。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '09_lc_231_power_of_two.cpp' -o '/tmp/codex_cpp_C_Bit_09_lc_231_power_of_two' && '/tmp/codex_cpp_C_Bit_09_lc_231_power_of_two'
+//
+// === 預期輸出（節錄）===
+// [實務] sequence 10 in capacity 8 -> slot 2
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

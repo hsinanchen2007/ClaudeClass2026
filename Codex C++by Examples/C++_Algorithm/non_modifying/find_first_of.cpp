@@ -68,3 +68,12 @@ int main() {
  * 不變但比較工作增加。實務 delimiter 很小時 O(N*M) 通常可接受。
  * 練習：將 delimiter 預建成 256 格 lookup table，保留相同測試。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'find_first_of.cpp' -o '/tmp/codex_cpp_C_Algorithm_non_modifying_find_first_of' && '/tmp/codex_cpp_C_Algorithm_non_modifying_find_first_of'
+//
+// === 預期輸出（節錄）===
+// find_first_of：LeetCode 771 與實務 delimiter 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

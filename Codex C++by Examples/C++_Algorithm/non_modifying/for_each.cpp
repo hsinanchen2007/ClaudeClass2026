@@ -71,3 +71,12 @@ int main() {
  * 數量 O(T)。實務加總可能 overflow，正式 metrics 用 long long。
  * 練習：寫 functor 並從 for_each 回傳值讀取 total/alerts。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'for_each.cpp' -o '/tmp/codex_cpp_C_Algorithm_non_modifying_for_each' && '/tmp/codex_cpp_C_Algorithm_non_modifying_for_each'
+//
+// === 預期輸出（節錄）===
+// for_each：LeetCode 1672 與實務 metric 聚合測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

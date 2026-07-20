@@ -135,3 +135,12 @@ int main() {
  * 【面試】void_t 為何有效？只要內部 expressions 都可形成型別，它就是 void；否則代換失敗。
  * 【練習】建立 HasReserve trait，只有容器支援 reserve 時才預先配置。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '16_sfinae.cpp' -o '/tmp/codex_cpp_C_Template_16_sfinae' && '/tmp/codex_cpp_C_Template_16_sfinae'
+//
+// === 預期輸出（節錄）===
+// SFINAE 測試完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

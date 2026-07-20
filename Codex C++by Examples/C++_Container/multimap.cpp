@@ -4,7 +4,7 @@
 // multimap 與 map 都是 ordered tree，但同一 key 可有多筆 value。它沒有 operator[]；
 // 查一組重複鍵用 equal_range(key)，回傳 [first,last) 半開區間。insert O(log n)，
 // count 通常 O(log n + matches)，走訪匹配 O(matches)。同 key 元素彼此的相對順序
-// 不應拿來當業務契約；需要明確排序時把次要欄位放進 composite key。
+// 自 C++11 起，等價 key 的相對順序按插入順序保留；若業務還有 priority 等明確規則，仍應放進 composite key。
 
 #include <algorithm>
 #include <cassert>
@@ -103,3 +103,12 @@ int main()
 // 【陷阱】erase(key) 會刪除該 key 的所有元素；只刪一筆要 erase(iterator)。
 // 【面試】multimap 與 map<Key, vector<Value>> 差異：局部更新、配置、整組存取介面。
 // 【練習】將事件 key 改為 pair<timestamp,priority>，讓同時間事件有明確順序。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'multimap.cpp' -o '/tmp/codex_cpp_C_Container_multimap' && '/tmp/codex_cpp_C_Container_multimap'
+//
+// === 預期輸出（節錄）===
+// multimap：重複鍵、equal_range 與排程索引測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

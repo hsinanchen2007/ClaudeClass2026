@@ -103,3 +103,20 @@ int main()
 // 【面試】map 與 unordered_map 的選擇不能只答 O(log n) vs O(1)：還要排序、最差情況、
 //         記憶體、iterator 穩定性與 deterministic output。
 // 【練習】加入 erase 某 timestamp，驗證其他 iterator 不失效。
+
+/*
+ * 【教科書補充：ordered lookup 的 begin 邊界】
+ * - `prev(upper_bound(x))` 只在 map 非空且 upper_bound(x)!=begin() 時合法；assert 不是 production guard。
+ * - 找不到下界可回 optional/expected 或丟 domain exception，不可解參考 begin 前位置。
+ * - `outer[key]` 會先建立空 inner container；後續配置失敗時可能留下空項目，僅有 basic guarantee。
+ * - node-based map 插入不使既有 iterator/reference 失效，但 erase 仍使被刪節點 handle 失效。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'map.cpp' -o '/tmp/codex_cpp_C_Container_map' && '/tmp/codex_cpp_C_Container_map'
+//
+// === 預期輸出（節錄）===
+// map：ordered query、版本資料與費率查詢測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

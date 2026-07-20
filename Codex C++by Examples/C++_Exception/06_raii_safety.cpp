@@ -126,3 +126,12 @@ int main()
 // 練習：讓 Trie::insert 具有 strong guarantee，失敗不留下 prefix nodes。
 // 複雜度：RAII wrapper 本身通常 O(1)，acquire/release 與 rollback 的實際成本由資源決定。
 // 生命週期：guard 的 lexical scope 就是資源有效期；成功 transfer 時必須明確 move/release ownership。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '06_raii_safety.cpp' -o '/tmp/codex_cpp_C_Exception_06_raii_safety' && '/tmp/codex_cpp_C_Exception_06_raii_safety'
+//
+// === 預期輸出（節錄）===
+// [實務] unwinding triggered transaction rollback
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

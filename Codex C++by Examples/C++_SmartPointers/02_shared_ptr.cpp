@@ -128,3 +128,12 @@ Q3：為何不能對同一個 raw pointer 分別建兩個 `shared_ptr`？
 A：兩者會有獨立 control blocks，最後各自 delete 同一物件，形成 double delete/UB。要增加 owner
 必須複製既有 `shared_ptr`；需要指向子物件但共享 ownership 時用 aliasing constructor。
 */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '02_shared_ptr.cpp' -o '/tmp/codex_cpp_C_SmartPointers_02_shared_ptr' && '/tmp/codex_cpp_C_SmartPointers_02_shared_ptr'
+//
+// === 預期輸出（節錄）===
+// [實務] two requests share const llama weights
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

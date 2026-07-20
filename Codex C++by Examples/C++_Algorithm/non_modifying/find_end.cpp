@@ -68,3 +68,12 @@ int main() {
  * LeetCode 若允許 overlapping matches，find_end 仍可找到最後一個；列舉全部時下一次
  * 起點加 1 才保留 overlap，若加 pattern.size 則只找不重疊匹配。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'find_end.cpp' -o '/tmp/codex_cpp_C_Algorithm_non_modifying_find_end' && '/tmp/codex_cpp_C_Algorithm_non_modifying_find_end'
+//
+// === 預期輸出（節錄）===
+// find_end：LeetCode-style 最後匹配與實務 log marker 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

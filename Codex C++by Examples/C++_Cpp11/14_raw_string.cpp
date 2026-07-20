@@ -53,7 +53,7 @@ void test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】log status 擷取：raw literal 讓 regex 規則可讀，但 parser 仍明確回報失敗。
 namespace practical {
 // 實務：從簡化 log 中抽 status；正式 production parser 應有格式邊界與錯誤處理。
 int extract_status(const std::string& line) {
@@ -78,3 +78,14 @@ int main() {
     practical_test();
     std::cout << "raw string：path/JSON、palindrome、log regex 測試通過\n";
 }
+
+// 【延伸練習】寫一段同時含 )" 的 regex/JSON，選安全 delimiter，並測試 malformed input。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++11 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '14_raw_string.cpp' -o '/tmp/codex_cpp_C_Cpp11_14_raw_string' && '/tmp/codex_cpp_C_Cpp11_14_raw_string'
+//
+// === 預期輸出（節錄）===
+// raw string：path/JSON、palindrome、log regex 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

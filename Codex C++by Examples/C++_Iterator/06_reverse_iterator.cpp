@@ -68,3 +68,12 @@ int main() { basic_example(); leetcode_344_example(); practical_example(); }
 // 面試若要求回正向位置，先畫半開區間，再決定要 base() 還是 prev(base())。
 // 對 list 可用 std::next(rit).base()，不可寫 base()-1，因其不是 random-access。
 // 練習：以 reverse_iterator 找最後一個偶數並 erase，驗證 base conversion。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '06_reverse_iterator.cpp' -o '/tmp/codex_cpp_C_Iterator_06_reverse_iterator' && '/tmp/codex_cpp_C_Iterator_06_reverse_iterator'
+//
+// === 預期輸出（節錄）===
+// [實務] reverse search found final separator index 7
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

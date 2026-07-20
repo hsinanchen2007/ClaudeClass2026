@@ -73,3 +73,12 @@ int main() {
  * - `s = {}`、`s = ""` 也能變空，但 clear 最直接表達移除全部元素。
  * 【面試題】敏感字串如何可靠抹除？標準 string 不提供安全擦除保證。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'clear.cpp' -o '/tmp/codex_cpp_C_String_clear' && '/tmp/codex_cpp_C_String_clear'
+//
+// === 預期輸出（節錄）===
+// clear: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

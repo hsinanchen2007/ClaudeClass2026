@@ -92,3 +92,12 @@ int main()
 // 【陷阱】自訂 assembly/synchronization 若 TSan 不理解，可能 false positive/negative。
 // 【面試】TSan 與 race detector 的限制：動態 coverage、排程概率、額外成本。
 // 【練習】在 /tmp 寫一個未鎖 counter，確認 TSan 報告後刪除，不污染教材原始碼。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '14_thread_sanitizer.cpp' -o '/tmp/codex_cpp_C_MultiThread_14_thread_sanitizer' && '/tmp/codex_cpp_C_MultiThread_14_thread_sanitizer'
+//
+// === 預期輸出（節錄）===
+// TSan 教材：預設 race-free 範例測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

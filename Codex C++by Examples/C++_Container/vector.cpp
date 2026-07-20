@@ -118,3 +118,20 @@ int main()
 // 3. vector<bool> 是位元壓縮特化，operator[] 不回傳真正 bool&；需要穩定位址時避開。
 // 【面試】為何攤銷 O(1) 不代表每次 O(1)？請用幾何擴容解釋總搬移量。
 // 【練習】讓 make_batches 回傳 span，並列出呼叫端不可進行的 vector 操作。
+
+/*
+ * 【教科書補充：batch 與 vector 失效契約】
+ * - batch_size 必須大於零；assert 在 release 消失，正式 API 要避免除零與 size_t 加法溢位。
+ * - reallocation 使全部 iterator/reference/pointer（含舊 end）失效；reserve 只有真的重配時才如此。
+ * - 未重配的 insert/erase 仍會使操作點及其後方 handle（含 past-the-end）失效。
+ * - throwing move-only 元素在重配置失敗時可能無法提供一般期待的 strong guarantee，需查元素型別契約。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'vector.cpp' -o '/tmp/codex_cpp_C_Container_vector' && '/tmp/codex_cpp_C_Container_vector'
+//
+// === 預期輸出（節錄）===
+// vector：基礎、LeetCode、批次分頁測試全部通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -75,3 +75,12 @@ int main() {
  * swap 仍不是 thread-safe，需 mutex 或 immutable shared state。
  * 練習：實作 resource-owning class 的 noexcept swap 與 copy assignment。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'swap.cpp' -o '/tmp/codex_cpp_C_Algorithm_modifying_swap' && '/tmp/codex_cpp_C_Algorithm_modifying_swap'
+//
+// === 預期輸出（節錄）===
+// swap：LeetCode 344 與實務設定發布測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

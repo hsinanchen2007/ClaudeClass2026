@@ -73,7 +73,7 @@ int cal_points(const std::vector<std::string>& operations) {
 void test() { assert(cal_points({"5", "2", "C", "D", "+"}) == 30); }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】工作狀態機：scoped enum 防止不同狀態域混用，transition 函式集中合法邊。
 namespace practical {
 enum class JobState { queued, running, succeeded, failed };
 
@@ -98,3 +98,14 @@ int main() {
     practical_test();
     std::cout << "enum class：強型別狀態、Baseball Game、工作流測試通過\n";
 }
+
+// 【延伸練習】新增 cancelled 狀態；讓 compiler 幫你找出所有必須更新的 switch/transition。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++11 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '12_enum_class.cpp' -o '/tmp/codex_cpp_C_Cpp11_12_enum_class' && '/tmp/codex_cpp_C_Cpp11_12_enum_class'
+//
+// === 預期輸出（節錄）===
+// enum class：強型別狀態、Baseball Game、工作流測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

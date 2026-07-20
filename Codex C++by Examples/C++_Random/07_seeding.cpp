@@ -101,3 +101,20 @@ int main()
 // 練習：接受 CLI `--seed`；未給才 random_device，並把實際 seed 寫進 test report。
 // 複雜度：seed_seq 初始化與 engine state 大小成正比；每次 draw 才是 engine 的常態成本。
 // 生命週期：seed 只初始化 state，不需保活；engine 必須保活，否則每次重建都回序列起點。
+
+/*
+ * 【教科書補充：seed 與空集合契約】
+ * - random_device 不保證硬體熵或 non-deterministic；安全 token 應使用平台 CSPRNG，而非 mt19937。
+ * - 對空集合建立 [0,size-1] distribution 會下溢；getRandom 應回 optional 或丟明確例外。
+ * - 若資料結構名稱對應 LeetCode 380，應明示線性搜尋版本只是 seed 教材，不具平均 O(1) insert/remove。
+ * - seed_seq 可展開多個 seed word；測試保存固定 seed，production 則記錄 seed 以利重現診斷。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '07_seeding.cpp' -o '/tmp/codex_cpp_C_Random_07_seeding' && '/tmp/codex_cpp_C_Random_07_seeding'
+//
+// === 預期輸出（節錄）===
+// [LeetCode 380] injected seed replays getRandom calls
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

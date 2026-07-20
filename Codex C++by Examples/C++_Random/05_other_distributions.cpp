@@ -82,3 +82,20 @@ int main()
 // 練習：用 binomial_distribution 模擬 100 requests、每個成功率 0.9 的成功數。
 // 複雜度：不同 distribution 的 sampling algorithm/成本由實作與參數決定，不能一概當 O(1)。
 // 生命週期：某些 distribution 可保存 cached state；改參數/重播時要理解 param() 與 reset()。
+
+/*
+ * 【教科書補充：權重本身也是不可信輸入】
+ * - discrete_distribution 的實務 wrapper 應拒絕負數、NaN、Infinity、空集合與全零權重。
+ * - 建構成功後仍要維持「回傳 index < items.size()」的不變量，items/weights 不可分開修改。
+ * - 分布測試不能 assert 固定短序列；以大量樣本檢查容忍區間，另用固定 seed 重現失敗。
+ * - 權重是相對比例而非百分比，整體倍增不應改變理論機率。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '05_other_distributions.cpp' -o '/tmp/codex_cpp_C_Random_05_other_distributions' && '/tmp/codex_cpp_C_Random_05_other_distributions'
+//
+// === 預期輸出（節錄）===
+// [LeetCode 528] pickIndex 依 1:3 權重抽樣
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

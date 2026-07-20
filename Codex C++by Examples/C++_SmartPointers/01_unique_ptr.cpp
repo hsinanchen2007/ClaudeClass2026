@@ -116,3 +116,12 @@ Q3：函式參數何時收 `unique_ptr<T>`，何時收 `T&`/`T*`？
 A：收 by-value `unique_ptr` 明確表示函式要接管 ownership；只借用且不得為空用 `T&`，可為空用
 `T*`。不要為了「看起來安全」把單純借用寫成 `const unique_ptr<T>&`，那會把 ownership 型別洩漏進 API。
 */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '01_unique_ptr.cpp' -o '/tmp/codex_cpp_C_SmartPointers_01_unique_ptr' && '/tmp/codex_cpp_C_SmartPointers_01_unique_ptr'
+//
+// === 預期輸出（節錄）===
+// [實務] Controller owns exactly one Backend
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

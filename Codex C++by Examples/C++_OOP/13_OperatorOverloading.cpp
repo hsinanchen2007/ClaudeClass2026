@@ -140,3 +140,12 @@ int main()
 // 練習：為 Money 加 -=/-，並思考 overflow 與不同 currency 應如何建模。
 // 複雜度：operator 語法不保證便宜；Money arithmetic O(1)，container-like + 可能是 O(N)。
 // 生命週期：回傳 value 最安全；回傳 reference 必須指向仍存活 object，prefix/postfix 契約也不同。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '13_OperatorOverloading.cpp' -o '/tmp/codex_cpp_C_OOP_13_OperatorOverloading' && '/tmp/codex_cpp_C_OOP_13_OperatorOverloading'
+//
+// === 預期輸出（節錄）===
+// [實務] semantic versions 已依欄位排序
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

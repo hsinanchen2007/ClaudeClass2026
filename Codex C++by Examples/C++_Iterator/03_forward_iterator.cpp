@@ -68,3 +68,12 @@ int main() { basic_example(); leetcode_876_example(); practical_example(); }
 // forward iterator；但在不能 O(1) 跳躍的容器上，實際 iterator increments 可能是 O(N)。
 // 實務若需要頻繁 size/index，forward_list 通常不是適合容器，不能只看單次插入 O(1)。
 // 練習：改成只移除連續重複的字串，並解釋為何未排序資料需先 sort 才能全域去重。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '03_forward_iterator.cpp' -o '/tmp/codex_cpp_C_Iterator_03_forward_iterator' && '/tmp/codex_cpp_C_Iterator_03_forward_iterator'
+//
+// === 預期輸出（節錄）===
+// [實務] forward_list::unique removed adjacent duplicates
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -74,3 +74,12 @@ int main() {
  * 易錯陷阱：不要把 reserve 當 resize；reserve 只改 capacity，copy 到 begin 仍沒有
  * 已建構元素可指定。要嘛 resize，要嘛用 back_inserter。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'copy.cpp' -o '/tmp/codex_cpp_C_Algorithm_modifying_copy' && '/tmp/codex_cpp_C_Algorithm_modifying_copy'
+//
+// === 預期輸出（節錄）===
+// copy：容量、重疊方向、LC1929、log 匯出測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

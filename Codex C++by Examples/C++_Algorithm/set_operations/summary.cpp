@@ -206,3 +206,12 @@ int main() {
  * 4. 為 case-insensitive key 建立同一 comparator/canonicalizer，測 Unicode 邊界。
  * 5. 比較 sorted vector set operation 與 unordered_set 在不同資料量的效能。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'summary.cpp' -o '/tmp/codex_cpp_C_Algorithm_set_operations_summary' && '/tmp/codex_cpp_C_Algorithm_set_operations_summary'
+//
+// === 預期輸出（節錄）===
+// Set operations summary：manifest、LC349 與 audit merge 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

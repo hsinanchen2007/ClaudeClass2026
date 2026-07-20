@@ -127,3 +127,12 @@ int main()
 // 練習：加入 max_depth，並說明 depth() 在 root children 時的值。
 // 複雜度：遞迴走訪是 O(nodes)，額外 traversal state 與深度成正比；symlink policy 會改圖形。
 // 生命週期：iterator 保存目前 traversal state；increment 後舊 entry reference 不應長期留用。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '06_recursive_iterator.cpp' -o '/tmp/codex_cpp_C_Filesystem_06_recursive_iterator' && '/tmp/codex_cpp_C_Filesystem_06_recursive_iterator'
+//
+// === 預期輸出（節錄）===
+// [實務] recursion skipped .git subtree
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

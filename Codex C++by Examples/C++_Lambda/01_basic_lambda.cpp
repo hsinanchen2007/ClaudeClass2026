@@ -7,7 +7,7 @@
  *
  * 【return】單一一致 expression 通常可推導；多個分支型別不同時明寫 `-> Type`。
  * 【captureless】沒有 capture 的 lambda 可轉成相容 function pointer，適合 C callback。
- * 【constexpr】符合條件時 lambda call operator 可在 compile time 執行；C++20 可明寫 constexpr。
+ * 【constexpr】C++17 起可明寫 constexpr，符合條件時 call operator 也可隱含 constexpr；C++20 另加入 consteval lambda。
  * 【成本】直接呼叫通常可 inline；把它放進 std::function 才引入 type erasure/可能配置。
  * 【常見陷阱】兩個文字相同 lambda 仍是不同 closure type，不能假設可以互相 assignment。
  * 【面試題】兩個相同 lambda expression 的 decltype 是否相同？不同。
@@ -54,7 +54,7 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】批次使用者驗證：把只在呼叫點使用的規則寫成無副作用 predicate。
 namespace practical {
 struct User {
     std::string name;
@@ -81,3 +81,18 @@ int main() {
     practical::practical_test();
     std::cout << "lambda 基礎：closure、Running Sum、資料驗證測試通過\n";
 }
+
+/*
+ * 【版本釐清】lambda 可明寫 constexpr 是 C++17；符合條件的 call operator 也可隱含 constexpr。
+ * C++20 在這條演進上新增 consteval lambda 等能力，不是「第一次能明寫 constexpr」。
+ * 判斷是否真的常數求值要把呼叫放進 static_assert/constant-expression context，而非只看宣告。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '01_basic_lambda.cpp' -o '/tmp/codex_cpp_C_Lambda_01_basic_lambda' && '/tmp/codex_cpp_C_Lambda_01_basic_lambda'
+//
+// === 預期輸出（節錄）===
+// lambda 基礎：closure、Running Sum、資料驗證測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

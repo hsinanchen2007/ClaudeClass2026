@@ -192,3 +192,20 @@ int main()
 // 【注意】close 可與 submit/close 並行；destructor 開始後仍呼叫任何 member 則違反物件生命週期。
 // 【面試】定義 shutdown contract：drain、cancel pending、deadline 到後 abort，各自回報什麼。
 // 【練習】加入 close_for(timeout)，逾時後回傳尚未處理工作清單。
+
+/*
+ * 【教科書補充：graceful 需要定義 failure，而不只是 drain】
+ * - worker 內 sink/push_back 若拋例外且逃出 thread entry，程序會 terminate；需捕捉並發布錯誤/取消。
+ * - 已接受工作若處理失敗，要定義 retry、dead-letter、部分結果與 close() 回報方式。
+ * - 任務永久阻塞會讓 close/join 永久等待；production 要有 stop token、deadline 或可中斷 I/O。
+ * - 教學中的 int 平方也需限制範圍，signed overflow 是 UB，catch 不到。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '22_graceful_shutdown.cpp' -o '/tmp/codex_cpp_C_MultiThread_22_graceful_shutdown' && '/tmp/codex_cpp_C_MultiThread_22_graceful_shutdown'
+//
+// === 預期輸出（節錄）===
+// graceful shutdown：拒新件、drain 與 idempotent close 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

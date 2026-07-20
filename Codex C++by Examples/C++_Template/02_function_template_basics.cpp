@@ -88,3 +88,12 @@ int main() {
  * 【面試】函式模板可否只靠回傳型別推導 T？一般不行，因回傳型別不參與引數推導。
  * 【練習】讓 binary_search_index 接受 vector 以外的 random-access range。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '02_function_template_basics.cpp' -o '/tmp/codex_cpp_C_Template_02_function_template_basics' && '/tmp/codex_cpp_C_Template_02_function_template_basics'
+//
+// === 預期輸出（節錄）===
+// 函式模板測試完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

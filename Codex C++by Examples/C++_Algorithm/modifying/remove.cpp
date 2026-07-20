@@ -68,3 +68,12 @@ int main() {
  * O(N^2)。若不要求保序，可用 swap-with-back 逐筆移除，搬移更少但順序改變。
  * 易錯陷阱：predicate 不可修改判斷所依賴的 key，否則後續結果難以推理。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'remove.cpp' -o '/tmp/codex_cpp_C_Algorithm_modifying_remove' && '/tmp/codex_cpp_C_Algorithm_modifying_remove'
+//
+// === 預期輸出（節錄）===
+// remove：erase-remove、LC27、session 清理測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

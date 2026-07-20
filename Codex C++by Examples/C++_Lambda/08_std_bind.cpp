@@ -66,7 +66,7 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】延後執行 task：bind object 自己擁有 Worker，placeholder 留給未來輸入。
 namespace practical {
 class Worker {
 public:
@@ -95,3 +95,22 @@ int main() {
     practical::practical_test();
     std::cout << "std::bind：placeholder/reference、First Bad Version、owned task 測試通過\n";
 }
+
+// 【延伸練習】用 lambda 重寫 practical_task，比較 ownership、錯誤訊息與 placeholder 可讀性。
+
+/*
+ * 【教科書補充：bind expression 的轉換規則】
+ * - 一般 bound value 儲存在 bind object，呼叫時以該 object 的 cv-lvalue 形式傳入；不會每次自動 move。
+ * - 因此 move-only 值若最終 callable 參數要求 by-value，bind object 可能無法呼叫；lambda capture 更直觀。
+ * - 多餘的 call-time arguments 會被忽略，但仍會求值；帶副作用的多餘參數仍會執行。
+ * - overload set 需先 cast 到確切 function pointer；nested bind expression 會被視為組合並展開，不是普通值。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '08_std_bind.cpp' -o '/tmp/codex_cpp_C_Lambda_08_std_bind' && '/tmp/codex_cpp_C_Lambda_08_std_bind'
+//
+// === 預期輸出（節錄）===
+// std::bind：placeholder/reference、First Bad Version、owned task 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

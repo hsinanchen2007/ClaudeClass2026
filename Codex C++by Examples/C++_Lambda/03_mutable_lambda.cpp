@@ -57,7 +57,7 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】退避序列：mutable closure 保存每次呼叫後更新的 delay 狀態。
 namespace practical {
 auto practical_backoff(int initial_ms, int factor) {
     return [delay = initial_ms, factor]() mutable {
@@ -81,3 +81,12 @@ int main() {
     practical::practical_test();
     std::cout << "mutable lambda：獨立狀態、Happy Number、backoff 測試通過\n";
 }
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '03_mutable_lambda.cpp' -o '/tmp/codex_cpp_C_Lambda_03_mutable_lambda' && '/tmp/codex_cpp_C_Lambda_03_mutable_lambda'
+//
+// === 預期輸出（節錄）===
+// mutable lambda：獨立狀態、Happy Number、backoff 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

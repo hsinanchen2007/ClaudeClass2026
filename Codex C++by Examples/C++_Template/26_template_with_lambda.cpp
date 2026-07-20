@@ -93,3 +93,20 @@ int main() {
  * 【面試】generic lambda 何時出現？C++14；顯式 template parameter list 是 C++20。
  * 【練習】為 transform_to_vector 加 concept，要求 Range 有 size/begin 且 Function 可呼叫。
  */
+
+/*
+ * 【教科書補充：transform result 與 range constraint】
+ * - `decltype(function(*begin))` 可能是 T& 或 void，直接形成 vector<T&>/vector<void> 會失敗。
+ * - 通用版本應用 invoke_result_t 再依 ownership 需求 remove_cvref_t，並 constraint callable/result。
+ * - 目前還依賴 member size/begin/end，並非所有 range；若要泛用應使用 ranges::begin/size 等 CPO。
+ * - sort projection 必須在排序期間穩定，且比較結果形成 strict weak ordering；不可讀會變動的外部 key。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '26_template_with_lambda.cpp' -o '/tmp/codex_cpp_C_Template_26_template_with_lambda' && '/tmp/codex_cpp_C_Template_26_template_with_lambda'
+//
+// === 預期輸出（節錄）===
+// 模板與 lambda 測試完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

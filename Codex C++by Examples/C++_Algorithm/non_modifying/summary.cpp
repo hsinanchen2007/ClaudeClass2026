@@ -219,3 +219,12 @@ int main() {
  * 最後速記：先問「找值、找集合成員、找子序列、找連續 run、計數、量詞、差異」；
  * 再確認空範圍、第二範圍長度與複雜度，幾乎就能選對 non-modifying algorithm。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'summary.cpp' -o '/tmp/codex_cpp_C_Algorithm_non_modifying_summary' && '/tmp/codex_cpp_C_Algorithm_non_modifying_summary'
+//
+// === 預期輸出（節錄）===
+// Non-modifying algorithms 整合複習完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

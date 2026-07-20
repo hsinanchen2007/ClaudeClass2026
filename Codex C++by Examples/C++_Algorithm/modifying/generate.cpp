@@ -72,3 +72,12 @@ int main() {
  * 或集中式 ID service。generate 本身不提供交易性，也不會在 generator 丟例外時
  * rollback，前面已寫入的元素仍保持修改後狀態。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'generate.cpp' -o '/tmp/codex_cpp_C_Algorithm_modifying_generate' && '/tmp/codex_cpp_C_Algorithm_modifying_generate'
+//
+// === 預期輸出（節錄）===
+// generate：狀態 generator、FizzBuzz、ID 配發測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

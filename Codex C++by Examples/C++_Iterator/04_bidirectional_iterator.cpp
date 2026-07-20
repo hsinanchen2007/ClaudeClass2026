@@ -68,3 +68,12 @@ int main() { basic_example(); leetcode_234_example(); practical_example(); }
 // vector 本身已有 reverse_iterator，通常有更好的 cache locality。不要因支援 -- 就選 list。
 // 對 set/map 應優先用成員 find/lower_bound，因它們能沿樹 O(logN)，自由 algorithm 只會走訪。
 // 練習：比較 vector insert 對 tracked iterator 的 invalidation。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '04_bidirectional_iterator.cpp' -o '/tmp/codex_cpp_C_Iterator_04_bidirectional_iterator' && '/tmp/codex_cpp_C_Iterator_04_bidirectional_iterator'
+//
+// === 預期輸出（節錄）===
+// [實務] list insertion preserved tracked iterator
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

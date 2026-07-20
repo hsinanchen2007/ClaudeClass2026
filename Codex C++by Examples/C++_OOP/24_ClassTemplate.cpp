@@ -185,3 +185,12 @@ int main()
 // 練習：用 concept 限制 GenericMinStack 的 T 必須可用 `<` 比較。
 // 複雜度：template 不決定 Big-O；本例 stack push/pop 依底層 vector，MinStack 操作 O(1)。
 // 生命週期：每個 specialization 是獨立型別；其 objects 仍依 members 的 ownership 規則解構。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '24_ClassTemplate.cpp' -o '/tmp/codex_cpp_C_OOP_24_ClassTemplate' && '/tmp/codex_cpp_C_OOP_24_ClassTemplate'
+//
+// === 預期輸出（節錄）===
+// [實務] fixed-capacity job queue 不做 heap allocation
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

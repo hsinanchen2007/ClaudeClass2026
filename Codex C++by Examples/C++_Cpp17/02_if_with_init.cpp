@@ -51,7 +51,7 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】cache lookup：iterator 只存在於 if/else 範圍，避免後續誤用或命名污染。
 namespace practical {
 using Cache = std::unordered_map<std::string, std::string>;
 
@@ -75,3 +75,12 @@ int main() {
     practical::practical_test();
     std::cout << "if-init：scope、Two Sum、cache lookup 測試通過\n";
 }
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++17 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '02_if_with_init.cpp' -o '/tmp/codex_cpp_C_Cpp17_02_if_with_init' && '/tmp/codex_cpp_C_Cpp17_02_if_with_init'
+//
+// === 預期輸出（節錄）===
+// if-init：scope、Two Sum、cache lookup 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -70,3 +70,12 @@ int main() {
  * 【面試題】最後一次出現且必須貼齊尾端，為何 ends_with 比 rfind 更直接？意圖與邊界
  * 都由 API 表達，不必再驗 `pos+pattern.size()==size()`。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'rfind.cpp' -o '/tmp/codex_cpp_C_String_rfind' && '/tmp/codex_cpp_C_String_rfind'
+//
+// === 預期輸出（節錄）===
+// rfind: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

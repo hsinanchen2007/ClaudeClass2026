@@ -232,3 +232,12 @@ int main() {
  * LeetCode 範例用 LC2460 串接 remove/fill；實務範例用事件匯出管線串接
  * copy_if/transform/unique，兩者都在 main 以可執行 assertion 驗證。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'summary.cpp' -o '/tmp/codex_cpp_C_Algorithm_modifying_summary' && '/tmp/codex_cpp_C_Algorithm_modifying_summary'
+//
+// === 預期輸出（節錄）===
+// Modifying algorithms 整合複習完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -505,3 +505,12 @@ int main() {
  * - 用實際 benchmark 比較 substr、string_view、find 在大型 log parser 的配置與耗時。
  * - 對 fuzz input 驗證 parser 不越界、不無限迴圈、無例外洩漏。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'summary.cpp' -o '/tmp/codex_cpp_C_String_summary' && '/tmp/codex_cpp_C_String_summary'
+//
+// === 預期輸出（節錄）===
+// std::string summary: all tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

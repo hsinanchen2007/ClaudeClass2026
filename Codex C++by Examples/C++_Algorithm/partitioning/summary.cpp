@@ -216,3 +216,12 @@ int main() {
  * 4. 對一百萬個大型物件 benchmark 原地 swap 與 index partition。
  * 5. 建立 property test：partition 後 is_partitioned 必為 true，且 multiset 不變。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'summary.cpp' -o '/tmp/codex_cpp_C_Algorithm_partitioning_summary' && '/tmp/codex_cpp_C_Algorithm_partitioning_summary'
+//
+// === 預期輸出（節錄）===
+// Partitioning summary：五個 API 整合測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

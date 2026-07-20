@@ -70,7 +70,7 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】跨 build trace 參數：production 可不使用 trace_id，但 API 簽名維持一致。
 namespace practical {
 int practical_process(const std::string& payload,
                       [[maybe_unused]] const std::string& trace_id) {
@@ -89,3 +89,12 @@ int main() {
     practical::practical_test();
     std::cout << "maybe_unused：build 變體、Two Sum II、trace API 測試通過\n";
 }
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++17 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '09_maybe_unused.cpp' -o '/tmp/codex_cpp_C_Cpp17_09_maybe_unused' && '/tmp/codex_cpp_C_Cpp17_09_maybe_unused'
+//
+// === 預期輸出（節錄）===
+// maybe_unused：build 變體、Two Sum II、trace API 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

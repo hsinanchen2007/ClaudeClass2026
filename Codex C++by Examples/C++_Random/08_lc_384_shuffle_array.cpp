@@ -91,3 +91,12 @@ int main()
 // 複雜度：reset 與 shuffle 都需複製 N 個元素，時間 O(N)、回傳空間 O(N)；engine 與
 // original_ 的生命週期跟著 Solution object，不能把臨時 engine 每次重建後誤稱「隨機」。
 // 練習：加入 constructor 使用 random_device，但保留可注入 seed 的 overload。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '08_lc_384_shuffle_array.cpp' -o '/tmp/codex_cpp_C_Random_08_lc_384_shuffle_array' && '/tmp/codex_cpp_C_Random_08_lc_384_shuffle_array'
+//
+// === 預期輸出（節錄）===
+// [實務] recorded seed replays two shuffle operations
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

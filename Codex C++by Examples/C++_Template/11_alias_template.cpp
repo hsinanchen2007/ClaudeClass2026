@@ -112,3 +112,12 @@ int main() {
  * 【面試】typedef 與 using 差異？一般別名皆可；只有 using 能自然表達 alias template。
  * 【練習】建立 Result<T> = variant<T, Error>，並思考它是否該是 alias 或正式 class。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '11_alias_template.cpp' -o '/tmp/codex_cpp_C_Template_11_alias_template' && '/tmp/codex_cpp_C_Template_11_alias_template'
+//
+// === 預期輸出（節錄）===
+// alias template 測試完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

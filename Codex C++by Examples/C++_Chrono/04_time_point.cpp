@@ -118,3 +118,12 @@ Q3：`time_point + duration` 一定不 overflow 嗎？
 A：不保證；底層 `rep` 仍是有限寬度。外部輸入的巨大 timeout 要先 range-check/saturate，不能因 chrono
 是強型別就忽略整數 overflow。系統 API 的最大可表示 deadline 也可能更小。
 */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '04_time_point.cpp' -o '/tmp/codex_cpp_C_Chrono_04_time_point' && '/tmp/codex_cpp_C_Chrono_04_time_point'
+//
+// === 預期輸出（節錄）===
+// [實務] injected time makes lease boundary deterministic
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

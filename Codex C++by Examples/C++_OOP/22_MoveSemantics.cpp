@@ -120,3 +120,12 @@ Q3：moved-from object 可做什麼？
 A：除非型別另有更強契約，標準庫物件通常只保證 valid but unspecified：可解構、重新指定，也可呼叫
 不依賴特定值的操作。不要假設一定 empty/zero；若程式需要該狀態，就自行明訂並測試類別契約。
 */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '22_MoveSemantics.cpp' -o '/tmp/codex_cpp_C_OOP_22_MoveSemantics' && '/tmp/codex_cpp_C_OOP_22_MoveSemantics'
+//
+// === 預期輸出（節錄）===
+// [實務] queue 同時接受 lvalue copy 與 rvalue move
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -412,3 +412,14 @@ int main()
     practical_factory_demo();
     std::cout << "OOP summary: all assertions passed\n";
 }
+
+// 【章末自測】為支付模組畫 ownership/多型邊界，再分別用 virtual、variant、template 實作。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'summary.cpp' -o '/tmp/codex_cpp_C_OOP_summary' && '/tmp/codex_cpp_C_OOP_summary'
+//
+// === 預期輸出（節錄）===
+// OOP summary: all assertions passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

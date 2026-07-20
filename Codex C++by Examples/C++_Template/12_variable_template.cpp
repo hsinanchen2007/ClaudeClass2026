@@ -114,3 +114,12 @@ int main() {
  * 【面試】variable template 可否特化？可以，完整與偏特化皆可。
  * 【練習】建立 bytes_per_element_v<T>，再估算 vector<T> 的資料區大小。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '12_variable_template.cpp' -o '/tmp/codex_cpp_C_Template_12_variable_template' && '/tmp/codex_cpp_C_Template_12_variable_template'
+//
+// === 預期輸出（節錄）===
+// 變數模板測試完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

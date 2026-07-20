@@ -70,3 +70,12 @@ int main() {
  * `rhs-lhs > threshold`，但先防整數溢位。實務 timestamp 相同是否真錯要由資料契約
  * 決定，多來源事件可能合法同時發生。練習：回傳兩個 offending event 的 id。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'adjacent_find.cpp' -o '/tmp/codex_cpp_C_Algorithm_non_modifying_adjacent_find' && '/tmp/codex_cpp_C_Algorithm_non_modifying_adjacent_find'
+//
+// === 預期輸出（節錄）===
+// adjacent_find：LeetCode 645 與實務事件診斷測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

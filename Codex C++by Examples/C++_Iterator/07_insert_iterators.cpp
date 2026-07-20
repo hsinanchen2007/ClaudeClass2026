@@ -69,3 +69,12 @@ int main() { basic_example(); leetcode_88_example(); practical_example(); }
 // 若 algorithm 的 input 與 output 是同一 vector，成長造成的 reallocation 可能使 input
 // iterators 失效；除非 API 明確支援 overlap，否則先用獨立 output 或預先設計容量與索引。
 // 練習：用 front_inserter(deque) copy 1,2,3，預測並驗證結果順序。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '07_insert_iterators.cpp' -o '/tmp/codex_cpp_C_Iterator_07_insert_iterators' && '/tmp/codex_cpp_C_Iterator_07_insert_iterators'
+//
+// === 預期輸出（節錄）===
+// [實務] set union grew output without pre-sizing
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

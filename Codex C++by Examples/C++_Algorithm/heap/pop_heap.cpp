@@ -77,3 +77,12 @@ int main() {
  * 易錯陷阱：pop_max 取得的是 value copy；若元素是 unique_ptr，應在 pop_heap 後
  * 從 back std::move 出所有權，再 pop_back，不能嘗試複製。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'pop_heap.cpp' -o '/tmp/codex_cpp_C_Algorithm_heap_pop_heap' && '/tmp/codex_cpp_C_Algorithm_heap_pop_heap'
+//
+// === 預期輸出（節錄）===
+// pop_heap：取頂、石頭碰撞、工作派送測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

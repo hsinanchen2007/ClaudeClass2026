@@ -101,3 +101,12 @@ int main() {
  * 【面試追問】move assignment 一定 O(1) 嗎？不一定；allocator 不相容可迫使元素搬移。
  * 【練習】為 JobStatus 增加 `set(bool ok, std::string message)`，成功時忽略 message。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'operator_assign.cpp' -o '/tmp/codex_cpp_C_String_operator_assign' && '/tmp/codex_cpp_C_String_operator_assign'
+//
+// === 預期輸出（節錄）===
+// operator=: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

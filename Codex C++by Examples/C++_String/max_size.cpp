@@ -70,3 +70,12 @@ int main() {
  * max_size 的操作通常丟 length_error；未超過仍可能因配置失敗丟 bad_alloc。
  * 不可用 max_size 直接 reserve 做壓力測試，這可能耗盡程序或系統資源。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'max_size.cpp' -o '/tmp/codex_cpp_C_String_max_size' && '/tmp/codex_cpp_C_String_max_size'
+//
+// === 預期輸出（節錄）===
+// max_size: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

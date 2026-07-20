@@ -83,3 +83,12 @@ int main()
 // 【陷阱】自訂比較若只比較部分欄位，該部分等價的兩物件會被視為同一 key。
 // 【面試】set 的「相等」由 !comp(a,b)&&!comp(b,a) 定義，不一定呼叫 operator==。
 // 【練習】用 set_intersection 算兩使用者共同權限。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'set.cpp' -o '/tmp/codex_cpp_C_Container_set' && '/tmp/codex_cpp_C_Container_set'
+//
+// === 預期輸出（節錄）===
+// set：唯一有序值、去重與權限差集測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -161,3 +161,12 @@ int main()
 // Q: condition_variable 為何要 predicate？A: state 才是事實，notification 可早到/假醒。
 // 【陷阱】用 char('0'+number) 只適用 0..9；本題 limit=5，泛化輸出應用 to_string。
 // 【練習】實作 LeetCode 1195 Fizz Buzz Multithreaded，明確定義四 worker predicate。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '30_interview_problems.cpp' -o '/tmp/codex_cpp_C_MultiThread_30_interview_problems' && '/tmp/codex_cpp_C_MultiThread_30_interview_problems'
+//
+// === 預期輸出（節錄）===
+// interview problems：counter、ZeroEvenOdd、startup gate 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

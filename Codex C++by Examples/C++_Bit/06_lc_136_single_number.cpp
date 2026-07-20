@@ -76,3 +76,12 @@ int main()
 // 生命週期：函式以 const reference 借用 vector，只在呼叫期間讀取，不保存 iterator/reference。
 // API 契約：production 若不能信任「恰成對」前置條件，應改回傳 optional/result 並先驗頻次。
 // 練習：LC 137 中其他值出現三次，需累計每個 bit modulo 3，單純 XOR 已不適用。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '06_lc_136_single_number.cpp' -o '/tmp/codex_cpp_C_Bit_06_lc_136_single_number' && '/tmp/codex_cpp_C_Bit_06_lc_136_single_number'
+//
+// === 預期輸出（節錄）===
+// [實務] unmatched transaction id=309
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

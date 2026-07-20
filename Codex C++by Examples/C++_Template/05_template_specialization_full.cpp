@@ -97,3 +97,12 @@ int main() {
  * 【面試】overload 與 specialization 的選擇？函式行為差異通常優先 overload，規則更直觀。
  * 【練習】新增 TextEncoder<vector<int>>，輸出 [1,2,3]。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '05_template_specialization_full.cpp' -o '/tmp/codex_cpp_C_Template_05_template_specialization_full' && '/tmp/codex_cpp_C_Template_05_template_specialization_full'
+//
+// === 預期輸出（節錄）===
+// {"enabled":true,"name":"cuda"}
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

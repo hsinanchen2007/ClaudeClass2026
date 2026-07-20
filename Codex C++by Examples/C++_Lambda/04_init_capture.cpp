@@ -53,7 +53,7 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】背景工作 ownership：init-capture 將 unique_ptr 移入 callback，離開 factory 仍安全。
 namespace practical {
 auto practical_task(std::unique_ptr<std::string> payload) {
     return [owned = std::move(payload)]() {
@@ -75,3 +75,12 @@ int main() {
     practical::practical_test();
     std::cout << "init-capture：計算/move ownership、Pivot Index、task 測試通過\n";
 }
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '04_init_capture.cpp' -o '/tmp/codex_cpp_C_Lambda_04_init_capture' && '/tmp/codex_cpp_C_Lambda_04_init_capture'
+//
+// === 預期輸出（節錄）===
+// init-capture：計算/move ownership、Pivot Index、task 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

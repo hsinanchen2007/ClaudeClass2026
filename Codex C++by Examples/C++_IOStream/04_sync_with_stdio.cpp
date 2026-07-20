@@ -76,3 +76,20 @@ int main()
 // 複雜度仍由讀寫 token/字元數決定；設定本身近似 O(1)，只改 buffering/synchronization。
 // 生命週期：global stream 設定持續到 process 結束，library 不應暗中改變 caller 的政策。
 // 練習：benchmark `\n` 與 std::endl 寫 100k 行到 ostringstream/file 的差異。
+
+/*
+ * 【教科書補充：sync_with_stdio 是程序級初始化決策】
+ * - 必須在第一次 C/C++ standard I/O 前設定；已做 I/O 後再切換，行為由實作決定。
+ * - 關閉同步後不要依賴 printf 與 cout 的交錯順序，除非自行 flush 並了解實作。
+ * - 它是 process-global 狀態，不適合在一般 library function 或可重複測試函式中偷偷修改。
+ * - 效能瓶頸若在格式化、磁碟或鎖，關閉同步未必有幫助；應量測完整工作負載。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '04_sync_with_stdio.cpp' -o '/tmp/codex_cpp_C_IOStream_04_sync_with_stdio' && '/tmp/codex_cpp_C_IOStream_04_sync_with_stdio'
+//
+// === 預期輸出（節錄）===
+// [實務] fast I/O configured once at application entry
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

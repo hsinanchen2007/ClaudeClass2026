@@ -49,7 +49,7 @@ void leetcode_test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】projection-based max：caller 用 lambda 指定 Metric 的比較欄位，演算法保持泛型。
 namespace practical {
 struct Metric {
     std::string name;
@@ -77,3 +77,22 @@ int main() {
     practical::practical_test();
     std::cout << "generic lambda：template call operator、duplicate、projection 測試通過\n";
 }
+
+// 【延伸練習】讓 practical_max_by 回 iterator/optional，正確處理空 range 並避免不必要複製。
+
+/*
+ * 【教科書補充：泛型回傳與空範圍】
+ * - identity(temporary) 可回 T&&，但 temporary 在完整運算式結束時死亡；不得保存該 reference。
+ * - perfect forwarding 保留 value category，並不延長任何來源物件生命週期。
+ * - practical_max_by 對空 range 會解參考 end()；目前契約是 non-empty，正式 API 應回 iterator/optional。
+ * - 目前 auto return 會複製最大元素並移除 cv/ref；若元素昂貴，回 iterator 並明列失效規則更好。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '05_generic_lambda.cpp' -o '/tmp/codex_cpp_C_Lambda_05_generic_lambda' && '/tmp/codex_cpp_C_Lambda_05_generic_lambda'
+//
+// === 預期輸出（節錄）===
+// generic lambda：template call operator、duplicate、projection 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

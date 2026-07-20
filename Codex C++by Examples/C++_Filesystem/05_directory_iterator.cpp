@@ -125,3 +125,12 @@ int main()
 // 練習：使用 error_code 版本，回傳「結果 + 是否完整」而非默默忽略錯誤。
 // 複雜度：完整列舉為 O(E)，E 是目錄 entries；每筆 status 查詢還可能增加 I/O。
 // 生命週期：directory_entry 可保存 path/status cache，但外部變更會讓 snapshot 過期；iterator 只在 range 有效。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '05_directory_iterator.cpp' -o '/tmp/codex_cpp_C_Filesystem_05_directory_iterator' && '/tmp/codex_cpp_C_Filesystem_05_directory_iterator'
+//
+// === 預期輸出（節錄）===
+// [實務] filtered one regular .log file
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

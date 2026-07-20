@@ -84,3 +84,14 @@ int main()
 // 或需教學演算法時才手寫。benchmark 必須包含不同 bit density，不能只測單一輸入。
 // 生命週期：兩個函式都只接收 value copy、沒有保存指標或狀態，呼叫結束後沒有懸空風險。
 // 面試延伸：若 CPU 不支援 POPCNT，compiler/runtime library 可能如何實作？
+
+// 【延伸練習】比較逐 bit、Brian Kernighan 與 std::popcount；列出各法迴圈次數與標準版本。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '05_lc_191_hamming_weight.cpp' -o '/tmp/codex_cpp_C_Bit_05_lc_191_hamming_weight' && '/tmp/codex_cpp_C_Bit_05_lc_191_hamming_weight'
+//
+// === 預期輸出（節錄）===
+// [實務] enabled features=3，兩份設定差 2 bits
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

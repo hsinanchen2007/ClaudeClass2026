@@ -69,3 +69,12 @@ int main() {
  * 測試要含 count=0、count=完整長度、兩邊長度不同、超界拒絕。此範例用 assert
  * 表達內部前置條件，公開函式應回 expected/error。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'swap_ranges.cpp' -o '/tmp/codex_cpp_C_Algorithm_modifying_swap_ranges' && '/tmp/codex_cpp_C_Algorithm_modifying_swap_ranges'
+//
+// === 預期輸出（節錄）===
+// swap_ranges：LeetCode 反轉與實務 blue/green 切換測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -68,3 +68,12 @@ int main() {
  * 測試 searcher 最佳化前後只能比較結果，不應假設內部比較次數完全固定。
  * 練習：加入 overlapping pattern `aaaa` / `aa`，列出所有起點。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'search.cpp' -o '/tmp/codex_cpp_C_Algorithm_non_modifying_search' && '/tmp/codex_cpp_C_Algorithm_non_modifying_search'
+//
+// === 預期輸出（節錄）===
+// search：LeetCode 28 與實務 binary magic 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

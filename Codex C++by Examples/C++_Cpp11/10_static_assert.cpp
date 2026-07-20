@@ -67,7 +67,7 @@ void test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】MetricsCounter 型別契約：只允許 unsigned counter，錯誤設定無法實體化。
 namespace practical {
 template <class Counter>
 class MetricsCounter {
@@ -98,3 +98,14 @@ int main() {
     practical_test();
     std::cout << "static_assert：型別契約、陣列串接、計數器測試通過\n";
 }
+
+// 【延伸練習】為固定 wire header 寫型別契約，但不要以 sizeof(struct) 取代逐欄 serialization。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++11 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '10_static_assert.cpp' -o '/tmp/codex_cpp_C_Cpp11_10_static_assert' && '/tmp/codex_cpp_C_Cpp11_10_static_assert'
+//
+// === 預期輸出（節錄）===
+// static_assert：型別契約、陣列串接、計數器測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

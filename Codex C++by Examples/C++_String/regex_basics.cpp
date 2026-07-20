@@ -74,3 +74,20 @@ int main() {
  * - capture group 從 match[1] 開始，match[0] 是整體匹配。
  * 【練習】加入可選 timestamp capture，並驗證缺 timestamp 與錯格式。
  */
+
+/*
+ * 【教科書補充：regex 結果也有生命週期】
+ * - smatch/sub_match 保存來源字串的 iterator；來源銷毀或修改失效後，不可再讀 capture。
+ * - 需要跨 scope 保存 capture 時立即呼叫 `.str()` 取得 owning string；sregex_iterator 也依賴輸入與 regex。
+ * - 標準 regex 沒有適合作為安全邊界的可攜最壞時間保證；不可信輸入要限長、限 pattern 或用線性引擎。
+ * - static regex 省去重複建構，但初始化仍可能丟 regex_error，錯誤策略必須在 API 邊界決定。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'regex_basics.cpp' -o '/tmp/codex_cpp_C_String_regex_basics' && '/tmp/codex_cpp_C_String_regex_basics'
+//
+// === 預期輸出（節錄）===
+// regex basics: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

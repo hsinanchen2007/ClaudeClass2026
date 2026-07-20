@@ -109,3 +109,20 @@ int main() {
  * 【面試】std::forward 做了什麼？條件式 cast，不會自行搬資料；是否搬移由接收端決定。
  * 【練習】為 EventQueue 加 constrained emplace，要求 Event 可由 Args... 建構。
  */
+
+/*
+ * 【教科書補充：哪些 T&& 才是 forwarding reference】
+ * - 必須是當下正在推導、未加 const 的 `T&&`；`const T&&` 與 class-template 已固定 T 的 member `T&&` 都不是。
+ * - braced-init-list、overload set、bit-field 等常無法直接推導，需明確型別、cast 或先存具名物件。
+ * - forward 只做條件式 cast，不延長 lifetime；將 temporary 轉發給會保存 reference 的 API 仍會懸空。
+ * - EventQueue::emplace/last 回傳的 Event& 會在 vector reallocation 後失效，不可跨後續 emplace 保存。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '15_perfect_forwarding.cpp' -o '/tmp/codex_cpp_C_Template_15_perfect_forwarding' && '/tmp/codex_cpp_C_Template_15_perfect_forwarding'
+//
+// === 預期輸出（節錄）===
+// perfect forwarding 測試完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

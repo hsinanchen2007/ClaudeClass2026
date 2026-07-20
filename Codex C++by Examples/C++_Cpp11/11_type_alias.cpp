@@ -67,7 +67,7 @@ void test() {
 }
 }  // namespace leetcode
 
-// 實務案例：下列 practical_* 函式與測試展示工作場景。
+// 【實務案例】權限表：alias 縮短巢狀容器型別並揭示 UserId、PermissionSet 的領域角色。
 namespace practical {
 using UserId = std::string;
 using PermissionSet = std::unordered_set<std::string>;
@@ -100,3 +100,12 @@ int main() {
     practical_test();
     std::cout << "type alias：alias template、cycle detection、ACL 測試通過\n";
 }
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++11 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '11_type_alias.cpp' -o '/tmp/codex_cpp_C_Cpp11_11_type_alias' && '/tmp/codex_cpp_C_Cpp11_11_type_alias'
+//
+// === 預期輸出（節錄）===
+// type alias：alias template、cycle detection、ACL 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

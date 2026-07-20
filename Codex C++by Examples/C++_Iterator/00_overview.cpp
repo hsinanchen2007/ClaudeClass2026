@@ -68,3 +68,12 @@ int main() { basic_example(); leetcode_704_example(); practical_example(); }
 // 工作設計：iterator pair 不擁有資料，呼叫期間 owner 必須活著。若 API 要延後執行，
 // 應傳 owning container、shared ownership，或明確保證 lifetime，而非偷偷保存 iterators。
 // 練習：把 temporary vector 的 begin 存起來後再用，說明 dangling 的原因（不要執行 UB）。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '00_overview.cpp' -o '/tmp/codex_cpp_C_Iterator_00_overview' && '/tmp/codex_cpp_C_Iterator_00_overview'
+//
+// === 預期輸出（節錄）===
+// [實務] generic iterator range counts two positive values
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

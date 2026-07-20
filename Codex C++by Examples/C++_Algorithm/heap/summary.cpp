@@ -204,3 +204,12 @@ int main() {
  * 【最後陷阱】priority_queue 的 Compare 語意常被看反：front 是依 Compare 排在
  * 最後、也就是最高 priority 的元素；用小例子測 comparator 比背名稱可靠。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'summary.cpp' -o '/tmp/codex_cpp_C_Algorithm_heap_summary' && '/tmp/codex_cpp_C_Algorithm_heap_summary'
+//
+// === 預期輸出（節錄）===
+// Heap 家族整合複習完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

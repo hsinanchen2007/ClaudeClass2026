@@ -68,3 +68,12 @@ int main() { basic_example(); leetcode_1929_example(); practical_example(); }
 // output adapter 的 assignment 可能觸發配置或 stream 錯誤，並非天然 noexcept。
 // 若輸出失敗會危害一致性，應先寫暫存結果、驗證後再提交，而非假設 algorithm 原子化。
 // 練習：改用 front_inserter(list) 觀察輸出順序為何反轉。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '02_output_iterator.cpp' -o '/tmp/codex_cpp_C_Iterator_02_output_iterator' && '/tmp/codex_cpp_C_Iterator_02_output_iterator'
+//
+// === 預期輸出（節錄）===
+// [實務] output iterator wrote deterministic line records
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

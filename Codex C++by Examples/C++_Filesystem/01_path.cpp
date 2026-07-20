@@ -81,3 +81,12 @@ int main()
 //
 // 面試快問：`path("a/b")` 成功能否證明檔案存在？不能，constructor 只建立路徑值。
 // 練習：測試 archive.tar.gz、.bashrc、name. 的 stem/extension。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '01_path.cpp' -o '/tmp/codex_cpp_C_Filesystem_01_path' && '/tmp/codex_cpp_C_Filesystem_01_path'
+//
+// === 預期輸出（節錄）===
+// [實務] path composition avoids manual slash bugs
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

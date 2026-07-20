@@ -68,3 +68,12 @@ int main() {
  * 保存上一輪 shuffled。實務還要版本化 seed/experiment id，否則部署改演算法會換組。
  * 面試可手寫 Fisher-Yates，確認 random index 範圍是 [i,N-1] 而不是固定 [0,N-1]。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'shuffle.cpp' -o '/tmp/codex_cpp_C_Algorithm_modifying_shuffle' && '/tmp/codex_cpp_C_Algorithm_modifying_shuffle'
+//
+// === 預期輸出（節錄）===
+// shuffle：LeetCode 384 與實務 A/B 分組測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

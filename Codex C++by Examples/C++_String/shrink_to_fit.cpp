@@ -69,3 +69,12 @@ int main() {
  * 【面試題】為何是 non-binding？實作可能有 SSO、allocator bucket 或保留策略，強制縮小
  * 反而不一定更有效率。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'shrink_to_fit.cpp' -o '/tmp/codex_cpp_C_String_shrink_to_fit' && '/tmp/codex_cpp_C_String_shrink_to_fit'
+//
+// === 預期輸出（節錄）===
+// shrink_to_fit: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -77,3 +77,12 @@ int main()
 // 空間但能直接偵測 duplicate/out-of-range。工程上要依「是否信任輸入」選，而非只追 O(1)。
 // 生命週期：輸入由 const reference 借用；函式不修改資料，也不把 reference/iterator 帶出去。
 // 練習：加入 O(N) 驗證，拒絕 duplicate 與不在 [0,n] 的值。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '07_lc_268_missing_number.cpp' -o '/tmp/codex_cpp_C_Bit_07_lc_268_missing_number' && '/tmp/codex_cpp_C_Bit_07_lc_268_missing_number'
+//
+// === 預期輸出（節錄）===
+// [實務] missing shard id=3
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

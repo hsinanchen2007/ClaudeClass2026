@@ -91,3 +91,12 @@ int main() {
  * 【面試段落】const member function 的 this 型別近似 `T const* const`，不能修改一般成員。
  * 【練習】為 NumberSeries 加 update(index,value)，但必須同步修正受影響的所有 prefix。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '10_as_const.cpp' -o '/tmp/codex_cpp_C_Utility_10_as_const' && '/tmp/codex_cpp_C_Utility_10_as_const'
+//
+// === 預期輸出（節錄）===
+// as_const 測試完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

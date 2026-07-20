@@ -119,3 +119,12 @@ int main()
 // 【面試追問】若只需 count，為何 map 可能更好？每個 key 只需一個節點，更新數字更直接。
 // 【面試追問】何時 reference 還有效但 iterator 失效？rehash 後元素節點仍在，但 bucket 走訪位置重建。
 // 【練習】為 InventoryBag 加 ship_many(sku,n)，不足時不得部分出貨。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'unordered_multiset.cpp' -o '/tmp/codex_cpp_C_Container_unordered_multiset' && '/tmp/codex_cpp_C_Container_unordered_multiset'
+//
+// === 預期輸出（節錄）===
+// unordered_multiset：bag、重複交集與庫存測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

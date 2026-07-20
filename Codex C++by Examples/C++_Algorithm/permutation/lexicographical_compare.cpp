@@ -77,3 +77,12 @@ int main() {
  * 練習：完成完整 SemVer 比較（prerelease、build metadata）；這比整數 vector 多出
  * 規則，應先寫 parser，再把 canonical token 交給明確 comparator。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'lexicographical_compare.cpp' -o '/tmp/codex_cpp_C_Algorithm_permutation_lexicographical_compare' && '/tmp/codex_cpp_C_Algorithm_permutation_lexicographical_compare'
+//
+// === 預期輸出（節錄）===
+// lexicographical_compare：alien order 與版本比較測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

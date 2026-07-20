@@ -113,3 +113,12 @@ int main()
 // 練習：新增 JobId；證明 user_path(JobId{42}) 在 compile time 被拒絕。
 // 複雜度：built-in conversion 常是 O(1)，class conversion 則包含 constructor/operator 的成本。
 // 生命週期：implicit conversion 可能建立只活到 full-expression 結尾的 temporary，勿保存其 reference。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '07_implicit_explicit.cpp' -o '/tmp/codex_cpp_C_Cast_07_implicit_explicit' && '/tmp/codex_cpp_C_Cast_07_implicit_explicit'
+//
+// === 預期輸出（節錄）===
+// [實務] strong UserId path=/users/42
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

@@ -78,3 +78,20 @@ int main() {
  * 保存內容，仍應複製/使用 string。`data()` 不能假設 data()[size()] 是 NUL。
  * 【練習】寫 split_all 回傳 vector<string_view>，並在註解聲明 owner 契約。
  */
+
+/*
+ * 【教科書補充：借用範圍的完整契約】
+ * - owner 被縮短、clear 或 erase 時，舊 view 可能指向已不屬於字串的區段；未重配不等於仍合法。
+ * - remove_prefix/remove_suffix(n) 的前置條件是 n<=size()，違反時是未定義行為。
+ * - vector<string_view> 只是很多借用；原始 string 集合搬移、重配或銷毀後，整批 view 都要重新取得。
+ * - 禁止把 temporary string 傳入會保存/回傳 view 的介面；若無法表達借用關係就複製成 string。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'string_view.cpp' -o '/tmp/codex_cpp_C_String_string_view' && '/tmp/codex_cpp_C_String_string_view'
+//
+// === 預期輸出（節錄）===
+// string_view: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

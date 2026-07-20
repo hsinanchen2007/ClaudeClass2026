@@ -76,3 +76,12 @@ int main() {
  * 練習：加入時間戳，若兩筆間隔不是一小時，輸出每分鐘平均用量；要處理時間倒退
  * 與計量器 overflow，並決定錯誤是回 optional、expected 還是拋例外。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'adjacent_difference.cpp' -o '/tmp/codex_cpp_C_Algorithm_numeric_adjacent_difference' && '/tmp/codex_cpp_C_Algorithm_numeric_adjacent_difference'
+//
+// === 預期輸出（節錄）===
+// adjacent_difference：差分與區間更新測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

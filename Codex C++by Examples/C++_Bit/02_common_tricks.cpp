@@ -102,3 +102,12 @@ Q3：`align_up(value,a)=(value+a-1)&~(a-1)` 何時正確？
 A：a 必須為非零 power of two，而且 `value+a-1` 不得 overflow。一般 alignment 或外部輸入不能直接
 套公式；production API 要驗 preconditions，或使用 checked arithmetic/標準配置工具。
 */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '02_common_tricks.cpp' -o '/tmp/codex_cpp_C_Bit_02_common_tricks' && '/tmp/codex_cpp_C_Bit_02_common_tricks'
+//
+// === 預期輸出（節錄）===
+// [實務] 13 對齊 8-byte boundary 得 16
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

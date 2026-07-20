@@ -103,3 +103,12 @@ int main()
 // 【面試】何時用 unordered_multimap，何時用 unordered_map<Key, vector<Value>>？
 //         前者單筆節點插刪方便；後者整組取得與連續儲存通常更直觀。
 // 【練習】精確刪除 compiler->Ada，不可刪掉 compiler 的其他員工。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'unordered_multimap.cpp' -o '/tmp/codex_cpp_C_Container_unordered_multimap' && '/tmp/codex_cpp_C_Container_unordered_multimap'
+//
+// === 預期輸出（節錄）===
+// unordered_multimap：重複 hash key 與 secondary index 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

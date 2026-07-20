@@ -93,3 +93,20 @@ int main() {
  * 【面試】為何將 Rows/Columns 放模板而非成員？可讓尺寸進型別並支援 constexpr 展開。
  * 【練習】實作只接受相容維度的 Matrix 乘法。
  */
+
+/*
+ * 【教科書補充：NTTP 版本與數值契約】
+ * - 整數、enum、pointer/reference 等 NTTP 早已有之；structural class type 與浮點支援是較晚標準擴充。
+ * - PrefixSum::sum_range 的前置條件是 left<=right<N；本例有效輸入不代表公開 API 可省略驗證。
+ * - prefix 累加仍可能發生 signed overflow；「在編譯期」不會自動變成 arbitrary precision。
+ * - encode 的 Bytes 只決定輸出寬度，超出寬度的高位目前會截斷；協定 API 應先拒絕超界值。
+ */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '09_non_type_template_parameter.cpp' -o '/tmp/codex_cpp_C_Template_09_non_type_template_parameter' && '/tmp/codex_cpp_C_Template_09_non_type_template_parameter'
+//
+// === 預期輸出（節錄）===
+// NTTP 測試完成
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

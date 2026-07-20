@@ -128,3 +128,12 @@ int main()
 // 練習：用 std::lock_guard<std::mutex> 改寫一個 thread-safe counter。
 // 複雜度：wrapper 通常 O(1)，但 acquire/release 可能 syscall、lock contention 或 I/O。
 // 生命週期：resource validity 精確綁 owner scope；move 可轉移，raw handle borrow 不得超過 owner。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '19_RAII.cpp' -o '/tmp/codex_cpp_C_OOP_19_RAII' && '/tmp/codex_cpp_C_OOP_19_RAII'
+//
+// === 預期輸出（節錄）===
+// [實務] RAII transaction rollback/commit 正確
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

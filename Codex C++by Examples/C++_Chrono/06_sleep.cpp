@@ -92,3 +92,12 @@ int main()
 // 練習：以 condition_variable 寫可由 stop flag 提前喚醒的 wait_for。
 // 複雜度：安排一次 sleep 是 O(1) API 呼叫，但 wall latency 至少 requested duration 且可更久。
 // 生命週期：sleep 不替 callback/object 保活；跨等待保存 raw this pointer 仍需 owner/cancellation 設計。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '06_sleep.cpp' -o '/tmp/codex_cpp_C_Chrono_06_sleep' && '/tmp/codex_cpp_C_Chrono_06_sleep'
+//
+// === 預期輸出（節錄）===
+// [實務] absolute periodic deadlines=100/200/300ms
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

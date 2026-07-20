@@ -97,3 +97,12 @@ Q3：bit_cast 後的整數值可直接當網路 byte order 嗎？
 A：不可。object representation 仍依 native endianness；網路協定必須明確 shift/byteswap 成規定順序。
 C++20 `endian` 可檢查平台，但協定 encoding 不應只把 host bytes 原封不動送出。
 */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '04_bit_cast.cpp' -o '/tmp/codex_cpp_C_Bit_04_bit_cast' && '/tmp/codex_cpp_C_Bit_04_bit_cast'
+//
+// === 預期輸出（節錄）===
+// [實務] float 1.0 big-endian bytes=3f 80 00 00
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

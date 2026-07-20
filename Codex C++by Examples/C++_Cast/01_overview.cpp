@@ -82,3 +82,12 @@ int main()
 // 練習：解釋 `double result = 1 / 4;` 為何得到 0.0。
 // 複雜度：numeric/pointer cast 通常是 O(1)，但 user-defined conversion 可執行任意 constructor。
 // 生命週期：cast 不會自動延長來源生命；由 temporary 轉出的 pointer/reference 仍可能懸空。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread '01_overview.cpp' -o '/tmp/codex_cpp_C_Cast_01_overview' && '/tmp/codex_cpp_C_Cast_01_overview'
+//
+// === 預期輸出（節錄）===
+// [實務] 1/4 completion=25%（除法前轉 double）
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

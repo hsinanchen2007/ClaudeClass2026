@@ -146,3 +146,12 @@ int main()
 // 【邊界】兩個 int 都合法，不代表其和或差也能用 int 表示；先提升再做算術。
 // 【面試】reserve 對 iterator 有何影響？呼叫當下若 rehash，舊 iterator 立即失效。
 // 【練習】為 aggregate 輸出依服務名稱排序的 vector 報表。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'unordered_map.cpp' -o '/tmp/codex_cpp_C_Container_unordered_map' && '/tmp/codex_cpp_C_Container_unordered_map'
+//
+// === 預期輸出（節錄）===
+// unordered_map：hash 查找、Two Sum 與指標聚合測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

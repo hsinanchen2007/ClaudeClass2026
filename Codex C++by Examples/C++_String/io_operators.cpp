@@ -96,3 +96,12 @@ int main() {
  * 【面試追問】std::ws 做什麼？依 locale 消耗連續 whitespace，適合在 >> 後接 getline。
  * 【練習】為 LogRecord 實作 operator<<，輸出可再次被 practical_parse_log 讀回。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'io_operators.cpp' -o '/tmp/codex_cpp_C_String_io_operators' && '/tmp/codex_cpp_C_String_io_operators'
+//
+// === 預期輸出（節錄）===
+// I/O operators: tests passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

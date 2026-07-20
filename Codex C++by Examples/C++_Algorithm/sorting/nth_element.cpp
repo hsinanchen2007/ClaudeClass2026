@@ -69,3 +69,12 @@ int main() {
  * 練習：回傳偶數筆的統計 median（中間兩值平均），注意需找兩個 order statistic
  * 與避免整數相加溢位。
  */
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'nth_element.cpp' -o '/tmp/codex_cpp_C_Algorithm_sorting_nth_element' && '/tmp/codex_cpp_C_Algorithm_sorting_nth_element'
+//
+// === 預期輸出（節錄）===
+// nth_element：LC215、median 與 quantile 測試通過
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================

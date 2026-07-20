@@ -339,3 +339,12 @@ int main()
 // 3. 用 reverse iterator 找最後一個符合條件的元素，正確換回正向 iterator。
 // 4. 將 typed input 改成 "1 2 bad 3"，在 iterator 抵達 end 後分辨 eofbit 與 failbit。
 // 5. 替 CountingIterator 加不同型別 sentinel，但不要虛報 random-access 能力。
+
+// ================================================================================
+// 編譯與執行（請先 cd 到本檔所在目錄）:
+// g++ -std=c++20 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -pthread 'summary.cpp' -o '/tmp/codex_cpp_C_Iterator_summary' && '/tmp/codex_cpp_C_Iterator_summary'
+//
+// === 預期輸出（節錄）===
+// Iterator summary: all checks passed
+// 程式正常結束（exit code 0）代表所有 assert／內建檢查均通過。
+// ================================================================================
