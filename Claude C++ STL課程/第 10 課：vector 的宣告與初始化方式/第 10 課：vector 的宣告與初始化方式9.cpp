@@ -1,3 +1,127 @@
+// =============================================================================
+//  第 10 課：vector 的宣告與初始化方式 9  —  本課講義 + CTAD（C++17 型別推導）
+// =============================================================================
+//
+// 【主題資訊 Information】
+//   本檔前半是第 10 課的完整講義（保存在下方區塊註解），
+//   後半是可執行的 CTAD（Class Template Argument Deduction）示範。
+//   CTAD 語法：
+//       std::vector v = {1, 2, 3};          // 推導為 vector<int>
+//       std::vector v(first, last);         // 從迭代器的 value_type 推導
+//   標頭檔：<vector>
+//   標準版本：**CTAD 是 C++17**。本機以 -std=c++14 -pedantic-errors 實測，
+//             `std::vector v = {1,2,3};` 會被拒絕；-std=c++17 才通過。
+//   注意：CTAD 推導的是「類別模板的參數」，
+//         和 auto（推導變數型別）、template argument deduction
+//         （推導函式模板參數）是三件不同的事。
+//
+// 【詳細解釋 Explanation】
+//
+// 【1. C++17 之前為什麼一定要寫出型別】
+//   C++17 之前，函式模板可以推導參數（std::make_pair(1, 2.0) 就是靠這個），
+//   但類別模板不行。所以標準函式庫得為每個類別各寫一個 make_ 工廠函式：
+//       std::make_pair、std::make_tuple、std::make_shared…
+//   這些函式存在的唯一理由，就是「借用函式模板的推導能力」來繞過限制。
+//   C++17 的 CTAD 直接讓類別模板自己會推導，這批 make_ 函式從此
+//   大多只剩相容性價值（std::make_shared 除外——它還負責合併配置）。
+//
+// 【2. CTAD 靠什麼推導：推導指引（deduction guides）】
+//   編譯器會把類別的建構子當成一組候選函式來做重載解析。
+//   `std::vector v = {1, 2, 3};` 匹配到 vector(initializer_list<T>)，
+//   於是 T 推導為 int。
+//   但有些情況建構子本身推不出來，例如從一對迭代器建構——
+//   vector(InputIt, InputIt) 的簽章裡根本沒有 T。
+//   這時就需要標準函式庫明確提供的推導指引：
+//       template<class InputIt, class Alloc = ...>
+//       vector(InputIt, InputIt, Alloc = Alloc())
+//           -> vector<typename iterator_traits<InputIt>::value_type, Alloc>;
+//   這行指引告訴編譯器「用迭代器的 value_type 當 T」。
+//   本檔的 v3 就是走這條路。
+//
+// 【3. CTAD 最容易出意外的地方：括號種類會改變推導結果】
+//   std::vector<int> src = {1, 2, 3};
+//   std::vector a{src};        // 推導成什麼？
+//   直覺會說 vector<vector<int>>（一個含單一元素的巢狀 vector）。
+//   實際上是 vector<int>，也就是 src 的複本。
+//   原因：重載解析時「複製建構子」贏過 initializer_list 建構子。
+//   這個規則讓 `std::vector a{src};` 和 `std::vector a(src);` 結果相同，
+//   算是避免了更大的困惑，但和「大括號一律是元素清單」的直覺相衝。
+//   本檔的 main 有實測。
+//
+// 【4. 什麼時候該用 CTAD、什麼時候不該】
+//   該用：型別從初始值一眼可知，寫出來只是噪音。
+//       std::vector v = {1, 2, 3};
+//       std::pair p{1, "x"};
+//   不該用：型別不明顯，或推導結果可能不是你要的。
+//       std::vector v = {1u, 2, 3};       // 混型別 → 直接編譯失敗（推不出唯一 T）
+//       std::vector v(10, 0);             // 這是 10 個 0 還是兩個元素？寫明比較好
+//   一般準則：CTAD 省的是打字，不該用來省「讀者的理解成本」。
+//
+// 【概念補充 Concept Deep Dive】
+//
+// (A) CTAD 不做隱式轉換的統一
+//     std::vector v = {1, 2, 3.0};    // 編譯失敗
+//     推導 T 時三個元素分別是 int, int, double，無法得到唯一的 T。
+//     編譯器不會「自動升級成 double」——推導失敗就是失敗。
+//     這和 auto 面對 {1, 2, 3.0} 的行為一致（也會失敗）。
+//
+// (B) CTAD 與 auto 的分工
+//     auto v = std::vector<int>{1, 2, 3};   // auto 推導「變數」的型別
+//     std::vector v = {1, 2, 3};            // CTAD 推導「模板參數」
+//     兩者可以合用：auto v = std::vector{1, 2, 3};
+//     但這樣寫沒有好處，反而讓型別完全消失在字面上。
+//
+// (C) C++20 對 CTAD 的擴充
+//     C++20 起，別名模板（alias template）也支援 CTAD，
+//     聚合型別（aggregate）也能推導：
+//         template<class T> struct Box { T value; };
+//         Box b{42};                          // C++20 起合法，推導為 Box<int>
+//     C++17 時這需要自己寫推導指引。
+//
+// 【注意事項 Pay Attention】
+//   1. CTAD 是 C++17。用 -std=c++14 編譯會直接失敗
+//      （驗證方式：加 -pedantic-errors，只用 -fsyntax-only 會被
+//       GCC 當成擴充放行，看起來像舊標準也支援）。
+//   2. std::vector v{other_vector} 推導成「複本」不是「巢狀 vector」——
+//      複製建構子在重載解析中勝過 initializer_list 建構子。
+//   3. 元素型別不一致時 CTAD 直接失敗，不會自動做算術轉換。
+//   4. CTAD 不能只指定部分參數。std::vector<int> v(...) 是明確指定，
+//      std::vector v(...) 是全部推導，沒有中間狀態。
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】CTAD 與 vector 的初始化
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. CTAD 是哪個標準版本引入的？在那之前標準函式庫怎麼繞過限制？
+//     答：C++17。在那之前，類別模板無法推導參數，只有函式模板可以，
+//         所以標準函式庫提供一整批 make_ 工廠函式
+//         （make_pair / make_tuple / make_shared）借用函式模板的推導能力。
+//         C++17 之後這些函式大多只剩相容性用途——
+//         例外是 std::make_shared，它還負責把控制區塊與物件合併成一次配置。
+//     追問：怎麼驗證某個語法屬於哪個標準？
+//         → 用 g++ -std=c++14 -pedantic-errors 編譯看它拒不拒絕。
+//           只用 -fsyntax-only 不夠，GCC 會把很多新特性當擴充放行。
+//
+// 🔥 Q2. `std::vector<int> src = {1,2,3}; std::vector a{src};`
+//        a 的型別是什麼？
+//     答：vector<int>，內容是 src 的複本（三個元素 1,2,3）。
+//         不是 vector<vector<int>>。因為重載解析時複製建構子
+//         勝過 initializer_list 建構子。
+//     追問：那 std::vector a{src, src}; 呢？
+//         → 兩個元素，型別是 vector<vector<int>>。
+//           兩個引數無法匹配複製建構子，才走 initializer_list。
+//
+// ⚠️ 陷阱. `std::vector v = {1, 2, 3.0};` 為什麼編譯失敗？
+//         明明 int 可以隱式轉成 double，編譯器自動選 double 不就好了？
+//     答：CTAD 的推導不做「找一個大家都能轉過去的共同型別」這件事。
+//         它把 initializer_list<T> 的 T 拿三個元素分別去推，
+//         得到 int、int、double 三個互相矛盾的結果 → 推導失敗 → 編譯錯誤。
+//         想要 double 就自己寫明：std::vector<double> v = {1, 2, 3.0};
+//     為什麼會錯：把 CTAD 想成「智慧型別選擇」。它其實只是
+//         模板參數推導，規則是「所有推導結果必須完全一致」，
+//         一旦不一致就放棄，不會試圖調解。
+//         auto x = {1, 2, 3.0}; 失敗的原因完全相同。
+// ═══════════════════════════════════════════════════════════════════════════
+
 /*
 # 第二階段：序列容器 — vector
 
@@ -314,16 +438,161 @@ int main() {
 
 #include <vector>
 #include <iostream>
+#include <string>
+#include <list>
+#include <type_traits>
+
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】—— 本檔刻意不放
+//   理由：CTAD 純粹是「宣告變數時少打幾個字」的語法便利，
+//   不改變任何執行期行為，也不影響演算法的正確性或複雜度。
+//   LeetCode 的評分只看輸入輸出，沒有一題的難點會落在型別推導上
+//   （實際上 LeetCode 的函式簽章都由平台給定、型別全部寫死，
+//     連用 CTAD 的機會都沒有）。
+//   硬掛一題只會讓讀者誤以為 CTAD 有演算法上的意義，所以從缺。
+// -----------------------------------------------------------------------------
+
+// -----------------------------------------------------------------------------
+// 【日常實務範例】用 CTAD 讓「查表初始化」的宣告不再囉唆
+//   情境：程式裡常有一批寫死的對照表——HTTP 狀態碼說明、
+//         副檔名對 MIME type、錯誤碼對訊息。
+//   為什麼用到本主題：這種表的型別從初始值一眼可知，
+//     把 std::vector<std::pair<int, std::string>> 完整寫出來只是噪音。
+//     CTAD 正是為這種場合設計的。
+//   分寸：下面同時示範「該用」與「不該用」——狀態表用 CTAD 很清爽；
+//     但需要明確控制型別（例如要 double 而初始值全寫成整數）時，
+//     就必須寫明，不能依賴推導。
+// -----------------------------------------------------------------------------
+void demoConfigTables() {
+    using namespace std::string_literals;   // 讓 "..."s 產生 std::string
+
+    // CTAD：推導為 vector<pair<int, string>>，一眼可知，不必寫型別
+    std::vector statusTable = {
+        std::pair{200, "OK"s},
+        std::pair{404, "Not Found"s},
+        std::pair{500, "Internal Server Error"s},
+    };
+
+    std::cout << "HTTP 狀態表（CTAD 推導）:\n";
+    for (const auto& [code, text] : statusTable) {     // 結構化繫結，C++17
+        std::cout << "  " << code << " -> " << text << "\n";
+    }
+
+    // 反例：想要 double，但初始值都寫成整數 → CTAD 會推成 vector<int>
+    std::vector wrong = {1, 2, 3};              // vector<int>
+    std::vector<double> right = {1, 2, 3};      // 明確指定 → vector<double>
+    std::cout << "CTAD  {1,2,3} 的元素是 double 嗎: " << std::boolalpha
+              << std::is_same_v<decltype(wrong)::value_type, double> << "\n";
+    std::cout << "明確寫 vector<double> 的元素是 double 嗎: "
+              << std::is_same_v<decltype(right)::value_type, double> << "\n";
+    std::cout << "→ 型別不是「一眼可知」時就該寫明，別依賴 CTAD\n";
+}
 
 int main() {
     // C++17 之前必須寫：std::vector<int> v = {1, 2, 3};
     // C++17 可以讓編譯器推導：
     std::vector v1 = {1, 2, 3};       // 推導為 vector<int>
     std::vector v2 = {1.5, 2.5, 3.5}; // 推導為 vector<double>
-    
-    // 從迭代器推導
+
+    // 從迭代器推導（靠標準函式庫提供的推導指引，取 iterator 的 value_type）
     std::vector<int> source = {10, 20, 30};
     std::vector v3(source.begin(), source.end());  // 推導為 vector<int>
-    
+
+    std::cout << "=== CTAD 基本推導（C++17）===\n";
+    std::cout << std::boolalpha;
+    std::cout << "v1 = {1, 2, 3}         推導成 vector<int>?    "
+              << std::is_same_v<decltype(v1), std::vector<int>>
+              << "  size=" << v1.size() << "\n";
+    std::cout << "v2 = {1.5, 2.5, 3.5}   推導成 vector<double>? "
+              << std::is_same_v<decltype(v2), std::vector<double>>
+              << "  size=" << v2.size() << "\n";
+    std::cout << "v3(begin, end)         推導成 vector<int>?    "
+              << std::is_same_v<decltype(v3), std::vector<int>>
+              << "  size=" << v3.size() << "\n";
+
+    std::cout << "\n=== 從別種容器的迭代器推導 ===\n";
+    {
+        std::list<std::string> names = {"alice", "bob", "carol"};
+        std::vector fromList(names.begin(), names.end());   // 推導為 vector<string>
+        std::cout << "從 list<string> 的迭代器推導成 vector<string>? "
+                  << std::is_same_v<decltype(fromList), std::vector<std::string>> << "\n";
+        std::cout << "內容: ";
+        for (const auto& s : fromList) std::cout << s << " ";
+        std::cout << "\n";
+    }
+
+    std::cout << "\n=== 陷阱：大括號包住另一個 vector，推導出什麼？ ===\n";
+    {
+        std::vector<int> src = {1, 2, 3};
+
+        std::vector a{src};        // 直覺：vector<vector<int>>？
+        std::vector b(src);        // 明顯是複製建構
+
+        std::cout << "std::vector a{src} 是 vector<int>（= src 的複本）嗎? "
+                  << std::is_same_v<decltype(a), std::vector<int>> << "\n";
+        std::cout << "  a.size()=" << a.size() << " 內容: ";
+        for (int x : a) std::cout << x << " ";
+        std::cout << "\n";
+        std::cout << "  → 不是 vector<vector<int>>！複製建構子在重載解析中\n";
+        std::cout << "    勝過 initializer_list 建構子，所以 a{src} 等同 a(src)。\n";
+        std::cout << "std::vector b(src) 的 size=" << b.size() << "（兩者一致）\n";
+
+        // 兩個引數無法匹配複製建構子，這時才走 initializer_list
+        std::vector c{src, src};
+        std::cout << "std::vector c{src, src} 是 vector<vector<int>> 嗎? "
+                  << std::is_same_v<decltype(c), std::vector<std::vector<int>>> << "\n";
+        std::cout << "  c.size()=" << c.size() << "（兩個元素，每個都是一整個 vector）\n";
+    }
+
+    std::cout << "\n=== 推導失敗的情況（已註解，寫出來會編譯錯誤）===\n";
+    std::cout << "std::vector v = {1, 2, 3.0};   // 錯誤：推出 int/int/double，不唯一\n";
+    std::cout << "CTAD 不會自動找共同型別，推導結果不一致就直接放棄。\n";
+    std::cout << "要 double 請自己寫明: std::vector<double> v = {1, 2, 3.0};\n";
+    {
+        std::vector<double> ok = {1, 2, 3.0};   // 明確指定就沒問題
+        std::cout << "明確指定的版本 size=" << ok.size() << " 首元素=" << ok[0] << "\n";
+    }
+
+    std::cout << "\n=== 日常實務：查表初始化該不該用 CTAD ===\n";
+    demoConfigTables();
+
     return 0;
 }
+
+// 編譯: g++ -std=c++17 -Wall -Wextra 第 10 課：vector 的宣告與初始化方式9.cpp -o demo9
+// ⚠️ 本檔必須用 C++17（或更新）—— CTAD 是 C++17 特性。
+//    以 g++ -std=c++14 -pedantic-errors 編譯會被明確拒絕。
+
+// === 預期輸出 ===
+// === CTAD 基本推導（C++17）===
+// v1 = {1, 2, 3}         推導成 vector<int>?    true  size=3
+// v2 = {1.5, 2.5, 3.5}   推導成 vector<double>? true  size=3
+// v3(begin, end)         推導成 vector<int>?    true  size=3
+//
+// === 從別種容器的迭代器推導 ===
+// 從 list<string> 的迭代器推導成 vector<string>? true
+// 內容: alice bob carol
+//
+// === 陷阱：大括號包住另一個 vector，推導出什麼？ ===
+// std::vector a{src} 是 vector<int>（= src 的複本）嗎? true
+//   a.size()=3 內容: 1 2 3
+//   → 不是 vector<vector<int>>！複製建構子在重載解析中
+//     勝過 initializer_list 建構子，所以 a{src} 等同 a(src)。
+// std::vector b(src) 的 size=3（兩者一致）
+// std::vector c{src, src} 是 vector<vector<int>> 嗎? true
+//   c.size()=2（兩個元素，每個都是一整個 vector）
+//
+// === 推導失敗的情況（已註解，寫出來會編譯錯誤）===
+// std::vector v = {1, 2, 3.0};   // 錯誤：推出 int/int/double，不唯一
+// CTAD 不會自動找共同型別，推導結果不一致就直接放棄。
+// 要 double 請自己寫明: std::vector<double> v = {1, 2, 3.0};
+// 明確指定的版本 size=3 首元素=1
+//
+// === 日常實務：查表初始化該不該用 CTAD ===
+// HTTP 狀態表（CTAD 推導）:
+//   200 -> OK
+//   404 -> Not Found
+//   500 -> Internal Server Error
+// CTAD  {1,2,3} 的元素是 double 嗎: false
+// 明確寫 vector<double> 的元素是 double 嗎: true
+// → 型別不是「一眼可知」時就該寫明，別依賴 CTAD

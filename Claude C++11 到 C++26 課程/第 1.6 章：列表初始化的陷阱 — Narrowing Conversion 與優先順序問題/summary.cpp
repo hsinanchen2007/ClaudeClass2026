@@ -1,7 +1,138 @@
 // ============================================================================
 // 第 1.6 章：列表初始化的陷阱 — Narrowing Conversion 與優先順序問題（總複習）
 // ============================================================================
+//
+// 【主題資訊 Information】
+//   主題    ：{} 列表初始化的十大陷阱（窄化轉換、重載優先權、生命週期）
+//   標準版本：列表初始化 / initializer_list      C++11
+//             auto x{42} 推導為 int              C++17（N3922）
+//             CTAD（vector v{1,2,3}）             C++17
+//             保證的複製省略（guaranteed copy elision）C++17
+//   標頭檔  ：<initializer_list>、<vector>、<string>
+//   複雜度  ：語法特性；重載決議發生於編譯期，執行期無額外成本
+//   本檔宣告的標準：C++17
+//
+// 【詳細解釋 Explanation】
+//
+// 【1. 為什麼「更安全的 {}」反而有一整章陷阱】
+//   {} 被設計來解決舊語法的問題（防窄化、避開 Most Vexing Parse），
+//   但它同時引入了一條新的重載決議路徑。
+//   結果是：{} 在「安全性」上是進步的，在「可預測性」上卻多了一層規則。
+//   本章的十大陷阱幾乎都源自同一個根：
+//       「{} 不是 () 的同義詞，它走不同的決議規則。」
+//
+// 【2. 窄化轉換：{} 唯一「多做事」的地方】
+//   標準明確列舉哪些轉換屬於窄化（narrowing）：
+//     * 浮點 → 整數（一律算窄化，即使值是 3.0）
+//     * 整數 → 浮點（若無法精確表示）
+//     * 較寬整數 → 較窄整數（若值不可表示）
+//   關鍵豁免：若來源是「編譯期常數」且值可被目標型別精確表示，就不算窄化。
+//       int  a{3.0};   // ❌ 錯誤 — double → int 一律窄化
+//       char b{65};    // ✅ 可以 — 常數 65 在 char 範圍內
+//       char c{300};   // ❌ 錯誤 — 300 超出 char 範圍
+//   這條豁免解釋了為什麼「有時 {} 擋得住、有時擋不住」：
+//   關鍵在於編譯器能不能在編譯期知道那個值。
+//
+// 【3. initializer_list 的絕對優先權（最容易出事的一條）】
+//   重載決議對 {} 有特例：只要有任何 initializer_list 建構子可行，
+//   它就勝過所有其他建構子 —— 即使其他建構子是更精確的匹配。
+//       std::vector<int> v1(5, 10);   // 5 個 10
+//       std::vector<int> v2{5, 10};   // 2 個元素 [5, 10]
+//   更隱蔽的版本是「隱式轉換也算可行」：
+//       std::vector<double> v{1, 2};  // int 可轉 double → 仍走 initializer_list
+//
+// 【4. 生命週期：initializer_list 不擁有資料】
+//   {1,2,3} 背後是編譯器產生的「後備陣列」，而 initializer_list 只是它的 view。
+//   陣列壽命 = list 物件壽命，因此回傳它或存成成員都會懸空。
+//   本檔保留了一個 dangerousReturn() 作為教材，但刻意「只定義、不呼叫」——
+//   因為呼叫它就會執行未定義行為，而 UB 沒有可展示的固定結果。
+//
+// 【概念補充 Concept Deep Dive】
+//
+// (A) 為什麼窄化檢查只在 {} 生效
+//     = 與 () 沿用 C 的隱式轉換規則，那是為了向後相容而不能改的歷史包袱。
+//     C++11 需要一個「新的、可以嚴格一點」的語法入口，{} 正好是全新的，
+//     沒有既有程式碼依賴它的行為，因此可以安全地加上嚴格檢查。
+//     這是 C++ 演進的典型手法：不改舊語法，而是給新語法更好的預設。
+//
+// (B) 「編譯期常數」豁免的實務意義
+//     char c{65}; 能過，但下面這段不能：
+//         int n = readFromConfig();   // 執行期才知道
+//         char c{n};                  // ❌ 錯誤：編譯器無法保證 n 在範圍內
+//     這代表 {} 的保護只涵蓋「編譯期已知」的值。
+//     從設定檔、網路、使用者輸入來的資料，仍然必須自己做範圍檢查 ——
+//     {} 不是執行期的安全網。
+//
+// (C) auto + {} 的版本差異（本檔為 C++17）
+//       auto a = {1, 2, 3};   // initializer_list<int>（所有版本）
+//       auto b{42};           // C++11/14：initializer_list<int>
+//                             // C++17 起：int   ← 本檔採用此規則
+//       auto c = {42};        // initializer_list<int>（所有版本）
+//     C++17 的 N3922 規則：直接列表初始化（無 =）且單一元素 → 推導為元素型別；
+//     複製列表初始化（有 =）→ 仍為 initializer_list。
+//
+// (D) 聚合部分初始化的保證
+//     Aggregate a{1}; 未列出的成員會被「值初始化」（歸零），不是垃圾值。
+//     這是標準的明文保證，可以放心依賴。
+//     ※ 本檔此處會產生 -Wmissing-field-initializers 警告，
+//       那是 GCC 在提醒「你有成員沒寫」，而我們正是要示範這條規則，
+//       故刻意保留，屬教材的一部分而非缺陷。
+//
+// 【注意事項 Pay Attention】
+//   1. {} 的窄化檢查只對「編譯期已知」的值有效；執行期資料仍須自行驗證。
+//   2. vector<int> v(5,10) 與 v{5,10} 語意完全不同，改寫時務必留意。
+//   3. initializer_list 建構子的優先權是絕對的，隱式轉換也算「可行」。
+//   4. 絕不要回傳或儲存 initializer_list —— 會懸空，後續使用屬未定義行為，
+//      其表現不固定（可能看似正常、可能讀到垃圾、也可能崩潰），不可依賴。
+//   5. auto x{42} 在本檔（C++17）是 int；C++11/14 則是 initializer_list<int>。
+//   6. 本檔刻意保留 3 個 -Wmissing-field-initializers 與 1 個
+//      -Winit-list-lifetime 警告作為教材；dangerousReturn() 只定義不呼叫，
+//      因此程式執行過程中不會真的觸發未定義行為。
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】列表初始化的陷阱
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 為什麼 int x{3.0}; 編譯不過，但 char c{65}; 可以？
+//     答：浮點 → 整數一律被標準列為窄化轉換，即使 3.0 沒有小數部分也一樣。
+//         而 char c{65}; 有豁免：來源是編譯期常數且 65 在 char 範圍內，
+//         編譯器能證明不會失真，所以不算窄化。
+//     追問：char c{300}; 呢？→ 編譯錯誤，300 超出 char 表示範圍，豁免不成立。
+//         再追問：int n = 讀設定(); char c{n}; → 也是錯誤，因為 n 執行期才知道，
+//         編譯器無法證明它安全。
+//
+// 🔥 Q2. std::vector<double> v{1, 2}; 會呼叫哪個建構子？
+//     答：initializer_list<double> 版本。雖然 1 和 2 是 int，
+//         但 int → double 是可行的隱式轉換，所以 initializer_list 建構子「可行」，
+//         而只要它可行就擁有絕對優先權。結果是 2 個元素 [1.0, 2.0]。
+//     追問：那要怎麼建立「2 個元素、每個都是 1.0」的 vector？→ 只能用 ()：
+//         std::vector<double> v(2, 1.0);
+//
+// 🔥 Q3. 為什麼不能從函式回傳 std::initializer_list？
+//     答：它只是編譯器生成之後備陣列的 view，不擁有資料。
+//         函式返回時後備陣列即銷毀，回傳的 view 隨即懸空，
+//         使用它屬未定義行為（GCC 會給 -Winit-list-lifetime 警告）。
+//     追問：正確作法？→ 回傳擁有資料的容器，例如 std::vector<int>，
+//         寫 return {1,2,3}; 讓 vector 複製一份自己的資料。
+//
+// ⚠️ 陷阱 1. 「{} 比較安全，所以應該全面改用 {}」對嗎？
+//     答：不完全對。{} 在防窄化與避開 Most Vexing Parse 上確實更安全，
+//         但它會改變重載決議 —— 對有 initializer_list 建構子的型別
+//         （vector/map 等），把 () 換成 {} 是語意改變，不是風格調整。
+//     為什麼會錯：把 {} 當成「比較新的括號」。
+//         正確心智模型是：{} 是一條獨立的初始化路徑，不是 () 的同義詞。
+//
+// ⚠️ 陷阱 2. Aggregate a{1}; 其餘成員是垃圾值嗎？
+//     答：不是。標準保證未列出的成員會被「值初始化」——
+//         算術型別歸零、指標為 nullptr、類別型別呼叫其預設建構子。
+//     為什麼會錯：把它類比成 C 的區域變數「未初始化 = 垃圾值」。
+//         但聚合初始化只要出現了 {}，就啟動了值初始化的保證，
+//         這是可以安心依賴的行為。
+// ═══════════════════════════════════════════════════════════════════════════
+//
 // 編譯指令: g++ -std=c++17 -Wall -Wextra -o summary summary.cpp
+//   註：本檔會出現 3 個 -Wmissing-field-initializers 與 1 個 -Winit-list-lifetime
+//       警告，皆為刻意保留的教材內容（示範聚合部分初始化與懸空 view），
+//       非程式缺陷；dangerousReturn() 只定義不呼叫，執行時不會觸發 UB。
 //
 // 本檔案是第 1.6 章的完整總複習，涵蓋列表初始化（brace initialization）的
 // 十大常見陷阱，包含完整可編譯的程式碼範例與詳盡的中文註解。
@@ -15,6 +146,7 @@
 #include <type_traits>
 #include <map>
 #include <cstdint>
+#include <algorithm>
 
 // ============================================================================
 // 【陷阱 1】initializer_list 建構子的優先順序
@@ -132,7 +264,7 @@ void demo_trap2_narrowing_conversion()
     double d = 3.14;
 
     int a(d);       // 合法：使用 () 不會禁止窄化，a = 3（截斷小數）
-    int b = d;      // 合法：使用 = 不會禁止窄化，b = 3
+    [[maybe_unused]] int b = d;      // 合法：使用 = 不會禁止窄化，b = 3
     // int c{d};    // 編譯錯誤！d 是 double 變數，{} 禁止窄化轉換
     // int e = {d}; // 編譯錯誤！同上
 
@@ -150,7 +282,7 @@ void demo_trap2_narrowing_conversion()
     long long big = 1000;
 
     int i1(big);     // 合法：使用 () 不會報錯
-    int i2 = big;    // 合法：使用 = 不會報錯
+    [[maybe_unused]] int i2 = big;    // 合法：使用 = 不會報錯
     // int i3{big};  // 編譯錯誤！即使 big 的值 1000 放得進 int，
                      // 但 big 是變數（非常量表達式），編譯器無法保證安全
 
@@ -167,10 +299,10 @@ void demo_trap2_narrowing_conversion()
     int negative = -1;
 
     unsigned u1(negative);    // 合法但危險：-1 變成一個非常大的無號數
-    unsigned u2 = negative;   // 合法但危險：同上
+    [[maybe_unused]] unsigned u2 = negative;   // 合法但危險：同上
     // unsigned u3{negative}; // 編譯錯誤！{} 禁止有號→無號的窄化
 
-    unsigned u4{0};           // 合法：0 是常量且在無號範圍內
+    [[maybe_unused]] unsigned u4{0};           // 合法：0 是常量且在無號範圍內
     // unsigned u5{-1};       // 編譯錯誤！-1 是負數常量，不在 unsigned 範圍內
 
     std::cout << "unsigned u1(-1)   = " << u1 << "  ← () 允許，但值是垃圾\n";
@@ -182,7 +314,7 @@ void demo_trap2_narrowing_conversion()
     int* ptr = nullptr;
 
     bool b1(ptr);    // 合法：指標隱式轉換為 bool
-    bool b2 = ptr;   // 合法：同上
+    [[maybe_unused]] bool b2 = ptr;   // 合法：同上
     // bool b3{ptr}; // 編譯錯誤！C++11 禁止指標→bool 的窄化轉換
 
     std::cout << "bool b1(nullptr) = " << std::boolalpha << b1 << "  ← () 允許\n";
@@ -761,6 +893,88 @@ void demo_trap10_nested_braces()
 // 主程式：依序展示所有十大陷阱
 // ============================================================================
 
+// ============================================================================
+// 【LeetCode 實戰範例】LeetCode 973. K Closest Points to Origin
+//   題目：給定平面上的點，回傳距離原點最近的 k 個點。
+//   為什麼用到本主題：
+//     這題的輸入與輸出都是 vector<vector<int>>，全程與列表初始化正面遭遇：
+//       (a) 回傳 {p[0], p[1]} 就地建構結果元素 —— {} 最自然的用途；
+//       (b) 距離用 long long 累加，避免 int 溢位；若寫成
+//           int d{p[0]*p[0] + p[1]*p[1]}; 在座標大時會溢位，
+//           而且 {} 也擋不住（那是溢位不是窄化，屬兩回事）——
+//           這正好示範「{} 的保護有邊界」。
+//   複雜度：時間 O(n log n)（排序），空間 O(n)
+// ============================================================================
+std::vector<std::vector<int>> kClosest(std::vector<std::vector<int>> points, int k)
+{
+    if (k <= 0 || points.empty()) return {};                 // {} = 空結果
+
+    // 用 long long 算平方距離：座標達 1e4 時 x*x+y*y 會超出 int 範圍
+    std::sort(points.begin(), points.end(),
+              [](const std::vector<int>& a, const std::vector<int>& b) {
+                  long long da = 1LL * a[0] * a[0] + 1LL * a[1] * a[1];
+                  long long db = 1LL * b[0] * b[0] + 1LL * b[1] * b[1];
+                  return da < db;
+              });
+
+    std::vector<std::vector<int>> out;
+    int take = (k < static_cast<int>(points.size()))
+                   ? k : static_cast<int>(points.size());
+    for (int i = 0; i < take; ++i) {
+        out.push_back({points[i][0], points[i][1]});         // {} 就地建構
+    }
+    return out;
+}
+
+// ============================================================================
+// 【日常實務範例 1】感測器封包解析 — {} 擋得住什麼、擋不住什麼
+//   情境：從裝置收到的原始讀數是 double（例如 23.7 度），
+//         但下游的儲存格式是 int16_t（節省頻寬）。
+//   為什麼用到本主題：
+//     這是實務上最容易「靜默失真」的地方。本例對照三種寫法，
+//     並示範 {} 的保護邊界：編譯期常數擋得住，執行期資料擋不住。
+// ============================================================================
+struct SensorReading {
+    std::int16_t temperatureCentiC;   // 溫度，單位 0.01°C
+    std::int16_t humidityPercent;
+    std::uint8_t batteryPercent;
+};
+
+// 安全轉換：執行期資料必須自己檢查範圍（{} 在這裡幫不了忙）
+bool toCentiCelsius(double celsius, std::int16_t& out)
+{
+    double centi = celsius * 100.0;
+    if (centi < -32768.0 || centi > 32767.0) return false;   // 自行做範圍把關
+    out = static_cast<std::int16_t>(centi);                  // 明確轉換
+    return true;
+}
+
+// ============================================================================
+// 【日常實務範例 2】容器初始化的經典災難 — 誤把 {} 當 ()
+//   情境：要預先配置一個「有 N 個預設值」的緩衝區。
+//         這是 {} vs () 差異在真實專案裡最常造成 bug 的形式。
+//   為什麼用到本主題：
+//     buffer{1024} 只會得到「1 個元素、值為 1024」，
+//     而非預期的「1024 個元素」。程式編得過、跑得動，
+//     直到寫入第 2 個位置才越界 —— 而那可能是上線之後的事。
+// ============================================================================
+void demonstrateBufferBug()
+{
+    const std::size_t kBufferSize = 1024;
+
+    std::vector<int> correct(kBufferSize);      // ✅ () → 1024 個元素，全為 0
+    std::vector<int> wrong{kBufferSize};        // ❌ {} → 1 個元素，值為 1024
+
+    std::cout << "  預期配置 " << kBufferSize << " 個元素的緩衝區：\n";
+    std::cout << "    std::vector<int> buf(1024);  → size = "
+              << correct.size() << "  ✅ 正確\n";
+    std::cout << "    std::vector<int> buf{1024};  → size = "
+              << wrong.size() << "     ❌ 只有 1 個元素，值是 1024\n";
+    std::cout << "    後者寫入 buf[1] 就已越界，屬未定義行為，\n";
+    std::cout << "    但不保證當場崩潰 —— 常常要到上線後才以奇怪的方式浮現。\n";
+}
+
+// ============================================================================
 int main()
 {
     std::cout << std::boolalpha;
@@ -796,5 +1010,291 @@ int main()
     std::cout << "10. 嵌套 {} 適合初始化複合型別，但不要過度嵌套\n";
     std::cout << "\n";
 
+    // ========================================================================
+    // 【LeetCode 實戰】973. K Closest Points to Origin
+    // ========================================================================
+    std::cout << "================================================================\n";
+    std::cout << " 【LeetCode 973】K Closest Points to Origin\n";
+    std::cout << "================================================================\n\n";
+    {
+        // 巢狀 {} 把測資寫成「點的清單」，形狀一目了然
+        std::vector<std::vector<int>> pts{{1, 3}, {-2, 2}, {5, 8}, {0, 1}};
+        std::vector<std::vector<int>> ans = kClosest(pts, 2);
+
+        std::cout << "輸入點: (1,3) (-2,2) (5,8) (0,1)，取最近 2 個\n";
+        std::cout << "結果  : ";
+        for (const auto& p : ans) std::cout << "(" << p[0] << "," << p[1] << ") ";
+        std::cout << "\n";
+        std::cout << "k 超過點數時的保護: k=99 → 回傳 "
+                  << kClosest(pts, 99).size() << " 個點（全部）\n";
+        std::cout << "k=0 → 回傳 " << kClosest(pts, 0).size()
+                  << " 個點（return {}; 表示空結果）\n\n";
+        std::cout << "重點：距離用 long long 累加。若寫成 int 並以 {} 初始化，\n";
+        std::cout << "      座標大時會「溢位」而非「窄化」，{} 擋不住 ——\n";
+        std::cout << "      這說明 {} 的保護只涵蓋型別轉換，不涵蓋算術溢位。\n\n";
+    }
+
+    // ========================================================================
+    // 【日常實務 1】感測器封包：{} 的保護邊界
+    // ========================================================================
+    std::cout << "================================================================\n";
+    std::cout << " 【日常實務 1】感測器封包 — {} 的保護邊界\n";
+    std::cout << "================================================================\n\n";
+    {
+        // 編譯期常數：{} 全程把關，任何失真都會編譯失敗
+        SensorReading r{2370, 55, 87};
+        std::cout << "編譯期常數初始化（{} 有保護）：\n";
+        std::cout << "  溫度 " << r.temperatureCentiC / 100.0 << "°C, 濕度 "
+                  << r.humidityPercent << "%, 電量 "
+                  << static_cast<int>(r.batteryPercent) << "%\n";
+        std::cout << "  若寫成 SensorReading{2370.5, 55, 87} → 編譯錯誤（窄化）\n";
+        std::cout << "  若寫成 SensorReading{99999, 55, 87} → 編譯錯誤（超出 int16_t）\n\n";
+
+        // 執行期資料：{} 幫不上忙，必須自己檢查
+        std::cout << "執行期資料（{} 沒有保護，須自行驗證）：\n";
+        const double samples[] = {23.7, -12.34, 400.0};
+        for (std::size_t i = 0; i < 3; ++i) {
+            std::int16_t centi{0};
+            bool ok = toCentiCelsius(samples[i], centi);
+            std::cout << "  " << samples[i] << "°C → "
+                      << (ok ? "接受" : "拒絕（超出 int16_t 範圍）");
+            if (ok) std::cout << "，存為 " << centi;
+            std::cout << "\n";
+        }
+        std::cout << "\n  結論：{} 只在「編譯期已知值」時擋得住失真。\n";
+        std::cout << "        來自設定檔／網路／使用者的資料仍須自行做範圍檢查。\n\n";
+    }
+
+    // ========================================================================
+    // 【日常實務 2】緩衝區配置的經典災難
+    // ========================================================================
+    std::cout << "================================================================\n";
+    std::cout << " 【日常實務 2】vector 緩衝區：{} 與 () 的致命差異\n";
+    std::cout << "================================================================\n\n";
+    demonstrateBufferBug();
+    std::cout << "\n";
+
     return 0;
 }
+
+// 編譯: g++ -std=c++17 -Wall -Wextra "summary.cpp" -o narrowing_summary
+
+// === 預期輸出 ===
+// ================================================================
+//  第 1.6 章 總複習：列表初始化的陷阱 — 十大陷阱完整展示
+// ================================================================
+//
+// ===== 【陷阱 1】initializer_list 建構子的優先順序 =====
+//
+// Container c1(5);        →   Container(size_t size=5)
+// Container c2{5};        →   Container(initializer_list<int>, size=1, values={5})
+// Container c3(5, 10);    →   Container(size_t size=5, int value=10)
+// Container c4{5, 10};    →   Container(initializer_list<int>, size=2, values={5, 10})
+// Container c5({5, 10});  →   Container(initializer_list<int>, size=2, values={5, 10})
+//
+// ===== 【陷阱 2】窄化轉換 =====
+//
+// --- 2.1 浮點數 → 整數 ---
+// int a(3.14) = 3  ← () 允許，但截斷小數
+// int f{3}    = 3  ← {} 允許，整數常量無損失
+// int c{d};        ← 編譯錯誤！{} 禁止 double→int 窄化
+//
+// --- 2.2 大整數 → 小整數 ---
+// int i1(big)  = 1000  ← () 允許
+// int i4{100LL} = 100 ← {} 允許，常量在 int 範圍內
+// int i3{big};       ← 編譯錯誤！big 是變數，即使值放得下
+//
+// --- 2.3 有號 ↔ 無號 轉換 ---
+// unsigned u1(-1)   = 4294967295  ← () 允許，但值是垃圾
+// unsigned u3{negative}; ← 編譯錯誤！{} 禁止有號→無號窄化
+//
+// --- 2.4 指標 → bool ---
+// bool b1(nullptr) = false  ← () 允許
+// bool b3{ptr};          ← 編譯錯誤！{} 禁止指標→bool
+//
+// ===== 【陷阱 3】auto 與大括號的推導規則 =====
+//
+// --- auto = {...} ---
+// auto a = {1, 2, 3}; → initializer_list<int>, size=3
+// auto b = {42};      → initializer_list<int>, size=1
+//
+// --- auto x{value} (C++17 改變) ---
+// auto c{42}; → type is int, value=42
+//
+// --- 對比表 ---
+// 語法              C++11/14               C++17
+// auto x = {1,2,3}  initializer_list<int>  initializer_list<int>
+// auto x = {42}     initializer_list<int>  initializer_list<int>
+// auto x{42}        initializer_list<int>  int
+// auto x{1,2,3}     initializer_list<int>  編譯錯誤
+//
+// ===== 【陷阱 4】空大括號 {} 的歧義 =====
+//
+// --- Widget（有 initializer_list 建構子）---
+// Widget w1;      →   Widget() 預設建構子
+// Widget w2{};    →   Widget() 預設建構子
+// Widget w3({});  →   Widget(initializer_list<int>, size=0)
+// Widget w4{{}}; →   Widget(initializer_list<int>, size=1)
+//
+// --- Gadget（無 initializer_list 建構子）---
+// Gadget g1;      →   Gadget() 預設建構子
+// Gadget g2{};    →   Gadget() 預設建構子
+//
+// --- std::vector 的空大括號陷阱 ---
+// vector<int> v1;     size = 0
+// vector<int> v2{};   size = 0
+// vector<int> v3({}); size = 0
+// vector<int> v4{{}}; size = 1 (元素值: 0) ← 不是空的！
+//
+// ===== 【陷阱 5】std::vector 的著名陷阱 =====
+//
+// --- vector<int> ---
+// v1(5)     (size=5): {0, 0, 0, 0, 0}
+// v2{5}     (size=1): {5}
+// v3(5, 10) (size=5): {10, 10, 10, 10, 10}
+// v4{5, 10} (size=2): {5, 10}
+//
+// --- vector<string> ---
+// s1(3)          (size=3): {"", "", ""}
+// s3(3, "hello") (size=3): {"hello", "hello", "hello"}
+// s4{"a", "b"}  (size=2): {"a", "b"}
+//
+// ===== 【陷阱 6】建構子選擇的微妙差異 =====
+//
+// Converter c1(42);   →   Converter(int 42)
+// Converter c2{42};   →   Converter(initializer_list<double>, size=1)
+// Converter c3(3.14); →   Converter(double 3.14)
+// Converter c4{3.14}; →   Converter(initializer_list<double>, size=1)
+//
+// 重點：即使存在更精確的 Converter(int) 建構子，
+//       {} 初始化仍然優先匹配 initializer_list<double>，
+//       因為 int 可以隱式轉換為 double。
+//
+// ===== 【陷阱 7】如何強制呼叫非 initializer_list 建構子 =====
+//
+// --- 問題：{} 被 initializer_list 劫持 ---
+// ForceConstruct f1{5, 10};  →   ForceConstruct(initializer_list, size=2)
+//
+// --- 解決：使用 () 呼叫 ---
+// ForceConstruct f2(5, 10);  →   ForceConstruct(int 5, int 10)
+//
+// 結論：
+//   使用 {} → 優先匹配 initializer_list 建構子
+//   使用 () → 匹配最佳的非 initializer_list 建構子
+//
+// ===== 【陷阱 8】聚合類別的特殊初始化規則 =====
+//
+// --- 聚合類別 Aggregate ---
+// Aggregate a1{1, 2, 3}: x=1, y=2, z=3
+// Aggregate a2{1, 2}:    x=1, y=2, z=0
+// Aggregate a3{1}:       x=1, y=0, z=0
+// Aggregate a4{}:        x=0, y=0, z=0
+//
+// --- 非聚合類別 NonAggregate ---
+// NonAggregate n2{}: 呼叫預設建構子
+// NonAggregate n1{1,2,3}; → 編譯錯誤！不是聚合類別
+//
+// --- 聚合類別的條件 (C++11/14) ---
+// 1. 沒有使用者宣告的建構子
+// 2. 沒有私有或保護的非靜態成員
+// 3. 沒有虛擬函式
+// 4. 沒有虛擬、私有、保護的基礎類別
+//
+// ===== 【陷阱 9】initializer_list 的生命週期問題 =====
+//
+// --- 安全用法 ---
+// std::vector<int> v{1, 2, 3}; → 安全，元素被複製到 vector
+// for (int x : {1, 2, 3}) { ... } → 安全，陣列在迴圈期間存活
+//
+// --- 危險用法 ---
+// std::initializer_list<int> dangerousReturn() {
+//     return {1, 2, 3};  // 危險！底層陣列在返回後已銷毀
+// }
+// → 使用回傳的 initializer_list 是未定義行為！
+//
+// --- 危險：作為成員儲存 ---
+// class Holder {
+//     std::initializer_list<int> data_;  // 危險！
+// };
+// → 建構子結束後，底層陣列可能已銷毀
+//
+// --- 正確做法 ---
+// class SafeHolder {
+//     std::vector<int> data_;  // 安全！
+//     SafeHolder(std::initializer_list<int> init)
+//         : data_(init) {}  // 元素被複製到 vector
+// };
+//
+// ===== 【陷阱 10】嵌套大括號的解析 =====
+//
+// --- std::pair 的初始化 ---
+// pair p1(1, 2):   1, 2
+// pair p2{1, 2}:   1, 2
+// pair p3 = {1,2}: 1, 2
+//
+// --- std::map 的嵌套初始化 ---
+// map 使用嵌套 {} 初始化:
+//   one -> 1
+//   three -> 3
+//   two -> 2
+//
+// --- vector<vector<int>> 二維矩陣 ---
+// matrix:
+//   1 2 3 
+//   4 5 6 
+//   7 8 9 
+//
+// ================================================================
+//  【總結】實務建議
+// ================================================================
+//
+// 1. 當類別有 initializer_list 建構子時，{} 會優先匹配它
+// 2. {} 初始化禁止窄化轉換，這是安全優勢
+// 3. auto 與 {} 的推導規則在 C++17 有重大變化
+// 4. 空 {} 優先匹配預設建構子，而非 initializer_list
+// 5. vector<int> v(5) 和 v{5} 語意完全不同
+// 6. 即使轉換不完美，{} 仍優先匹配 initializer_list
+// 7. 想繞過 initializer_list 優先權，使用 () 初始化
+// 8. 聚合類別可以直接用 {} 按成員順序初始化
+// 9. 不要回傳或儲存 initializer_list，改用 vector
+// 10. 嵌套 {} 適合初始化複合型別，但不要過度嵌套
+//
+// ================================================================
+//  【LeetCode 973】K Closest Points to Origin
+// ================================================================
+//
+// 輸入點: (1,3) (-2,2) (5,8) (0,1)，取最近 2 個
+// 結果  : (0,1) (-2,2) 
+// k 超過點數時的保護: k=99 → 回傳 4 個點（全部）
+// k=0 → 回傳 0 個點（return {}; 表示空結果）
+//
+// 重點：距離用 long long 累加。若寫成 int 並以 {} 初始化，
+//       座標大時會「溢位」而非「窄化」，{} 擋不住 ——
+//       這說明 {} 的保護只涵蓋型別轉換，不涵蓋算術溢位。
+//
+// ================================================================
+//  【日常實務 1】感測器封包 — {} 的保護邊界
+// ================================================================
+//
+// 編譯期常數初始化（{} 有保護）：
+//   溫度 23.7°C, 濕度 55%, 電量 87%
+//   若寫成 SensorReading{2370.5, 55, 87} → 編譯錯誤（窄化）
+//   若寫成 SensorReading{99999, 55, 87} → 編譯錯誤（超出 int16_t）
+//
+// 執行期資料（{} 沒有保護，須自行驗證）：
+//   23.7°C → 接受，存為 2370
+//   -12.34°C → 接受，存為 -1234
+//   400°C → 拒絕（超出 int16_t 範圍）
+//
+//   結論：{} 只在「編譯期已知值」時擋得住失真。
+//         來自設定檔／網路／使用者的資料仍須自行做範圍檢查。
+//
+// ================================================================
+//  【日常實務 2】vector 緩衝區：{} 與 () 的致命差異
+// ================================================================
+//
+//   預期配置 1024 個元素的緩衝區：
+//     std::vector<int> buf(1024);  → size = 1024  ✅ 正確
+//     std::vector<int> buf{1024};  → size = 1     ❌ 只有 1 個元素，值是 1024
+//     後者寫入 buf[1] 就已越界，屬未定義行為，
+//     但不保證當場崩潰 —— 常常要到上線後才以奇怪的方式浮現。

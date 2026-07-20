@@ -22,16 +22,198 @@
  * ============================================================
  */
 
-#include <iostream>
-#include <thread>
-#include <mutex>
-#include <future>
+// =============================================================================
+//  第一階段總複習 — 並行程式設計基礎概念（教科書級完整規格）
+// =============================================================================
+//
+// 【主題資訊 Information】
+//   標頭檔與對應主題：
+//     <thread>              std::thread / this_thread / hardware_concurrency  (C++11)
+//     <mutex>               std::mutex / lock_guard / unique_lock / scoped_lock
+//                           （scoped_lock 是 C++17）
+//     <atomic>              std::atomic<T> / atomic_flag                      (C++11)
+//     <future>              std::async / future / promise / packaged_task     (C++11)
+//     <condition_variable>  condition_variable / condition_variable_any       (C++11)
+//     <chrono>              steady_clock（量測經過時間的唯一正確選擇）        (C++11)
+//
+//   複雜度速記：
+//     建立一條執行緒        ≈ 20–80 微秒（Linux clone(2) + 堆疊配置）
+//     未競爭的 mutex 加解鎖 ≈ 20–50 奈秒（快速路徑不進核心）
+//     競爭到的 mutex        ≈ 微秒等級（futex 系統呼叫 + 排程）
+//     atomic fetch_add      ≈ 5–20 奈秒（x86 的 lock 前綴指令）
+//   ⚠️ 以上皆為【實作與硬體相關】的量級參考，不是標準保證的數值。
+//
+// 【詳細解釋 Explanation】
+//
+// 【1. 本階段的主線：從「為什麼」到「有什麼代價」】
+//   六堂課其實在回答四個遞進的問題：
+//     1.1  並發與並行是什麼？    → 釐清概念，避免用錯詞、想錯模型
+//     1.2  為什麼要用多執行緒？  → 三大價值：效能、響應性、資源利用
+//     1.3  執行緒與程序差在哪？  → 共享記憶體是威力來源，也是所有麻煩的根源
+//     1.4  會遇到什麼問題？      → 競爭條件、死結、飢餓
+//     1.5–1.6 標準提供了什麼工具？
+//   關鍵在於 1.3 與 1.4 的因果關係：【正因為執行緒共享記憶體，
+//   才有 1.2 的低成本通訊優勢，也才有 1.4 的全部問題】。
+//   這兩件事是同一枚硬幣的兩面，不能只要好處。
+//
+// 【2. data race 與 race condition —— 全階段最重要的區分】
+//   這兩個詞中文都常被譯成「競爭」，但它們是【不同層次】的概念，
+//   混用會導致完全錯誤的除錯方向：
+//
+//   * data race（資料競爭）：
+//       定義（[intro.races]）：兩個執行緒【並行存取同一記憶體位置】，
+//       其中【至少一個是寫入】，且兩者之間【沒有 happens-before 關係】。
+//       後果：【未定義行為（UB）】—— 標準允許任何結果，
+//       包含讀到撕裂的值、編譯器把迴圈最佳化掉、甚至 crash。
+//       消除方式：mutex、atomic、或其他建立 happens-before 的同步機制。
+//
+//   * race condition（競爭條件）：
+//       定義：程式的正確性依賴於「不受控的事件先後順序」。
+//       後果：邏輯錯誤，但【不一定是 UB】。
+//       典型是 check-then-act：
+//           if (!map.count(k)) map[k] = compute();   // 兩步之間可能被插隊
+//       即使每一步都用 mutex 保護（沒有 data race），
+//       整體仍可能出錯 —— 因為臨界區的【邊界劃錯了】。
+//
+//   兩者的關係：
+//       有 data race        → 一定是 bug（UB）
+//       沒有 data race      → 【不代表】沒有 race condition
+//       修掉所有 data race  → 只是拿到了「討論正確性」的入場券
+//   本檔 demo_1_3 的 g_sharedCounter 是【data race】（未加任何同步的 ++），
+//   demo_1_4 的死結示範則是【race condition】家族的問題。
+//
+// 【3. 為什麼 ++counter 不是原子操作】
+//   在 x86-64 上，未最佳化的 ++counter 展開成三個步驟：
+//       mov  rax, [counter]     ; load
+//       add  rax, 1             ; modify
+//       mov  [counter], rax     ; store
+//   兩條執行緒可能同時 load 到相同的值，各自 +1 再寫回，
+//   於是兩次遞增只生效一次 —— 這叫 lost update。
+//   ⚠️ 即使編譯器最佳化成單一指令 inc [counter]，在硬體上【仍非原子】：
+//      沒有 lock 前綴的話，其他核心仍可能在讀-改-寫之間插入。
+//      只有 lock inc（也就是 std::atomic::fetch_add 產生的指令）
+//      才會鎖住該條 cache line，保證整個讀-改-寫不可分割。
+//
+// 【4. 為什麼 demo_1_3 的結果「有時候剛好是 20000」】
+//   這是本階段最危險的陷阱。data race 是 UB，
+//   【不保證一定出錯，也不保證一定出對】。實測上：
+//     * 迴圈次數少、執行緒啟動有時間差 → 可能剛好不重疊，答案「正確」；
+//     * 開了 -O2，編譯器可能把整個迴圈摺疊成一次加法 → 看起來更「正確」；
+//     * 換 ARM 等弱記憶體模型的平台 → 錯得更明顯。
+//   ⚠️ 所以【絕對不能】用「跑起來答案對」來證明沒有 data race。
+//      正確的驗證工具是 ThreadSanitizer（g++ -fsanitize=thread），
+//      它偵測的是「有沒有違反 happens-before」，而不是「答案對不對」。
+//
+// 【概念補充 Concept Deep Dive】
+//   * happens-before 的三個常見來源（本階段全部用到）：
+//       (a) 同一條執行緒內的程式順序（sequenced-before）；
+//       (b) mutex：解鎖 synchronizes-with 後續對同一 mutex 的加鎖；
+//       (c) thread::join()：執行緒的完成 synchronizes-with join() 的返回。
+//     (c) 特別實用 —— 它讓「worker 寫、main 在 join 後讀」不需要任何額外同步。
+//
+//   * lock_guard vs unique_lock vs scoped_lock：
+//       lock_guard   最輕量，建構即鎖、解構即解，中途不能放開。
+//       unique_lock  可延遲鎖定/中途 unlock/移動，condition_variable 必須用它。
+//       scoped_lock  C++17，可一次鎖多個 mutex 且【內建死結避免演算法】，
+//                    是同時鎖兩把以上時的正確選擇。
+//
+//   * 為什麼 mutex 比 atomic 慢：未競爭時兩者差距不大（mutex 快速路徑
+//     也只是一次 atomic 操作）；一旦競爭，mutex 會走 futex 系統呼叫讓
+//     執行緒進入睡眠，成本跳到微秒等級。atomic 則是自旋重試，
+//     沒有系統呼叫，但高競爭下會浪費 CPU 並造成 cache line 乒乓。
+//
+//   * 執行緒不是免費的：每條執行緒預設堆疊在 Linux 上通常是 8 MB
+//     【虛擬】位址空間（實體記憶體按需配置）。開幾千條執行緒會嚴重
+//     消耗位址空間與排程器資源，這是要用執行緒池而非「每任務一執行緒」的原因。
+//
+// 【注意事項 Pay Attention】
+//   1. data race ≠ race condition。前者是 UB、可用 atomic/mutex 消除；
+//      後者是邏輯錯誤、即使無 data race 也可能存在。
+//   2. 【不可】用「執行結果看起來正確」證明沒有 data race。UB 不保證出錯。
+//      要驗證請用 g++ -fsanitize=thread。
+//   3. demo_1_3 的 g_sharedCounter 是【刻意保留】的 data race 示範，
+//      是教學用的錯誤示範，【請勿】當成可以照抄的寫法。
+//   4. 本檔所有毫秒數、競爭條件的實際數值、執行緒交錯順序
+//      【每次執行都不同】，且在不同機器上差異更大。
+//   5. std::cout 保證無 data race，但【不保證整行輸出的原子性】。
+//   6. hardware_concurrency() 可能回傳 0，且在容器中不反映 cgroup 配額。
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】並行基礎概念總複習
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. data race 和 race condition 有什麼不同？
+//     答：data race 是「兩條執行緒並行存取同一記憶體位置、至少一個是寫、
+//         且無 happens-before 關係」，後果是【未定義行為】，
+//         可用 mutex 或 atomic 消除。race condition 是「正確性依賴於
+//         不受控的事件順序」，屬於邏輯錯誤，【即使完全沒有 data race
+//         也可能存在】—— 例如全程用 mutex 保護的 check-then-act。
+//         有 data race 一定是 bug；沒有 data race 只是及格線，不代表正確。
+//     追問：舉一個沒有 data race 但有 race condition 的例子。
+//         → if (!cache.contains(k)) cache.insert(k, compute());
+//           兩個操作各自加鎖所以沒有 data race，但兩者之間可能被插隊，
+//           導致 compute() 被執行兩次或覆蓋別人的結果。
+//           修法是把「檢查與動作」放進【同一個】臨界區。
+//
+// 🔥 Q2. 為什麼 ++counter 在多執行緒下不安全？加了 volatile 能解決嗎？
+//     答：++counter 是讀-改-寫三個步驟，兩條執行緒可能同時讀到相同的值，
+//         各自 +1 再寫回，於是兩次遞增只生效一次（lost update）。
+//         即使編譯器最佳化成單一 inc 指令，硬體上仍非原子 ——
+//         必須有 lock 前綴才會鎖住 cache line。
+//         volatile 【不能】解決：C++ 的 volatile 只承諾不省略讀寫、
+//         不與其他 volatile 重排，它不提供原子性、不保證跨核心可見性、
+//         也不建立 happens-before。正解是 std::atomic<int> 或 mutex。
+//     追問：那 Java 的 volatile 呢？
+//         → Java/C# 的 volatile 有 acquire/release 語意，比 C++ 強得多。
+//           這是跨語言遷移時最常見的誤植來源，三家不能互相套用。
+//
+// 🔥 Q3. 並發與並行的差別？單核心機器上寫多執行緒有意義嗎？
+//     答：並發是【程式的結構】（把程式組織成多個可獨立推進的任務，與硬體無關），
+//         並行是【執行的現象】（多個任務同一時刻真的同時跑，需要多核心）。
+//         單核心上仍非常有意義：(a) 可以讓 UI 保持響應；
+//         (b) I/O 密集任務在等待時讓出 CPU，照樣能得到接近執行緒數的加速。
+//         只有【CPU 密集】任務的吞吐量才真正需要多核心。
+//     追問：那怎麼決定要開幾條執行緒？
+//         → CPU 密集：約等於核心數（再多只會增加 context switch）。
+//           I/O 密集：可以遠多於核心數，因為多數時間在等待。
+//           實務上用執行緒池並依量測結果調整，不要憑感覺。
+//
+// 🔥 Q4. std::thread 解構時如果還 joinable，會發生什麼事？
+//     答：呼叫 std::terminate()，程式立刻中止。這是標準【保證】的行為，
+//         不是未定義行為。設計理由是解構時自動 join 會讓解構子阻塞任意久、
+//         自動 detach 又會造成 dangling reference，委員會選擇讓錯誤立刻可見。
+//         解法是用 RAII 包裝（自寫 ThreadGuard，或 C++20 的 std::jthread）。
+//     追問：jthread 為什麼就敢自動 join？
+//         → 因為它同時提供 stop_token，解構子先 request_stop() 再 join()，
+//           讓「阻塞很久」這個缺點有了標準化的解法。
+//
+// ⚠️ 陷阱. demo_1_3 的競爭條件示範，我跑了好幾次結果都剛好是 20000，
+//         是不是代表這段程式其實是安全的？
+//     答：完全不是。data race 是【未定義行為】——標準允許任何結果，
+//         【包括剛好正確】。看起來對的原因可能是：迴圈太短、
+//         兩條執行緒的啟動有時間差而幾乎沒重疊、或編譯器把整個迴圈
+//         摺疊成一次加法。換一台機器、換一個最佳化等級、
+//         或在真實負載下，它隨時會出錯。
+//     為什麼會錯：把「測試通過」當成「正確性證明」。
+//         對 UB 而言，測試【原理上】就無法證明安全性 ——
+//         你只是沒觸發到而已。唯一可靠的做法是用
+//         ThreadSanitizer（g++ -fsanitize=thread）檢查，
+//         它偵測的是「有沒有違反 happens-before 規則」這個【結構性】問題，
+//         而不是「這次的答案對不對」。本檔的 demo 用 TSan 一跑就會報 race。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <atomic>
-#include <vector>
 #include <chrono>
-#include <string>
+#include <condition_variable>
+#include <functional>
+#include <future>
 #include <iomanip>
+#include <iostream>
+#include <mutex>
 #include <numeric>
+#include <queue>
+#include <string>
+#include <thread>
+#include <vector>
 
 // ============================================================
 // ===== 課程 1.1：什麼是並行與並發 =====
@@ -317,10 +499,12 @@ void demo_1_3_shared_memory() {
     t1.join();
     t2.join();
 
-    // 預期 20000，但因競爭條件，結果通常不等於 20000
+    // 預期 20000；因為存在 data race，結果通常小於 20000（lost update）
     std::cout << "預期結果: 20000\n";
     std::cout << "實際結果: " << g_sharedCounter << "\n";
-    std::cout << "（結果不確定，這就是競爭條件！）\n";
+    std::cout << "（這是【data race】—— 未定義行為，不只是「結果不確定」。\n";
+    std::cout << "  它甚至可能剛好印出 20000，但那不代表程式是安全的；\n";
+    std::cout << "  用 g++ -fsanitize=thread 編譯執行，TSan 會直接報出這個 race。）\n";
 }
 
 
@@ -713,6 +897,261 @@ void demo_1_6_library_overview() {
 // ============================================================
 // ===== main() —— 執行所有示範 =====
 // ============================================================
+// ============================================================
+// ===== LeetCode 實戰範例 =====
+// ============================================================
+
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例 1】LeetCode 1114. Print in Order
+//   題目：三條執行緒分別呼叫 first()/second()/third()，呼叫順序【任意】，
+//         但輸出必須永遠是 "firstsecondthird"。
+//   為什麼用到本階段主題：這題把課程 1.1（並發≠並行）與 1.4（同步的必要性）
+//         綁在一起。三條執行緒結構上獨立（並發），可任意交錯執行，
+//         題目卻要求確定的順序 —— 這只能靠【主動建立 happens-before 關係】
+//         來達成，正是本階段 1.4 的核心結論。
+//   ⚠️ wait 必須帶述詞：condition_variable 允許【虛假喚醒】，
+//         沒有人 notify 也可能醒來。述詞版會在醒來後重新檢查條件。
+// -----------------------------------------------------------------------------
+class PrintInOrder {
+public:
+    void first(const std::function<void()>& printFirst) {
+        std::unique_lock<std::mutex> lock(mtx_);
+        printFirst();
+        step_ = 2;
+        cv_.notify_all();
+    }
+    void second(const std::function<void()>& printSecond) {
+        std::unique_lock<std::mutex> lock(mtx_);
+        cv_.wait(lock, [this] { return step_ == 2; });
+        printSecond();
+        step_ = 3;
+        cv_.notify_all();
+    }
+    void third(const std::function<void()>& printThird) {
+        std::unique_lock<std::mutex> lock(mtx_);
+        cv_.wait(lock, [this] { return step_ == 3; });
+        printThird();
+    }
+
+private:
+    std::mutex mtx_;
+    std::condition_variable cv_;
+    int step_ = 1;
+};
+
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例 2】LeetCode 1116. Print Zero Even Odd
+//   題目：三條執行緒協作輸出 "0102030405..."（n=5 時）。
+//         zero() 印 n 個 0（每個數字前一個）、even() 印偶數、odd() 印奇數。
+//   為什麼用到本階段主題：比 1114 更進一階 —— 它不是「一次性排序」，
+//         而是【反覆輪流】的循環協調，需要一個能表達「現在輪到誰」的狀態機。
+//         這正好示範課程 1.4 說的「同步不只是加鎖，更是設計狀態轉移」。
+//   狀態設計：turn_ = 0 → 該印 0；1 → 該印奇數；2 → 該印偶數。
+//         zero() 印完後依 counter 的奇偶決定下一棒交給誰，避免多餘的喚醒。
+// -----------------------------------------------------------------------------
+class ZeroEvenOdd {
+public:
+    explicit ZeroEvenOdd(int n) : n_(n) {}
+
+    void zero(const std::function<void(int)>& printNumber) {
+        for (int i = 1; i <= n_; ++i) {
+            std::unique_lock<std::mutex> lock(mtx_);
+            cv_.wait(lock, [this] { return turn_ == 0; });
+            printNumber(0);
+            turn_ = (i % 2 == 1) ? 1 : 2;   // 奇數棒交給 odd，偶數棒交給 even
+            cv_.notify_all();
+        }
+    }
+
+    void even(const std::function<void(int)>& printNumber) {
+        for (int i = 2; i <= n_; i += 2) {
+            std::unique_lock<std::mutex> lock(mtx_);
+            cv_.wait(lock, [this] { return turn_ == 2; });
+            printNumber(i);
+            turn_ = 0;
+            cv_.notify_all();
+        }
+    }
+
+    void odd(const std::function<void(int)>& printNumber) {
+        for (int i = 1; i <= n_; i += 2) {
+            std::unique_lock<std::mutex> lock(mtx_);
+            cv_.wait(lock, [this] { return turn_ == 1; });
+            printNumber(i);
+            turn_ = 0;
+            cv_.notify_all();
+        }
+    }
+
+private:
+    int n_;
+    int turn_ = 0;
+    std::mutex mtx_;
+    std::condition_variable cv_;
+};
+
+void demo_leetcode() {
+    std::cout << "\n========================================\n";
+    std::cout << "【LeetCode 實戰】並行題實作\n";
+    std::cout << "========================================\n";
+
+    // ---- 1114. Print in Order ----
+    {
+        PrintInOrder foo;
+        std::string out;
+        std::mutex m;
+        auto emit = [&](const char* s) {
+            std::lock_guard<std::mutex> lk(m);
+            out += s;
+        };
+        // 故意用相反順序建立執行緒，證明結果與建立順序無關
+        std::thread t3([&] { foo.third([&] { emit("third"); }); });
+        std::thread t2([&] { foo.second([&] { emit("second"); }); });
+        std::thread t1([&] { foo.first([&] { emit("first"); }); });
+        t3.join(); t2.join(); t1.join();
+        std::cout << "1114 Print in Order（建立順序故意顛倒為 3→2→1）\n";
+        std::cout << "  輸出: " << out << "\n";
+    }
+
+    // ---- 1116. Print Zero Even Odd ----
+    {
+        const int n = 5;
+        ZeroEvenOdd zeo(n);
+        std::string out;
+        std::mutex m;
+        auto emit = [&](int v) {
+            std::lock_guard<std::mutex> lk(m);
+            out += std::to_string(v);
+        };
+        std::thread tz([&] { zeo.zero(emit); });
+        std::thread te([&] { zeo.even(emit); });
+        std::thread to([&] { zeo.odd(emit); });
+        tz.join(); te.join(); to.join();
+        std::cout << "1116 Print Zero Even Odd（n = " << n << "）\n";
+        std::cout << "  輸出: " << out << "\n";
+    }
+    std::cout << "  ← 兩題的輸出都是【確定的】：這正是同步原語存在的意義。\n";
+}
+
+// ============================================================
+// ===== 日常實務範例 =====
+// ============================================================
+
+// -----------------------------------------------------------------------------
+// 【日常實務範例】有界阻塞佇列 + 生產者/消費者（本階段所有概念的集大成）
+//   情境：日誌收集器。多條業務執行緒（生產者）產生日誌事件，
+//         少數幾條寫入執行緒（消費者）批次寫進磁碟或送往遠端。
+//         佇列必須【有上限】—— 否則下游變慢時記憶體會被無限撐爆，
+//         這是生產環境真實發生過的事故模式（unbounded queue 導致 OOM）。
+//   本階段概念如何被用上：
+//     * 課程 1.2 資源利用：生產者不必等磁碟 I/O，寫入與業務邏輯重疊進行；
+//     * 課程 1.3 共享記憶體：佇列就是共享狀態，必須同步；
+//     * 課程 1.4 競爭條件：用 mutex 保護佇列、用 cv 表達「滿 / 空」兩種等待；
+//     * happens-before：消費者透過 mutex 看到生產者寫入的完整資料。
+//   ⚠️ 兩個 condition_variable 的必要性：
+//         notFull_ 給生產者等（佇列滿時），notEmpty_ 給消費者等（佇列空時）。
+//         若共用一個 cv，notify 會喚醒錯誤的一方造成無謂的自旋，
+//         極端情況下甚至可能所有人一起睡死（lost wakeup）。
+//   ⚠️ 關閉協定（shutdown）：光設旗標不夠，必須 notify_all() 把
+//         正在 wait 的消費者叫醒，否則它們永遠等不到，join() 就會卡死。
+// -----------------------------------------------------------------------------
+template <typename T>
+class BoundedBlockingQueue {
+public:
+    explicit BoundedBlockingQueue(std::size_t cap) : cap_(cap) {}
+
+    // 生產者：佇列滿就阻塞等待
+    bool push(T item) {
+        std::unique_lock<std::mutex> lock(mtx_);
+        notFull_.wait(lock, [this] { return q_.size() < cap_ || closed_; });
+        if (closed_) return false;              // 已關閉，拒絕新資料
+        q_.push(std::move(item));
+        lock.unlock();                          // 先解鎖再通知，減少無謂的喚醒後阻塞
+        notEmpty_.notify_one();
+        return true;
+    }
+
+    // 消費者：佇列空就阻塞等待；已關閉且清空則回傳 false 讓消費者收工
+    bool pop(T& out) {
+        std::unique_lock<std::mutex> lock(mtx_);
+        notEmpty_.wait(lock, [this] { return !q_.empty() || closed_; });
+        if (q_.empty()) return false;           // 只有「已關閉且已清空」會走到這
+        out = std::move(q_.front());
+        q_.pop();
+        lock.unlock();
+        notFull_.notify_one();
+        return true;
+    }
+
+    // 關閉：設旗標 + 叫醒【所有】等待者，否則它們會永遠睡著
+    void close() {
+        {
+            std::lock_guard<std::mutex> lock(mtx_);
+            closed_ = true;
+        }
+        notFull_.notify_all();
+        notEmpty_.notify_all();
+    }
+
+private:
+    std::size_t cap_;
+    std::queue<T> q_;
+    std::mutex mtx_;
+    std::condition_variable notFull_;
+    std::condition_variable notEmpty_;
+    bool closed_ = false;
+};
+
+void demo_practical_producer_consumer() {
+    std::cout << "\n========================================\n";
+    std::cout << "【日常實務】有界阻塞佇列：日誌收集器\n";
+    std::cout << "========================================\n";
+
+    BoundedBlockingQueue<std::string> queue(4);   // 刻意設小，讓「佇列滿」真的發生
+    std::atomic<int> produced{0};
+    std::atomic<int> consumed{0};
+    std::mutex coutMtx;                            // 保護輸出，避免整行被撕裂
+
+    auto say = [&coutMtx](const std::string& s) {
+        std::lock_guard<std::mutex> lk(coutMtx);
+        std::cout << s << "\n";
+    };
+
+    // 2 條消費者（模擬批次寫檔）
+    std::vector<std::thread> consumers;
+    for (int c = 0; c < 2; ++c) {
+        consumers.emplace_back([&, c] {
+            std::string item;
+            while (queue.pop(item)) {
+                consumed.fetch_add(1, std::memory_order_relaxed);
+                std::this_thread::sleep_for(std::chrono::milliseconds(30));  // 模擬 I/O
+                say("  [consumer " + std::to_string(c) + "] 寫入 " + item);
+            }
+            say("  [consumer " + std::to_string(c) + "] 佇列已關閉且清空，收工");
+        });
+    }
+
+    // 3 條生產者（模擬業務執行緒）
+    std::vector<std::thread> producers;
+    for (int p = 0; p < 3; ++p) {
+        producers.emplace_back([&, p] {
+            for (int i = 0; i < 4; ++i) {
+                queue.push("log-" + std::to_string(p) + "-" + std::to_string(i));
+                produced.fetch_add(1, std::memory_order_relaxed);
+            }
+        });
+    }
+
+    for (auto& t : producers) t.join();
+    queue.close();                                 // 生產結束 → 關閉並喚醒消費者
+    for (auto& t : consumers) t.join();
+
+    std::cout << "  生產 " << produced.load() << " 筆、消費 " << consumed.load()
+              << " 筆（兩者相等代表沒有遺失，佇列容量僅 4）\n";
+    std::cout << "  ← 佇列有上限：下游變慢時生產者會被擋住（背壓 back-pressure），\n";
+    std::cout << "    而不是無限堆積記憶體直到 OOM。\n";
+}
+
 int main() {
     std::cout << "╔══════════════════════════════════════════════════════╗\n";
     std::cout << "║  第一階段：並行程式設計基礎概念 — 總複習 summary.cpp ║\n";
@@ -737,6 +1176,12 @@ int main() {
     // 課程 1.6：標準函式庫總覽
     demo_1_6_library_overview();
 
+    // LeetCode 實戰：1114 Print in Order、1116 Print Zero Even Odd
+    demo_leetcode();
+
+    // 日常實務：有界阻塞佇列（生產者/消費者）
+    demo_practical_producer_consumer();
+
     std::cout << "\n╔══════════════════════════════════════════════════════╗\n";
     std::cout << "║           第一階段複習完成！                          ║\n";
     std::cout << "╠══════════════════════════════════════════════════════╣\n";
@@ -751,3 +1196,174 @@ int main() {
 
     return 0;
 }
+// 編譯: g++ -std=c++17 -Wall -Wextra -pthread summary.cpp -o summary
+//   本檔只用到 C++11 起就有的功能（lock_guard/atomic/future/condition_variable），
+//   已用 -std=c++17 -pedantic-errors 驗證通過，0 警告。
+//
+//   ★ 驗證 data race 的正確方式（強烈建議親自跑一次）：
+//       g++ -std=c++17 -fsanitize=thread -g -pthread summary.cpp -o summary_tsan
+//       ./summary_tsan
+//     ThreadSanitizer 會明確報出 demo_1_3 的 incrementShared() 有 data race。
+//     實測結果：偵測到 2 筆 data race 警告，程式以 exit code 66 結束。
+//     這證明了「答案有時看起來正確」【完全無法】用來證明沒有 race。
+
+// 註:
+//   ⚠️ 非決定性內容，【每次執行都不同】：
+//   * 所有執行緒 ID（實作定義的數值，執行緒結束後還可能被重複使用）；
+//   * 所有毫秒數與加速比（受機器、核心數、當下負載影響）；
+//   * 【課程 1.3 / 1.4 的無保護計數器數值】—— 那是 data race（未定義行為），
+//   標準允許任何結果，包含剛好等於 20000；
+//   * 多執行緒區段的輸出交錯順序。
+//   【確定不變】的是：mutex 版與 atomic 版永遠是 20000；
+//   LeetCode 1114 永遠輸出 firstsecondthird、1116 永遠輸出 0102030405；
+//   生產者/消費者的生產數與消費數永遠相等（12 = 12，無遺失）。
+//   以下為本機（16 邏輯核心）某一次的實際執行結果，重複區段以 ... 省略。
+
+// === 預期輸出 ===
+// ╔══════════════════════════════════════════════════════╗
+// ║  第一階段：並行程式設計基礎概念 — 總複習 summary.cpp ║
+// ╚══════════════════════════════════════════════════════╝
+//
+// ========================================
+// 【課程 1.1】並發 vs 並行 示範
+// ========================================
+// 主執行緒 ID: 135125134903232
+// 硬體支援的執行緒數量: 16
+//
+// --- 循序執行（非並發）---
+// [任務A] 執行第 1 次（執行緒 ID: 135125134903232）
+// [任務A] 執行第 2 次（執行緒 ID: 135125134903232）
+// [任務A] 完成！
+// [任務B] 執行第 1 次（執行緒 ID: 135125134903232）
+// [任務B] 執行第 2 次（執行緒 ID: 135125134903232）
+// [任務B] 完成！
+// 循序耗時: 201 ms
+//
+// --- 並發執行 ---
+// [任務A] 執行第 1 次（執行緒 ID: 135125127919296）
+// [任務B] 執行第 1 次（執行緒 ID: 135125119526592）
+// [任務A] 執行第 2 次（執行緒 ID: 135125127919296[任務B] 執行第 2 次（執行緒 ID: 135125119526592）
+// ）
+// [任務B] 完成！
+// [任務A] 完成！
+// 並發耗時: 100 ms
+// 加速比: 2.01 倍
+//
+// ========================================
+// 【課程 1.2】響應性改善 示範（協作式取消）
+// ========================================
+// [UI] 下載開始中，UI 保持響應...
+// [下載] 開始下載: example.zip
+// [下載] 進度: 20%
+// [下載] 進度: 40%
+// [UI] 使用者點擊取消按鈕！
+// [下載] 進度: 60%
+// [下載] 收到取消請求，停止
+// [UI] 操作結束
+//
+// ========================================
+// 【課程 1.2】效能提升 示範（質數計算）
+// ========================================
+// 單執行緒: 41538 個質數，耗時 127 ms
+// 多執行緒(16 核): 41538 個質數，耗時 11 ms
+// 加速比: 11.55 倍
+// 結果驗證：一致
+//
+// ========================================
+// 【課程 1.3】執行緒共享記憶體 示範
+// ========================================
+// 預期結果: 20000
+// 實際結果: 19675
+// （這是【data race】—— 未定義行為，不只是「結果不確定」。
+//   它甚至可能剛好印出 20000，但那不代表程式是安全的；
+//   用 g++ -fsanitize=thread 編譯執行，TSan 會直接報出這個 race。）
+//
+// ========================================
+// 【課程 1.4】多執行緒挑戰 示範
+// ========================================
+//
+// --- 競爭條件示範 ---
+// 無保護計數器（預期20000）: 16281
+//
+// --- 使用 mutex 修正競爭條件 ---
+// mutex 保護計數器（預期20000）: 20000
+//
+// --- 使用 atomic 修正競爭條件 ---
+// atomic 計數器（預期20000）: 20000
+//
+// --- 死結說明 ---
+// 死結情境：
+//   執行緒1 鎖定 mutexA → 等待 mutexB
+//   執行緒2 鎖定 mutexB → 等待 mutexA
+//   兩者互相等待，永遠無法繼續！
+// 解決方法：固定鎖順序，或使用 std::scoped_lock（C++17）
+//
+// ========================================
+// 【課程 1.5】C++ 多執行緒發展史 示範
+// ========================================
+// --- C++11 現代寫法（型別安全）---
+// 現代 C++ 執行緒收到值: 42
+// --- C++17 scoped_lock（同時鎖定多個 mutex）---
+// 同時持有 m1 和 m2，不會發生死結
+// --- 各版本功能展示 ---
+// C++11: thread, mutex, future, atomic, condition_variable
+// C++14: shared_timed_mutex, shared_lock
+// C++17: shared_mutex, scoped_lock, parallel algorithms
+// C++20: jthread, semaphore, latch, barrier, stop_token
+//
+// ========================================
+// 【課程 1.6】標準函式庫總覽 綜合示範
+// ========================================
+//
+// [1] std::thread - 建立執行緒
+// [2] std::async - 非同步執行
+//     Hello from thread! ID: 135124855264960[3] std::atomic - 原子操作
+//
+//     async 結果: 42
+//     atomic 計數器: 2
+// [4] std::condition_variable - 等待與通知
+//     消費者收到: 資料已就緒
+//
+// [總結] 標準函式庫各部分均運作正常
+//
+// ========================================
+// 【LeetCode 實戰】並行題實作
+// ========================================
+// 1114 Print in Order（建立順序故意顛倒為 3→2→1）
+//   輸出: firstsecondthird
+// 1116 Print Zero Even Odd（n = 5）
+//   輸出: 0102030405
+//   ← 兩題的輸出都是【確定的】：這正是同步原語存在的意義。
+//
+// ========================================
+// 【日常實務】有界阻塞佇列：日誌收集器
+// ========================================
+//   [consumer 0] 寫入 log-0-0
+//   [consumer 1] 寫入 log-0-1
+//   [consumer 0] 寫入 log-0-2
+//   [consumer 1] 寫入 log-0-3
+//   [consumer 0] 寫入 log-2-0
+//   [consumer 1] 寫入 log-2-1
+//   [consumer 0] 寫入 log-2-2
+//   [consumer 1] 寫入 log-1-0
+//   [consumer 0] 寫入 log-2-3
+//   [consumer 1] 寫入 log-1-1
+//   [consumer 0] 寫入 log-1-2
+//   [consumer 0] 佇列已關閉且清空，收工
+//   [consumer 1] 寫入 log-1-3
+//   [consumer 1] 佇列已關閉且清空，收工
+//   生產 12 筆、消費 12 筆（兩者相等代表沒有遺失，佇列容量僅 4）
+//   ← 佇列有上限：下游變慢時生產者會被擋住（背壓 back-pressure），
+//     而不是無限堆積記憶體直到 OOM。
+//
+// ╔══════════════════════════════════════════════════════╗
+// ║           第一階段複習完成！                          ║
+// ╠══════════════════════════════════════════════════════╣
+// ║  核心重點：                                           ║
+// ║  1. 並發是設計概念，並行是執行現象                   ║
+// ║  2. 多執行緒：效能、響應性、資源利用                 ║
+// ║  3. 執行緒共享程序記憶體，需謹慎同步                 ║
+// ║  4. 競爭條件→mutex/atomic，死結→固定鎖順序           ║
+// ║  5. C++11 開始標準化，C++20 大幅增強                ║
+// ║  6. 六大標頭檔：thread/mutex/cv/future/atomic/...    ║
+// ╚══════════════════════════════════════════════════════╝

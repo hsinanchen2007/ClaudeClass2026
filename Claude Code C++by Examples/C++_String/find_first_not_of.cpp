@@ -78,7 +78,10 @@
 // 【概念補充 Concept Deep Dive】
 // (A) 為什麼 trim 要用 find_*_not_of 而不是手寫 while
 //   手寫:
-//     while (i < s.size() && std::isspace(s[i])) ++i;
+//     while (i < s.size() && std::isspace(static_cast<unsigned char>(s[i]))) ++i;
+//     ⚠️ 那個 static_cast<unsigned char> 不是可有可無的裝飾:cctype 系列的前置條件是
+//        「引數必須可表示為 unsigned char 或等於 EOF」。plain char 在 x86-64 Linux 上
+//        是有號的,傳入 0x80~0xFF(例如 UTF-8 中文的任何一個 byte)會變成負值 → UB。
 //   STL:
 //     i = s.find_first_not_of(" \t\n\r");
 //   STL 版本:
@@ -105,7 +108,8 @@
 //
 // (D) 與 ranges (C++20) 的對照
 //   C++20 後可用 ranges::find_if + lambda:
-//     auto it = std::ranges::find_if(s, [](char c){ return !std::isspace(c); });
+//     auto it = std::ranges::find_if(s, [](char c){
+//         return !std::isspace(static_cast<unsigned char>(c)); });   // 同樣要轉 unsigned char
 //   但對「字元集合」這個用例,find_first_not_of 仍然簡潔得多。
 //
 // 【注意事項 Pay Attention】

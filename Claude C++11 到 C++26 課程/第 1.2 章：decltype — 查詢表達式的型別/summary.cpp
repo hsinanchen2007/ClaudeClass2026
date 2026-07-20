@@ -1,7 +1,137 @@
 // =============================================================================
 // 第 1.2 章：decltype — 查詢表達式的型別（綜合複習）
 // =============================================================================
-// 編譯指令: g++ -std=c++14 -Wall -o summary summary.cpp
+//
+// 【主題資訊 Information】
+//   語法    ：decltype(expression)          // 只「查詢」型別，不對表達式求值
+//   標準版本：decltype                       C++11
+//             後置回傳型別 auto f() -> T     C++11
+//             decltype(auto)                 C++14（本章末尾對照用）
+//             generic lambda [](auto&){}     C++14 ← 本檔宣告 C++14 的原因
+//   標頭檔  ：<type_traits>（is_same / is_reference / decay / declval）
+//   複雜度  ：純編譯期構造，執行期成本為零
+//   本檔宣告的標準：C++14
+//
+// 【詳細解釋 Explanation】
+//
+// 【1. decltype 要解決的問題：型別「無法被寫出來」】
+//   C++11 之前，有些型別你根本沒辦法用手寫出來：
+//     * lambda 的型別（每個 lambda 都是獨一無二的匿名類別）
+//     * 模板中 a + b 的結果型別（依 T、U 而定，可能是第三種型別）
+//     * 巢狀模板的迭代器型別
+//   decltype 讓你可以「指著一個表達式說：就是它的型別」，
+//   把型別的定義權從「人手抄」交還給「編譯器推導」。
+//
+// 【2. 不求值語境（unevaluated context）— 這是核心機制】
+//   decltype(expr) 裡的 expr 只做型別分析，絕對不會被執行：
+//       int f() { std::cout << "被呼叫了"; return 0; }
+//       decltype(f()) x;   // x 是 int，但 f() 從未被呼叫，什麼都不會印
+//   這和 sizeof、noexcept、typeid（非多型）同屬不求值語境。
+//   實務上最重要的後果：可以對「根本無法建構的型別」做型別運算，
+//   這就是 std::declval<T>() 的用途 —— 它宣告了回傳 T&& 卻沒有定義，
+//   只能在不求值語境使用，用來「假裝有一個 T 物件」以查詢其成員型別。
+//
+// 【3. 兩條推導規則，順序不可顛倒】
+//   規則 1：若運算元是「未加括號的識別字」或「類別成員存取」
+//           → 結果就是它宣告時的型別（完整保留 const 與 &）。
+//   規則 2：否則依表達式的 value category 決定：
+//               prvalue → T        （純值，如 42、f() 回傳值）
+//               lvalue  → T&       （有身分可取址，如 (x)、v[0]）
+//               xvalue  → T&&      （將亡值，如 std::move(x)）
+//   兩條規則的交界就是惡名昭彰的「括號陷阱」：
+//       int x = 0;
+//       decltype(x)   → int    （規則 1：x 是識別字）
+//       decltype((x)) → int&   （規則 2：(x) 是 lvalue 表達式）
+//
+// 【4. 後置回傳型別（trailing return type）為什麼必要】
+//   在 C++11，回傳型別寫在函式名稱「之前」，那時參數 a、b 還沒進入作用域：
+//       template<class T, class U>
+//       decltype(a + b) add(T a, U b);        // ❌ a、b 此時尚未宣告
+//   把回傳型別移到參數列之後，名稱查找就看得到參數了：
+//       template<class T, class U>
+//       auto add(T a, U b) -> decltype(a + b) // ✅ C++11 正解
+//   C++14 起可直接 auto add(T a, U b)（回傳型別推導），
+//   但要「完整保留參考」仍需 decltype(auto)（見第 1.3 章）。
+//
+// 【5. decltype + SFINAE：編譯期偵測成員是否存在】
+//   decltype 會在「替換失敗」時讓該候選函式安靜地退出重載集合，而不是編譯錯誤，
+//   這就是 SFINAE（Substitution Failure Is Not An Error）。
+//   本檔示範兩種經典寫法：函式重載法、類別模板特化法（void_t 模式的前身）。
+//
+// 【概念補充 Concept Deep Dive】
+//
+// (A) 為何 decltype(v[0]) 是 T& 而不是 T
+//     std::vector<T>::operator[] 的回傳型別就是 T&（reference），
+//     函式呼叫回傳參考時，該呼叫表達式的 value category 是 lvalue，
+//     依規則 2 得到 T&。這代表 decltype 能「無損」保留容器的參考語意 —
+//     用 auto 則會複製一份，這是效能與正確性的實際差異。
+//     反例：std::vector<bool>::operator[] 回傳的是 proxy 物件（prvalue），
+//     decltype 會得到那個 proxy 型別而非 bool&，這是 vector<bool> 的著名坑。
+//
+// (B) decltype 與陣列：唯一不會 decay 的推導方式
+//         int arr[5];
+//         auto      a = arr;   // int*      ← decay（陣列退化成指標，長度資訊消失）
+//         decltype(arr) b;     // int[5]    ← 完整保留，長度還在
+//     需要「保留陣列長度」時（例如寫 sizeof(arr)/sizeof(arr[0]) 的泛型版本），
+//     只能靠 decltype 或模板的 T(&)[N] 形式。
+//
+// (C) std::declval 的存在理由
+//     想查詢 T::size() 的回傳型別，直覺會寫 decltype(T().size())，
+//     但這要求 T 必須可預設建構 —— 對只有帶參數建構子的型別就失敗了。
+//     std::declval<T>() 產生一個「假的」T&&，只在不求值語境合法：
+//         decltype(std::declval<T>().size())   // 不需要 T 可建構
+//     它刻意「只宣告不定義」，所以一旦不小心在求值語境用到，連結期就會報錯。
+//
+// (D) 為什麼 SFINAE 用 `...` 當備援
+//     C++ 重載決議中，省略號（ellipsis）的匹配優先權最低。
+//     把「偵測成功」的版本寫成模板 + decltype 條件，
+//     「偵測失敗」的版本寫成 f(...)，就形成「有就選精準版、沒有才掉到 ... 版」，
+//     這是 C++11/14 沒有 concepts 時的標準做法。C++20 之後可直接用 requires。
+//
+// 【注意事項 Pay Attention】
+//   1. decltype 不求值：decltype(f()) 不會呼叫 f()，也不會有副作用。
+//   2. 括號會改變結果：decltype((x)) 是 T&，decltype(x) 是 T。多一對括號就變型別。
+//   3. decltype(v[0]) 對一般 vector 是 T&；對 std::vector<bool> 是 proxy 型別，不是 bool&。
+//   4. decltype 不會讓陣列 decay，auto 會 —— 需要保留長度時務必用 decltype。
+//   5. std::declval 只能用在不求值語境；在求值語境使用會連結失敗（刻意設計）。
+//   6. 本檔多處變數僅為展示推導結果而宣告，故以 (void)x; 標示 —— 因為本檔是 C++14，
+//      不能用 C++17 才有的 [[maybe_unused]]（已用 -pedantic-errors 驗證）。
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】decltype
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. decltype(x) 與 decltype((x)) 差在哪？為什麼？
+//     答：decltype(x) 走規則 1（未加括號的識別字）→ 得到 x 的宣告型別 int。
+//         decltype((x)) 的運算元變成表達式，走規則 2；(x) 是 lvalue → int&。
+//     追問：那什麼時候會不小心踩到？→ decltype(auto) f(){ int x=0; return (x); }
+//         回傳型別變 int&，指向已銷毀的區域變數，是懸空引用（UB）。
+//
+// 🔥 Q2. decltype 和 auto 推導同一個表達式，結果會一樣嗎？
+//     答：常常不一樣。auto 走模板推導：剝掉 top-level const、剝掉參考、陣列 decay 成指標。
+//         decltype 完整保留 const 與參考，陣列也不 decay。
+//         例：const int ci=0; auto a=ci;（int）但 decltype(ci) 是 const int。
+//     追問：想要 auto 的便利 + decltype 的精確怎麼辦？→ decltype(auto)（C++14）。
+//
+// 🔥 Q3. 為什麼需要後置回傳型別 auto f(T a, U b) -> decltype(a+b)？
+//     答：因為在傳統寫法中，回傳型別出現在參數列之前，此時 a、b 尚未進入作用域，
+//         無法在回傳型別裡引用它們。後置語法把回傳型別移到參數列之後就解決了。
+//     追問：C++14 可以只寫 auto 嗎？→ 可以（回傳型別推導），但 auto 會剝掉參考；
+//         要無損保留必須用 decltype(auto)。
+//
+// ⚠️ 陷阱 1. decltype(f()) 會不會執行 f()？
+//     答：不會。decltype 是不求值語境，只做型別分析。即使 f() 裡有 printf 也不會印，
+//         即使 f() 有副作用也不會發生。
+//     為什麼會錯：把 decltype 想成「執行一次看看結果是什麼型別」的執行期行為；
+//         實際上它完全發生在編譯期，運算元從未被求值。
+//
+// ⚠️ 陷阱 2. 對 std::vector<bool> 用 decltype(v[0])，會得到 bool& 嗎？
+//     答：不會。vector<bool> 是空間最佳化的特化版，operator[] 回傳的是 proxy 物件
+//         （std::vector<bool>::reference）的 prvalue，所以 decltype 得到那個 proxy 型別。
+//     為什麼會錯：以為「vector<T> 的 operator[] 一律回傳 T&」，
+//         忽略了 vector<bool> 是標準明文規定的特例（每個 bool 只佔 1 bit）。
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// 編譯指令: g++ -std=c++14 -Wall -Wextra -o summary summary.cpp
 // 說明: 本檔案彙整 decltype 的所有核心觀念與用法，
 //       閱讀本檔即可完整複習本章所有內容。
 // =============================================================================
@@ -174,6 +304,87 @@ public:
 };
 
 // =============================================================================
+// 【LeetCode 實戰範例】—— 本章刻意從缺，理由如下
+// =============================================================================
+// decltype 是「型別查詢機制」，屬於語言層工具，不是演算法。
+// LeetCode 題目考的是資料結構與演算法，沒有任何一題的解法核心是 decltype；
+// 硬套一題（例如把 Two Sum 的 iterator 宣告改用 decltype）只會製造
+// 「為了用而用」的假範例，反而誤導讀者以為實務上該這樣寫。
+// 因此本章不提供 LeetCode 範例，改以兩個真實會發生的工程情境示範。
+// =============================================================================
+
+
+// -----------------------------------------------------------------------------
+// 【日常實務範例 1】泛型統計工具 — 用 decltype 讓回傳型別自動跟隨容器
+//   情境：監控系統要對「各種數值容器」算總和與平均，容器元素可能是
+//         int（請求數）、double（延遲秒數）、long long（位元組數）。
+//   為什麼一定要用 decltype：
+//     總和的型別必須由「元素型別」決定，不能寫死成 int（會截斷 double），
+//     也不能寫死成 double（long long 大值會失去精度）。
+//     用 decltype(*c.begin()) 取得元素型別，再用 std::decay 去掉參考，
+//     就得到「這個容器的元素值型別」，回傳型別因此自動正確。
+//   注意 std::decay 的必要性：*c.begin() 是 lvalue，decltype 會給 T&，
+//         拿 T& 當累加變數的型別會編譯失敗（參考必須綁定既有物件）。
+// -----------------------------------------------------------------------------
+template <typename Container>
+auto sumOf(const Container& c)
+    -> typename std::decay<decltype(*c.begin())>::type
+{
+    // 元素值型別（已去掉 const 與 &）
+    using Elem = typename std::decay<decltype(*c.begin())>::type;
+    Elem total = Elem();          // 值初始化：int→0, double→0.0
+    for (const auto& v : c) total += v;
+    return total;
+}
+
+// -----------------------------------------------------------------------------
+// 【日常實務範例 2】就地調整容器內容 — decltype 保留參考，auto 會失敗
+//   情境：資料清洗。把一批感測器讀數中的負值（顯然是故障值）就地夾到 0。
+//   為什麼用到本主題：
+//     decltype(v[0]) 是 T&（參考），拿它宣告變數就能「就地改到原容器」。
+//     若改用 auto x = v[i]; 會複製一份，改了複本、原容器毫髮無傷 ——
+//     這是實務上非常常見、而且很難用眼睛看出來的 bug。
+// -----------------------------------------------------------------------------
+void clampNegativeToZero(std::vector<double>& readings)
+{
+    for (std::size_t i = 0; i < readings.size(); ++i) {
+        // decltype(readings[i]) 推導為 double&（operator[] 回傳參考 → lvalue → T&）
+        decltype(readings[i]) slot = readings[i];   // slot 是原元素的別名，不是複本
+        if (slot < 0.0) slot = 0.0;                 // 改 slot == 改原容器
+    }
+}
+
+// 對照組：故意用 auto，示範「改不到原容器」的錯誤版本
+void clampNegativeToZero_WRONG(std::vector<double>& readings)
+{
+    for (std::size_t i = 0; i < readings.size(); ++i) {
+        auto slot = readings[i];      // ← auto 剝掉參考，slot 是「複本」
+        if (slot < 0.0) slot = 0.0;   // 只改到複本，原容器完全沒變
+    }
+}
+
+// -----------------------------------------------------------------------------
+// 【日常實務範例 3】用 SFINAE + decltype 決定「這個型別能不能直接印大小」
+//   情境：寫通用 log 函式。若物件有 size()（容器、字串）就印筆數，
+//         沒有就只印「單一物件」。這是 log/除錯工具的常見需求。
+//   為什麼用到本主題：
+//     用 decltype(std::declval<T>().size()) 偵測成員是否存在。
+//     declval 讓我們不需要真的建構一個 T 就能查詢其成員 —— 對只有
+//     帶參數建構子的型別（實務上非常多）這是唯一可行的做法。
+// -----------------------------------------------------------------------------
+template <typename T>
+std::string describeSize(const T& obj, decltype(std::declval<T>().size(), 0) = 0)
+{
+    return "容器，元素數 = " + std::to_string(obj.size());
+}
+
+std::string describeSize(...)
+{
+    return "單一物件（沒有 size()）";
+}
+
+
+// =============================================================================
 // 【主程式】完整展示所有 decltype 用法
 // =============================================================================
 
@@ -215,8 +426,10 @@ int main()
     const int& crx = x;       // const int& — x 的常數參考
 
     decltype(cx) c1 = 50;     // const int（保留 const）
+    (void)c1;  // 僅為展示推導結果而宣告
     decltype(rx) r1 = x;      // int&（保留參考）
     decltype(crx) cr1 = x;    // const int&（同時保留 const 和參考）
+    (void)cr1;  // 僅為展示推導結果而宣告
 
     // c1 = 60;  // 編譯錯誤！c1 是 const int，不可修改
     r1 = 999;    // 合法，r1 是 int&，修改 r1 就是修改 x
@@ -244,9 +457,12 @@ int main()
     int& ref = x;
 
     auto       autoVal = value;      // int（auto 忽略 const，得到非 const 的複製）
+    (void)autoVal;  // 僅為展示推導結果而宣告
     decltype(value) declVal = 100;   // const int（decltype 保留 const）
+    (void)declVal;  // 僅為展示推導結果而宣告
 
     auto       autoRef = ref;        // int（auto 忽略參考，得到獨立的複製）
+    (void)autoRef;  // 僅為展示推導結果而宣告
     decltype(ref) declRef = x;       // int&（decltype 保留參考）
 
     autoRef = 111;   // 修改 autoRef 不影響 x（因為是獨立複製）
@@ -275,6 +491,7 @@ int main()
     int num = 10;
 
     decltype(num)   d1 = 0;       // int（識別符號，用宣告型別）
+    (void)d1;  // 僅為展示推導結果而宣告
     decltype((num)) d2 = num;     // int&（左值表達式，必須初始化參考）
 
     d2 = 777;
@@ -301,7 +518,9 @@ int main()
 
     decltype(i + j) sum = 0;       // int（prvalue → T）
     decltype(i < j) cmp = true;    // bool（prvalue → T）
+    (void)cmp;  // 僅為展示推導結果而宣告
     decltype(i += j) ref2 = i;     // int&（lvalue → T&）
+    (void)ref2;  // 僅為展示推導結果而宣告
 
     sum = 100;
     std::cout << "decltype(i + j)  -> int,  sum = " << sum << "\n";
@@ -322,8 +541,11 @@ int main()
     std::cout << "===== 6. 函式回傳型別推導 =====\n";
 
     decltype(getValue()) val1 = 0;              // int
+    (void)val1;  // 僅為展示推導結果而宣告
     decltype(getReference()) val2 = x;          // int&
+    (void)val2;  // 僅為展示推導結果而宣告
     decltype(getConstReference()) val3 = x;     // const int&
+    (void)val3;  // 僅為展示推導結果而宣告
 
     std::cout << "decltype(getValue())         -> int\n";
     std::cout << "decltype(getReference())     -> int&\n";
@@ -348,6 +570,7 @@ int main()
 
     decltype(arr) arr2 = {10, 20, 30, 40, 50};  // int[5]（保留陣列型別！）
     decltype(ptr) ptr2 = nullptr;                // int*
+    (void)ptr2;  // 僅為展示推導結果而宣告
 
     std::cout << "sizeof(arr)  = " << sizeof(arr) << " bytes\n";
     std::cout << "sizeof(arr2) = " << sizeof(arr2) << " bytes (decltype 保留陣列型別)\n";
@@ -399,6 +622,15 @@ int main()
     using ElemType = decltype(data[0]);        // std::pair<std::string, int>&
     using IterType = decltype(data.begin());   // std::vector<...>::iterator
 
+    // 用 static_assert 在編譯期「證明」上面三行註解寫的型別真的是對的。
+    // 特別注意 ElemType 帶著 & — 因為 vector::operator[] 回傳的是參考（lvalue），
+    // 依 decltype 規則 2：lvalue → T&。這正是 decltype 與 auto 的分水嶺：
+    // 若改寫成 auto e = data[0];，會退化成 pair<string,int>（複製一份，不是參考）。
+    static_assert(std::is_same<ElemType, std::pair<std::string, int>&>::value,
+                  "decltype(data[0]) 應為 pair<string,int>& — operator[] 回傳參考");
+    static_assert(std::is_same<IterType, DataType::iterator>::value,
+                  "decltype(data.begin()) 應為該容器的 iterator");
+
     DataType data2;
     data2.push_back({"Charlie", 92});
     std::cout << "成功使用 decltype 定義複雜型別別名\n";
@@ -429,7 +661,9 @@ int main()
     Point pt{10, 20.5};
 
     decltype(pt.x) px = 100;       // int（成員存取，宣告型別）
+    (void)px;  // 僅為展示推導結果而宣告
     decltype(pt.y) py = 3.14;      // double
+    (void)py;  // 僅為展示推導結果而宣告
     decltype((pt.x)) prx = pt.x;   // int&（加括號 → 左值表達式 → 參考）
 
     prx = 999;
@@ -437,7 +671,9 @@ int main()
 
     // 不需要物件實體，直接用類別名稱推導成員型別
     decltype(Point::x) memberX = 0;   // int
+    (void)memberX;  // 僅為展示推導結果而宣告
     decltype(Point::y) memberY = 0.0; // double
+    (void)memberY;  // 僅為展示推導結果而宣告
     std::cout << "decltype(Point::x) -> int\n";
     std::cout << "decltype(Point::y) -> double\n\n";
 
@@ -478,6 +714,7 @@ int main()
     WithSize objWith;
     WithoutSize objWithout;
     WithIntSize objWithInt;
+    (void)objWithInt;  // 僅為展示推導結果而宣告
     std::string testStr = "Hello";
     int number = 42;
 
@@ -570,7 +807,133 @@ int main()
     //    - 類別成員型別推導
     // =========================================================================
 
+    // =========================================================================
+    // 13. 日常實務範例
+    // =========================================================================
+    std::cout << "===== 13. 日常實務範例 =====\n";
+
+    // --- 實務 1：泛型統計，回傳型別自動跟隨元素型別 ---
+    std::vector<int>    requests{120, 340, 90, 512};
+    std::vector<double> latencies{0.12, 0.35, 0.08, 0.51};
+
+    auto reqTotal = sumOf(requests);     // int
+    auto latTotal = sumOf(latencies);    // double
+    static_assert(std::is_same<decltype(reqTotal), int>::value,
+                  "int 容器的總和應為 int");
+    static_assert(std::is_same<decltype(latTotal), double>::value,
+                  "double 容器的總和應為 double — 不能被截斷成 int");
+
+    std::cout << "請求數總和 (int)    : " << reqTotal << "\n";
+    std::cout << "延遲總和   (double) : " << latTotal << "\n";
+    std::cout << "→ 回傳型別由 decltype 從元素推導，double 沒有被截斷成 int\n\n";
+
+    // --- 實務 2：decltype 保留參考 vs auto 複製 ---
+    std::vector<double> sensorA{1.5, -2.0, 3.25, -0.75};
+    std::vector<double> sensorB = sensorA;   // 同樣的資料給錯誤版本用
+
+    clampNegativeToZero(sensorA);        // decltype 版本：真的改到了
+    clampNegativeToZero_WRONG(sensorB);  // auto 版本：只改到複本
+
+    std::cout << "decltype 版本 (正確): ";
+    for (double v : sensorA) std::cout << v << " ";
+    std::cout << "\nauto 版本     (錯誤): ";
+    for (double v : sensorB) std::cout << v << " ";
+    std::cout << "\n→ auto 剝掉了參考，負值完全沒有被修正\n\n";
+
+    // --- 實務 3：SFINAE + declval 偵測 size() ---
+    std::cout << "std::vector<int> : " << describeSize(requests) << "\n";
+    std::cout << "std::string      : " << describeSize(std::string("hello")) << "\n";
+    std::cout << "int              : " << describeSize(42) << "\n\n";
+
     std::cout << "===== 複習完成 =====\n";
 
     return 0;
 }
+
+// 編譯: g++ -std=c++14 -Wall -Wextra "summary.cpp" -o ch12_summary
+
+// === 預期輸出 ===
+// ===== 1. 基本用法：從變數推導型別 =====
+// a = 20 (與 x 同型別: int)
+// b = 2.718 (與 y 同型別: double)
+// s = World (與 str 同型別: std::string)
+//
+// ===== 2. 保留 const 與參考 =====
+// 修改 r1 = 999 後:
+//   x = 999 (證明 r1 是 x 的參考)
+//
+// ===== 3. auto vs decltype 比較 =====
+// autoRef = 111 後, x = 999 (auto 複製，不影響 x)
+// declRef = 222 後, x = 222 (decltype 保留參考，修改 x)
+//
+// ===== 4. 括號的影響 (重要！) =====
+// d2 = 777 後, num = 777
+// (證明 decltype((num)) 是 int&，修改 d2 會影響 num)
+//
+// ===== 5. 表達式的型別推導 =====
+// decltype(i + j)  -> int,  sum = 100
+// decltype(i < j)  -> bool
+// decltype(i += j) -> int& (i += j 回傳左值參考)
+//
+// ===== 6. 函式回傳型別推導 =====
+// decltype(getValue())         -> int
+// decltype(getReference())     -> int&
+// decltype(getConstReference())-> const int&
+// (以上推導過程中，函式都沒有被實際呼叫)
+//
+// ===== 7. 陣列與指標 =====
+// sizeof(arr)  = 20 bytes
+// sizeof(arr2) = 20 bytes (decltype 保留陣列型別)
+// sizeof(arrAuto) = 8 bytes (auto 退化為指標)
+//
+// ===== 8. 容器元素存取 =====
+// 修改 elem 後, vec[0] = 100 (elem 是 vec[0] 的參考)
+// vec.size() = 5
+//
+// ===== 9. 搭配 typedef / using =====
+// 成功使用 decltype 定義複雜型別別名
+// data2[0].first = Charlie
+//
+// ===== 10. 類別成員的 decltype =====
+// 修改 prx 後, pt.x = 999 (decltype((pt.x)) 是 int&)
+// decltype(Point::x) -> int
+// decltype(Point::y) -> double
+//
+// ===== 11. 後置回傳型別 (Trailing Return Type) =====
+// add(1, 2)      = 3 (int)
+// add(1, 2.5)    = 3.5 (double)
+// add(1.5f, 2.5) = 4 (double)
+//
+// ===== 12. SFINAE 方法 1：函式重載 =====
+// std::vector<int> has size(): true
+// std::string has size():      true
+// WithSize has size():         true
+// WithoutSize has size():      false
+// int has size():              false
+//
+// ===== 13. SFINAE 方法 2：類別模板特化 =====
+// HasSizeMethod<std::vector<int>>: true
+// HasSizeMethod<std::string>:      true
+// HasSizeMethod<WithSize>:         true
+// HasSizeMethod<WithoutSize>:      false
+// HasSizeMethod<int>:              false
+// HasSizeMethod<WithIntSize>:      true
+//
+// ===== 14. 實際應用：條件式呼叫 =====
+// 此型別有 size() 方法
+// 此型別沒有 size() 方法
+//
+// ===== 13. 日常實務範例 =====
+// 請求數總和 (int)    : 1062
+// 延遲總和   (double) : 1.06
+// → 回傳型別由 decltype 從元素推導，double 沒有被截斷成 int
+//
+// decltype 版本 (正確): 1.5 0 3.25 0 
+// auto 版本     (錯誤): 1.5 -2 3.25 -0.75 
+// → auto 剝掉了參考，負值完全沒有被修正
+//
+// std::vector<int> : 容器，元素數 = 4
+// std::string      : 容器，元素數 = 5
+// int              : 單一物件（沒有 size()）
+//
+// ===== 複習完成 =====

@@ -1,3 +1,121 @@
+// =============================================================================
+//  第 16 課-14：迭代器失效 —— 為什麼「拿在手上的位置」會突然作廢
+// =============================================================================
+//
+// 【主題資訊 Information】
+//   本檔上半部是第 16 課的完整講義（保留在一個大 /* */ 註解區塊中），
+//   下半部是可執行的「迭代器失效」示範程式。
+//   相關操作與其失效範圍（vector）：
+//     push_back / emplace_back  → 若觸發重新配置：全部失效；否則只有 end() 失效
+//     insert                    → 若觸發重新配置：全部失效；否則插入點之後失效
+//     erase                     → 刪除點之後（含）失效；之前仍有效
+//     reserve / resize / shrink_to_fit → 若容量改變：全部失效
+//     clear                     → 全部失效（end() 除外仍是合法值）
+//   標準版本：C++98 起即有明確規定（[vector.modifiers]）
+//   標頭檔：<vector>
+//
+// 【詳細解釋 Explanation】
+//
+// 【1. 失效的物理原因只有兩個】
+//   (a) 記憶體重新配置：vector 的元素必須連續，容量不夠時只能
+//       另外配置一塊更大的、把元素搬過去、釋放舊的。
+//       舊位址上的東西已經被 free 掉，指向那裡的迭代器就是懸空指標。
+//   (b) 元素搬移：即使沒有重新配置，insert/erase 也會讓插入或刪除點
+//       之後的元素整批平移。位址還在，但上面住的已經是別的元素了。
+//   第一種是「指向已釋放的記憶體」，第二種是「指向了錯的元素」。
+//   前者通常會崩潰，後者更陰險——程式照跑，只是答案默默錯掉。
+//
+// 【2. 為什麼迭代器不能「自動更新」】
+//   一個很自然的疑問：vector 為什麼不維護一份「所有存活迭代器」的清單，
+//   在搬移時一併更新？答案是成本。
+//   vector 的迭代器在多數實作上就是一根裸指標，sizeof 只有 8 bytes、
+//   零建構成本、可以直接被 CPU 當位址用。
+//   若要支援自動更新，每個迭代器都得註冊到容器裡、容器要多存一份清單、
+//   建構解構都要動到那份清單——vector 就不再是「零額外成本的陣列」了。
+//   C++ 的一貫取捨是：不為你沒要求的功能付費，正確性交給程式設計者。
+//
+// 【3. 「可能失效」為什麼比「一定失效」更危險】
+//   push_back 只有在 size == capacity 時才重新配置。
+//   所以同一段程式碼，capacity 還夠時迭代器完好、剛好用滿時就懸空。
+//   這造成一種最惡劣的 bug 型態：小資料量測試全過，
+//   資料一多就在毫無關聯的地方崩潰。
+//   正確心態是把「可能失效」直接當成「已經失效」——
+//   標準允許失效，你就不能依賴它沒失效。
+//
+// 【4. end() 的特殊地位】
+//   push_back 即使沒有觸發重新配置，end() 也一定失效（它必須往後挪一格）。
+//   這正是「範圍 for 內 push_back 會出事」的原因之一：
+//   範圍 for 在進入迴圈前就把 end() 快取起來了。
+//
+// 【5. 三種正確的應對策略】
+//   (a) 事前 reserve：容量一次到位，之後 push_back 不再重新配置。
+//       這是最乾淨的做法，前提是你事先知道大概要多少。
+//   (b) 改用索引：索引不會因重新配置而失效（它是相對位置，不是位址）。
+//       缺點是只適用於 random access 容器。
+//   (c) 接住回傳值：insert/erase 都會回傳新的有效迭代器，
+//       養成 it = v.erase(it) 的習慣。
+//
+// 【概念補充 Concept Deep Dive】
+//   ▸ 索引為什麼不會失效
+//     索引是「從 begin 算起的第幾個」，是相對量；
+//     迭代器是「記憶體的哪個位址」，是絕對量。
+//     重新配置改變的是絕對位址，相對位置不變，所以 v[2] 永遠是第三個元素。
+//     代價是每次存取都要做一次 begin_ + i 的加法（實務上可忽略）。
+//   ▸ reference 與 pointer 的失效規則完全相同
+//     int& r = v[0]; 和 int* p = &v[0]; 和 auto it = v.begin();
+//     三者本質上都是「記住了一個位址」，失效規則一模一樣。
+//     很多人只警覺迭代器，卻把 reference 存起來，一樣會中。
+//   ▸ 其他容器的失效規則差很多
+//     list：只有被刪除的那個節點失效，其餘永遠有效（節點各自獨立）。
+//     deque：插入頭尾使所有迭代器失效，但 reference 仍有效（分段配置的特性）。
+//     map/set：只有被刪的節點失效，插入完全不影響既有迭代器。
+//     「vector 的規則」不能直接套到其他容器上。
+//
+// 【注意事項 Pay Attention】
+//   1. 使用失效迭代器是 undefined behavior，不是「值會不對」——
+//      它可能崩潰、可能安靜地讀到垃圾、也可能剛好看起來正常。
+//   2. 「這次沒崩潰」不代表程式碼正確，只代表這次的 capacity 剛好夠。
+//   3. reference 與 pointer 的失效規則和迭代器完全相同。
+//   4. 範圍 for 內不可改變容器大小（begin/end 已被快取）。
+//   5. reserve 本身若造成容量改變，也會使既有迭代器全部失效。
+//   6. 別把 vector 的失效規則套到 list/deque/map 上，四者規則都不同。
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】迭代器失效
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. vector 的 push_back 一定會讓迭代器失效嗎？
+//     答：不一定。只有在 size == capacity、必須重新配置時，
+//         所有迭代器/指標/引用才會全部失效。容量還夠時，
+//         指向既有元素的迭代器仍然有效——但 end() 一定失效。
+//         由於呼叫端通常無法確定當下容量，實務上必須一律當作會失效。
+//     追問：那要怎麼寫才安全？
+//         → 事前 reserve 把容量一次備足；或改用索引（索引不會失效）；
+//           或每次操作後重新 v.begin() 取得迭代器。
+//
+// 🔥 Q2. 為什麼標準不讓 vector 自動更新失效的迭代器？
+//     答：成本。vector 的迭代器在多數實作上就是一根裸指標，
+//         零額外空間、零建構成本。要支援自動更新，就得讓容器
+//         維護一份存活迭代器清單，每個迭代器的建構、複製、解構
+//         都要動到那份清單，vector 也就不再是「零開銷的動態陣列」。
+//         C++ 選擇把正確性責任交給使用者，換取效能。
+//     追問：有沒有語言或函式庫做了自動更新？
+//         → 有，例如某些 debug 模式（libstdc++ 的 _GLIBCXX_DEBUG、
+//           MSVC 的 iterator debugging）會加上檢查並在誤用時直接中止，
+//           但那是開發期工具，會顯著拖慢執行速度。
+//
+// ⚠️ 陷阱. std::vector<int> v = {1,2,3};
+//          int& r = v[0];
+//          v.push_back(4);
+//          r = 99;                     // ← 這行為什麼危險？
+//     答：push_back 若觸發重新配置，v[0] 已經搬到新位址，
+//         而 r 仍綁在被 free 掉的舊記憶體上，寫入它是 undefined behavior
+//         （典型的 heap-use-after-free，ASan 會直接抓到）。
+//     為什麼會錯：多數人只把「迭代器失效」記成迭代器的問題，
+//         沒意識到 reference 和 pointer 本質上是同一回事——
+//         三者都只是「記住了一個位址」。
+//         口訣：凡是從容器裡「取出位址」的東西，失效規則完全一致。
+// ═══════════════════════════════════════════════════════════════════════════
+
 /*
 信安，我們繼續課程。第 16 課的主題是 **vector 的迭代器操作**。
 
@@ -648,16 +766,58 @@ int main() {
 
 
 #include <iostream>
+#include <string>
 #include <vector>
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】即時排行榜：一邊掃描一邊補進新條目
+//   情境：遊戲伺服器維護一份玩家分數清單。結算時要走訪全部玩家，
+//         發現達標者就把「獎勵條目」補進同一份清單。
+//   為什麼用本主題：這是迭代器失效最常見的真實形態——
+//         「邊走訪邊往同一個容器加東西」。
+//         正確做法有兩種，本範例兩種都示範：
+//           (A) 用索引走訪（索引不會因重新配置而失效）；
+//           (B) 先收集到暫存區，走訪結束後再一次併入（語意最清晰）。
+//         絕對不可以的是：在範圍 for 或迭代器迴圈裡直接對同一容器 push_back。
+// -----------------------------------------------------------------------------
+struct Player {
+    std::string name;
+    int score;
+};
+
+// 做法 A：用索引走訪，邊走邊加。索引是相對位置，重新配置不會使它失效。
+// 迴圈條件每次都重新讀 v.size()，所以新加入的元素也會被走訪到
+// （這裡用 name 前綴擋掉，避免獎勵條目再產生獎勵）。
+void grantBonusByIndex(std::vector<Player>& players, int threshold) {
+    for (std::size_t i = 0; i < players.size(); ++i) {
+        if (players[i].score >= threshold && players[i].name.rfind("BONUS:", 0) != 0) {
+            players.push_back({"BONUS:" + players[i].name, 0});
+            // 若改用迭代器走訪，push_back 之後迭代器就可能懸空了
+        }
+    }
+}
+
+// 做法 B：走訪時只讀不寫，把要新增的先放暫存區，結束後一次併入。
+// 走訪期間容器完全沒被改動，不存在任何失效問題。
+void grantBonusByStaging(std::vector<Player>& players, int threshold) {
+    std::vector<Player> pending;
+    for (const Player& p : players) {              // 唯讀走訪，安全
+        if (p.score >= threshold) {
+            pending.push_back({"BONUS:" + p.name, 0});
+        }
+    }
+    players.insert(players.end(), pending.begin(), pending.end());
+}
+
 int main() {
+    std::cout << "=== 一、迭代器失效的基本示範 ===" << std::endl;
     std::vector<int> v = {10, 20, 30};
     auto it = v.begin();  // 指向 10
 
     std::cout << "*it = " << *it << std::endl;  // 10
 
-    // 這個 push_back 可能導致記憶體重新配置
-    // 如果發生重新配置，it 就失效了！
+    // 這幾個 push_back 可能導致記憶體重新配置
+    // 一旦發生重新配置，it 就失效了！
     v.push_back(40);
     v.push_back(50);
     v.push_back(60);
@@ -669,5 +829,86 @@ int main() {
     it = v.begin();
     std::cout << "*it = " << *it << std::endl;  // 10
 
+    std::cout << "\n=== 二、觀察「什麼時候」真的重新配置 ===" << std::endl;
+    std::cout << "（不印位址本身——位址每次執行都不同；改印位址有沒有改變）" << std::endl;
+    std::vector<int> w;
+    w.reserve(4);                       // 先把容量固定在 4，讓行為可預期
+    for (int i = 1; i <= 3; ++i) w.push_back(i);
+
+    const int* before = w.data();
+    std::size_t capBefore = w.capacity();
+    w.push_back(4);                     // size 3→4，還沒超過 capacity 4
+    std::cout << "size 3→4（capacity " << capBefore << "）: 重新配置? "
+              << std::boolalpha << (w.data() != before) << std::endl;
+
+    before = w.data();
+    capBefore = w.capacity();
+    w.push_back(5);                     // size 4→5，超過 capacity → 必定重新配置
+    std::cout << "size 4→5（capacity " << capBefore << "）: 重新配置? "
+              << (w.data() != before)
+              << "，新 capacity = " << w.capacity() << std::endl;
+    std::cout << "↑ 同一行 push_back，一次沒事一次全部失效——這就是它危險的原因" << std::endl;
+
+    std::cout << "\n=== 三、索引不會失效，指標與迭代器會 ===" << std::endl;
+    std::vector<int> u = {1, 2, 3};
+    std::size_t idx = 1;                       // 索引：相對位置
+    const int* p = &u[1];                      // 指標：絕對位址
+    std::cout << "push_back 前 u[idx] = " << u[idx] << ", *p = " << *p << std::endl;
+    u.push_back(4);
+    u.push_back(5);
+    u.push_back(6);                            // 期間必定發生過重新配置
+    std::cout << "push_back 後 u[idx] = " << u[idx] << "（索引仍然正確）" << std::endl;
+    std::cout << "（*p 不再印出——p 可能已懸空，讀它是 undefined behavior）" << std::endl;
+    (void)p;
+
+    std::cout << "\n=== 四、日常實務：邊走訪邊新增的兩種安全寫法 ===" << std::endl;
+    std::vector<Player> a = {{"Alice", 95}, {"Bob", 60}, {"Carol", 88}};
+    grantBonusByIndex(a, 80);
+    std::cout << "做法A（索引走訪）  : ";
+    for (const Player& pl : a) std::cout << pl.name << "(" << pl.score << ") ";
+    std::cout << std::endl;
+
+    std::vector<Player> b = {{"Alice", 95}, {"Bob", 60}, {"Carol", 88}};
+    grantBonusByStaging(b, 80);
+    std::cout << "做法B（暫存後併入）: ";
+    for (const Player& pl : b) std::cout << pl.name << "(" << pl.score << ") ";
+    std::cout << std::endl;
+
     return 0;
 }
+
+// 編譯: g++ -std=c++17 -Wall -Wextra "第 16 課：vector 的迭代器操作14.cpp" -o invalidation
+//
+// 【關於下方預期輸出的但書】
+//   ▸ 本檔刻意不印出任何記憶體位址——位址每次執行都不同，
+//     改為印出「位址有沒有改變」這個布林結果，才是可重現的觀察。
+//   ▸ 第二段的 capacity 數值（4 → 8）來自 libstdc++ 的 2 倍成長策略，
+//     屬實作定義（本機 GCC 15.2 實測）；MSVC 採 1.5 倍，數字會不同。
+//   ▸ 第三段刻意不解參考可能懸空的指標 p，因此輸出中沒有它的值。
+//
+// 【本檔未附 LeetCode 範例的理由】
+//   迭代器失效是「容器實作機制」層次的議題，源自 vector 必須維持
+//   記憶體連續這個約束。LeetCode 的解題流程幾乎不會出現
+//   「邊走訪邊改變同一容器大小」的需求，硬套一題只會讓主題失焦。
+//   真正會被它咬到的是上面那種伺服器端的長期維護程式碼，
+//   因此改以排行榜結算的實務範例呈現。
+
+// === 預期輸出 ===
+// === 一、迭代器失效的基本示範 ===
+// *it = 10
+// *it = 10
+//
+// === 二、觀察「什麼時候」真的重新配置 ===
+// （不印位址本身——位址每次執行都不同；改印位址有沒有改變）
+// size 3→4（capacity 4）: 重新配置? false
+// size 4→5（capacity 4）: 重新配置? true，新 capacity = 8
+// ↑ 同一行 push_back，一次沒事一次全部失效——這就是它危險的原因
+//
+// === 三、索引不會失效，指標與迭代器會 ===
+// push_back 前 u[idx] = 2, *p = 2
+// push_back 後 u[idx] = 2（索引仍然正確）
+// （*p 不再印出——p 可能已懸空，讀它是 undefined behavior）
+//
+// === 四、日常實務：邊走訪邊新增的兩種安全寫法 ===
+// 做法A（索引走訪）  : Alice(95) Bob(60) Carol(88) BONUS:Alice(0) BONUS:Carol(0)
+// 做法B（暫存後併入）: Alice(95) Bob(60) Carol(88) BONUS:Alice(0) BONUS:Carol(0)

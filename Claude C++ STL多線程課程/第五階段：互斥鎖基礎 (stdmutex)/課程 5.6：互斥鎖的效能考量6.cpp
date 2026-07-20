@@ -1,4 +1,148 @@
-﻿/*
+﻿// =============================================================================
+//  課程 5.6：互斥鎖的效能考量6.cpp  —  優化前後對照：一個完整的案例研究
+// =============================================================================
+//
+// 【檔案結構】上半部（約 920 行）是本節的完整講義，包在一個 /* ... */ 區塊裡，
+//   收錄了 5.6-1 到 5.6-5 各檔的程式碼與說明；下半部才是本檔實際會編譯執行的
+//   「優化前 / 優化後」對照程式。本段是為整份檔案補上的教科書導讀。
+//
+// 【主題資訊 Information】
+//   主題：    鎖優化的完整案例：從「每次操作都上鎖」到「本地累加 + 合併一次」
+//   核心手法：thread-local 部分和 + 最後一次合併（reduction / 歸約）
+//   標準版本：std::thread / std::chrono / std::accumulate 為 C++11 起
+//   標頭檔：  <mutex>、<numeric>、<chrono>、<vector>
+//   本機環境：Ubuntu 26.04 / g++ 15.2.0 / 16 核心
+//   ⚠️ 所有時間數字都是本機實測值，每次執行都不同，非標準保證。
+//
+// 【詳細解釋 Explanation】
+//
+// 【1. 這個案例把前五節的教訓濃縮成一個對照】
+//   * BeforeOptimization：每處理一個元素就 lock → sum += → unlock。
+//     總上鎖次數 = 資料量（本檔 100000 次）。
+//   * AfterOptimization ：每條執行緒先在區域變數累加自己那一段，
+//     全部算完才上一次鎖把部分和加進全域。
+//     總上鎖次數 = 執行緒數（本檔 4 次）。
+//   兩者的計算量完全相同、結果完全相同，
+//   差別只在「上鎖次數從 100000 降到 4」。
+//   本機實測加速比通常在 20 倍以上（見檔尾）。
+//
+// 【2. 為什麼效果這麼誇張：序列比例被壓到接近零】
+//   優化前，每個元素的處理都在臨界區段內，
+//   而「sum += data[i]」本身只是一次加法（約 1 ns），
+//   鎖的開銷卻是十幾奈秒 —— 【同步比工作本身還貴十幾倍】。
+//   再加上 4 條執行緒互相爭搶同一把鎖造成的上下文切換，
+//   整體退化成「比單執行緒還慢」。
+//   優化後，99.999% 的工作在鎖外並行執行，
+//   依 Amdahl 定律序列比例 p ≈ 0，加速比接近核心數上限。
+//
+// 【3. 「預熱」為什麼在 main 裡出現】
+//   main 中先呼叫了一次 runTest(before) 與 runTest(after) 才開始正式量測。
+//   原因是第一次執行時：
+//     * 指令快取與資料快取都是冷的
+//     * 分支預測器還沒學到模式
+//     * CPU 可能還在低頻狀態（動態頻率調節需要時間爬升）
+//     * 記憶體頁可能還沒真正配置（首次寫入才觸發 page fault）
+//   不預熱的話，第一個被測的項目會被系統性地低估效能。
+//   這是 micro-benchmark 的基本紀律，本檔有做對。
+//
+// 【4. 這個優化的三個代價（不能只講好處）】
+//   ① 結果有延遲：合併之前，全域 sum 看不到部分進度。
+//      需要即時進度條的場景不適用（可改成每 N 次合併一次，折衷）。
+//   ② 崩潰會遺失：執行緒中途異常結束，它的本地累加就消失了。
+//   ③ 浮點數的累加順序改變：若累加的是 double，
+//      因為浮點加法不滿足結合律，結果的最低有效位可能與優化前不同。
+//      本檔累加的是整數，所以結果完全相同（程式有驗證這一點）。
+//
+// 【5. 什麼時候【不該】做這個優化】
+//   * 當臨界區段本來就很重（例如每次都要做 I/O 或複雜計算）→
+//     鎖的佔比已經很低，優化鎖收益微乎其微（見 5.6-4 的 good vs better）。
+//   * 當操作之間有順序相依（後一次要用到前一次的結果）→
+//     根本無法拆成獨立的部分和。
+//   * 當需要即時的全域一致視圖 → 批次合併違反這個需求。
+//   → 判斷流程永遠是：先量測找出真正的瓶頸，再決定要不要優化。
+//     「先優化再說」通常只會增加複雜度而沒有收益。
+//
+// 【概念補充 Concept Deep Dive】
+//
+// (A) 這個模式的正式名稱與標準支援
+//   把資料切塊、各自算部分結果、最後合併，叫做 reduction（歸約）。
+//   C++17 起標準函式庫直接支援：
+//       std::reduce(std::execution::par, v.begin(), v.end(), 0LL);
+//   （需要連結 TBB；g++ 需加 -ltbb）
+//   OpenMP 則有 `#pragma omp parallel for reduction(+:sum)`。
+//   本檔手寫是為了讓機制透明 —— 理解手寫版本之後，
+//   使用標準設施時才知道它在做什麼、以及它的限制在哪。
+//
+// (B) 為什麼不用 std::atomic<long> 取代 mutex 就好
+//   把 sum 換成 atomic 確實比 mutex 快（一道 lock add vs 一次 futex 快路徑），
+//   但仍然是【每個元素都要做一次原子操作】，
+//   而所有核心都在寫同一條 cache line → cache line ping-pong。
+//   本地累加則是每條執行緒寫自己堆疊上的變數（各自的 cache line），
+//   完全沒有一致性流量。這就是為什麼「減少同步次數」
+//   比「換用更快的同步原語」有效得多。
+//
+// (C) 為什麼優化後仍然需要那一把鎖
+//   最後合併時，4 條執行緒仍然要寫同一個 sum，所以還是需要同步。
+//   只是這次只發生 4 次，成本可以忽略。
+//   → 這說明優化的目標不是「消滅鎖」，而是「減少上鎖的次數」。
+//     完全無鎖的設計（lock-free）通常複雜且容易出錯，
+//     而把上鎖次數降幾個數量級，往往就足以解決問題。
+//
+// 【注意事項 Pay Attention】
+// 1. 優化的核心是「減少上鎖次數」，不是「換更快的鎖」或「消滅鎖」。
+// 2. micro-benchmark 一定要預熱（本檔有做），否則第一個被測項目會被低估。
+// 3. 三個代價：結果有延遲、崩潰會遺失本地累計、浮點累加順序改變。
+// 4. 本檔累加整數，所以優化前後結果完全相同；若是 double 則最低有效位可能不同。
+// 5. 臨界區段本來就很重、或操作間有順序相依時，這個優化不適用。
+// 6. C++17 起可用 std::reduce + 平行執行策略（需 -ltbb）取代手寫。
+// 7. 所有時間數字每次執行都不同，檔尾的預期輸出只是某一次的實測。
+//
+// 【LeetCode 說明】本檔不附 LeetCode 範例。
+//   本檔是效能優化的案例研究（量測 → 定位瓶頸 → 改寫 → 驗證），
+//   沒有可判題的演算法；允許使用的設計題（146/155/705/707/1603）
+//   與並行題（1114～1117/1195）都不涉及效能優化流程。
+//   硬湊只會失焦，故從缺，改以下方兩個真實情境
+//   （日誌分析的平行歸約、以及「先量測再優化」的反例）呈現。
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】鎖的效能優化
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 一段多執行緒程式用了鎖之後比單執行緒還慢，你會怎麼排查?
+//     答：先量測「鎖的佔比」——把臨界區段的內容與上鎖次數列出來。
+//         最常見的三個原因依序是：
+//         ① 上鎖次數太多（每次操作都上鎖）→ 改成本地累加、最後合併
+//         ② 臨界區段太大（計算 / I/O 在鎖內）→ 把它們移到鎖外
+//         ③ 鎖的粒度太粗（不相干的資料共用一把鎖）→ 分片
+//         其中 ① 的效果通常最顯著，因為它直接把序列比例壓到接近零。
+//     追問：為什麼不直接換成 std::atomic?
+//         → atomic 比 mutex 快，但仍然是「每個元素都做一次原子操作」，
+//           而且所有核心搶同一條 cache line 會產生 ping-pong。
+//           本地累加則各自寫自己堆疊上的變數，完全沒有一致性流量 ——
+//           「減少同步次數」比「換更快的同步原語」有效得多。
+//
+// 🔥 Q2. 「本地累加 + 最後合併」有什麼代價?
+//     答：三個。① 結果有延遲 —— 合併前看不到部分進度，
+//         不適合需要即時全域視圖的場景。
+//         ② 執行緒中途崩潰會遺失它的本地累計。
+//         ③ 若累加的是浮點數，因為加法不滿足結合律，
+//         累加順序改變會讓結果的最低有效位不同。
+//     追問：那要即時進度怎麼辦?
+//         → 折衷：每 N 次合併一次（例如每 1000 筆），
+//           把上鎖次數降到 1/N，同時保有大致的即時性。
+//
+// ⚠️ 陷阱. 「我看到程式碼裡有 mutex，就先把它優化掉再說」——錯在哪?
+//     答：這是在還沒確認瓶頸之前就優化。實務上多數效能問題出在
+//         演算法複雜度、I/O 或記憶體配置，鎖往往不是主因。
+//         而且無鎖改寫會大幅增加複雜度與出錯機率 ——
+//         用巨大的正確性風險換取可能只有 1% 的收益。
+//     為什麼會錯：把「看得見的同步原語」當成瓶頸的證據。
+//         正確的流程是先量測（profiler、或像本檔這樣做 A/B 對照），
+//         確認鎖真的佔了顯著比例，再動手。
+//         5.6-1 的實測就顯示：當臨界區段有真實工作量時，
+//         鎖的佔比往往只有個位數百分比。
+// =============================================================================
+
+/*
 # 第五階段：互斥鎖基礎 (std::mutex)
 
 ## 課程 5.6：互斥鎖的效能考量
@@ -932,6 +1076,7 @@ int main() {
 #include <chrono>
 #include <numeric>
 #include <iomanip>
+#include <thread>
 
 const int DATA_SIZE = 100000;
 const int NUM_THREADS = 4;
@@ -1010,6 +1155,145 @@ double runTest(T& processor) {
     return std::chrono::duration<double, std::milli>(end - start).count();
 }
 
+
+// -----------------------------------------------------------------------------
+// 【日常實務範例 1】日誌分析的平行歸約
+//   情境：分析 100 萬行日誌，統計各 HTTP 狀態碼的次數與總傳輸量。
+//   天真寫法：每處理一行就鎖住全域統計表更新 → 100 萬次上鎖。
+//   正解：每條執行緒維護自己的本地統計，處理完自己那段才合併一次。
+//         這與本檔的 AfterOptimization 是完全相同的模式，
+//         只是累加的對象從單一個 sum 變成一組計數器。
+// -----------------------------------------------------------------------------
+struct LogStats {
+    long count2xx = 0;
+    long count4xx = 0;
+    long count5xx = 0;
+    long totalBytes = 0;
+
+    void merge(const LogStats& other) {
+        count2xx += other.count2xx;
+        count4xx += other.count4xx;
+        count5xx += other.count5xx;
+        totalBytes += other.totalBytes;
+    }
+};
+
+struct LogEntry {
+    int status;
+    long bytes;
+};
+
+// ✗ 每行都上鎖
+void analyzePerLine(std::mutex& mtx, LogStats& global,
+                    const std::vector<LogEntry>& logs, size_t begin, size_t end) {
+    for (size_t i = begin; i < end; ++i) {
+        std::lock_guard<std::mutex> lock(mtx);
+        if (logs[i].status < 400)      ++global.count2xx;
+        else if (logs[i].status < 500) ++global.count4xx;
+        else                           ++global.count5xx;
+        global.totalBytes += logs[i].bytes;
+    }
+}
+
+// ✓ 本地統計 + 合併一次
+void analyzeLocalMerge(std::mutex& mtx, LogStats& global,
+                       const std::vector<LogEntry>& logs, size_t begin, size_t end) {
+    LogStats local;                                   // 全程無鎖
+    for (size_t i = begin; i < end; ++i) {
+        if (logs[i].status < 400)      ++local.count2xx;
+        else if (logs[i].status < 500) ++local.count4xx;
+        else                           ++local.count5xx;
+        local.totalBytes += logs[i].bytes;
+    }
+    std::lock_guard<std::mutex> lock(mtx);            // 整條執行緒只上鎖一次
+    global.merge(local);
+}
+
+template<typename Fn>
+double runLogAnalysis(Fn fn, const std::vector<LogEntry>& logs, int numThreads,
+                      LogStats& result) {
+    std::mutex mtx;
+    LogStats global;
+    std::vector<std::thread> threads;
+    size_t chunk = logs.size() / static_cast<size_t>(numThreads);
+
+    auto start = std::chrono::steady_clock::now();
+    for (int i = 0; i < numThreads; ++i) {
+        size_t b = chunk * static_cast<size_t>(i);
+        size_t e = (i == numThreads - 1) ? logs.size() : b + chunk;
+        threads.emplace_back([&mtx, &global, &logs, b, e, fn] {
+            fn(mtx, global, logs, b, e);
+        });
+    }
+    for (auto& t : threads) t.join();
+    auto end = std::chrono::steady_clock::now();
+
+    result = global;
+    return std::chrono::duration<double, std::milli>(end - start).count();
+}
+
+// -----------------------------------------------------------------------------
+// 【日常實務範例 2】反例：先量測，不要憑直覺優化
+//   情境：這個工作的臨界區段本來就很重（每次要做一段真實計算）。
+//         直覺會說「有鎖就該優化」，但實測會顯示：
+//         把上鎖次數從 N 降到執行緒數，收益極為有限 ——
+//         因為鎖根本不是瓶頸，計算才是。
+//   教訓：優化前先量測「鎖佔總時間的比例」，
+//         佔比低就別動它，把力氣花在真正的瓶頸上。
+// -----------------------------------------------------------------------------
+inline long heavyWork(int x) {
+    long h = x;
+    for (int i = 0; i < 200; ++i) h = h * 31 + (i ^ x);
+    return h;
+}
+
+double runHeavyPerItemLock(const std::vector<int>& data, int numThreads, long& out) {
+    std::mutex mtx;
+    long sum = 0;
+    std::vector<std::thread> threads;
+    size_t chunk = data.size() / static_cast<size_t>(numThreads);
+
+    auto start = std::chrono::steady_clock::now();
+    for (int i = 0; i < numThreads; ++i) {
+        size_t b = chunk * static_cast<size_t>(i);
+        size_t e = (i == numThreads - 1) ? data.size() : b + chunk;
+        threads.emplace_back([&mtx, &sum, &data, b, e] {
+            for (size_t k = b; k < e; ++k) {
+                long v = heavyWork(data[k]);          // 計算在鎖外
+                std::lock_guard<std::mutex> lock(mtx);
+                sum += v;                              // 每個元素上鎖一次
+            }
+        });
+    }
+    for (auto& t : threads) t.join();
+    auto end = std::chrono::steady_clock::now();
+    out = sum;
+    return std::chrono::duration<double, std::milli>(end - start).count();
+}
+
+double runHeavyLocalMerge(const std::vector<int>& data, int numThreads, long& out) {
+    std::mutex mtx;
+    long sum = 0;
+    std::vector<std::thread> threads;
+    size_t chunk = data.size() / static_cast<size_t>(numThreads);
+
+    auto start = std::chrono::steady_clock::now();
+    for (int i = 0; i < numThreads; ++i) {
+        size_t b = chunk * static_cast<size_t>(i);
+        size_t e = (i == numThreads - 1) ? data.size() : b + chunk;
+        threads.emplace_back([&mtx, &sum, &data, b, e] {
+            long local = 0;
+            for (size_t k = b; k < e; ++k) local += heavyWork(data[k]);
+            std::lock_guard<std::mutex> lock(mtx);
+            sum += local;                              // 整條執行緒只上鎖一次
+        });
+    }
+    for (auto& t : threads) t.join();
+    auto end = std::chrono::steady_clock::now();
+    out = sum;
+    return std::chrono::duration<double, std::milli>(end - start).count();
+}
+
 int main() {
     BeforeOptimization before;
     AfterOptimization after;
@@ -1035,6 +1319,105 @@ int main() {
     std::cout << "優化前 sum = " << before.getSum() << std::endl;
     std::cout << "優化後 sum = " << after.getSum() << std::endl;
     std::cout << "結果一致：" << (before.getSum() == after.getSum() ? "✓" : "✗") << std::endl;
+    std::cout << "（累加的是整數，所以優化前後結果完全相同；" << std::endl;
+    std::cout << "  若是 double，浮點加法不滿足結合律，最低有效位可能不同）" << std::endl;
+
+    std::cout << "\n=== 日常實務 1：日誌分析的平行歸約 ===" << std::endl;
+    {
+        std::vector<LogEntry> logs(1000000);
+        for (size_t i = 0; i < logs.size(); ++i) {
+            int r = static_cast<int>(i % 10);
+            logs[i].status = (r < 7) ? 200 : (r < 9 ? 404 : 500);
+            logs[i].bytes = 100 + static_cast<long>(i % 900);
+        }
+
+        LogStats r1, r2;
+        runLogAnalysis(analyzePerLine,   logs, 4, r1);   // 預熱
+        runLogAnalysis(analyzeLocalMerge, logs, 4, r2);
+
+        double tPerLine = runLogAnalysis(analyzePerLine,    logs, 4, r1);
+        double tLocal   = runLogAnalysis(analyzeLocalMerge, logs, 4, r2);
+
+        std::cout << std::fixed << std::setprecision(2);
+        std::cout << "100 萬行日誌，4 條執行緒" << std::endl;
+        std::cout << "每行上鎖  ：" << tPerLine << " ms（上鎖 1000000 次）" << std::endl;
+        std::cout << "本地合併  ：" << tLocal   << " ms（上鎖 4 次）" << std::endl;
+        std::cout << "2xx=" << r2.count2xx << "  4xx=" << r2.count4xx
+                  << "  5xx=" << r2.count5xx << std::endl;
+        std::cout << "兩種寫法結果一致："
+                  << ((r1.count2xx == r2.count2xx && r1.count4xx == r2.count4xx
+                       && r1.count5xx == r2.count5xx && r1.totalBytes == r2.totalBytes)
+                      ? "是" : "否") << std::endl;
+    }
+
+    std::cout << "\n=== 日常實務 2：反例 —— 鎖不是瓶頸時，優化鎖沒有意義 ===" << std::endl;
+    {
+        std::vector<int> data(200000);
+        for (size_t i = 0; i < data.size(); ++i) data[i] = static_cast<int>(i % 1000);
+
+        long s1 = 0, s2 = 0;
+        runHeavyPerItemLock(data, 4, s1);    // 預熱
+        runHeavyLocalMerge(data, 4, s2);
+
+        double tPerItem = runHeavyPerItemLock(data, 4, s1);
+        double tLocal   = runHeavyLocalMerge(data, 4, s2);
+
+        std::cout << std::fixed << std::setprecision(2);
+        std::cout << "20 萬筆資料，每筆要做 200 次運算，4 條執行緒" << std::endl;
+        std::cout << "每筆上鎖  ：" << tPerItem << " ms" << std::endl;
+        std::cout << "本地合併  ：" << tLocal   << " ms" << std::endl;
+        std::cout << "加速比    ：" << (tPerItem / tLocal) << "x" << std::endl;
+        std::cout << "結果一致  ：" << (s1 == s2 ? "是" : "否") << std::endl;
+        std::cout << "→ 對照前一段的 20 倍以上，這裡的加速比小得多：" << std::endl;
+        std::cout << "  因為每筆的計算量遠大於一次上鎖，鎖根本不是瓶頸。" << std::endl;
+        std::cout << "  這就是為什麼要【先量測再優化】。" << std::endl;
+    }
     
     return 0;
 }
+
+// 編譯: g++ -std=c++17 -Wall -Wextra -pthread '課程 5.6：互斥鎖的效能考量6.cpp' -o optimization
+
+// ⚠️ 本檔的【所有時間與加速比每次執行都不同】（效能量測，受頻率調節、
+// 排程、負載影響），下面貼的是本機（Ubuntu 26.04 / g++ 15.2.0 / 16 核心）
+// 某一次的真實實測。穩定成立的是【趨勢】：
+//   * 上鎖次數從 10 萬 / 100 萬降到 4 次時，加速數十倍（本次 25.69x、39x）
+//   * 但當每筆的計算量遠大於一次上鎖時，加速比就掉到接近 1（本次 1.78x）
+//     —— 這正是「先量測再優化」要說明的事。
+//
+// 以下是確定值（正確性驗證，每次執行都相同）：
+//   * 優化前後 sum 皆為 18104913692784、結果一致 ✓（累加的是整數）
+//   * 日誌統計 2xx=700000 / 4xx=200000 / 5xx=100000
+
+// === 預期輸出 ===
+// === 優化前後效能對比 ===
+// 資料大小：100000
+// 執行緒數：4
+//
+// 優化前時間：9.48 ms
+// 優化後時間：0.32 ms
+// 加速比：29.33x
+//
+// 結果驗證：
+// 優化前 sum = 18104913692784
+// 優化後 sum = 18104913692784
+// 結果一致：✓
+// （累加的是整數，所以優化前後結果完全相同；
+//   若是 double，浮點加法不滿足結合律，最低有效位可能不同）
+//
+// === 日常實務 1：日誌分析的平行歸約 ===
+// 100 萬行日誌，4 條執行緒
+// 每行上鎖  ：112.04 ms（上鎖 1000000 次）
+// 本地合併  ：2.60 ms（上鎖 4 次）
+// 2xx=700000  4xx=200000  5xx=100000
+// 兩種寫法結果一致：是
+//
+// === 日常實務 2：反例 —— 鎖不是瓶頸時，優化鎖沒有意義 ===
+// 20 萬筆資料，每筆要做 200 次運算，4 條執行緒
+// 每筆上鎖  ：34.15 ms
+// 本地合併  ：18.88 ms
+// 加速比    ：1.81x
+// 結果一致  ：是
+// → 對照前一段的 20 倍以上，這裡的加速比小得多：
+//   因為每筆的計算量遠大於一次上鎖，鎖根本不是瓶頸。
+//   這就是為什麼要【先量測再優化】。

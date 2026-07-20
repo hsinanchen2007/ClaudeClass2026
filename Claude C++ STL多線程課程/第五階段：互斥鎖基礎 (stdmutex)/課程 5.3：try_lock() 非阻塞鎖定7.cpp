@@ -1,4 +1,133 @@
-﻿/*
+﻿// =============================================================================
+//  課程 5.3：try_lock() 非阻塞鎖定7.cpp  —  自訂逾時鎖 vs std::timed_mutex
+// =============================================================================
+//
+// 【主題資訊 Information】
+//   本檔手寫模式：
+//       bool tryLockFor(std::mutex& m, std::chrono::milliseconds timeout);
+//       —— 用 try_lock() + sleep 迴圈土炮出「等一段時間就放棄」
+//   標準提供的正解（C++11）：
+//       class std::timed_mutex;                                   // <mutex>
+//           template<class Rep, class Period>
+//           bool try_lock_for  (const chrono::duration<Rep,Period>& rel_time);
+//           template<class Clock, class Duration>
+//           bool try_lock_until(const chrono::time_point<Clock,Duration>& abs_time);
+//       class std::recursive_timed_mutex;                         // C++11
+//       class std::shared_timed_mutex;                            // C++14
+//   標頭檔：<mutex>、<chrono>、<thread>
+//
+// 【詳細解釋 Explanation】
+//
+// 【1. 為什麼需要「有逾時的鎖」】
+//   lock() 是「無限期等待」，try_lock() 是「完全不等」。
+//   真實系統最常見的需求其實在兩者【中間】：
+//     「我可以等，但不能等太久——超過 100ms 就回報服務繁忙。」
+//   這在有 SLA 的服務裡是硬需求：一個請求的總預算可能只有 200ms，
+//   絕不能因為某把鎖塞住而讓它無限期掛著。
+//   逾時鎖把「最壞延遲」變成可控、可預測的量。
+//
+// 【2. 本檔手寫版本的三個實際缺陷】
+//   tryLockFor 的邏輯是「每 1ms 醒來試一次，直到逾時」。能動，但：
+//     (a) 【延遲不精確】：鎖若在兩次取樣的【中間】被釋放，
+//         這段最多 1ms 的空窗就白等了。取樣間隔調小則 CPU 消耗上升，
+//         調大則延遲變差——這是土炮方案無法擺脫的取捨。
+//     (b) 【浪費 CPU】：每次醒來都是一次完整的 context switch。
+//         100ms 的等待就是約 100 次無謂的醒來，其中 99 次注定失敗。
+//     (c) 【逾時判斷不精準】：sleep_for 只保證「至少」睡那麼久，
+//         再加上 try_lock 本身的成本，實際逾時一定略大於設定值。
+//   → std::timed_mutex 沒有這些問題：它底層用【帶逾時參數的 futex 等待】，
+//     執行緒真的睡著（CPU 0%），鎖一釋放就【立刻】被喚醒，
+//     不需要輪詢，延遲最低。
+//
+// 【3. 那為什麼標準要分成 mutex 與 timed_mutex 兩種型別？】
+//   因為逾時能力【不是免費的】：timed_mutex 的實作路徑比 mutex 複雜，
+//   在部分平台上還需要額外的狀態。
+//   C++ 的設計哲學是「不為你沒用到的功能付出代價」
+//   （zero-overhead principle），所以把逾時能力分離成獨立型別，
+//   讓絕大多數不需要逾時的場合仍能用最精簡的 std::mutex。
+//   （本機 x86-64 / glibc 上兩者的 sizeof 剛好相同，見程式輸出；
+//     但這是【實作定義】的巧合，不可當成通則。）
+//
+// 【4. try_lock_for vs try_lock_until——與 sleep_for/sleep_until 同一個道理】
+//     try_lock_for(100ms)              → 相對：從現在起最多等 100ms
+//     try_lock_until(deadline)         → 絕對：等到某個時間點為止
+//   在「一個請求有總時間預算」的場景，try_lock_until 才是對的：
+//       auto deadline = steady_clock::now() + 200ms;   // 整個請求的預算
+//       if (!m1.try_lock_until(deadline)) return Timeout;
+//       if (!m2.try_lock_until(deadline)) return Timeout;   // 共用同一個截止時間
+//   若這裡用 try_lock_for(200ms) 兩次，最壞會等 400ms，預算就爆了。
+//   ⚠️ 並且務必用 steady_clock：system_clock 會被 NTP 校時往前往後跳。
+//
+// 【概念補充 Concept Deep Dive】
+//   * 逾時【失敗】之後要做什麼，比逾時本身更重要。
+//     回傳 false 卻沒有替代路徑，等於只是把「卡住」換成「靜默失敗」。
+//     正確做法是：回報明確的錯誤（HTTP 503 / 熔斷器計數 +1）、
+//     記錄告警，讓維運知道鎖競爭已經嚴重到影響 SLA。
+//   * 逾時值的選擇是工程判斷：太短會在正常負載下誤判失敗，
+//     太長則失去保護意義。實務上從 P99 延遲往上抓幾倍作為起點，
+//     再依線上數據調整。
+//   * 若發現需要頻繁設定鎖的逾時，通常代表【設計本身有問題】：
+//     臨界區段太長、鎖的粒度太粗、或在鎖裡做了 I/O。
+//     逾時是安全網，不是效能問題的解法。
+//   * 本檔原始的 main 讓三條執行緒直接 cout，輸出順序每次都不同。
+//     已改為收集結果後由主執行緒統一輸出，讓預期輸出可以驗證。
+//
+// 【注意事項 Pay Attention】
+//   1. std::mutex 【沒有】try_lock_for/try_lock_until，
+//      需要逾時必須改用 std::timed_mutex。
+//   2. 手寫的輪詢式逾時延遲較差且浪費 CPU，能用 timed_mutex 就別自己寫。
+//   3. try_lock_for 的實際等待時間一定【略大於】設定值
+//      （sleep 只保證下限、還有排程延遲）。
+//   4. 一個請求內取多把鎖時，用 try_lock_until 共用同一個截止時間，
+//      而不是每把鎖各給一次 try_lock_for。
+//   5. 時間基準請用 steady_clock，不要用 system_clock。
+//   6. 逾時失敗【必須】有明確的替代路徑與可觀測性，不可靜默忽略。
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】逾時鎖
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. std::mutex 有 try_lock_for() 嗎？沒有的話該用什麼？
+//     答：沒有。std::mutex 只有 lock() / try_lock() / unlock()。
+//         需要逾時要改用 std::timed_mutex（C++11），
+//         它提供 try_lock_for()（相對時間）與 try_lock_until()（絕對時間點）。
+//         另有 recursive_timed_mutex（C++11）與 shared_timed_mutex（C++14）。
+//     追問：為什麼標準不直接把逾時加進 std::mutex？
+//           → zero-overhead principle：逾時能力需要更複雜的實作路徑，
+//             不該讓完全不需要它的使用者付出代價。
+//
+// 🔥 Q2. 用 try_lock() 加 sleep 迴圈自己實作逾時，跟 timed_mutex 差在哪？
+//     答：手寫版本是【輪詢】：每隔一小段醒來試一次。
+//         缺點是鎖若在兩次取樣之間被釋放就白等（延遲抖動）、
+//         每次醒來都是一次 context switch（浪費 CPU）、
+//         而且逾時值不精確。
+//         timed_mutex 底層是帶逾時的 futex 等待：執行緒真的睡著，
+//         鎖一釋放立刻被喚醒，延遲最低且不耗 CPU。
+//     追問：那手寫版本什麼時候還有價值？
+//           → 當每次重試之間需要做別的事時（檢查取消旗標、更新進度、
+//             處理其他佇列），才需要自己控制迴圈。
+//
+// ⚠️ 陷阱. 一個請求要依序取得 m1、m2、m3 三把鎖，總預算 300ms。
+//        寫成三次 try_lock_for(300ms) 對嗎？
+//     答：不對。每次 try_lock_for 都是【從呼叫當下重新起算】300ms，
+//         最壞情況會等 900ms，整整超出預算三倍。
+//         正解是先算出一個絕對截止時間，三把鎖共用它：
+//             auto deadline = std::chrono::steady_clock::now()
+//                           + std::chrono::milliseconds(300);
+//             if (!m1.try_lock_until(deadline)) return Timeout;
+//             if (!m2.try_lock_until(deadline)) return Timeout;
+//             if (!m3.try_lock_until(deadline)) return Timeout;
+//     為什麼會錯：把「每一步的逾時」誤當成「整體的逾時」。
+//         逾時預算是【整個請求】的屬性，不是單一操作的屬性——
+//         這個錯誤在網路重試、RPC 呼叫鏈上同樣常見。
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// 【LeetCode 實戰範例】—— 本檔【略過】，理由如下：
+//   LeetCode 的並行題（1114 / 1115 / 1116 / 1117 / 1195）要求所有輸出
+//   都必須完成，沒有「等太久就放棄」的語意；評測環境也沒有 SLA 概念。
+//   逾時鎖的價值完全在於「可控的最壞延遲」，這在那些題目裡不存在，
+//   硬掛一題會誤導使用時機，故從缺。
+
+/*
 # 第五階段：互斥鎖基礎 (std::mutex)
 
 ## 課程 5.3：try_lock() 非阻塞鎖定
@@ -702,10 +831,11 @@ int main() {
 // 檔案：lesson_5_3_try_lock_timeout.cpp
 // 說明：實現自訂的超時鎖獲取
 
-#include <iostream>
-#include <thread>
-#include <mutex>
+#include <atomic>
 #include <chrono>
+#include <iostream>
+#include <mutex>
+#include <thread>
 
 std::mutex mtx;
 
@@ -728,34 +858,197 @@ bool tryLockFor(std::mutex& m, std::chrono::milliseconds timeout) {
     }
 }
 
+// 結果收集：直接在執行緒裡 cout 會交錯，順序每次不同，無法驗證
+std::atomic<int> acquiredCount{0};
+std::atomic<int> timedOutCount{0};
+
 void worker(int id, int workTime) {
-    std::cout << "執行緒 " << id << "：嘗試獲取鎖（超時 100ms）" << std::endl;
-    
+    (void)id;
+
     if (tryLockFor(mtx, std::chrono::milliseconds(100))) {
-        std::cout << "執行緒 " << id << "：獲得鎖，工作 " 
-                  << workTime << "ms" << std::endl;
-        
         std::this_thread::sleep_for(std::chrono::milliseconds(workTime));
-        
         mtx.unlock();
-        std::cout << "執行緒 " << id << "：完成並釋放鎖" << std::endl;
+        acquiredCount.fetch_add(1, std::memory_order_relaxed);
     } else {
-        std::cout << "執行緒 " << id << "：超時，放棄等待" << std::endl;
+        timedOutCount.fetch_add(1, std::memory_order_relaxed);
     }
 }
 
+// -----------------------------------------------------------------------------
+// 【標準正解對照組】std::timed_mutex —— 同樣的語意，交給標準函式庫
+//   差別：不輪詢、不浪費 context switch，鎖一釋放就立刻醒來。
+// -----------------------------------------------------------------------------
+std::timed_mutex tmtx;
+
+std::atomic<int> tmAcquired{0};
+std::atomic<int> tmTimedOut{0};
+
+void timedWorker(int workTime) {
+    if (tmtx.try_lock_for(std::chrono::milliseconds(100))) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(workTime));
+        tmtx.unlock();
+        tmAcquired.fetch_add(1, std::memory_order_relaxed);
+    } else {
+        tmTimedOut.fetch_add(1, std::memory_order_relaxed);
+    }
+}
+
+// -----------------------------------------------------------------------------
+// 【日常實務範例】請求層級的截止時間（deadline propagation）
+//   情境：一個 API 請求的總預算是 150ms，處理過程中要依序取得
+//         「使用者資料」與「帳務資料」兩把鎖。
+//   ⚠️ 錯誤寫法：對兩把鎖各給 try_lock_for(150ms)
+//              → 最壞會等 300ms，整整超出預算一倍。
+//   ✅ 正確寫法：在請求開始時算出一個【絕對截止時間】，
+//              兩把鎖共用它（try_lock_until）——無論在哪一步逾時，
+//              整個請求的總耗時都不會超過預算。
+//   這個「把 deadline 一路往下傳」的模式，在 gRPC / Go 的 context
+//   等現代 RPC 框架裡是標準做法，不只適用於鎖。
+// -----------------------------------------------------------------------------
+enum class RequestResult { Ok, TimeoutOnUser, TimeoutOnBilling };
+
+std::timed_mutex userMtx;
+std::timed_mutex billingMtx;
+
+RequestResult handleRequest(std::chrono::milliseconds budget) {
+    // 整個請求共用同一個截止時間（用 steady_clock，不受系統校時影響）
+    const auto deadline = std::chrono::steady_clock::now() + budget;
+
+    if (!userMtx.try_lock_until(deadline)) {
+        return RequestResult::TimeoutOnUser;
+    }
+    std::unique_lock<std::timed_mutex> userLock(userMtx, std::adopt_lock);
+
+    if (!billingMtx.try_lock_until(deadline)) {   // 注意：同一個 deadline
+        return RequestResult::TimeoutOnBilling;   // userLock 解構時自動解鎖
+    }
+    std::unique_lock<std::timed_mutex> billingLock(billingMtx, std::adopt_lock);
+
+    // 兩把鎖都到手，做實際工作
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    return RequestResult::Ok;
+}
+
 int main() {
-    // 執行緒 1 持有鎖 200ms，執行緒 2 和 3 只等待 100ms
-    std::thread t1(worker, 1, 200);
-    
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    
-    std::thread t2(worker, 2, 50);
-    std::thread t3(worker, 3, 50);
-    
-    t1.join();
-    t2.join();
-    t3.join();
-    
+    std::cout << "=== 課程示範: 手寫 tryLockFor（輪詢式逾時）===" << std::endl;
+    {
+        // 執行緒 1 持有鎖 200ms，執行緒 2 和 3 只等待 100ms
+        std::thread t1(worker, 1, 200);
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+        std::thread t2(worker, 2, 50);
+        std::thread t3(worker, 3, 50);
+
+        t1.join();
+        t2.join();
+        t3.join();
+
+        std::cout << "取得鎖的執行緒數: " << acquiredCount.load()
+                  << "  (必須是 1——執行緒 1 先搶到並持有 200ms)" << std::endl;
+        std::cout << "逾時放棄的執行緒數: " << timedOutCount.load()
+                  << "  (必須是 2——它們只等 100ms，短於 200ms 的持有時間)"
+                  << std::endl;
+    }
+
+    std::cout << "\n=== 標準正解: std::timed_mutex::try_lock_for ===" << std::endl;
+    {
+        std::thread t1(timedWorker, 200);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::thread t2(timedWorker, 50);
+        std::thread t3(timedWorker, 50);
+
+        t1.join();
+        t2.join();
+        t3.join();
+
+        std::cout << "取得鎖的執行緒數: " << tmAcquired.load()
+                  << "  (必須是 1，行為與手寫版相同)" << std::endl;
+        std::cout << "逾時放棄的執行緒數: " << tmTimedOut.load()
+                  << "  (必須是 2)" << std::endl;
+        std::cout << "差別: timed_mutex 全程睡眠等待，不輪詢、不浪費 CPU，"
+                     "且鎖一釋放就立刻醒來" << std::endl;
+    }
+
+    std::cout << "\n=== 兩種 mutex 的大小（實作定義）===" << std::endl;
+    std::cout << "sizeof(std::mutex)       = " << sizeof(std::mutex) << " bytes" << std::endl;
+    std::cout << "sizeof(std::timed_mutex) = " << sizeof(std::timed_mutex) << " bytes" << std::endl;
+    std::cout << "註: 本機兩者相同純屬平台巧合，不可當通則；"
+                 "標準把逾時能力分成獨立型別是為了 zero-overhead 原則" << std::endl;
+
+    std::cout << "\n=== 日常實務: 請求層級的截止時間 ===" << std::endl;
+    {
+        // 情境 1：無競爭，兩把鎖都能立刻取得 → 成功
+        {
+            const auto t0 = std::chrono::steady_clock::now();
+            const RequestResult r = handleRequest(std::chrono::milliseconds(150));
+            const auto spent = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                   std::chrono::steady_clock::now() - t0);
+            std::cout << "無競爭時的結果: "
+                      << (r == RequestResult::Ok ? "Ok" : "Timeout")
+                      << "，耗時未超出 150ms 預算: "
+                      << (spent.count() <= 150 ? "是" : "否") << std::endl;
+        }
+
+        // 情境 2：billingMtx 被別人長期持有 → 在第二把鎖逾時，
+        //         但【整個請求】仍在預算內返回
+        {
+            billingMtx.lock();      // 模擬別的請求長期持有帳務鎖
+
+            RequestResult result = RequestResult::Ok;
+            long spentMs = 0;
+
+            std::thread req([&result, &spentMs]() {
+                const auto t0 = std::chrono::steady_clock::now();
+                result = handleRequest(std::chrono::milliseconds(150));
+                spentMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+                              std::chrono::steady_clock::now() - t0).count();
+            });
+
+            req.join();
+            billingMtx.unlock();
+
+            std::cout << "帳務鎖被佔用時的結果: "
+                      << (result == RequestResult::TimeoutOnBilling
+                              ? "TimeoutOnBilling" : "其他")
+                      << std::endl;
+            std::cout << "整個請求仍在預算內返回: "
+                      << (spentMs <= 200 ? "是" : "否")
+                      << "  (若對每把鎖各給 150ms，最壞會拖到 300ms)" << std::endl;
+        }
+    }
+
     return 0;
 }
+
+// 編譯: g++ -std=c++17 -Wall -Wextra -pthread '課程 5.3：try_lock() 非阻塞鎖定7.cpp' -o try_lock_timeout
+
+// -----------------------------------------------------------------------------
+// 【輸出但書】
+//   1. sizeof 的兩個數字是【實作定義】的（本機 x86-64 / glibc / libstdc++），
+//      換平台或換標準函式庫實作都會不同。
+//   2. 各段的「1 成功 / 2 逾時」是穩定的：持有者持有 200ms，
+//      另外兩條只等 100ms，兩者差距夠大。
+//   3. 實際耗時的毫秒數每次執行都不同（sleep 只保證下限、還有排程延遲），
+//      故本檔只驗證「是否在預算內」這個布林條件，不列出實際毫秒數。
+// -----------------------------------------------------------------------------
+
+// === 預期輸出 ===
+// === 課程示範: 手寫 tryLockFor（輪詢式逾時）===
+// 取得鎖的執行緒數: 1  (必須是 1——執行緒 1 先搶到並持有 200ms)
+// 逾時放棄的執行緒數: 2  (必須是 2——它們只等 100ms，短於 200ms 的持有時間)
+//
+// === 標準正解: std::timed_mutex::try_lock_for ===
+// 取得鎖的執行緒數: 1  (必須是 1，行為與手寫版相同)
+// 逾時放棄的執行緒數: 2  (必須是 2)
+// 差別: timed_mutex 全程睡眠等待，不輪詢、不浪費 CPU，且鎖一釋放就立刻醒來
+//
+// === 兩種 mutex 的大小（實作定義）===
+// sizeof(std::mutex)       = 40 bytes
+// sizeof(std::timed_mutex) = 40 bytes
+// 註: 本機兩者相同純屬平台巧合，不可當通則；標準把逾時能力分成獨立型別是為了 zero-overhead 原則
+//
+// === 日常實務: 請求層級的截止時間 ===
+// 無競爭時的結果: Ok，耗時未超出 150ms 預算: 是
+// 帳務鎖被佔用時的結果: TimeoutOnBilling
+// 整個請求仍在預算內返回: 是  (若對每把鎖各給 150ms，最壞會拖到 300ms)

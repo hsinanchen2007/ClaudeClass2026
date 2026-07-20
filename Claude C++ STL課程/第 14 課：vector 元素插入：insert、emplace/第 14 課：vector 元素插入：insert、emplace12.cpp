@@ -1,3 +1,51 @@
+// =============================================================================
+//  第 14 課：vector 元素插入：insert、emplace12.cpp  —  本課完整講義＋可執行範例
+// =============================================================================
+//
+// 【主題資訊 Information】
+//   iterator insert(const_iterator pos, const T& value);              // 複製插入
+//   iterator insert(const_iterator pos, T&& value);                   // 移動插入 C++11
+//   iterator insert(const_iterator pos, size_type n, const T& value); // 插入 n 份
+//   template<class InputIt>
+//   iterator insert(const_iterator pos, InputIt first, InputIt last); // 插入範圍
+//   iterator insert(const_iterator pos, std::initializer_list<T> il); // C++11
+//   template<class... Args>
+//   iterator emplace(const_iterator pos, Args&&... args);             // 就地建構 C++11
+//
+//   回傳：指向第一個被插入元素的 iterator；沒插入任何元素時回傳 pos（本機實測）。
+//   標頭：<vector>
+//   複雜度：O(插入個數 + end() - pos)。尾端插入攤銷 O(1)，中間／開頭 O(n)。
+//
+// 【詳細解釋 Explanation】
+//   ★ 本檔以下（「# 第二階段」起）是本課的完整講義本體，包含逐段說明與大量範例，
+//     請直接往下閱讀。此處只補三個「讀講義時要一起記住」的關鍵框架：
+//
+//   【1. 為什麼插入很貴】vector 承諾元素連續，插入必須把 pos 之後的元素整段後移，
+//      搬移量 = end() - pos。這是「連續」這個承諾的必然代價，不是實作偷懶。
+//   【2. 為什麼插在 pos「之前」】STL 用半開區間 [first, last)。定義成「之前」，
+//      insert(end(), x) 才能自然表示附加到尾端，也才有辦法插到最前面。
+//   【3. insert vs emplace 的關鍵不是速度，是初始化語意】
+//      insert 走複製初始化（需可隱式轉換），emplace 走直接初始化
+//      （完美轉發給建構子，可呼叫 explicit 建構子、且不做 narrowing 檢查）。
+//
+// 【概念補充 Concept Deep Dive】
+//   容量不足時，一次插入其實做了：配置更大空間 → 搬 [begin, pos) → 就地建構新元素
+//   → 搬 [pos, end) → 銷毀舊元素並釋放。其中「搬」是 move 還是 copy，取決於 T 的
+//   移動建構子是否為 noexcept（std::move_if_noexcept）：若移動可能拋例外，
+//   vector 為維持**強例外保證**會退化成複製 —— 這就是「移動建構子請標 noexcept」
+//   的真正理由。成長倍率**是實作定義**（libstdc++ 實測 2×、MSVC 1.5×），
+//   標準只規定 push_back 為攤銷 O(1)。
+//
+// 【注意事項 Pay Attention】
+//   1. iterator 失效：有 reallocation → 全部失效；沒有 → 插入點及其之後失效。
+//      不要賭，插入後一律用 insert 的回傳值重新取得 iterator。
+//   2. pos 必須是「這個容器」的有效 iterator，傳別的容器的是 UB，
+//      標準不保證任何特定症狀：可能當場崩潰，也可能安靜跑出錯誤結果。
+//   3. 插入 0 個元素（n==0 或空範圍）合法，回傳 pos、容器不變。
+//   4. 迴圈裡逐筆 insert 到前面是 O(n²)；改用範圍版一次插入是 O(n+m)。
+//
+// =============================================================================
+
 // # 第二階段：序列容器 — vector
 
 // ## 第 14 課：vector 元素插入：insert、emplace
@@ -534,8 +582,84 @@
 // 準備好繼續嗎？
 
 
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】vector::insert / emplace
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. insert 回傳什麼？為什麼要有回傳值？
+//     答：回傳指向「第一個被插入元素」的 iterator；若一個都沒插入
+//         （n == 0 或空範圍），回傳傳進去的 pos。
+//         有回傳值是因為插入可能使舊 iterator 失效，你需要一個保證有效的新 iterator
+//         才能接著操作。
+//     追問：什麼時候舊 iterator 會失效？→ 發生 reallocation 時全部失效；
+//           沒有 reallocation 時，插入點及其之後失效。
+//
+// 🔥 Q2. 為什麼 result.insert(result.end(), a.begin()+i, a.end()) 比
+//        逐個 push_back 剩餘元素好？
+//     答：範圍版 insert 可以一次算出要插入幾個元素、必要時只做一次容量調整，
+//         並用單次搬移把整段放進去；逐筆 push_back 則要反覆檢查容量。
+//         本檔已先 reserve，兩者差距縮小，但範圍版語意更清楚也更不易寫錯。
+//     追問：那範圍版對 input iterator（例如從 istream 讀）也能一次算出個數嗎？
+//           → 不行。只有 forward iterator 以上能先算距離；input iterator
+//             只能邊讀邊插，退化成逐筆成長。
+//
+// ⚠️ 陷阱. 下面這段想「把 src 全部插到 v 最前面」，複雜度是多少？
+//         for (int x : src) v.insert(v.begin(), x);
+//     答：O(n²)，而且順序還會被反轉。每次插在 begin() 都要把現有元素整段後移，
+//         總搬移量是 1+2+…+n。正解是 v.insert(v.begin(), src.begin(), src.end())，
+//         O(n+m) 且順序正確。
+//     為什麼會錯：多數人記得「單次 insert 是 O(n)」，卻把迴圈裡的 n 當常數，
+//         忘了它每輪都在變大，於是把 O(n²) 誤算成 O(n)；順序反轉則是完全沒想到。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <vector>
 #include <iostream>
+#include <string>
+
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例 1】LeetCode 88. Merge Sorted Array
+//   題目：nums1 長度為 m+n（後 n 格是預留的 0），nums2 有 n 個元素，
+//         要把 nums2 併進 nums1 並保持排序，**就地**完成。
+//   為什麼用到本主題：這題是「插入」的反面教材 —— 正解刻意**不用** insert。
+//         若從前面插入，每次都要後移元素，是 O(m*n)；
+//         改成從**後往前**填，利用尾端預留空間，一次掃描 O(m+n) 完成。
+//         理解「為什麼避開中間插入」正是本課的重點。
+// -----------------------------------------------------------------------------
+void mergeSortedArray(std::vector<int>& nums1, int m, const std::vector<int>& nums2, int n) {
+    int i = m - 1, j = n - 1, k = m + n - 1;
+    while (j >= 0) {
+        if (i >= 0 && nums1[i] > nums2[j]) {
+            nums1[k--] = nums1[i--];
+        } else {
+            nums1[k--] = nums2[j--];
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+// 【日常實務範例 1】設定檔區段插入：在 [server] 段落末尾補上預設鍵值
+//   情境：載入 nginx/ini 風格設定檔後，若某個區段缺少必要鍵，
+//         要在**該區段結尾**補上預設值，而不是塞到檔案最後（會跑進別的區段）。
+//   為什麼用到本主題：這是範圍版 insert 的典型用途 ——
+//         先定位區段邊界，再把一整批預設行一次插進去。
+// -----------------------------------------------------------------------------
+std::vector<std::string> fillSectionDefaults(std::vector<std::string> lines,
+                                             const std::string& section,
+                                             const std::vector<std::string>& defaults) {
+    // 找到區段起點
+    size_t start = lines.size();
+    for (size_t i = 0; i < lines.size(); ++i) {
+        if (lines[i] == section) { start = i + 1; break; }
+    }
+    if (start > lines.size()) return lines;
+
+    // 從區段起點往後找到下一個區段標頭，即為本區段結尾
+    size_t end = start;
+    while (end < lines.size() && !lines[end].empty() && lines[end][0] != '[') ++end;
+
+    // 一次把所有缺少的預設值插進區段結尾（範圍版 insert，只搬一次）
+    lines.insert(lines.begin() + static_cast<long>(end), defaults.begin(), defaults.end());
+    return lines;
+}
 
 std::vector<int> merge_sorted(const std::vector<int>& a, const std::vector<int>& b) {
     std::vector<int> result;
@@ -558,15 +682,61 @@ std::vector<int> merge_sorted(const std::vector<int>& a, const std::vector<int>&
 }
 
 int main() {
+    std::cout << "=== 合併兩個已排序 vector（範圍版 insert 收尾）===" << std::endl;
     std::vector<int> a = {1, 3, 5, 7};
     std::vector<int> b = {2, 4, 6, 8, 9, 10};
-    
+
     auto merged = merge_sorted(a, b);
-    
+
+    std::cout << "  ";
     for (int x : merged) {
-        std::cout << x << " ";  // 1 2 3 4 5 6 7 8 9 10
+        std::cout << x << " ";
     }
     std::cout << std::endl;
-    
+
+    std::cout << "\n=== LeetCode 88. Merge Sorted Array ===" << std::endl;
+    std::vector<int> nums1 = {1, 2, 3, 0, 0, 0};
+    std::vector<int> nums2 = {2, 5, 6};
+    mergeSortedArray(nums1, 3, nums2, 3);
+    std::cout << "  [1,2,3,0,0,0] + [2,5,6] -> ";
+    for (int x : nums1) std::cout << x << " ";
+    std::cout << std::endl;
+
+    std::vector<int> only = {0};
+    std::vector<int> src = {1};
+    mergeSortedArray(only, 0, src, 1);
+    std::cout << "  m=0 的邊界情形 -> ";
+    for (int x : only) std::cout << x << " ";
+    std::cout << std::endl;
+
+    std::cout << "\n=== 日常實務：設定檔區段補預設值 ===" << std::endl;
+    std::vector<std::string> conf = {
+        "[server]", "listen=8080", "", "[logging]", "level=info"
+    };
+    auto filled = fillSectionDefaults(conf, "[server]",
+                                      {"workers=4", "keepalive=75"});
+    for (const auto& line : filled) {
+        std::cout << "  " << (line.empty() ? "(空行)" : line) << std::endl;
+    }
+
     return 0;
 }
+
+// 編譯: g++ -std=c++17 -Wall -Wextra "第 14 課：vector 元素插入：insert、emplace12.cpp" -o insert_emplace12
+
+// === 預期輸出 ===
+// === 合併兩個已排序 vector（範圍版 insert 收尾）===
+//   1 2 3 4 5 6 7 8 9 10
+//
+// === LeetCode 88. Merge Sorted Array ===
+//   [1,2,3,0,0,0] + [2,5,6] -> 1 2 2 3 5 6
+//   m=0 的邊界情形 -> 1
+//
+// === 日常實務：設定檔區段補預設值 ===
+//   [server]
+//   listen=8080
+//   workers=4
+//   keepalive=75
+//   (空行)
+//   [logging]
+//   level=info

@@ -1,3 +1,93 @@
+// =============================================================================
+//  第 13 課：vector 元素新增：push_back、emplace_back10.cpp
+//    —  本課完整講義（含對照表與練習題）＋ 強例外保證可執行範例
+// =============================================================================
+//
+// 【主題資訊 Information】
+//   標頭檔：<vector>
+//
+//   void push_back(const T& value);                 // (1) C++03 起，複製
+//   void push_back(T&& value);                      // (2) C++11 起，移動
+//
+//   template<class... Args>
+//   void      emplace_back(Args&&... args);         // C++11 / C++14：回傳 void
+//   template<class... Args>
+//   reference emplace_back(Args&&... args);         // C++17 起：回傳新元素參考
+//
+//   複雜度：兩者皆為**攤銷 O(1)**（amortized constant）。
+//           單次呼叫最壞是 O(n)——觸發 reallocation 時要搬走全部既有元素；
+//           但成長是等比級數，連續 n 次的總成本是 O(n)，攤平後每次是常數。
+//
+//   成長倍率：**實作定義，標準未規定**。
+//           libstdc++ / libc++ = 2 倍（本機實測 capacity 序列 1,2,4,8,16,32,64）；
+//           MSVC STL = 1.5 倍。標準只規定攤銷常數複雜度。
+//           任何依賴具體 capacity 數值的程式碼都不可攜。
+//
+//   例外保證：strong exception guarantee（強例外保證）——
+//           操作失敗時 vector 保持呼叫前的狀態。
+//           但這個保證有前提：元素的 move constructor 必須是 noexcept，
+//           否則 reallocation 會透過 std::move_if_noexcept **退化成 copy**。
+//           詳見本檔尾端的【面試題】Q3 與可執行的 MayThrow 範例。
+//
+//   失效規則：一旦發生 reallocation，該 vector 的**所有** iterator / pointer /
+//           reference（含 end()）全部失效；未 reallocation 時既有元素的
+//           iterator 仍有效，但 end() 一定失效。
+//
+// 【本檔結構說明】
+//   緊接在下方的區塊是本課的**完整講義**（九個章節 + 兩張對照表 + 練習題），
+//   請直接閱讀。講義之後接的是可實際編譯執行的「強例外保證」示範程式，
+//   以及檔尾的【面試題】與【日常實務範例】。
+//
+// 【詳細解釋 Explanation】
+//   ★ 逐節說明在下方講義本體，此處只補三個貫穿全課的主軸：
+//
+//   【1. 攤銷 O(1) 到底在說什麼】
+//      單次 push_back 最壞是 O(n)（要重新配置並搬走全部元素），
+//      但因為容量是**成倍**成長，昂貴的那一次會被之後大量便宜的 push_back 分攤，
+//      n 次 push_back 的總成本是 O(n)、平均每次 O(1)。
+//      標準規定的是這個**攤銷**上界，**不是**每次都 O(1)，
+//      也**沒有**規定倍率要是多少。
+//
+//   【2. emplace_back 的價值不在「比較快」，在「不需要先有物件」】
+//      當你手上已經是一個同型別物件時，push_back 與 emplace_back 都要做一次
+//      copy/move，效能幾乎相同 ——「emplace_back 一定比較快」是錯誤的通說。
+//      真正的差別是 emplace_back 把參數**完美轉發**給建構子做直接初始化，
+//      因此能就地建構、能呼叫 explicit 建構子、也不做 narrowing 檢查。
+//
+//   【3. 為什麼「移動建構子請標 noexcept」是硬性建議】
+//      reallocation 時 vector 要把舊元素搬到新空間。若搬到一半拋例外，
+//      舊空間已被破壞、新空間不完整，就無法回復原狀 —— 強例外保證會失守。
+//      所以 vector 透過 std::move_if_noexcept 判斷：move 若不是 noexcept，
+//      寧可**退化成 copy**（慢但可回復）。這就是漏標 noexcept 會讓效能悄悄
+//      掉一個量級的原因，而且編譯器不會警告你。
+//
+// 【概念補充 Concept Deep Dive】
+//   一次觸發成長的 push_back，實際順序是：
+//     1) 配置一塊更大的原始記憶體（只配置，尚未建構任何物件）
+//     2) 在新空間的尾端**先**就地建構新元素（placement new）
+//     3) 把舊元素逐一 move（或 copy，見上）到新空間
+//     4) 反向銷毀舊元素、釋放舊記憶體
+//   第 2 步排在第 3 步之前很關鍵：這讓 v.push_back(v[0]) 這種
+//   **自我參照**插入也能正確運作 —— 新元素在舊資料被破壞前就已完成建構。
+//   另外注意 capacity 是「已配置但尚未建構物件」的空間，
+//   所以 size() 與 capacity() 之間那段記憶體裡並沒有合法物件，
+//   直接存取 v[size()] 是未定義行為。
+//
+// 【注意事項 Pay Attention】
+//   1. 成長倍率、以及任何具體 capacity 數值都是**實作定義**
+//      （libstdc++ 實測 2×、MSVC 為 1.5×），標準只規定攤銷 O(1)。
+//      不要寫出依賴特定 capacity 數值的程式碼或測試。
+//   2. 失效規則：發生 reallocation → 所有 iterator/pointer/reference 全失效；
+//      未 reallocation → 既有元素的仍有效，但 end() 一定失效。
+//   3. emplace_back 的回傳型別：**C++11/14 為 void，C++17 起為 reference**
+//      （本機以 -pedantic-errors 實測確認）。
+//   4. emplace_back 不做 narrowing 檢查、可呼叫 explicit 建構子，
+//      參數寫錯有機會安靜編譯通過，要靠 code review 補回這層檢查。
+//   5. 若元素型別的 move constructor 未標 noexcept，reallocation 會退化成 copy；
+//      這是效能問題，不是正確性問題，且不會有任何編譯警告。
+//
+// =============================================================================
+
 /*
 # 第二階段：序列容器 — vector
 
@@ -527,11 +617,82 @@ int main() {
 準備好繼續嗎？
 */
 
-
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】push_back / emplace_back 綜合（本課總整理）
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. push_back 的複雜度是 O(1) 嗎？成長倍率是 2 倍嗎？
+//     答：是**攤銷 O(1)**，不是每次都 O(1)——觸發 reallocation 的那一次是
+//         O(n)。因為成長是等比級數，n 次操作的總搬移量是 O(n)，攤平後
+//         每次是常數。倍率則是**實作定義，標準沒有規定**：
+//         libstdc++ / libc++ 是 2 倍（本機實測 capacity 序列 1,2,4,8,16,32,64），
+//         MSVC 是 1.5 倍。標準只要求攤銷常數複雜度。
+//     追問：為什麼不能用「每次加固定值」的成長策略？
+//         → 總搬移量會變成 1+2+...+n = O(n^2)，攤銷後每次仍是 O(n)，
+//           等比成長才能讓總量收斂到 O(n)。
+//
+// ⚠️ 陷阱 Q2. 「emplace_back 永遠比 push_back 快」——這句話錯在哪？
+//     答：錯在「永遠」。當傳入的已經是現成的同型別物件時，兩者**完全等價**：
+//             v.push_back(s);      // 複製
+//             v.emplace_back(s);   // 也是複製！s 是 lvalue
+//         emplace_back 只有在「原本需要先建構一個臨時物件」時才勝出
+//         （例如 emplace_back("Bar") 或多參數建構）。
+//     為什麼會錯：以為「就地建構 = 不會複製」，
+//         漏掉 std::forward 會**保留參數的值類別**——傳 lvalue 進去，
+//         轉發出來還是 lvalue，最後呼叫的依然是複製建構子。
+//         emplace_back 省的是「臨時物件」，不是「複製」本身。
+//
+// 🔥 Q3. 講義第九節說 push_back / emplace_back 提供強例外保證，
+//         這個保證有什麼前提？
+//     答：前提是元素的 **move constructor 必須是 noexcept**。
+//         reallocation 搬移元素到一半若拋出例外就無法回復，
+//         所以標準用 std::move_if_noexcept 決定策略：
+//           * move 是 noexcept → 用 move（快）
+//           * move 可能拋例外 → **退化成 copy**（慢，但 copy 不破壞來源、
+//             失敗可回滾，強例外保證才守得住）
+//           * 型別不可複製（如 unique_ptr）→ 只能用 move，
+//             此時強例外保證降級為基本保證
+//         實務結論：自訂型別的 move constructor 一定要標 noexcept，
+//         忘了標會在擴容時默默從移動退化成深複製，且完全沒有警告。
+//     追問：本檔的 MayThrow 為什麼 size 停在 2？
+//         → 第三次 emplace_back 在**建構新元素時**就拋了例外，
+//           新元素從未成功建構，size 不會遞增，前兩個元素完好無損——
+//           這正是強例外保證的具體表現。
+//
+// 🔥 Q4. emplace_back 的回傳值是什麼？（講義第五節）
+//     答：**C++17 起**回傳 reference（指向剛建構的新元素），
+//         C++11 / C++14 回傳 void；push_back 從頭到尾都是 void。
+//         本機以 g++ -std=c++14 -pedantic-errors 實測，
+//         寫 auto& r = v.emplace_back(x) 會得到 "forming reference to void"，
+//         改 -std=c++17 即通過。
+//         （注意：只用 -fsyntax-only 會被 GCC 當擴充放行，結論會錯。）
+//     追問：為什麼回傳 reference 而不是 iterator？
+//         → 插入位置固定在尾端，位置資訊沒有價值；回傳物件本身才能寫出
+//           v.emplace_back(...).member = x 這種鏈式操作。
+//
+// ⚠️ 陷阱 Q5. 講義練習題 4：
+//         vector<unique_ptr<int>> v; auto p = make_unique<int>(42);
+//         v.push_back(p);  ← 問題出在哪？
+//     答：unique_ptr 不可複製，而 p 是 lvalue，push_back(p) 會選中
+//         const T& 重載並嘗試複製 → **編譯失敗**（複製建構子被 delete）。
+//         正解是 v.push_back(std::move(p))（或 emplace_back(std::move(p))），
+//         明確把所有權轉移進容器；p 之後為 nullptr。
+//     為什麼會錯：把「放進容器」直覺當成轉移所有權。
+//         C++ 的預設語意是複製，要轉移就必須明確寫出 std::move。
+//
+// ⚠️ 陷阱 Q6. v.push_back(v[0]) 會不會因為擴容而讀到懸空參考？
+//     答：不會。標準明文要求實作必須正確處理這種自我參照。
+//         libstdc++ 的順序是「先在新記憶體上建構新元素 → 再搬移舊元素 →
+//         最後才釋放舊記憶體」，讀 v[0] 時舊記憶體仍然活著。
+//     為什麼會錯：直覺推理成「先擴容、再插入」，因而認定舊記憶體已釋放。
+//         但要注意：**操作本身安全 ≠ 舊 iterator 還能用**——
+//         只要發生 reallocation，先前取得的 iterator / pointer / reference
+//         一律失效。
+// ═══════════════════════════════════════════════════════════════════════════
 
 #include <vector>
 #include <iostream>
 #include <stdexcept>
+#include <string>
 
 struct MayThrow {
     int value;
@@ -556,10 +717,52 @@ struct MayThrow {
 
 int MayThrow::count = 0;
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】批次匯入使用者資料時的「全有或全無」語意
+//   情境：從上游系統批次匯入帳號，其中一筆資料不合法（年齡為負）。
+//         業務要求是「整批要嘛全部成功、要嘛完全不生效」，
+//         不允許匯入到一半留下半套資料。
+//   為什麼和本主題有關：push_back / emplace_back 的**強例外保證**
+//         只保證「單次呼叫」失敗時 vector 不變，
+//         **不會**自動幫你回滾同一個迴圈裡先前已成功的插入。
+//         所以真正的批次原子性必須自己做——這裡的作法是
+//         「先匯進暫存 vector，全部成功才 swap 進正式容器」。
+//         swap 是 O(1) 且 noexcept，不會在最後一步失敗，
+//         這正是 copy-and-swap idiom 的核心概念。
+// -----------------------------------------------------------------------------
+struct Account {
+    std::string userId;
+    int age;
+
+    Account(std::string id, int a) : userId(std::move(id)), age(a) {
+        if (a < 0) {
+            throw std::invalid_argument("年齡不可為負: " + userId);
+        }
+    }
+};
+
+// 回傳 true 表示整批匯入成功；失敗時 target 保持原狀完全不變
+bool importBatch(std::vector<Account>& target,
+                 const std::vector<std::pair<std::string, int>>& rows) {
+    std::vector<Account> staging;          // 暫存區：失敗就整個丟棄
+    staging.reserve(rows.size());
+    try {
+        for (const auto& row : rows) {
+            // 兩個零件就地建構，省掉臨時 Account
+            staging.emplace_back(row.first, row.second);
+        }
+    } catch (const std::exception& e) {
+        std::cout << "    匯入中止: " << e.what() << std::endl;
+        return false;                      // staging 解構，target 完全沒被碰過
+    }
+    target.swap(staging);                  // O(1) 且 noexcept，最後一步不會失敗
+    return true;
+}
+
 int main() {
     std::vector<MayThrow> v;
     v.reserve(5);
-    
+
     try {
         v.emplace_back(1);
         v.emplace_back(2);
@@ -569,8 +772,48 @@ int main() {
     catch (const std::exception& e) {
         std::cout << "捕捉例外: " << e.what() << std::endl;
     }
-    
+
     std::cout << "vector 大小: " << v.size() << std::endl;  // 2
-    
+    // 前兩個元素完好無損、第三個從未成功建構 → 這就是強例外保證的表現。
+    // 但注意：它保證的是「單次呼叫失敗時容器不變」，
+    // 並不會回滾同一迴圈中先前已成功的 emplace_back。
+
+    std::cout << "\n=== 日常實務：批次匯入的全有或全無 ===" << std::endl;
+    std::vector<Account> accounts;
+    accounts.emplace_back("existing-user", 30);   // 匯入前已有的既存資料
+    std::cout << "  匯入前既有筆數: " << accounts.size() << std::endl;
+
+    std::cout << "  [情境 1] 整批合法:" << std::endl;
+    bool ok1 = importBatch(accounts, {{"alice", 28}, {"bob", 35}});
+    std::cout << "    結果=" << std::boolalpha << ok1
+              << "，目前筆數=" << accounts.size() << std::endl;
+
+    std::cout << "  [情境 2] 中間有一筆不合法:" << std::endl;
+    bool ok2 = importBatch(accounts, {{"carol", 41}, {"dave", -5}, {"eve", 22}});
+    std::cout << "    結果=" << ok2
+              << "，目前筆數=" << accounts.size()
+              << "（維持情境 1 的結果，未被污染）" << std::endl;
+
+    std::cout << "  最終內容: ";
+    for (const Account& a : accounts) std::cout << a.userId << "(" << a.age << ") ";
+    std::cout << std::endl;
+
     return 0;
 }
+
+// 編譯: g++ -std=c++17 -Wall -Wextra "第 13 課：vector 元素新增：push_back、emplace_back10.cpp" -o exception_safety
+
+// === 預期輸出 ===
+// 建構 MayThrow(1)
+// 建構 MayThrow(2)
+// 捕捉例外: 第三個物件建構失敗
+// vector 大小: 2
+// 
+// === 日常實務：批次匯入的全有或全無 ===
+//   匯入前既有筆數: 1
+//   [情境 1] 整批合法:
+//     結果=true，目前筆數=2
+//   [情境 2] 中間有一筆不合法:
+//     匯入中止: 年齡不可為負: dave
+//     結果=false，目前筆數=2（維持情境 1 的結果，未被污染）
+//   最終內容: alice(28) bob(35) 

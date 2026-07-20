@@ -1,3 +1,90 @@
+// =============================================================================
+//  第 13 課：建構函數（Constructor）基礎 8  —  綜合實戰：Car 類別
+// =============================================================================
+//
+// 【主題資訊 Information】
+//   主題：本課完整講義 + 一個把「多載、驗證、預設值」全部用上的 Car 類別
+//   標準版本：C++98 起即有建構函式；委派建構函式需 C++11
+//   標頭檔：<string>、<vector>
+//   本檔結構：① 下方大段課程講義（markdown）② 可執行的 Car 展示廳實作
+//
+// 【詳細解釋 Explanation】
+//
+// 【1. Car 的三個建構函式各對應一種真實情境】
+//   * Car()                       → 展示廳的空位，稍後再填資料
+//   * Car(brand, model)           → 新車，年份取當年、里程必然為 0
+//   * Car(brand, model, y, mi)    → 二手車，四個屬性都要指定且都要驗證
+//   注意第二個版本隱含了一條業務規則：「新車的里程一定是 0」。
+//   把這條規則寫進建構函式，就沒有人能建立出「里程 5 萬公里的新車」——
+//   這正是建構函式作為「業務規則守門員」的價值。
+//
+// 【2. 這個類別最值得改進的地方：重複的初始化與驗證】
+//   原始版本三個建構函式各自寫了一遍 year = 2024、mileage = 0.0，
+//   而驗證邏輯只出現在第三個。這帶來兩個實際問題：
+//     (a) 預設年份要改成 2026 時，得改三個地方，漏一個就不一致
+//     (b) 前兩個建構函式完全沒有驗證 —— 若日後有人讓它們接受參數，
+//         很容易忘記補上檢查
+//   正解是用委派建構函式（C++11）讓三者全部匯流到「完整版」，
+//   初始化與驗證都只有一份。本檔的 CarV2 示範了這個重構。
+//
+// 【3. 驗證策略的選擇：靜默修正 vs 丟例外】
+//   原始版本採「靜默修正 + 印警告」：年份不合法就改成 2024。
+//   這在展示廳這種「資料由店員輸入、錯了就用預設值也無妨」的場景勉強可接受，
+//   但要清楚它的代價：呼叫端不知道自己的輸入被改掉了。
+//   若這是車輛履歷系統（年份牽涉估價與稅務），靜默修正就是嚴重錯誤 ——
+//   應該丟例外或回傳 optional，讓呼叫端無法忽略（見本課第 7 檔的三種策略）。
+//
+// 【4. 硬編年份 2025 是個真實的維護地雷】
+//   原始碼寫 `if (y < 1886 || y > 2025)`。這行程式碼在 2026 年就會開始
+//   誤判所有當年的新車為非法。這類「寫死當下年份」的檢查在真實專案中
+//   非常常見，而且往往要等到跨年才爆發。
+//   正解是從系統時間動態取得當前年份（本檔的 CarV2 用 <ctime> 實作），
+//   或至少把它抽成具名常數並加註「需定期更新」。
+//
+// 【概念補充 Concept Deep Dive】
+//   * 三個建構函式的參數個數不同（0、2、4），因此不會有多載歧義。
+//     若新增一個 Car(string) 版本，則 Car("Toyota") 仍然明確；
+//     但若新增 Car(string, int)，那 Car("Toyota", "Camry") 會因為
+//     const char* 轉 string 與轉 int 的優先序而變得微妙 —— 設計時要留意。
+//   * 本檔的建構函式在本體內賦值而非用初始化列表，因此 brand / model
+//     這兩個 std::string 各被「預設建構一次 + 賦值一次」。
+//     CarV2 改用初始化列表，省掉多餘的一次操作（見第 3 檔的實測）。
+//   * 1886 這個下限是有典故的：Karl Benz 的 Patent-Motorwagen 於 1886 年
+//     取得專利，通常被視為汽車的誕生年。這種「有業務意義的魔術數字」
+//     應該寫成具名常數並附註來源，而不是裸露在條件式裡。
+//
+// 【注意事項 Pay Attention】
+//   1. 別在驗證條件裡硬編當下年份，跨年就會誤判。
+//   2. 多個建構函式的重複邏輯要委派，否則修改時必定產生不一致。
+//   3. 靜默修正會隱藏呼叫端的錯誤；只在「錯了也無妨」的場景使用。
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】建構函數綜合
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. Car 有三個建構函式，編譯器怎麼決定要呼叫哪一個？
+//     答：走一般的多載解析（overload resolution），依引數的個數與型別比對。
+//         這三個版本的參數個數分別是 0、2、4，彼此不可能歧義。
+//         若參數個數相同而型別相近（例如同時有 Car(string,int) 與
+//         Car(string,double)），就可能出現 ambiguous 的編譯錯誤。
+//     追問：那 Car c2("Toyota", "Camry") 傳的是 const char*，怎麼會匹配 string？
+//         → 透過 std::string 的轉換建構函式做一次隱式轉換，這是允許的標準轉換。
+//
+// 🔥 Q2. 這三個建構函式有什麼設計上的問題？該怎麼改？
+//     答：初始化與驗證邏輯重複 —— year=2024、mileage=0.0 各寫了三遍，
+//         而驗證只寫在第三個版本。改法是用委派建構函式（C++11）讓前兩個
+//         委派給完整版，初始化與驗證都集中在一處，日後修改不會漏改。
+//     追問：委派會有效能成本嗎？→ 不會。它就是一次普通的建構函式呼叫，
+//           而且通常會被內聯掉。
+//
+// ⚠️ 陷阱. `if (y < 1886 || y > 2025)` 這行檢查有什麼問題？
+//     答：硬編了「當下的年份」。這段程式碼在 2026 年會開始把所有當年的新車
+//         判定為非法年份並靜默改成 2024 —— 而且問題會在跨年的那一刻才出現，
+//         測試時通常完全發現不了。
+//     為什麼會錯：寫程式當下覺得「2025 就是未來的上限」，
+//         忽略了程式的壽命通常比這個假設長。凡是與「現在」有關的邊界，
+//         都應該從系統時間動態取得，而不是寫死。
+// ═══════════════════════════════════════════════════════════════════════════
+
 /*
 好的，信安！我們進入 **第三階段：建構與解構**，從第 13 課開始。
 
@@ -679,6 +766,8 @@ g++ -std=c++17 -o lesson13_full lesson13_full.cpp
 
 #include <iostream>
 #include <string>
+#include <vector>
+#include <ctime>
 using namespace std;
 
 class Car {
@@ -697,8 +786,8 @@ public:
         mileage = 0.0;
         cout << "[建構] 創建預設汽車" << endl;
     }
-    
-    // 建構函數 2：只指定品牌和型號
+
+    // 建構函數 2：只指定品牌和型號（隱含業務規則：新車里程必為 0）
     Car(string b, string m) {
         brand = b;
         model = m;
@@ -706,20 +795,22 @@ public:
         mileage = 0.0;
         cout << "[建構] 創建新車: " << brand << " " << model << endl;
     }
-    
+
     // 建構函數 3：完整指定所有屬性
     Car(string b, string m, int y, double mi) {
         brand = b;
         model = m;
-        
+
         // 年份驗證
+        // ⚠️ 注意：上限硬編 2025 是個維護地雷，跨年就會誤判當年新車。
+        //    正解見下方 CarV2：從系統時間動態取得當前年份。
         if (y < 1886 || y > 2025) {  // 1886 年是汽車發明的年份
             cout << "  警告：年份不合法，使用 2024" << endl;
             year = 2024;
         } else {
             year = y;
         }
-        
+
         // 里程驗證
         if (mi < 0) {
             cout << "  警告：里程不能為負，設為 0" << endl;
@@ -727,35 +818,220 @@ public:
         } else {
             mileage = mi;
         }
-        
-        cout << "[建構] 創建二手車: " << brand << " " << model 
+
+        cout << "[建構] 創建二手車: " << brand << " " << model
              << " (" << year << ")" << endl;
     }
 
     void print() const {
-        cout << "  " << year << " " << brand << " " << model 
+        cout << "  " << year << " " << brand << " " << model
              << ", 里程: " << mileage << " km" << endl;
     }
 };
 
+// -----------------------------------------------------------------------------
+// 【重構版】CarV2：委派建構函式 + 動態年份上限 + 初始化列表
+//   三處改進，全部針對上方 Car 的實際缺陷：
+//     (1) 委派：初始化與驗證只寫一份，三種建立方式共用，日後修改不會漏改
+//     (2) 動態年份：用 <ctime> 取得當前年份當上限，跨年不會誤判
+//     (3) 初始化列表：brand/model 直接以目標值建構，省掉「預設建構+賦值」
+//   常數 FIRST_CAR_YEAR 具名並附註來源，取代裸露的魔術數字 1886。
+// -----------------------------------------------------------------------------
+class CarV2 {
+public:
+    // 1886：Karl Benz 的 Patent-Motorwagen 取得專利，通常視為汽車誕生年
+    static const int FIRST_CAR_YEAR = 1886;
+
+    // 動態取得當前年份，取代硬編上限
+    static int currentYear() {
+        time_t now = time(nullptr);
+        tm* lt = localtime(&now);
+        return (lt != nullptr) ? (lt->tm_year + 1900) : 2024;   // 取不到就退回安全值
+    }
+
+    // 完整版：唯一做初始化與驗證的地方
+    CarV2(const string& b, const string& m, int y, double mi)
+        : brand(b), model(m), year(y), mileage(mi) {      // 宣告順序 = 初始化順序
+        int maxYear = currentYear() + 1;                  // 允許明年式的新車
+        if (year < FIRST_CAR_YEAR || year > maxYear) {
+            cout << "  警告：年份 " << year << " 不合法（合法範圍 "
+                 << FIRST_CAR_YEAR << "-" << maxYear << "），改用 " << currentYear() << endl;
+            year = currentYear();
+        }
+        if (mileage < 0) {
+            cout << "  警告：里程不能為負，設為 0" << endl;
+            mileage = 0.0;
+        }
+    }
+
+    // 其餘版本全部委派過去，不重複任何邏輯
+    CarV2() : CarV2("未知", "未知", currentYear(), 0.0) {}
+    CarV2(const string& b, const string& m) : CarV2(b, m, currentYear(), 0.0) {}
+
+    void print() const {
+        cout << "  " << year << " " << brand << " " << model
+             << ", 里程: " << mileage << " km" << endl;
+    }
+
+private:
+    string brand;      // 宣告順序決定初始化順序
+    string model;
+    int    year;
+    double mileage;
+};
+
+// -----------------------------------------------------------------------------
+// 【日常實務範例】車輛庫存報表：建構期驗證讓後續統計可以無條件信任資料
+//   情境：中古車行的庫存系統，要算出「平均里程」與「最舊的車」。
+//   關鍵洞察：因為 CarV2 的建構函式保證了 mileage >= 0 且 year 在合理範圍，
+//   這個統計函式完全不需要再做防禦性檢查 —— 不變條件已經在物件誕生時建立。
+//   若沒有建構期驗證，這裡就得對每一筆資料重複檢查一次，
+//   而且一旦漏檢，負里程會直接污染平均值且極難追查來源。
+//   「驗證一次、之後全部信任」是封裝帶來的最大工程效益。
+// -----------------------------------------------------------------------------
+struct InventoryReport {
+    size_t count = 0;
+    double avgMileage = 0.0;
+    int    oldestYear = 0;
+    string oldestName;
+};
+
+class CarRecord {
+public:
+    CarRecord(const string& name, int year, double mileage)
+        : m_name(name), m_year(year), m_mileage(mileage) {
+        // 不變條件在此建立：里程非負、年份合理
+        if (m_mileage < 0) m_mileage = 0.0;
+        int maxYear = CarV2::currentYear() + 1;
+        if (m_year < CarV2::FIRST_CAR_YEAR || m_year > maxYear) {
+            m_year = CarV2::currentYear();
+        }
+    }
+    const string& name()    const { return m_name; }
+    int           year()    const { return m_year; }
+    double        mileage() const { return m_mileage; }
+
+private:
+    string m_name;
+    int    m_year;
+    double m_mileage;
+};
+
+InventoryReport summarize(const vector<CarRecord>& stock) {
+    InventoryReport rep;
+    if (stock.empty()) return rep;          // 空庫存要先擋，否則除以 0
+
+    double total = 0.0;
+    rep.oldestYear = stock[0].year();
+    rep.oldestName = stock[0].name();
+    for (const CarRecord& c : stock) {
+        // 不需要檢查 c.mileage() 是否為負 —— 建構函式已經保證了
+        total += c.mileage();
+        if (c.year() < rep.oldestYear) {
+            rep.oldestYear = c.year();
+            rep.oldestName = c.name();
+        }
+    }
+    rep.count = stock.size();
+    rep.avgMileage = total / static_cast<double>(stock.size());
+    return rep;
+}
+
 int main() {
     cout << "===== 汽車展示廳 =====" << endl << endl;
-    
+
     Car c1;
     c1.print();
     cout << endl;
-    
+
     Car c2("Toyota", "Camry");
     c2.print();
     cout << endl;
-    
+
     Car c3("BMW", "M3", 2020, 35000.5);
     c3.print();
     cout << endl;
-    
+
     // 測試非法數據
     Car c4("時光機", "DeLorean", 1800, -100.0);
     c4.print();
-    
+
+    cout << "\n===== 重構版 CarV2（委派 + 動態年份）=====" << endl;
+    cout << "（本機當前年份 = " << CarV2::currentYear() << "）" << endl;
+
+    CarV2 v1;
+    v1.print();
+
+    CarV2 v2("Toyota", "Camry");     // 新車：年份自動取當年，里程必為 0
+    v2.print();
+
+    CarV2 v3("BMW", "M3", 2020, 35000.5);
+    v3.print();
+
+    cout << "  非法資料一律由完整版統一攔截:" << endl;
+    CarV2 v4("時光機", "DeLorean", 1800, -100.0);
+    v4.print();
+
+    cout << "\n  ↑ 三種建立方式共用同一份驗證；年份上限隨系統時間變動，" << endl;
+    cout << "    不會像硬編 2025 那樣在跨年後誤判當年新車。" << endl;
+
+    cout << "\n===== 實務：庫存報表 =====" << endl;
+    vector<CarRecord> stock = {
+        CarRecord("Toyota Camry",   2020, 35000.5),
+        CarRecord("Honda Civic",    2018, 82000.0),
+        CarRecord("Mazda 3",        2022, 12500.0),
+        CarRecord("Ford Focus",     2015, -500.0),    // 髒資料：負里程
+        CarRecord("BMW M3",         1800,  60000.0),  // 髒資料：不合理年份
+    };
+
+    InventoryReport rep = summarize(stock);
+    cout << "  庫存數量: " << rep.count << " 輛" << endl;
+    cout << "  平均里程: " << rep.avgMileage << " km" << endl;
+    cout << "  最舊車輛: " << rep.oldestName << "（" << rep.oldestYear << " 年）" << endl;
+    cout << "  ↑ 兩筆髒資料在建構時就被修正，統計函式完全不需要重複防禦性檢查" << endl;
+
     return 0;
 }
+
+// 編譯: g++ -std=c++17 -Wall -Wextra "第 13 課：建構函數（Constructor）基礎8.cpp" -o demo8
+// 註：委派建構函式需 C++11 以上。
+
+// === 預期輸出 ===
+// ⚠️ 注意：CarV2 使用系統時間動態取得年份，因此下方「2026」「1886-2027」
+//    等數字會隨執行當下的年份改變 —— 這正是它取代硬編 2025 的目的。
+//    上半部舊版 Car 的輸出（硬編 2024/2025）則不受時間影響。
+//
+// ===== 汽車展示廳 =====
+//
+// [建構] 創建預設汽車
+//   2024 未知 未知, 里程: 0 km
+//
+// [建構] 創建新車: Toyota Camry
+//   2024 Toyota Camry, 里程: 0 km
+//
+// [建構] 創建二手車: BMW M3 (2020)
+//   2020 BMW M3, 里程: 35000.5 km
+//
+//   警告：年份不合法，使用 2024
+//   警告：里程不能為負，設為 0
+// [建構] 創建二手車: 時光機 DeLorean (2024)
+//   2024 時光機 DeLorean, 里程: 0 km
+//
+// ===== 重構版 CarV2（委派 + 動態年份）=====
+// （本機當前年份 = 2026）
+//   2026 未知 未知, 里程: 0 km
+//   2026 Toyota Camry, 里程: 0 km
+//   2020 BMW M3, 里程: 35000.5 km
+//   非法資料一律由完整版統一攔截:
+//   警告：年份 1800 不合法（合法範圍 1886-2027），改用 2026
+//   警告：里程不能為負，設為 0
+//   2026 時光機 DeLorean, 里程: 0 km
+//
+//   ↑ 三種建立方式共用同一份驗證；年份上限隨系統時間變動，
+//     不會像硬編 2025 那樣在跨年後誤判當年新車。
+//
+// ===== 實務：庫存報表 =====
+//   庫存數量: 5 輛
+//   平均里程: 37900.1 km
+//   最舊車輛: Ford Focus（2015 年）
+//   ↑ 兩筆髒資料在建構時就被修正，統計函式完全不需要重複防禦性檢查

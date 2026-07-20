@@ -1,4 +1,201 @@
-﻿/*
+﻿// =============================================================================
+//  第六課 16 — 課程講義全文：容器的概念、分類，與 STL 的三分結構
+// =============================================================================
+//
+//  本檔前半是本課完整講義（Markdown 全文，包在區塊註解中），後半是可執行的
+//  四個選容器案例。以下先補上講義本身較少展開、但決定你能不能真正用好容器的
+//  底層原理與工程判準。
+//
+// 【主題資訊 Information】
+//
+//   本課涵蓋的 STL 容器（C++17 為準）：
+//     序列容器      array(C++11) / vector / deque / list / forward_list(C++11)
+//     有序關聯容器  set / multiset / map / multimap          （<set>, <map>）
+//     無序關聯容器  unordered_set / unordered_map 及其 multi 版（C++11）
+//     容器配接器    stack / queue / priority_queue           （<stack>, <queue>）
+//
+//   所有容器共同的介面（這組共同詞彙就是「容器」這個概念的定義）：
+//     size_type size()  const;      bool empty() const;      void clear();
+//     iterator  begin();            iterator end();          void swap(C&);
+//     複雜度：size()/empty()/begin()/end() 皆為 O(1)（C++11 起 size() 一律 O(1)）
+//
+//   標頭檔：各容器一個，見上表；本檔示範用到
+//     <vector> <set> <map> <unordered_map> <queue> <string>
+//
+// 【詳細解釋 Explanation】
+//
+// 【1. 為什麼 STL 要把「容器／迭代器／演算法」三者拆開】
+// 這是理解整個 STL 最關鍵的一件事,也是本課通往第七課的橋樑。
+//
+// 假設沒有這層設計:M 種容器 × N 種演算法,你必須寫 M×N 份程式碼
+// (vector 的 sort、list 的 sort、deque 的 sort、vector 的 find、list 的 find…)。
+// STL 的解法是在中間插入一層**迭代器(iterator)**當作共通協議:
+//
+//     容器  ──提供──→  迭代器  ←──操作──  演算法
+//     (M 種)          (共通協議)         (N 種)
+//
+// 於是變成 M+N 份程式碼。演算法不認識容器,只認識「一對迭代器」;容器不認識
+// 演算法,只負責產生迭代器。這就是**關注點分離**在函式庫層次的經典實踐,
+// 也是為什麼 std::find 可以同時用在 vector、list、set 上。
+//
+// 這個設計也直接解釋了兩個常見疑惑:
+//   * 為什麼 std::sort 不能用在 list 上?
+//     因為 std::sort 需要**隨機存取迭代器**(要能 it + n 跳躍),而 list 的
+//     迭代器只能 ++/--(雙向迭代器)。所以 list 只好自備成員函式 sort()。
+//   * 為什麼 stack/queue 不能用 range-based for?
+//     因為它們**根本沒有迭代器** —— 沒有迭代器就接不上這套協議,這是配接器
+//     刻意限制介面的直接後果。
+//
+// 【2. 迭代器的分類決定了「誰能用什麼演算法」】
+// 迭代器不是只有一種,它依能力分層(每層包含上一層的能力):
+//     Input/Output      → 只能單次前進讀/寫（如 istream_iterator）
+//     Forward           → 可多次前進           （forward_list）
+//     Bidirectional     → 可前進也可後退       （list, set, map）
+//     Random Access     → 可 +n 跳躍、可相減   （vector, deque, array）
+//     Contiguous(C++17) → 保證記憶體實體連續   （vector, array, string）
+//
+// 一個演算法要求哪一層,就決定了它能用在哪些容器上。這是「容器的能力」與
+// 「演算法的需求」之間的契約 —— 而契約是由型別系統在編譯期檢查的。
+//
+// 【3. 複雜度表是上界,不是速度排行榜】
+// 講義中的複雜度表(O(1)、O(log n)、O(n))描述的是**成長趨勢**,不是絕對速度。
+// 實務上會反轉直覺的因素有三個:
+//   (a) cache locality:vector 元素連續,一次 cache line 就帶進多個元素,
+//       硬體 prefetcher 也能預測;list/map 的節點散落 heap,每次跳躍都可能是
+//       一次 cache miss(代價可達數十至上百 CPU cycle)。
+//   (b) 常數因子:O(1) 的 unordered_map 查找要先算 hash(對字串要走訪整個
+//       字串)、找 bucket、再走鏈;O(log n) 的 map 查找是幾次指標跳躍。
+//       n 小的時候,線性掃描一個小 vector 常常打敗兩者。
+//   (c) 前提條件:list 中間插入 O(1) 的前提是「你已經持有那個位置的迭代器」。
+//       若還要先找到位置,尋找本身就是 O(n)。
+// 結論:複雜度用來排除**明顯錯誤**的選擇(例如在迴圈裡對 vector 做 push_front);
+// 要在相近的候選之間分勝負,請實際量測,不要憑表格猜。
+//
+// 【4. 選容器的真正流程:問四個問題,而不是背表】
+//   Q1. 要用「鍵」查找嗎?
+//        否 → 序列容器,跳 Q2
+//        是 → 需要有序走訪或範圍查詢(lower_bound)嗎?
+//               要 → map / set        不要 → unordered_map / unordered_set
+//   Q2. 大小編譯期就固定嗎?  是 → array   否 → 跳 Q3
+//   Q3. 主要在哪裡增刪?
+//        只在尾端 → vector;頭尾都要 → deque;
+//        任意位置且已有迭代器、或需要迭代器永不失效 → list
+//   Q4. 存取模式該被限制嗎?
+//        LIFO → stack;FIFO → queue;每次取極值 → priority_queue
+//   預設答案:**不確定就用 vector**。
+//
+// 【5. 容器對元素型別的要求(container requirements)】
+// 容器不是什麼型別都能裝。C++11 之後規則變得寬鬆而精確:**你只需要滿足你
+// 實際用到的操作**。
+//   * vector<T> 若會 push_back 並可能重新配置 → T 需可複製或可搬移。
+//   * 只用 emplace_back 且從不複製 → T 甚至可以是 move-only(如 unique_ptr)。
+//   * set<T> / map<K,V> 的鍵需要**嚴格弱序**(strict weak ordering),
+//     預設用 operator<;寫成 <= 會破壞不變式,導致行為錯誤。
+//   * unordered_set<T> / unordered_map<K,V> 的鍵需要 std::hash 特化
+//     **以及** operator==。std::hash 對內建型別與 std::string 有特化,
+//     但**對 std::pair 沒有** —— 想用 pair 當鍵必須自己提供雜湊函式物件。
+//
+// 【概念補充 Concept Deep Dive】
+//
+// (A) 容器物件本身 vs 它管理的元素
+//     容器物件通常很小(只存幾個指標),真正的資料在 heap。本機實測
+//     (GCC 15.2.0 / x86-64,皆屬**實作定義**):
+//         sizeof(std::vector<int>)       = 24  （三個指標:begin/end/capacity）
+//         sizeof(std::list<int>)         = 24
+//         sizeof(std::forward_list<int>) = 8   （只有一個 head 指標）
+//         sizeof(std::deque<int>)        = 80
+//         sizeof(std::map<int,int>)      = 48
+//         sizeof(std::unordered_map<int,int>) = 56
+//         sizeof(std::array<int,5>)      = 20  （元素內嵌,無 heap 配置）
+//     forward_list 只有 8 bytes,是因為它連元素個數都不存 —— 這正是它
+//     沒有 size() 的原因,也是「零開銷」承諾的代價。
+//
+// (B) 講義中的「不保證連續」到底是什麼意思
+//     只有 array、vector、string 保證元素實體連續(C++17 起有 ContiguousIterator
+//     這個正式概念)。deque 是**分段連續**:一個指標陣列指向多個固定大小的
+//     chunk。本機實測 deque<int> 每 128 個元素換一個 chunk(chunk 為 512 bytes,
+//     **實作定義**)。所以 &dq[0] + 1 不保證等於 &dq[1] —— 想把資料交給
+//     C API(需要一整塊連續緩衝區)時,只有 vector/array 能用 .data()。
+//
+// (C) 為什麼 map 的 value_type 是 pair<const Key, T>
+//     鍵上的 const 不是多餘的謹慎:鍵決定了元素在紅黑樹中的位置,若允許就地
+//     修改鍵,樹的排序不變式立刻被破壞,之後所有查找都會出錯。所以標準直接
+//     用型別把它禁掉。C++17 之後若真要換鍵又不想重新配置節點,正確做法是
+//     extract() 取出 node handle → 改鍵 → 重新 insert。
+//
+// (D) 這一課如何接到第七課
+//     本課回答「資料放哪裡」,第七課回答「怎麼操作資料」。兩者的接點就是迭代器:
+//     容器提供 begin()/end(),演算法只吃這一對。理解了這層,你就會明白為什麼
+//     STL 演算法全都寫成 algo(first, last, ...) 而不是 algo(container, ...)
+//     ——直到 C++20 才用 Ranges 補上更好用的容器層介面。
+//
+// 【注意事項 Pay Attention】
+//  1. 所有標為「實作定義」的數值(sizeof、deque chunk 大小、vector 成長倍率、
+//     bucket 數列)都是本機 libstdc++ 實測值,換編譯器/標準庫就可能不同,
+//     不可寫進程式邏輯。
+//  2. 對空容器呼叫 front()/back()/top()/pop() 是 undefined behavior。
+//     行為**不保證、不可預測** —— 可能崩潰,也可能安靜地讀到垃圾值繼續跑。
+//     「測起來沒事」不能當成正確性的證據。
+//  3. unordered_* 的走訪順序未由標準規定;講義中案例 3 的字數統計輸出順序
+//     即屬此類,任何依賴它的程式都是錯的。需要穩定輸出請複製到 vector 排序,
+//     或改用 map。
+//  4. map/unordered_map 的 operator[] 在鍵不存在時會**預設建構並插入**。
+//     它是寫入介面而非查詢介面,也因此不能用在 const map 上。
+//     純查詢請用 find()、at(),或 C++20 的 contains()。
+//  5. 迭代器失效規則因容器而異,且必須連同「是否重新配置」一起判斷。
+//     安全慣例:對 vector 做過插入後,一律視為先前的迭代器已失效。
+//  6. std::sort 不能用在 list/set 上(迭代器能力不足);list 用成員 sort(),
+//     set 本身就已有序、不需要也不應該排序。
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】容器分類與 STL 三分結構
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. STL 為什麼要把容器、迭代器、演算法分開?這個設計解決了什麼問題?
+//     答：若不分開,M 種容器 × N 種演算法要寫 M×N 份實作。迭代器作為兩者之間
+//         的共通協議後,容器只負責產生迭代器、演算法只吃一對迭代器,程式碼量
+//         降為 M+N,而且新增容器或新增演算法都不必改動對方。這是關注點分離
+//         在函式庫設計上的經典案例。
+//     追問：那為什麼 std::sort 不能用在 std::list 上?
+//         → std::sort 需要隨機存取迭代器(要能 it+n 跳躍),而 list 只提供
+//           雙向迭代器。所以 list 自備成員函式 sort()(內部走 merge sort)。
+//
+// 🔥 Q2. 序列容器、關聯容器、無序容器的分類依據是什麼?
+//     答：看「元素的位置由誰決定」。序列容器由你的插入順序決定;關聯容器與
+//         無序容器由元素的值決定 —— 因為它們要靠位置來加速查找。兩者再細分:
+//         靠比較(嚴格弱序)排位的是有序關聯容器,額外獲得順序與範圍查詢能力;
+//         靠雜湊分桶的是無序容器,放棄順序換取平均 O(1)。
+//     追問：容器配接器算第四類嗎?
+//         → 它不是獨立的資料結構,而是包住既有容器並刻意限制介面的包裝層。
+//           所以它沒有迭代器,也不能餵給 STL 演算法。
+//
+// 🔥 Q3. 為什麼 map 的元素型別是 pair<const Key, T> 而不是 pair<Key, T>?
+//     答：鍵決定元素在樹中的位置。若允許就地修改鍵,排序不變式會立刻被破壞,
+//         之後的查找全部失準。標準用型別層的 const 把這件事直接禁掉。
+//         C++17 起若真要換鍵,正確做法是 extract() 取出 node handle、
+//         修改後再 insert,如此可重用節點、不必重新配置記憶體。
+//     追問：那用結構化綁定 auto& [k, v] 時,k 是什麼型別?
+//         → const Key&。所以 k 不能被指派,v 可以。
+//
+// ⚠️ 陷阱. 「複雜度表上 list 中間插入是 O(1)、vector 是 O(n),所以頻繁在中間
+//         插入時一定要選 list」——這個推論錯在哪?
+//     答：錯在忽略前提與常數。list 的 O(1) 前提是「已持有該位置的迭代器」;
+//         若每次都要先找到位置,尋找本身就是 O(n),總成本與 vector 同級。
+//         而且 list 走訪的每一步都可能 cache miss,vector 的搬移卻是 memmove
+//         這種 CPU 最擅長的連續複製。元素小、資料量中等時,vector 經常勝出。
+//     為什麼會錯：把大 O 當成效能排行榜。大 O 描述成長趨勢,刻意隱藏了常數
+//         因子與記憶體階層效應,而在現代 CPU 上這兩者往往才是主導因素。
+//
+// ⚠️ 陷阱. unordered_map 走訪的順序,在同一台機器、同一個程式裡跑兩次會一樣,
+//         是不是就代表可以依賴它?
+//     答：不可以。標準明文規定走訪順序未指定。它在同一份實作、同一組插入序列
+//         下碰巧穩定,只是實作細節的副作用 —— 換編譯器、換標準庫版本、
+//         元素數量改變觸發 rehash、甚至只是插入順序不同,順序就會改變。
+//         需要穩定輸出請複製到 vector 排序,或直接改用 map。
+//     為什麼會錯：用「我測過,結果一樣」來推論「行為有保證」。可重現的觀察
+//         不等於標準的承諾;未指定行為隨時可以在你沒改程式碼的情況下改變。
+// ═══════════════════════════════════════════════════════════════════════════
+
+/*
 # 第六課：容器（Container）的概念與分類
 
 ---
@@ -1191,6 +1388,96 @@ hello: 2
 #include <unordered_map>
 #include <queue>
 #include <string>
+#include <algorithm>
+#include <utility>
+
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 692. Top K Frequent Words
+//   題目：給一個字串陣列，回傳出現次數前 k 高的單字；次數相同時，字典序小的排前面。
+//   為什麼用到本主題：這題是下方「案例 3：字數統計」的自然延伸，而且把本課
+//     兩個核心判準都逼了出來：
+//       * 統計階段不需要順序 → unordered_map（平均 O(1) 累加）
+//       * 取前 k 名不需要全排序 → priority_queue（min-heap 維持大小 k）
+//       * 「次數相同要比字典序」讓比較器必須自訂 —— 這正好示範 priority_queue
+//         第三個模板參數 Compare 的真正用途。
+//   關鍵細節：min-heap 要淘汰「最差的」，所以比較器方向與直覺相反 ——
+//     次數少的算「差」；次數相同時，字典序**大**的算「差」（才會被先丟掉）。
+//   複雜度：時間 O(n log k)，空間 O(n)。
+// -----------------------------------------------------------------------------
+std::vector<std::string> topKFrequentWords(const std::vector<std::string>& words,
+                                           int k) {
+    std::unordered_map<std::string, int> freq;
+    for (const auto& w : words) ++freq[w];
+
+    using Item = std::pair<int, std::string>;      // (次數, 單字)
+    // min-heap：堆頂是「目前最該被淘汰的那個」
+    auto worse = [](const Item& a, const Item& b) {
+        if (a.first != b.first) return a.first > b.first;   // 次數多的比較「好」
+        return a.second < b.second;                          // 次數同：字典序小的比較「好」
+    };
+    std::priority_queue<Item, std::vector<Item>, decltype(worse)> heap(worse);
+
+    for (const auto& [word, count] : freq) {
+        heap.emplace(count, word);
+        if (static_cast<int>(heap.size()) > k) heap.pop();    // 丟掉最差的
+    }
+
+    std::vector<std::string> result;
+    while (!heap.empty()) {
+        result.push_back(heap.top().second);
+        heap.pop();
+    }
+    std::reverse(result.begin(), result.end());   // 堆由差到好彈出，反轉才是答案
+    return result;
+}
+
+// -----------------------------------------------------------------------------
+// 【日常實務範例】解析 INI 風格設定檔
+//   情境：讀一份 [section] key=value 格式的設定檔（nginx、systemd、git config、
+//     Python configparser 都屬這個家族），要能：
+//       1. 依 section 分組
+//       2. 同一 section 內的 key 按字母排序輸出（方便 diff 與人工核對）
+//       3. 後出現的同名 key 覆蓋先前的值（絕大多數設定檔的實際語意）
+//       4. 忽略空行與 # / ; 註解，並容忍 key/value 前後的空白
+//   為什麼用到本主題：需求 1+2 直接指定了容器 ——「要用鍵查找」且「要有序輸出」
+//     → std::map，而且是巢狀的 map<section, map<key, value>>。
+//     需求 3 剛好就是 operator[] 的指派語意。若改用 unordered_map，
+//     輸出順序就不再穩定，設定檔的 diff 會整片變動而失去可讀性。
+// -----------------------------------------------------------------------------
+using ConfigData = std::map<std::string, std::map<std::string, std::string>>;
+
+static std::string trimSpaces(const std::string& s) {
+    const char* ws = " \t\r\n";
+    size_t b = s.find_first_not_of(ws);
+    if (b == std::string::npos) return "";
+    size_t e = s.find_last_not_of(ws);
+    return s.substr(b, e - b + 1);
+}
+
+ConfigData parseIniConfig(const std::vector<std::string>& lines) {
+    ConfigData config;
+    std::string section = "global";        // 尚未宣告 section 前的預設分組
+
+    for (const auto& raw : lines) {
+        std::string line = trimSpaces(raw);
+        if (line.empty() || line[0] == '#' || line[0] == ';') continue;  // 空行/註解
+
+        if (line.front() == '[' && line.back() == ']') {
+            section = trimSpaces(line.substr(1, line.size() - 2));
+            config[section];               // 空 section 也要建立：operator[] 的插入語意
+            continue;
+        }
+
+        size_t eq = line.find('=');
+        if (eq == std::string::npos) continue;            // 不合法的行，跳過
+        std::string key   = trimSpaces(line.substr(0, eq));
+        std::string value = trimSpaces(line.substr(eq + 1));
+        if (key.empty()) continue;
+
+        config[section][key] = value;      // 後者覆蓋前者，正是 operator[] 的指派語意
+    }
+    return config;
+}
 
 int main() {
     // 案例 1：儲存學生成績列表 → vector
@@ -1246,6 +1533,93 @@ int main() {
         std::cout << "  優先級 " << task.first << ": " << task.second << std::endl;
         tasks.pop();
     }
-    
+
+    // ── LeetCode 692. Top K Frequent Words ──────────────────────
+    std::cout << "\n=== LeetCode 692. Top K Frequent Words ===" << std::endl;
+    {
+        std::vector<std::string> words = {"i", "love", "leetcode", "i", "love", "coding"};
+        auto top = topKFrequentWords(words, 2);
+        std::cout << "  words = {i, love, leetcode, i, love, coding}, k=2 → ";
+        for (const auto& w : top) std::cout << w << " ";
+        std::cout << std::endl;
+
+        std::vector<std::string> words2 = {
+            "the", "day", "is", "sunny", "the", "the", "the", "sunny", "is", "is"
+        };
+        auto top2 = topKFrequentWords(words2, 4);
+        std::cout << "  第二組, k=4 → ";
+        for (const auto& w : top2) std::cout << w << " ";
+        std::cout << std::endl;
+    }
+
+    // ── 日常實務：解析 INI 設定檔 ────────────────────────
+    std::cout << "\n=== 日常實務: 解析 INI 設定檔 ===" << std::endl;
+    {
+        std::vector<std::string> configLines = {
+            "# 這是註解，應被忽略",
+            "app_name = MyService",
+            "",
+            "[server]",
+            "  port   =  8080  ",
+            "host=0.0.0.0",
+            "; 分號也是註解",
+            "port = 9090",
+            "[database]",
+            "url = postgres://localhost/app",
+            "pool_size = 20",
+            "這行沒有等號，應被跳過",
+        };
+
+        ConfigData config = parseIniConfig(configLines);
+        for (const auto& [section, kvs] : config) {
+            std::cout << "  [" << section << "]" << std::endl;
+            for (const auto& [key, value] : kvs) {
+                std::cout << "    " << key << " = " << value << std::endl;
+            }
+        }
+        std::cout << "  （注意 port 被後者覆蓋為 9090；各 section 內的 key 已按字母排序）"
+                  << std::endl;
+    }
+
     return 0;
 }
+
+// 編譯: g++ -std=c++17 -Wall -Wextra "第六課：容器（Container）的概念與分類16.cpp" -o lesson6_notes
+
+// 注意：案例 3 的字數統計使用 std::unordered_map，其走訪順序未由標準規定，
+//       不同實作／不同標準庫版本可能不同（本機 libstdc++ 在固定插入序列下可重現）。
+//       需要穩定輸出時應複製到 vector 排序後再輸出，或改用 std::map。
+
+// === 預期輸出 ===
+// === 案例 1：學生成績 ===
+// 第三個學生: 78
+//
+// === 案例 2：去重標籤 ===
+// C++ Programming STL
+//
+// === 案例 3：字數統計 ===
+// world: 3
+// c++: 1
+// hello: 2
+//
+// === 案例 4：任務排程 ===
+// 按優先順序處理:
+//   優先級 5: 緊急任務
+//   優先級 4: 重要任務
+//   優先級 3: 一般任務
+//   優先級 1: 低優先任務
+//
+// === LeetCode 692. Top K Frequent Words ===
+//   words = {i, love, leetcode, i, love, coding}, k=2 → i love
+//   第二組, k=4 → the is sunny day
+//
+// === 日常實務: 解析 INI 設定檔 ===
+//   [database]
+//     pool_size = 20
+//     url = postgres://localhost/app
+//   [global]
+//     app_name = MyService
+//   [server]
+//     host = 0.0.0.0
+//     port = 9090
+//   （注意 port 被後者覆蓋為 9090；各 section 內的 key 已按字母排序）

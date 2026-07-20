@@ -1,3 +1,120 @@
+// =============================================================================
+//  第一課：STL 的歷史與設計哲學 6  —  本課完整講義 + 收束範例
+// =============================================================================
+//
+// 【主題資訊 Information】
+//   本檔前半是第一課的完整講義（保存在下方的區塊註解裡），
+//   後半是把整課收束起來的可執行範例，用到三個演算法：
+//     std::sort        <algorithm>  O(N log N)，IntroSort
+//     std::max_element <algorithm>  O(N)，回傳「迭代器」不是值
+//     std::accumulate  <numeric>    O(N)，回傳型別由 init 參數決定 ★
+//   標準版本：三者皆 C++98。注意 accumulate 在 <numeric> 不是 <algorithm>。
+//
+// 【詳細解釋 Explanation】
+//
+// 【1. max_element 為什麼回傳迭代器而不是值】
+//   如果它回傳值，就必須複製一份元素出來——對 std::string 或大型結構
+//   是無謂的開銷。回傳迭代器則有三個好處：
+//     ① 零複製：要值就 *it，不要就不付費。
+//     ② 知道「位置」：常常你要的不只是最大值，而是「誰最大」。
+//        有了迭代器就能 it - v.begin() 算出索引。
+//     ③ 能表達「空區間」：空的時候回傳 end()，不必發明特殊值。
+//   代價是呼叫端必須先確認 v 非空，否則 *v.end() 是未定義行為。
+//   本檔的範例在解參考前一律先檢查 empty()。
+//
+// 【2. accumulate 的回傳型別由 init 決定 —— 最容易踩的一個坑】
+//   簽章是：
+//       template<class InputIt, class T>
+//       T accumulate(InputIt first, InputIt last, T init);
+//   注意回傳型別是 T，也就是「你傳進去的 init 的型別」，
+//   而不是元素的型別。這造成兩個常見災難：
+//     ① std::accumulate(v.begin(), v.end(), 0)
+//        對 vector<long long> 求和 → T 推導成 int → 累加過程就在 int 裡
+//        進行 → 大數值直接有號溢位（未定義行為）。
+//        正解：傳 0LL，或 int64_t{0}。
+//     ② std::accumulate(v.begin(), v.end(), 0)
+//        對 vector<double> 求和 → T 是 int → 每一步都截斷成整數！
+//        正解：傳 0.0。
+//   這個設計不是失誤，而是刻意的：它讓你能用「較寬的型別」累加
+//   「較窄的元素」，避免中途溢位。但預設值不會替你想，你得自己指定。
+//
+// 【3. 為什麼 accumulate 住在 <numeric> 而不是 <algorithm>】
+//   STL 把「純粹重排/查詢元素」的演算法放 <algorithm>，
+//   把「對元素做數值運算」的放 <numeric>（accumulate、inner_product、
+//   partial_sum、adjacent_difference、iota）。
+//   這是介面分割：只做搜尋排序的程式不必為數值演算法付出編譯成本。
+//   實務上這個分界常被忘記，忘了 include <numeric> 是很常見的編譯錯誤。
+//
+// 【4. 本檔講義中兩處日期互相矛盾，引用前請查證】
+//   下方講義的時間軸寫「1994 年 7 月 STL 被正式納入 C++ 標準草案」，
+//   但正文又寫「1994 年 11 月，Stepanov 在聖地牙哥向委員會展示」。
+//   同一份文件裡，「展示」不可能晚於「納入」。
+//   常見的說法是：Stepanov 於 1993 年 11 月的 San Jose 會議首次提案，
+//   1994 年 7 月的 San Diego 會議通過納入草案。
+//   本檔保留原講義文字不動，但在此標注此矛盾——教材裡的歷史細節
+//   應以原始會議文件（WG21 papers）為準，不要直接引用二手整理。
+//
+// 【概念補充 Concept Deep Dive】
+//
+// (A) accumulate 其實是一個 fold（摺疊）
+//     它的第四參數版本可以傳入任意二元運算：
+//         std::accumulate(v.begin(), v.end(), 1LL, std::multiplies<long long>());
+//     這就是函數式語言裡的 foldl。用它做「連乘」「求最大」「字串串接」
+//     都成立。理解成「摺疊」而不是「加總」，才不會被名字誤導。
+//
+// (B) accumulate 是循序的，reduce 才可平行化（C++17）
+//     accumulate 保證「由左至右、依序」計算，所以即使運算可交換也不能
+//     平行。C++17 的 std::reduce 放寬了順序要求，才能配合執行策略
+//     std::execution::par 平行執行。代價是：對浮點數而言，
+//     不同的結合順序會產生不同的捨入結果。
+//
+// (C) 為什麼 max_element 對相同的最大值回傳「第一個」
+//     標準明訂：若有多個元素等於最大值，回傳第一個。
+//     這保證了演算法的結果是確定的（不因實作而異）。
+//     對應的 min_element 也是回傳第一個；
+//     而 minmax_element 的 max 部分回傳的是「最後一個」——
+//     這個不對稱是為了讓 minmax_element 能用在穩定分割的場合，
+//     是少數需要背下來的例外。
+//
+// 【注意事項 Pay Attention】
+//   1. max_element 對空區間回傳 end()，解參考 end() 是未定義行為。
+//      一律先 if (!v.empty()) 或比較 it != v.end()。
+//   2. accumulate 的 init 決定回傳型別與運算型別。整數求和請用 0LL，
+//      浮點求和請用 0.0。這是實務上最常見的溢位/截斷來源。
+//   3. accumulate 在 <numeric>，不是 <algorithm>。
+//   4. 講義中的歷史日期有內部矛盾（見上方【4.】），引用前請查證。
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】max_element 與 accumulate
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. std::accumulate(v.begin(), v.end(), 0) 對一個 vector<double>
+//        求和，結果會是什麼？
+//     答：會得到截斷後的整數和。因為回傳型別 T 是由第三個參數推導的，
+//         傳 0 讓 T = int，於是每一步累加都在 int 裡進行，
+//         每個 double 都被截斷。正解是傳 0.0。
+//     追問：那 vector<long long> 傳 0 會怎樣？
+//         → 累加在 int 中進行，總和超過 INT_MAX 就是有號整數溢位，
+//           屬未定義行為。正解是傳 0LL。
+//
+// 🔥 Q2. 為什麼 std::max_element 回傳迭代器而不是直接回傳最大值？
+//     答：三個理由。① 避免無謂複製（大物件複製很貴）；
+//         ② 呼叫端往往需要知道「位置」而不只是「值」，
+//            有迭代器才能算索引或就地修改；
+//         ③ 空區間有現成的表示法（回傳 end()），不必發明特殊值。
+//     追問：那空 vector 呼叫 max_element 會怎樣？
+//         → 回傳 end()。此時解參考是未定義行為，必須先判斷。
+//
+// ⚠️ 陷阱. `int sum = std::accumulate(v.begin(), v.end(), 0);`
+//         v 是 vector<int>，元素都在 int 範圍內，所以這樣寫很安全——對嗎？
+//     答：不對。個別元素在範圍內，不代表「總和」在範圍內。
+//         一百萬筆平均值三千的訂單金額，每筆都是合法的 int，
+//         總和卻是 30 億，超過 INT_MAX（2147483647）→ 有號溢位 → UB。
+//         正解是 `long long sum = std::accumulate(v.begin(), v.end(), 0LL);`
+//     為什麼會錯：直覺檢查的是「元素的範圍」，但溢位發生在「累加器」。
+//         accumulate 的累加器型別完全由 init 決定，
+//         元素型別再安全也救不了一個 int 的累加器。
+// ═══════════════════════════════════════════════════════════════════════════
+
 /*
 # 第一課：STL 的歷史與設計哲學
 
@@ -444,19 +561,64 @@ int main() {
 #include <vector>
 #include <algorithm>
 #include <numeric>
+#include <string>
+#include <climits>
+
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1480. Running Sum of 1d Array
+//   題目：給定陣列 nums，回傳 runningSum，其中 runningSum[i] = nums[0]+…+nums[i]。
+//         例如 [1,2,3,4] -> [1,3,6,10]。
+//   為什麼用到本主題：這題就是 accumulate 的「保留中間結果」版本——
+//     std::partial_sum，兩者同住 <numeric>、同屬「摺疊」家族。
+//     accumulate 只吐最後一個值，partial_sum 把每一步都寫出來。
+//     一併示範可以讓讀者看清 <numeric> 這組演算法的分工。
+//   複雜度：O(N) 時間、O(1) 額外空間（就地做）。
+// -----------------------------------------------------------------------------
+std::vector<int> runningSum(std::vector<int> nums) {
+    std::partial_sum(nums.begin(), nums.end(), nums.begin());  // 就地覆寫
+    return nums;
+}
+
+// -----------------------------------------------------------------------------
+// 【日常實務範例】結算一天的訂單金額（accumulate 的溢位陷阱現場）
+//   情境：電商後台每日結帳，把當天所有訂單金額加總。
+//         每筆金額都是合理的 int（幾百到幾萬元），
+//         但單日訂單量一大，總和就會衝破 INT_MAX。
+//   為什麼用到本主題：這是 accumulate 最真實、也最常出事的用法。
+//     init 傳 0 還是 0LL，決定了這支結算程式會不會在業績變好的那天爆掉。
+//   下面兩個函式刻意並列，main 會實測出它們的差異。
+// -----------------------------------------------------------------------------
+long long totalRevenueSafe(const std::vector<int>& amounts) {
+    // 正解：init 傳 0LL → 累加器是 long long，中途不會溢位
+    return std::accumulate(amounts.begin(), amounts.end(), 0LL);
+}
+
+long long totalRevenueByHand(const std::vector<int>& amounts) {
+    // 對照組：手動用 long long 累加，證明上面那個才是「數學上正確」的答案
+    long long s = 0;
+    for (int a : amounts) s += a;
+    return s;
+}
 
 int main() {
     std::vector<int> numbers = {5, 2, 8, 1, 9, 3, 7, 4, 6};
-    
+
     // 排序
     std::sort(numbers.begin(), numbers.end());
-    
-    // 找最大值, std::max_element 返回一個指向最大元素的迭代器，所以我們需要解引用它來獲取值
-    int max = *std::max_element(numbers.begin(), numbers.end());
-    
+
+    // 找最大值。max_element 回傳的是「迭代器」，要解參考才拿到值。
+    // 空區間會回傳 end()，解參考 end() 是 UB —— 所以先檢查 empty()。
+    if (numbers.empty()) {
+        std::cout << "沒有資料\n";
+        return 0;
+    }
+    auto maxIt = std::max_element(numbers.begin(), numbers.end());
+    int max = *maxIt;
+
     // 計算總和
     int sum = std::accumulate(numbers.begin(), numbers.end(), 0);
-    
+
+    std::cout << "=== 原始示範：sort + max_element + accumulate ===\n";
     std::cout << "排序後: ";
     for (int n : numbers) {
         std::cout << n << " ";
@@ -464,6 +626,87 @@ int main() {
     std::cout << std::endl;
     std::cout << "最大值: " << max << std::endl;
     std::cout << "總和: " << sum << std::endl;
-    
+
+    // 迭代器比「值」多帶了位置資訊
+    std::cout << "最大值所在索引: " << (maxIt - numbers.begin()) << "\n";
+
+    std::cout << "\n=== accumulate 的回傳型別由 init 決定 ===\n";
+    std::vector<double> prices = {1.5, 2.5, 3.25};
+    std::cout << "vector<double> 求和，init 傳 0  : "
+              << std::accumulate(prices.begin(), prices.end(), 0) << "  ← 每步都被截斷成 int\n";
+    std::cout << "vector<double> 求和，init 傳 0.0: "
+              << std::accumulate(prices.begin(), prices.end(), 0.0) << "  ← 正確\n";
+
+    std::cout << "\n=== accumulate 是「摺疊」，不只會加法 ===\n";
+    std::vector<int> small = {1, 2, 3, 4, 5};
+    std::cout << "連乘 (init=1LL, multiplies): "
+              << std::accumulate(small.begin(), small.end(), 1LL,
+                                 std::multiplies<long long>()) << "\n";
+    std::vector<std::string> words = {"STL", "-", "is", "-", "generic"};
+    std::cout << "字串串接 (init=空字串): "
+              << std::accumulate(words.begin(), words.end(), std::string{}) << "\n";
+
+    std::cout << "\n=== LeetCode 1480 Running Sum of 1d Array ===\n";
+    for (auto nums : std::vector<std::vector<int>>{{1, 2, 3, 4}, {1, 1, 1, 1, 1}, {3, 1, 2, 10, 1}}) {
+        std::cout << "[";
+        for (size_t i = 0; i < nums.size(); ++i) std::cout << (i ? "," : "") << nums[i];
+        std::cout << "] -> [";
+        auto rs = runningSum(nums);
+        for (size_t i = 0; i < rs.size(); ++i) std::cout << (i ? "," : "") << rs[i];
+        std::cout << "]\n";
+    }
+
+    std::cout << "\n=== 日常實務：單日訂單結算（accumulate 的 init 型別）===\n";
+    {
+        // 100 萬筆訂單，每筆 3000 元 —— 每筆都是合法的 int
+        std::vector<int> amounts(1000000, 3000);
+
+        long long correct = totalRevenueByHand(amounts);
+        long long safe    = totalRevenueSafe(amounts);
+
+        std::cout << "訂單筆數        : " << amounts.size() << "\n";
+        std::cout << "每筆金額        : " << amounts[0] << "（遠小於 INT_MAX）\n";
+        std::cout << "INT_MAX         : " << INT_MAX << "\n";
+        std::cout << "手動 long long 加總 : " << correct << "\n";
+        std::cout << "accumulate(…, 0LL)  : " << safe << "\n";
+        std::cout << "兩者一致        : " << std::boolalpha << (correct == safe) << "\n";
+        std::cout << "總和是否超過 INT_MAX: " << (correct > INT_MAX) << "\n";
+        std::cout << "→ 若寫成 accumulate(…, 0)，累加器是 int，這裡就會有號溢位；\n";
+        std::cout << "  那是未定義行為，不保證任何特定數值，所以本檔不示範它的「結果」。\n";
+    }
+
     return 0;
 }
+
+// 編譯: g++ -std=c++17 -Wall -Wextra 第一課：STL 的歷史與設計哲學6.cpp -o demo6
+
+// === 預期輸出 ===
+// === 原始示範：sort + max_element + accumulate ===
+// 排序後: 1 2 3 4 5 6 7 8 9
+// 最大值: 9
+// 總和: 45
+// 最大值所在索引: 8
+//
+// === accumulate 的回傳型別由 init 決定 ===
+// vector<double> 求和，init 傳 0  : 6  ← 每步都被截斷成 int
+// vector<double> 求和，init 傳 0.0: 7.25  ← 正確
+//
+// === accumulate 是「摺疊」，不只會加法 ===
+// 連乘 (init=1LL, multiplies): 120
+// 字串串接 (init=空字串): STL-is-generic
+//
+// === LeetCode 1480 Running Sum of 1d Array ===
+// [1,2,3,4] -> [1,3,6,10]
+// [1,1,1,1,1] -> [1,2,3,4,5]
+// [3,1,2,10,1] -> [3,4,6,16,17]
+//
+// === 日常實務：單日訂單結算（accumulate 的 init 型別）===
+// 訂單筆數        : 1000000
+// 每筆金額        : 3000（遠小於 INT_MAX）
+// INT_MAX         : 2147483647
+// 手動 long long 加總 : 3000000000
+// accumulate(…, 0LL)  : 3000000000
+// 兩者一致        : true
+// 總和是否超過 INT_MAX: true
+// → 若寫成 accumulate(…, 0)，累加器是 int，這裡就會有號溢位；
+//   那是未定義行為，不保證任何特定數值，所以本檔不示範它的「結果」。

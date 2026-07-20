@@ -1,8 +1,142 @@
-// ╔══════════════════════════════════════════════════════════════════╗
-// ║  第 1 單元：型別推導與初始化 — 完整教學                          ║
-// ║  從零開始，一步一步帶你徹底搞懂 C++11 的型別系統革新            ║
-// ║  編譯：g++ -std=c++17 -Wall -o summary "第 1 單元：型別推導與初始化 summary.cpp" ║
-// ╚══════════════════════════════════════════════════════════════════╝
+// =============================================================================
+//  第 1 單元：型別推導與初始化 summary.cpp  —  auto / decltype / {} 的完整規則書
+// =============================================================================
+//
+// 【主題資訊 Information】
+//   本檔涵蓋的語法與其標準版本（皆以 -pedantic-errors 實測驗證）：
+//     auto 變數推導                    C++11
+//     decltype(expr)                   C++11
+//     後置回傳型別 auto f() -> T       C++11
+//     統一初始化 {} / initializer_list C++11
+//     decltype(auto)                   C++14
+//     generic lambda [](auto x){}      C++14
+//     變數模板 template<class T> T v   C++14
+//     auto x{42} 推導為 int（非 list） C++17（N3922 修正）
+//     CTAD（vector v{1,2,3}）          C++17
+//     [[maybe_unused]]                 C++17
+//   標頭檔：<type_traits>（is_same/decay）、<initializer_list>
+//   本檔宣告的標準：C++17（因為用到 CTAD、is_const_v 等 _v 別名）
+//
+// 【詳細解釋 Explanation】
+//
+// 【1. 為什麼需要型別推導？不是「少打字」而已】
+//   C++03 時代寫一個 map 迭代器要打：
+//       std::map<std::string, std::vector<int>>::const_iterator it = m.begin();
+//   這不只是冗長 — 它是「重複資訊」。型別已經完全由 m.begin() 決定了，
+//   人再抄一次只會製造兩個問題：
+//     (a) 抄錯 → 觸發隱式轉換，產生一次靜默的複製（const_iterator vs iterator）。
+//     (b) 改動 m 的型別時，所有抄寫處都要跟著改 → 維護地獄。
+//   auto 把「型別的唯一真實來源」交還給初始化表達式，這是 DRY 原則在型別層的實踐。
+//
+// 【2. auto 用的是「模板參數推導」規則，不是新規則】
+//   這是理解 auto 的關鍵：auto 幾乎完全複用 template<class T> 的推導機制。
+//       auto x = expr;        ≈  template<class T> void f(T  x);  f(expr);
+//       auto& r = expr;       ≈  template<class T> void f(T& r);  f(expr);
+//       auto&& u = expr;      ≈  template<class T> void f(T&& u); f(expr);  ← 轉發引用
+//   因此 auto 會做兩件「看似奇怪、其實一致」的事：
+//     (a) by-value 推導會剝掉 top-level const 與 reference（因為是「複製一份」）。
+//     (b) 陣列與函式會 decay 成指標（因為傳值時陣列無法複製）。
+//   唯一例外：auto 對 {} 會推導成 std::initializer_list，而模板推導不會（見第 11 章）。
+//
+// 【3. decltype 是完全不同的東西：它問「表達式的宣告型別」】
+//   auto 問的是「如果我把它複製一份，型別是什麼」；
+//   decltype 問的是「這個表達式在標準裡被標記成什麼型別」——不剝任何東西。
+//   decltype 有兩條規則，順序不能顛倒：
+//     規則 A：若運算元是「未加括號的識別字或成員存取」→ 就是它宣告時的型別。
+//     規則 B：否則，看 value category：
+//              prvalue → T      lvalue → T&      xvalue → T&&
+//   括號陷阱就是規則 A/B 的交界：x 是識別字走 A，(x) 是表達式走 B。
+//   int x; decltype(x) → int；decltype((x)) → int&（x 是 lvalue）。
+//
+// 【4. {} 的三個真正目的（不只是「另一種括號」）】
+//   (a) 統一語法：所有初始化都能寫 {}，含聚合、容器、成員初始化。
+//   (b) 禁止窄化轉換：int x{3.14}; 是編譯錯誤，而 int x = 3.14; 只是靜默截斷。
+//       這是 {} 唯一「多做事」的地方，也是最值得用它的理由。
+//   (c) 繞開 Most Vexing Parse：Widget w(); 被解析成函式宣告，Widget w{}; 不會。
+//
+// 【概念補充 Concept Deep Dive】
+//
+// (A) auto 剝 const 的精確界線：只剝 top-level
+//       const int  ci = 42;   auto a = ci;    // a 是 int      ← top-level const 被剝
+//       const int* p  = &ci;  auto b = p;     // b 是 const int* ← low-level const 保留
+//     為什麼？因為 by-value 是「複製一份給你」，你自己那份要不要 const 由你決定；
+//     但 p 指向的東西是不是 const，是被指物的性質，不能替別人決定。
+//
+// (B) decltype(auto) 補的是哪個洞（C++14）
+//     完美轉發回傳值在 C++11 是做不到的：
+//         template<class F, class... A>
+//         auto call(F f, A&&... a) -> decltype(f(std::forward<A>(a)...))   // C++11 得寫兩次
+//     C++14 的 decltype(auto) 讓「回傳型別 = 回傳表達式的 decltype」：
+//         decltype(auto) call(F f, A&&... a) { return f(std::forward<A>(a)...); }
+//     代價是它把括號陷阱一起繼承了：return x; 回傳 int，return (x); 回傳 int&。
+//     後者若 x 是區域變數就是懸空引用。
+//
+// (C) initializer_list 的記憶體真相
+//     編譯器為 {1,2,3} 產生一個「後備陣列（backing array）」，
+//     initializer_list 只是持有 {const T* begin, size_t size} 的輕量 view。
+//     後備陣列的生命週期 = 該 initializer_list 物件的生命週期。
+//     所以「回傳 initializer_list」= 回傳指向已死陣列的 view，是懸空。
+//     元素是 const 的，因此 initializer_list 的元素只能複製、無法移動 —
+//     這正是 vector<unique_ptr<T>> v{make_unique<T>()...} 編譯不過的原因。
+//
+// (D) 為何 {} 讓 initializer_list 建構子「霸道地」勝出
+//     重載決議對 {} 有一條特例：只要有任何 initializer_list 建構子可行，
+//     它就優先於所有其他建構子，甚至優先於完全精確匹配的版本。
+//         vector<int> v1(5, 10);  // 5 個 10
+//         vector<int> v2{5, 10};  // 2 個元素 5, 10
+//     這不是 bug，是刻意設計：讓 {} 的「列表語意」永遠可預測。
+//     代價是你必須記住「要呼叫大小/容量類建構子就用 ()」。
+//
+// 【注意事項 Pay Attention】
+//   1. auto 一定要有初始化式；auto x; 無法推導。
+//   2. auto 會剝 top-level const 與 reference — 需要保留請明寫 const auto& / auto&。
+//   3. decltype((x)) 與 decltype(x) 不同型別；多打一對括號會從 int 變 int&。
+//   4. decltype(auto) 的 return (x); 若 x 是區域變數，回傳的引用在函式結束後即懸空，
+//      後續使用是未定義行為（UB）——實際觀察到的現象不固定，不可當成穩定結果。
+//   5. auto x = {1,2,3}; 得到 initializer_list<int>，不是 vector。
+//   6. auto x{42}; 在 C++17 起是 int；C++11/14 是 initializer_list<int>（N3922 修正）。
+//   7. 窄化檢查只有 {} 會做；= 與 () 都只會靜默截斷。
+//   8. 本檔多處刻意宣告變數只為展示推導結果，故標記 [[maybe_unused]]（C++17）。
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】型別推導與初始化
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. auto 和 decltype 的根本差別是什麼？
+//     答：auto 用「模板參數推導」規則，語意是「複製一份會是什麼型別」，
+//         所以會剝掉 top-level const 與 reference、陣列會 decay 成指標。
+//         decltype 用「宣告型別查詢」規則，不剝任何東西，並且會保留 reference。
+//         一句話：auto 問「複製後是什麼」，decltype 問「它本來被宣告成什麼」。
+//     追問：那 decltype(auto) 是哪一種？→ 用 auto 的位置（不必寫出型別），
+//         但套 decltype 的規則（完整保留 const/reference），C++14 引入。
+//
+// 🔥 Q2. decltype(x) 和 decltype((x)) 為什麼不同？
+//     答：decltype 規則 A 只在運算元是「未加括號的識別字/成員存取」時適用，
+//         此時回傳宣告型別 int。加了括號後 (x) 不再是識別字而是 lvalue 表達式，
+//         走規則 B：lvalue → T&，得到 int&。
+//     追問：這在哪裡會咬人？→ decltype(auto) f(){ int x=42; return (x); }
+//         回傳型別變成 int&，指向已銷毀的區域變數，是懸空引用。
+//
+// 🔥 Q3. vector<int> v(5, 10) 和 vector<int> v{5, 10} 差在哪？
+//     答：() 呼叫 (count, value) 建構子 → 5 個 10。
+//         {} 因為 initializer_list 建構子優先規則 → 2 個元素 [5, 10]。
+//         重載決議對 {} 的特例是「只要 initializer_list 版本可行就必勝」。
+//     追問：那要怎麼強制用 (count,value)？→ 只能用 ()，這是刻意的設計取捨。
+//
+// ⚠️ 陷阱 1. 「用 {} 一律比較安全，所以全部改成 {}」對嗎？
+//     答：不對。{} 在「防窄化」與「避開 Most Vexing Parse」上確實更安全，
+//         但它會改變重載決議結果 — 對有 initializer_list 建構子的型別
+//         （vector/map 等）語意完全不同，vector<int>(5,10) 改成 {5,10} 是行為改變。
+//     為什麼會錯：把 {} 當成「語法比較新的括號」，以為只是寫法差異；
+//         實際上 {} 是一條獨立的重載決議路徑，不是 () 的同義詞。
+//
+// ⚠️ 陷阱 2. auto a = ci;（ci 是 const int）之後改 a 會編譯錯誤嗎？
+//     答：不會。a 的型別是 int，top-level const 在 by-value 推導時被剝掉了。
+//         很多人以為「const 會傳染」而預期編譯錯誤。
+//     為什麼會錯：把 const 想成附著在「值」上；實際上 top-level const 修飾的是
+//         「那個變數本身」，複製出來的新變數是不是 const 由新的宣告決定。
+//         但 low-level const（指標所指之物）會保留：auto b = p;（const int* p）
+//         推導出 const int*，仍不能透過 b 改內容。
+// ═══════════════════════════════════════════════════════════════════════════
 //
 // 本檔案是一本「迷你書」，涵蓋以下章節：
 //   第 1 章：auto — 讓編譯器幫你推導型別
@@ -19,10 +153,12 @@
 //   第 12 章：Most Vexing Parse — () 的歧義與 {} 的解法
 //   第 13 章：實戰模式與最佳實踐
 //   第 14 章：常見錯誤與陷阱大全
+//   第 15 章：LeetCode 實戰 + 日常實務範例（本次新增）
 
 #include <iostream>
 #include <vector>
 #include <map>
+#include <unordered_map>
 #include <string>
 #include <array>
 #include <type_traits>
@@ -86,7 +222,7 @@ void chapter1() {
     cout << "  auto ll = 100LL; → long long, ll = " << ll << "\n\n";
 
     sub("字串型別推導（注意！）");
-    auto str1 = "Hello";              // const char*（字串字面值）
+    [[maybe_unused]] auto str1 = "Hello";              // const char*（字串字面值）
     auto str2 = string("World");      // string
     cout << "  auto str1 = \"Hello\";         → const char* ← 不是 string！\n";
     cout << "  auto str2 = string(\"World\"); → string\n\n";
@@ -142,8 +278,8 @@ void chapter2() {
     const int& crx = x;
 
     sub("規則 1：忽略頂層 const（因為是複製）");
-    auto a1 = cx;    // int（忽略 const，因為 a1 是新的副本）
-    auto a2 = crx;   // int（忽略 const 和引用）
+    [[maybe_unused]] auto a1 = cx;    // int（忽略 const，因為 a1 是新的副本）
+    [[maybe_unused]] auto a2 = crx;   // int（忽略 const 和引用）
     a1 = 999;        // ✅ a1 可以修改，它是 int
     cout << "  auto a1 = cx(const int);  → a1 是 int，可修改\n";
     cout << "  auto a2 = crx(const int&); → a2 是 int，可修改\n\n";
@@ -158,7 +294,7 @@ void chapter2() {
     const auto ca = x;      // const int
     auto& ra = x;            // int&
     const auto& cra = x;     // const int&
-    auto& ra2 = cx;          // const int&（底層 const 保留！）
+    [[maybe_unused]] auto& ra2 = cx;          // const int&（底層 const 保留！）
 
     ra = 555;
     cout << "  auto& ra = x;        → int&，修改 ra 就是修改 x\n";
@@ -234,13 +370,13 @@ void chapter3() {
     int x = 10;
     const int cx = 20;
     int& rx = x;
-    const int& crx = x;
+    [[maybe_unused]] const int& crx = x;
 
     sub("auto vs decltype 的關鍵差異");
     auto       autoVal = cx;       // int（忽略 const）
-    decltype(cx) declVal = 100;    // const int（保留 const）
+    [[maybe_unused]] decltype(cx) declVal = 100;    // const int（保留 const）
 
-    auto       autoRef = rx;       // int（忽略引用）
+    [[maybe_unused]] auto       autoRef = rx;       // int（忽略引用）
     decltype(rx) declRef = x;      // int&（保留引用）
 
     cout << "  原始：const int cx = 20;\n";
@@ -281,9 +417,15 @@ void chapter3() {
 
     sub("decltype 定義型別別名");
     vector<pair<string, int>> records;
-    using RecordType = decltype(records);       // vector<pair<string,int>>
-    using IterType = decltype(records.begin());  // vector 的 iterator
+    using RecordType = decltype(records);        // vector<pair<string,int>>
+    using IterType   = decltype(records.begin()); // vector 的 iterator
+    // 用 static_assert 驗證別名真的等於那個冗長型別（編譯期檢查，零執行成本）
+    static_assert(is_same_v<RecordType, vector<pair<string, int>>>,
+                  "RecordType 應等於 vector<pair<string,int>>");
+    static_assert(is_same_v<IterType, vector<pair<string, int>>::iterator>,
+                  "IterType 應等於該 vector 的 iterator");
     cout << "  using RecordType = decltype(records); → 省去寫完整型別\n";
+    cout << "  static_assert 已在編譯期驗證兩個別名的型別正確 ✅\n";
 
     (void)v1; (void)v2; (void)v3; (void)autoVal;
 }
@@ -366,7 +508,7 @@ void chapter5() {
     int& rx = x;
 
     auto a1 = cx;                // int（忽略 const）
-    decltype(auto) d1 = cx;      // const int（保留 const）
+    [[maybe_unused]] decltype(auto) d1 = cx;      // const int（保留 const）
 
     auto a2 = rx;                // int（忽略引用）
     decltype(auto) d2 = rx;      // int&（保留引用）
@@ -391,8 +533,8 @@ void chapter5() {
 
     sub("括號陷阱在 decltype(auto) 中更危險！");
     int num = 42;
-    decltype(auto) safe = num;    // int
-    decltype(auto) danger = (num); // int& ← 加括號變引用！
+    [[maybe_unused]] decltype(auto) safe = num;    // int
+    [[maybe_unused]] decltype(auto) danger = (num); // int& ← 加括號變引用！
     cout << "  decltype(auto) safe   = num;   → int\n";
     cout << "  decltype(auto) danger = (num); → int& ← 陷阱！\n";
     cout << "  在 return 中：return (x) 會回傳引用 → 可能懸空！\n\n";
@@ -532,7 +674,7 @@ void chapter8() {
     char c{65};   // ✅ 65 在 char 範圍內
     cout << "  char c{65};        → ✅ 65 在 char 範圍內，合法\n\n";
 
-    int big = 1000;
+    [[maybe_unused]] int big = 1000;
     // char d{big};  // ❌ big 不是常量表達式，可能超範圍
     cout << "  int big = 1000;\n";
     cout << "  char d{big};       → ❌ 編譯錯誤（big 不是常量）\n\n";
@@ -859,6 +1001,173 @@ void chapter14() {
 
 // ================================================================
 //
+//  第 15 章：LeetCode 實戰 + 日常實務範例
+//
+// ================================================================
+//
+// 說明：型別推導本身是「語言機制」而非演算法主題，因此不存在
+//       「考 auto 的 LeetCode 題」。但下列兩題的標準解法裡，
+//       auto（迭代器/範圍 for）與 {}（建構回傳值）是真正會用到、
+//       而且換成 C++03 寫法會明顯變醜的地方，故收錄。
+
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例 1】LeetCode 1. Two Sum
+//   題目：給定陣列與 target，回傳兩個和為 target 的元素索引。
+//   為什麼用到本主題：
+//     (a) auto it = seen.find(need);  — 省掉 unordered_map<int,int>::iterator
+//     (b) return {it->second, i};     — 用 {} 直接建構 vector<int> 回傳值，
+//         不必寫 return vector<int>{...}；這是統一初始化最自然的用途。
+// -----------------------------------------------------------------------------
+vector<int> twoSum(const vector<int>& nums, int target) {
+    unordered_map<int, int> seen;                  // value -> index
+    for (int i = 0; i < static_cast<int>(nums.size()); ++i) {
+        int need = target - nums[i];
+        auto it = seen.find(need);                 // auto：型別由 find 決定
+        if (it != seen.end()) {
+            return {it->second, i};                // {} 建構回傳值
+        }
+        seen[nums[i]] = i;
+    }
+    return {};                                     // {} 表示空 vector
+}
+
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例 2】LeetCode 56. Merge Intervals
+//   題目：合併所有重疊區間。
+//   為什麼用到本主題：
+//     (a) const auto& iv : intervals — 範圍 for 搭配 const auto& 避免每圈複製
+//         一個 vector<int>（改成 auto 會多一次堆積配置，是常見效能錯誤）。
+//     (b) out.push_back({s, e}); — 用 {} 就地建構元素。
+// -----------------------------------------------------------------------------
+vector<vector<int>> mergeIntervals(vector<vector<int>> intervals) {
+    if (intervals.empty()) return {};
+    sort(intervals.begin(), intervals.end());
+
+    vector<vector<int>> out;
+    out.push_back(intervals.front());              // 先放第一段
+
+    for (const auto& iv : intervals) {             // const auto& ← 不複製
+        auto& last = out.back();                   // auto& ← 要就地改，不能複製
+        if (iv[0] <= last[1]) {
+            last[1] = max(last[1], iv[1]);         // 重疊 → 延長
+        } else {
+            out.push_back({iv[0], iv[1]});         // {} 建構新區間
+        }
+    }
+    return out;
+}
+
+// -----------------------------------------------------------------------------
+// 【日常實務範例 1】載入設定檔並套用預設值
+//   情境：服務啟動時讀 key=value 設定，缺少的欄位要套預設值。
+//   為什麼用到本主題：
+//     (a) 預設值表用 {} 初始化 map，一眼看得出內容。
+//     (b) 走訪用 const auto&，避免每圈複製 std::string。
+//     (c) 逾時秒數刻意用 int{} 檢查 — 若來源是浮點數會在編譯期就被擋下
+//         （窄化轉換），這正是 {} 比 = 安全的地方。
+// -----------------------------------------------------------------------------
+map<string, string> loadConfig(const vector<string>& lines) {
+    // {} 讓「預設設定」像資料表一樣可讀
+    map<string, string> cfg{
+        {"host",    "127.0.0.1"},
+        {"port",    "8080"},
+        {"timeout", "30"},
+        {"debug",   "false"}
+    };
+
+    for (const auto& line : lines) {               // const auto& ← 不複製字串
+        if (line.empty() || line[0] == '#') continue;   // 跳過註解
+        auto eq = line.find('=');                  // auto → std::string::size_type
+        if (eq == string::npos) continue;          // 格式錯誤就略過
+        cfg[line.substr(0, eq)] = line.substr(eq + 1);
+    }
+    return cfg;
+}
+
+// -----------------------------------------------------------------------------
+// 【日常實務範例 2】以 decltype 讓輔助函式自動跟隨容器型別
+//   情境：統計 log 各等級出現次數，之後 log 結構若改型別，統計函式不必改。
+//   為什麼用到本主題：
+//     回傳型別寫 decltype(...)，型別的唯一來源是容器本身；
+//     日後把 map 換成 unordered_map，這個函式一個字都不用動。
+// -----------------------------------------------------------------------------
+using LogCounter = map<string, int>;
+
+// 後置回傳型別（C++11）：回傳型別由參數推導而來
+auto countLogLevels(const vector<string>& lines) -> LogCounter {
+    LogCounter counter;
+    for (const auto& line : lines) {
+        auto l = line.find('[');
+        if (l == string::npos) continue;
+        auto r = line.find(']', l + 1);
+        if (r == string::npos) continue;
+        ++counter[line.substr(l + 1, r - l - 1)];
+    }
+    return counter;
+}
+
+void chapter15() {
+    title("第 15 章：LeetCode 實戰 + 日常實務範例");
+
+    sub("LeetCode 1. Two Sum");
+    {
+        vector<int> nums{2, 7, 11, 15};
+        auto ans = twoSum(nums, 9);
+        cout << "  nums = [2,7,11,15], target = 9 → [";
+        for (size_t i = 0; i < ans.size(); ++i)
+            cout << ans[i] << (i + 1 < ans.size() ? "," : "");
+        cout << "]\n\n";
+    }
+
+    sub("LeetCode 56. Merge Intervals");
+    {
+        vector<vector<int>> iv{{1, 3}, {2, 6}, {8, 10}, {15, 18}};
+        auto merged = mergeIntervals(iv);
+        cout << "  輸入 [[1,3],[2,6],[8,10],[15,18]]\n";
+        cout << "  合併 → ";
+        for (const auto& seg : merged)
+            cout << "[" << seg[0] << "," << seg[1] << "] ";
+        cout << "\n\n";
+    }
+
+    sub("日常實務 1：載入設定檔（缺項自動套預設）");
+    {
+        vector<string> file{
+            "# 這行是註解",
+            "host=192.168.1.50",
+            "port=9090",
+            "壞掉的行沒有等號"
+        };
+        auto cfg = loadConfig(file);
+        for (const auto& kv : cfg)
+            cout << "  " << kv.first << " = " << kv.second << "\n";
+        cout << "  ← timeout/debug 未出現在檔案中，套用了預設值\n\n";
+    }
+
+    sub("日常實務 2：統計 log 等級（後置回傳型別）");
+    {
+        vector<string> logs{
+            "2026-07-19 10:00:01 [INFO] service started",
+            "2026-07-19 10:00:05 [WARN] cache miss rate high",
+            "2026-07-19 10:00:07 [ERROR] db connect failed",
+            "2026-07-19 10:00:09 [ERROR] db connect failed",
+            "沒有等級標籤的一行"
+        };
+        auto counter = countLogLevels(logs);
+        for (const auto& kv : counter)
+            cout << "  " << kv.first << " : " << kv.second << " 次\n";
+        cout << "\n";
+    }
+
+    sub("{} 防窄化：實務上真正救命的地方");
+    cout << "  int port{8080};      ✅ 正常\n";
+    cout << "  int port{8080.5};    ❌ 編譯錯誤 — 設定值誤植為浮點數，編譯期就抓到\n";
+    cout << "  int port = 8080.5;   ⚠️ 靜默截斷成 8080，錯誤被藏起來直到上線\n";
+}
+
+
+// ================================================================
+//
 //  main：按順序執行所有章節
 //
 // ================================================================
@@ -881,6 +1190,7 @@ int main() {
     chapter12();
     chapter13();
     chapter14();
+    chapter15();
 
     cout << "\n";
     cout << "================================================================\n";
@@ -892,7 +1202,497 @@ int main() {
     cout << "    7. {} 統一初始化 → 8. 防窄化 → 9. initializer_list\n";
     cout << "    10. {} vs () → 11. auto+{} → 12. Most Vexing Parse\n";
     cout << "    13. 實戰模式 → 14. 陷阱大全\n";
+    cout << "    15. LeetCode 實戰 + 日常實務\n";
     cout << "================================================================\n";
 
     return 0;
 }
+
+// 編譯: g++ -std=c++17 -Wall -Wextra "第 1 單元：型別推導與初始化 summary.cpp" -o unit1_summary
+
+// === 預期輸出 ===
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  型別推導與初始化 — 完整教學（14 章）                           ║
+// ╚══════════════════════════════════════════════════════════════════╝
+//
+// ================================================================
+//   第 1 章：auto — 讓編譯器幫你推導型別
+// ================================================================
+//
+// --- 基本型別推導 ---
+//   auto i = 42;     → int,       i = 42
+//   auto d = 3.14;   → double,    d = 3.14
+//   auto f = 3.14f;  → float,     f = 3.14
+//   auto c = 'A';    → char,       c = A
+//   auto b = true;   → bool,       b = true
+//   auto ll = 100LL; → long long, ll = 100
+//
+// --- 字串型別推導（注意！） ---
+//   auto str1 = "Hello";         → const char* ← 不是 string！
+//   auto str2 = string("World"); → string
+//
+// --- auto 最常見的用途：簡化迭代器 ---
+//   // 沒有 auto（C++03 風格）：
+//   // map<string, vector<int>>::iterator it = data.begin();
+//   // 用 auto（C++11）：
+//   // auto it = data.begin();  ← 簡潔多了！
+//
+//   Alice 的成績: 90 85 88 
+//   Bob 的成績: 78 82 80 
+//
+// --- auto 不能用的地方 ---
+//   ❌ auto x;               沒有初始化值
+//   ❌ auto arr[5] = {...};   不能用於陣列宣告
+//   ❌ class C { auto v=1; }; 不能用於非靜態成員
+//   ❌ void func(auto x);     C++11/14 不能用於參數（C++20 才行）
+//
+// ================================================================
+//   第 2 章：auto 的推導規則
+// ================================================================
+//
+// --- 規則 1：忽略頂層 const（因為是複製） ---
+//   auto a1 = cx(const int);  → a1 是 int，可修改
+//   auto a2 = crx(const int&); → a2 是 int，可修改
+//
+// --- 規則 2：忽略引用（因為是複製） ---
+//   auto a3 = rx(int&); → a3 是 int，修改 a3 不影響 x
+//   x = 100（不變）, a3 = 777
+//
+// --- 明確保留 const 或引用 ---
+//   auto& ra = x;        → int&，修改 ra 就是修改 x
+//   x = 555
+//   const auto ca = x;   → const int，不能修改
+//   const auto& cra = x; → const int&，不能修改
+//   auto& ra2 = cx;      → const int&（底層 const 保留！）
+//
+// --- 規則 3：指標被保留 ---
+//   auto p = ptr;  → int*（指標保留）
+//   *p1 = 555
+//
+// --- 規則 4：陣列退化為指標 ---
+//   auto arrAuto = arr;   → int*（退化，sizeof = 8）
+//   auto& arrRef = arr;   → int(&)[5]（保留，sizeof = 20）
+//
+// --- 推導規則總結表 ---
+//   ┌──────────────────┬───────────────────┬─────────────┐
+//   │    原始型別       │ auto x = ...      │ 推導結果    │
+//   ├──────────────────┼───────────────────┼─────────────┤
+//   │ int              │ auto a = x;       │ int         │
+//   │ const int        │ auto a = cx;      │ int         │
+//   │ int&             │ auto a = rx;      │ int         │
+//   │ const int&       │ auto a = crx;     │ int         │
+//   │ int*             │ auto a = ptr;     │ int*        │
+//   │ int[5]           │ auto a = arr;     │ int*        │
+//   ├──────────────────┼───────────────────┼─────────────┤
+//   │ 要保留 const     │ const auto a = x; │ const int   │
+//   │ 要保留引用       │ auto& a = x;      │ int&        │
+//   │ 要保留陣列       │ auto& a = arr;    │ int(&)[5]   │
+//   └──────────────────┴───────────────────┴─────────────┘
+//
+// ================================================================
+//   第 3 章：decltype — 查詢任何表達式的型別
+// ================================================================
+//
+// --- auto vs decltype 的關鍵差異 ---
+//   原始：const int cx = 20;
+//     auto a = cx;       → int（忽略 const）
+//     decltype(cx) d;    → const int（保留！）
+//
+//   原始：int& rx = x;
+//     auto a = rx;       → int（忽略引用）
+//     decltype(rx) d = x; → int&（保留！）
+//
+//   declRef = 222 後，x = 222（證明 declRef 是引用）
+//
+// --- decltype 與函式回傳型別 ---
+//   decltype(getValue())     → int
+//   decltype(getGlobalRef()) → int&
+//   decltype(getConstRef())  → const int&
+//   注意：函式不會被實際呼叫！
+//
+// --- decltype 保留陣列型別 ---
+//   sizeof(arr)     = 20
+//   sizeof(arr2)    = 20（decltype 保留陣列）
+//   sizeof(arrAuto) = 8（auto 退化為指標）
+//
+// --- decltype 與容器元素 ---
+//   decltype(vec[0]) → int&
+//   修改 elem 後 vec[0] = 100（因為是引用）
+//
+// --- decltype 定義型別別名 ---
+//   using RecordType = decltype(records); → 省去寫完整型別
+//   static_assert 已在編譯期驗證兩個別名的型別正確 ✅
+//
+// ================================================================
+//   第 4 章：decltype 的括號陷阱
+// ================================================================
+//
+// --- 不加括號 vs 加括號 ---
+//   decltype(num)   → int   （變數名 → 宣告型別）
+//   decltype((num)) → int&  （左值表達式 → T&）
+//   d2 = 999 後，num = 999（因為 d2 是引用！）
+//
+// --- 為什麼加括號就變引用了？ ---
+//   decltype 有兩條推導規則：
+//     規則 A：如果放的是「變數名」→ 回傳宣告型別
+//     規則 B：如果放的是「表達式」→ 根據值類別決定
+//
+//   num   → 是變數名 → 走規則 A → int
+//   (num) → 加括號後變成表達式 → 走規則 B
+//         → (num) 是左值 → T& → int&
+//
+// --- 這個陷阱在 return 時最危險 ---
+//   decltype(auto) func() {
+//       int x = 42;
+//       return x;    → int  （安全，回傳值）
+//       return (x);  → int& （危險！回傳局部變數的引用 → 懸空！）
+//   }
+// --- 表達式的值類別決定 decltype 結果 ---
+//   decltype(a + b)  → int  （prvalue → T）
+//   decltype(a = b)  → int& （lvalue → T&）
+//   decltype(a++)    → int  （prvalue → T）
+//   decltype(++a)    → int& （lvalue → T&）
+//
+// ================================================================
+//   第 5 章：decltype(auto) — 完美保留型別
+// ================================================================
+//
+// --- 變數推導比較 ---
+//   auto a1 = cx;            → int (忽略 const)
+//   decltype(auto) d1 = cx;  → const int (保留!)
+//
+//   auto a2 = rx;            → int (忽略引用)
+//   decltype(auto) d2 = rx;  → int& (保留!)
+//
+//   d2 = 888 後，x = 888（d2 是引用）
+//
+// --- 函式回傳型別比較 ---
+//   auto 回傳:            永遠是值（忽略引用）
+//   decltype(auto) 回傳:  保留引用！
+//
+//   decltypeReturnRef() = 500;
+//   g_value = 500（成功修改！因為回傳 int&）
+//
+// --- 括號陷阱在 decltype(auto) 中更危險！ ---
+//   decltype(auto) safe   = num;   → int
+//   decltype(auto) danger = (num); → int& ← 陷阱！
+//   在 return 中：return (x) 會回傳引用 → 可能懸空！
+//
+// --- 泛型轉發函式 ---
+//   template<typename F>
+//   auto callWithAuto(F f)           { return f(); } // 丟失引用
+//   decltype(auto) callPerfect(F f)  { return f(); } // 保留引用
+//
+// ================================================================
+//   第 6 章：後置回傳型別
+// ================================================================
+//
+// --- auto func() -> decltype(...) ---
+//   add(1, 2)     = 3 (int)
+//   add(1, 2.5)   = 3.5 (double)
+//   add(1.5f, 2.5)= 4 (double)
+//
+//   // C++11 語法：
+//   auto add(T a, U b) -> decltype(a + b) { return a + b; }
+//
+//   // C++14 簡化：
+//   auto add(T a, U b) { return a + b; }  // 自動推導
+//
+// ================================================================
+//   第 7 章：統一初始化 {} — 大括號語法
+// ================================================================
+//
+// --- C++11 之前的初始化方式（混亂） ---
+//   int x = 42;         // 複製初始化
+//   int x(42);          // 直接初始化
+//   int arr[] = {1,2};  // 聚合初始化（只有陣列能用 {}）
+//   每種型別有不同的初始化語法 → 混亂！
+//
+// --- C++11：{} 統一所有初始化語法 ---
+//   int i1{42};   → 42
+//   int i2 = {42}; → 42
+//   int i3{};     → 0 （值初始化為 0）
+//
+//   int arr[5]{1,2};   → 1 2 0 0 0 （其餘為 0）
+//
+//   vector<int> vec{1,2,3,4,5};  ← 直接初始化！
+//   map<string,int> m{{"Alice",95}, {"Bob",87}};
+//
+//   struct Point { int x; int y; };
+//   Point p{10, 20};  → (10, 20)
+//
+// --- 零初始化 vs 預設初始化 ---
+//   Data d1;    → 成員值不確定（危險！）
+//   Data d2{};  → x=0, y=0（安全）
+//
+// ================================================================
+//   第 8 章：{} 防止窄化轉換（Narrowing Conversion）
+// ================================================================
+//
+// --- 什麼是窄化轉換？ ---
+//   把大範圍的值塞進小範圍的型別，可能丟失資料：
+//     double → int     （丟失小數部分）
+//     int → char       （可能溢位）
+//     long long → int  （可能溢位）
+//
+// --- () 和 = 不會阻止窄化 ---
+//   int x = 3.14159;   → 3 （丟失小數，但編譯通過）
+//   int x(3.14159);    → 3 （同上）
+//
+// --- {} 會在編譯期阻止窄化！ ---
+//   int x{3.14159};    → ❌ 編譯錯誤！
+//   int x = {3.14159}; → ❌ 編譯錯誤！
+//
+//   char c{65};        → ✅ 65 在 char 範圍內，合法
+//
+//   int big = 1000;
+//   char d{big};       → ❌ 編譯錯誤（big 不是常量）
+//
+// --- 窄化轉換完整列表 ---
+//   ┌─────────────────────┬────────┬────────┐
+//   │ 轉換                │ () / = │   {}   │
+//   ├─────────────────────┼────────┼────────┤
+//   │ double → int       │   ✅   │   ❌   │
+//   │ float → int        │   ✅   │   ❌   │
+//   │ int → char         │   ✅   │ 看值   │
+//   │ long long → int    │   ✅   │ 看值   │
+//   │ int → unsigned     │   ✅   │ 看值   │
+//   │ 常量 65 → char     │   ✅   │   ✅   │
+//   └─────────────────────┴────────┴────────┘
+//   「看值」= 如果是常量且在目標範圍內則允許
+//
+// ================================================================
+//   第 9 章：std::initializer_list
+// ================================================================
+//
+// --- initializer_list 的基本性質 ---
+//   initializer_list<int> list = {10, 20, 30, 40};
+//   size = 4
+//   元素是 const 的（不能修改）
+//   底層是臨時陣列，複製 list 只複製指標（輕量！）
+//
+// --- 自訂類別的 initializer_list 建構子 ---
+//   NumberList n1{5, 10}:
+//   NumberList(initializer_list, 2 個元素)
+//     → 5 10 
+//   NumberList n2(5, 10):
+//   NumberList(size=5, value=10)
+//     → 10 10 10 10 10 
+//
+// --- 函式參數使用 initializer_list ---
+//   sum({1, 2, 3, 4, 5}) = 15
+//
+// --- 標準容器都支援 initializer_list ---
+//   vector<int> v{1,2,3};           // 建構子
+//   v.assign({10, 20, 30});          // assign 方法
+//   v.insert(v.end(), {40, 50});     // insert 方法
+//
+// ================================================================
+//   第 10 章：{} vs () — 建構子優先順序陷阱
+// ================================================================
+//
+// --- 陷阱：{} 優先匹配 initializer_list 建構子！ ---
+//   當類別同時有 initializer_list 建構子和一般建構子時，
+//   {} 會優先匹配 initializer_list 版本！
+//
+// --- vector 的陷阱 ---
+//   vector<int> v1(5, 10);  → 10 10 10 10 10 （5 個 10）
+//   vector<int> v2{5, 10};  → 5 10 （兩個元素：5 和 10）
+//
+//   ⚠️ 完全不同的結果！
+//
+// --- 自訂類別也一樣 ---
+//   NumberList n1{5, 10};   → initializer_list 版本
+//   NumberList n2(5, 10);   → 一般建構子 (size, value)
+//
+// --- 規則總結 ---
+//   1. {} 優先匹配 initializer_list 建構子
+//   2. 如果沒有 initializer_list 建構子 → 匹配一般建構子
+//   3. {} 空的情況 → 呼叫預設建構子（不是空 initializer_list）
+//   4. 想指定用一般建構子 → 用 ()
+//
+// --- 建議 ---
+//   容器用 {} 初始化元素值：vector<int> v{1,2,3};
+//   容器用 () 指定大小/填充：vector<int> v(100, 0);
+//
+// ================================================================
+//   第 11 章：auto + {} 的特殊規則
+// ================================================================
+//
+// --- auto + {} = initializer_list（C++11/14） ---
+//   auto list = {1, 2, 3};  → initializer_list<int>
+//   size = 3
+//
+//   auto list = {1, 2.0};   → ❌ 型別不一致（int vs double）
+//
+// --- C++17 的變化：auto x{42} ---
+//   auto x{42};
+//     C++11/14 → initializer_list<int>（一個元素）
+//     C++17    → int（直接推導為 int）
+//
+// --- 建議 ---
+//   想要 initializer_list → auto list = {1,2,3};
+//   想要單一值           → auto x = 42;（用 = 不用 {}）
+//
+// ================================================================
+//   第 12 章：Most Vexing Parse
+// ================================================================
+//
+// --- 問題：() 可能被解析為函式宣告 ---
+//   class Timer {};
+//   class Widget { Widget(Timer t) {} };
+//
+//   Widget w(Timer());   // 這是什麼？
+//     ❌ 不是建構 Widget 物件！
+//     ✅ 被解析為「函式宣告」：
+//        w 是一個函式，接收「回傳 Timer 的函式指標」，回傳 Widget
+//
+// --- 解法：用 {} 消除歧義 ---
+//   Widget w1{Timer{}};  // ✅ 明確是物件建構
+//   Widget w2(Timer{}); // ✅ 也行（參數用 {}）
+//   Widget w3{Timer()};  // ✅ 也行（外層用 {}）
+//
+// --- 其他常見的 Most Vexing Parse ---
+//   int x();     // 看起來像變數初始化？不！是函式宣告！
+//   int x{};     // ✅ 這才是變數初始化（x = 0）
+//
+//   int y{};  → y = 0（值初始化為 0）
+//
+// ================================================================
+//   第 13 章：實戰模式與最佳實踐
+// ================================================================
+//
+// --- 模式 1：range-based for 搭配 auto ---
+//   // 唯讀遍歷：
+//   for (const auto& name : names) { ... }
+//     Alice
+//     Bob
+//     Charlie
+//
+//   // 修改遍歷：
+//   for (auto& name : names) { name += "!"; }
+//     Alice!
+//     Bob!
+//     Charlie!
+//
+// --- 模式 2：auto 搭配 Lambda ---
+//   auto add = [](int a, int b) { return a + b; };
+//   add(3, 4) = 7
+//   greet("World") = Hello, World
+//
+// --- 模式 3：auto 搭配 make_unique / make_shared ---
+//   auto ptr = make_unique<vector<int>>({1,2,3});
+//   比寫 unique_ptr<vector<int>> ptr = ... 簡潔多了
+//
+// --- 模式 4：結構化綁定（C++17）搭配 auto ---
+//   for (const auto& [name, score] : scores) { ... }
+//     Alice: 95
+//     Bob: 87
+//
+// --- 模式 5：{} 初始化 STL 容器 ---
+//   vector<int> v{1,2,3};
+//   map<string,int> m{{"a",1},{"b",2}};
+//   pair<int,string> p{42, "answer"};
+//   array<int,3> a{10, 20, 30};
+//
+// --- 何時用 auto vs 明確型別？ ---
+//   ✅ 用 auto：型別明顯、迭代器、Lambda、make_unique 回傳值
+//   ❌ 不用 auto：型別不明顯時（auto x = getValue() ← 什麼型別？）
+//   ❌ 不用 auto：需要特定型別轉換時（auto x = 0 而非 size_t x = 0）
+//
+// --- 何時用 {} vs ()？ ---
+//   ✅ 用 {}：初始化基本型別（防窄化）、聚合類別、想要安全
+//   ✅ 用 ()：指定容器大小如 vector(100, 0)、避免 initializer_list 搶匹配
+//   ✅ 用 {}：消除 Most Vexing Parse 歧義
+//
+// ================================================================
+//   第 14 章：常見錯誤與陷阱大全
+// ================================================================
+//
+// --- 陷阱 1：auto 推導字串字面值為 const char* ---
+//   auto s = "Hello";  → const char*（不是 string！）
+//   解法：auto s = string("Hello"); 或 using namespace std::literals;
+//          auto s = "Hello"s;  ← C++14 字串字面值後綴
+//
+// --- 陷阱 2：auto 忽略 const 和引用 ---
+//   const int cx = 42;
+//   auto a = cx;  → int（不是 const int！）
+//   解法：const auto a = cx; 或 auto& a = cx;
+//
+// --- 陷阱 3：decltype 加括號變引用 ---
+//   int x = 42;
+//   decltype(x)   → int
+//   decltype((x)) → int&  ← 加括號就變引用！
+//
+// --- 陷阱 4：decltype(auto) return (x) 懸空引用 ---
+//   decltype(auto) func() {
+//       int x = 42;
+//       return (x);  → int& → 回傳局部變數引用 → 💥 懸空！
+//       return x;    → int  → 安全 ✅
+//   }
+//
+// --- 陷阱 5：vector{} vs vector() ---
+//   vector<int> v1(5, 10); → 5 個 10：[10,10,10,10,10]
+//   vector<int> v2{5, 10}; → 2 個元素：[5, 10]
+//   完全不同的結果！
+//
+// --- 陷阱 6：auto + {} = initializer_list ---
+//   auto x = {1, 2, 3};  → initializer_list<int>（不是 vector！）
+//   auto x{42};          → C++17 前是 initializer_list，C++17 後是 int
+//
+// --- 陷阱 7：initializer_list 建構子搶匹配 ---
+//   類別同時有 initializer_list 和一般建構子時，
+//   {} 總是優先匹配 initializer_list 版本
+//   想用一般建構子 → 用 ()
+//
+// --- 陷阱 8：窄化轉換只有 {} 會報錯 ---
+//   int x = 3.14;    → 靜默截斷（沒有警告）
+//   int x{3.14};     → 編譯錯誤 ✅（{} 保護你）
+//
+// === 安全檢查清單 ===
+//   ✅ 用 auto 時注意型別是否符合預期
+//   ✅ 需要 const/引用時明確寫出 const auto& / auto&
+//   ✅ decltype 避免不必要的括號
+//   ✅ decltype(auto) return 語句不要加括號
+//   ✅ 容器大小用 ()，元素值用 {}
+//   ✅ 用 {} 防止窄化轉換
+//
+// ================================================================
+//   第 15 章：LeetCode 實戰 + 日常實務範例
+// ================================================================
+//
+// --- LeetCode 1. Two Sum ---
+//   nums = [2,7,11,15], target = 9 → [0,1]
+//
+// --- LeetCode 56. Merge Intervals ---
+//   輸入 [[1,3],[2,6],[8,10],[15,18]]
+//   合併 → [1,6] [8,10] [15,18] 
+//
+// --- 日常實務 1：載入設定檔（缺項自動套預設） ---
+//   debug = false
+//   host = 192.168.1.50
+//   port = 9090
+//   timeout = 30
+//   ← timeout/debug 未出現在檔案中，套用了預設值
+//
+// --- 日常實務 2：統計 log 等級（後置回傳型別） ---
+//   ERROR : 2 次
+//   INFO : 1 次
+//   WARN : 1 次
+//
+// --- {} 防窄化：實務上真正救命的地方 ---
+//   int port{8080};      ✅ 正常
+//   int port{8080.5};    ❌ 編譯錯誤 — 設定值誤植為浮點數，編譯期就抓到
+//   int port = 8080.5;   ⚠️ 靜默截斷成 8080，錯誤被藏起來直到上線
+//
+// ================================================================
+//   恭喜！你已經完整學完型別推導與初始化的所有核心知識。
+//   建議順序複習：
+//     1. auto 基本用法 → 2. auto 推導規則（const/引用/陣列）
+//     3. decltype → 4. 括號陷阱 → 5. decltype(auto)
+//     6. 後置回傳型別
+//     7. {} 統一初始化 → 8. 防窄化 → 9. initializer_list
+//     10. {} vs () → 11. auto+{} → 12. Most Vexing Parse
+//     13. 實戰模式 → 14. 陷阱大全
+//     15. LeetCode 實戰 + 日常實務
+// ================================================================

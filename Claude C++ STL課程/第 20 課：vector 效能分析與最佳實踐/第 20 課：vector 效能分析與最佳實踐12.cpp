@@ -847,7 +847,120 @@ vector 的遍歷速度是 list 的 **6 倍以上**，這就是快取效應的力
 準備好了就告訴我，我們進入**第三階段：deque**，從第 21 課開始：**deque 的內部結構（分段連續空間）**。那是一個非常精巧的資料結構設計。
 */
 
-
+// =============================================================================
+//  第 20 課 講義附錄  —  vector vs list：快取局部性（cache locality）
+// =============================================================================
+//
+// 【主題資訊 Information】
+//   std::vector<T>  —  連續記憶體，random access iterator，[] 為 O(1)
+//   std::list<T>    —  雙向鏈結串列，bidirectional iterator，無 []
+//
+//   標頭檔：<vector>、<list>
+//   複雜度：兩者「順序遍歷」都是 O(n)，但常數差距極大
+//   本檔標準：C++17
+//
+// 【詳細解釋 Explanation】
+//
+// 【1. 為什麼複雜度相同、實際速度卻差很多】
+//   大 O 記號描述的是「運算次數隨 n 的成長趨勢」，它把
+//   「一次記憶體存取」當成單位成本 1。但在真實 CPU 上，
+//   這個假設完全不成立：
+//       L1 快取命中   ≈  1 ns 等級
+//       主記憶體(DRAM) ≈  100 ns 等級（相差約兩個數量級）
+//   遍歷 vector 時，元素在記憶體中連續排列，CPU 的硬體預取器
+//   （prefetcher）能準確預測下一個位址並提前載入，幾乎每次都命中快取。
+//   遍歷 list 時，每個節點是獨立 new 出來的，位址可能散布在整個 heap，
+//   預取器無從預測 → 每跳一個節點就可能是一次 cache miss。
+//   兩者都是 O(n)，但那個「1」的實際代價差了兩個數量級。
+//
+// 【2. list 的每個節點還多帶了兩個指標】
+//   本機 g++ 15.2 / libstdc++ 實測（本檔第 1 節會印出）：
+//       sizeof(int)                      = 4  位元組
+//       std::list<int> 的節點             = 24 位元組（prev 8 + next 8 + 資料 4 + 對齊補 4）
+//   也就是說，存同樣的資料，list 要用掉 vector **6 倍**的記憶體。
+//   記憶體用得多 → 同樣大小的快取裝得下的元素更少 → 命中率更差。
+//   這是雙重打擊：既不連續，又更肥。
+//
+// 【3. 那 list 什麼時候才有優勢】
+//   list 真正的強項只有一個：**已經拿到 iterator 時，插入／刪除是 O(1)
+//   且不搬移任何其他元素**，同時所有其他 iterator 保持有效。
+//   適用情境：
+//     * 需要在遍歷過程中大量插入／刪除，且元素本身複製成本很高
+//     * 需要 splice（O(1) 把一整段搬到另一個 list，完全不搬資料）
+//     * 需要「iterator 永不失效」的保證（例如外部持有元素的參考）
+//   ⚠️ 但注意：如果你必須先「找到」那個位置，尋找本身就是 O(n)，
+//      而且是 cache-miss 密集的 O(n)。此時 vector 常常整體更快，
+//      即使它的刪除是 O(n) 搬移——因為 memmove 是連續的、SIMD 友善的。
+//
+// 【4. 實務建議】
+//   C++ 社群的共識（Bjarne Stroustrup 與 Chandler Carruth 都公開示範過）是：
+//   **預設用 vector，除非你有具體理由且實測證明其他容器更好。**
+//   即使是「頻繁在中間插入」這種教科書上寫著「該用 list」的情境，
+//   在元素較小、n 不是特別大時，vector 往往仍然勝出。
+//   選容器要看實測，不要只看複雜度表。
+//
+// 【概念補充 Concept Deep Dive】
+//   ● 快取行（cache line）
+//     CPU 不是一次讀一個位元組，而是一次讀一整條 cache line
+//     （x86-64 上是 64 位元組）。所以讀 vector<int> 的第一個元素時，
+//     後面 15 個 int 也一起被載入了 —— 接下來 15 次存取全部免費命中。
+//     list 則因為節點是 24 位元組且位址分散，一條 cache line 通常
+//     只能帶進一兩個有用的節點。
+//
+//   ● 為什麼本檔改用「cache miss 的間接證據」而非只看耗時
+//     耗時會隨機器、負載、CPU 頻率變動。本檔在 stdout 印的是
+//     **結構性事實**（節點大小、記憶體總量、位址是否連續），
+//     這些每次執行都一樣，而且直接解釋了效能差異的成因。
+//     耗時仍然量測，但送到 stderr。
+//     若要看真正的硬體事件，用 perf：
+//         perf stat -e cache-misses,cache-references ./demo12
+//
+//   ● -Wreorder：本檔修正過的一個真實警告
+//     原版 Timer 的成員宣告順序（start_、label_）與初始化列表的書寫順序
+//     （label_、start_）不一致。C++ 規定成員一律依**宣告順序**初始化，
+//     g++ -Wall 會以 -Wreorder 警告。本檔已把宣告順序調整為一致。
+//
+// 【注意事項 Pay Attention】
+//   1. 「複雜度相同」不等於「效能相同」——大 O 忽略常數，而快取效應
+//      正好就藏在常數裡，可以差到兩個數量級。
+//   2. list 節點大小（本機 24 位元組）是**實作定義**，非標準規定。
+//   3. list 沒有 operator[]；隨機存取要 std::advance，那是 O(n)。
+//   4. 不要因為「要頻繁插入刪除」就反射性選 list，請先實測。
+//   5. 本檔第 3 節比較的位址連續性，其結果依賴 heap 配置行為，
+//      每次執行的實際位址都不同（本檔只印「是否連續」的判定，不印位址）。
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】vector vs list
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. vector 和 list 的順序遍歷都是 O(n)，為什麼實測差這麼多？
+//     答：大 O 把「一次記憶體存取」當成單位成本 1，但真實 CPU 上
+//         L1 命中約 1 ns、主記憶體約 100 ns，差兩個數量級。
+//         vector 元素連續，硬體預取器能準確預測、幾乎全部命中快取；
+//         list 節點散布 heap 各處，每跳一次就可能 cache miss。
+//         再加上 list 每個節點多兩個指標（本機 int 節點 24 位元組 vs 4），
+//         同樣的快取裝得下的元素更少，命中率更差。
+//     追問：怎麼實際驗證是快取造成的？→ 用 perf stat 量 cache-misses：
+//         perf stat -e cache-misses,cache-references ./demo12
+//
+// 🔥 Q2. 什麼情況下 list 才真的比 vector 好？
+//     答：只有一種核心情境——**已經持有 iterator**，要在該處插入／刪除，
+//         且不希望其他 iterator 失效。此時 list 是 O(1) 且零搬移。
+//         另外 splice（O(1) 搬移整段）是 list 獨有的能力。
+//     追問：那「頻繁在中間插入」呢？→ 要先看你怎麼找到插入點。
+//         若得先線性搜尋，那個 O(n) 搜尋是 cache-miss 密集的，
+//         往往比 vector 的 O(n) memmove 還慢。實測常常是 vector 贏。
+//
+// ⚠️ 陷阱. 「我要頻繁在中間插入刪除，所以一定要用 list」——錯在哪？
+//     答：錯在只看複雜度表、沒看常數，也沒算上「找到位置」的成本。
+//         vector 中間插入是 O(n) 沒錯，但那個 O(n) 是一次連續的 memmove，
+//         由 SIMD 指令執行，每個元素的成本極低；
+//         list 的 O(1) 插入前面往往有一個 cache-miss 密集的 O(n) 搜尋，
+//         而且每個節點還要一次獨立的 heap 配置（malloc 本身就不便宜）。
+//     為什麼會錯：把「資料結構課本的複雜度表」當成「效能的完整模型」。
+//         那張表建立在「所有記憶體存取成本相同」的假設上，
+//         而這個假設在有快取階層的現代 CPU 上早就不成立了。
+//         正確做法：預設 vector，有具體理由時再換，換完一定要實測比較。
+// ═══════════════════════════════════════════════════════════════════════════
 
 #include <iostream>
 #include <vector>
@@ -855,21 +968,116 @@ vector 的遍歷速度是 list 的 **6 倍以上**，這就是快取效應的力
 #include <chrono>
 #include <string>
 #include <numeric>
+#include <algorithm>
 
+// -----------------------------------------------------------------------------
+// RAII 計時器。
+// 【修正 1】成員宣告順序改成與初始化列表一致（原版觸發 -Wreorder 警告）。
+// 【修正 2】結果印到 std::cerr——耗時每次執行都不同，不應混進 stdout。
+// -----------------------------------------------------------------------------
 struct Timer {
-    std::chrono::high_resolution_clock::time_point start_;
-    std::string label_;
-    Timer(const std::string& label) : label_(label),
-        start_(std::chrono::high_resolution_clock::now()) {}
+    std::string label_;                                     // 先宣告 → 先初始化
+    std::chrono::high_resolution_clock::time_point start_;  // 後宣告 → 後初始化
+
+    explicit Timer(const std::string& label)
+        : label_(label),
+          start_(std::chrono::high_resolution_clock::now()) {}
+
     ~Timer() {
         auto end = std::chrono::high_resolution_clock::now();
         auto us = std::chrono::duration_cast<std::chrono::microseconds>(end - start_).count();
-        std::cout << label_ << ": " << us << " μs" << std::endl;
+        std::cerr << "  [計時] " << label_ << ": " << us << " μs" << std::endl;
     }
 };
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】事件佇列：為什麼即使「常常刪中間」也先選 vector
+//   情境：遊戲 / 模擬程式的事件佇列，每一輪要移除所有已完成的事件。
+//         直覺會想「常刪中間 → 用 list」，但實務上：
+//           ① 事件通常是小 struct，vector 的搬移是連續 memmove，很便宜
+//           ② 批次移除用 erase-remove 一次掃完，是 O(n) 而非 n 次 O(n)
+//           ③ 遍歷（每輪都要做）在 vector 上快得多
+//         所以正解是 vector + erase-remove，而不是 list。
+// -----------------------------------------------------------------------------
+struct Event {
+    int id;
+    int remainingTicks;
+};
+
+std::size_t tickEvents(std::vector<Event>& queue) {
+    for (auto& e : queue) --e.remainingTicks;
+
+    std::size_t before = queue.size();
+    // 一次掃完所有要移除的，O(n)；不是 n 次 O(n)
+    queue.erase(std::remove_if(queue.begin(), queue.end(),
+                               [](const Event& e) { return e.remainingTicks <= 0; }),
+                queue.end());
+    return before - queue.size();
+}
+
+// 註：本檔不附 LeetCode 範例。「vector vs list 的快取效應」是硬體層的效能議題，
+//     LeetCode 只驗證答案正確性、不量測快取行為，也沒有對應題型；
+//     硬掛一題無關的陣列題只會模糊本檔重點。
+
 int main() {
+    std::cout << "=== 1. 結構性事實：記憶體佔用（可重現）===\n";
+    std::cout << "sizeof(int)             = " << sizeof(int) << " 位元組\n";
+
+    // 直接「量」出 list 節點的大小，而不是用對齊規則去「算」。
+    // ⚠️ 初稿我用 alignof(std::max_align_t)（本機為 16）去進位，算出 32，
+    //    但實際的 _List_node<int> 只對齊到 alignof(void*)（8），真值是 24。
+    //    這是「用模型推導不如直接量測」的實例：下面這個 struct 忠實反映
+    //    libstdc++ 的 _List_node<int> 佈局，sizeof 就是答案。
+    struct FakeListNode { void* prev; void* next; int data; };
+    const std::size_t listNodeSize = sizeof(FakeListNode);
+
+    std::cout << "list<int> 每節點        = " << listNodeSize
+              << " 位元組（prev 8 + next 8 + 資料 4 + 尾端對齊補 4）\n";
+    std::cout << "→ 存同樣的資料，list 要用掉 vector 的 "
+              << (listNodeSize / sizeof(int)) << " 倍記憶體\n";
+    std::cout << "（節點大小為本機 g++ 15.2 / libstdc++ 的實作值，非標準保證）\n";
+
     const int N = 1'000'000;
+    const double vecMB  = static_cast<double>(N) * sizeof(int) / (1024.0 * 1024.0);
+    const double listMB = static_cast<double>(N) * static_cast<double>(listNodeSize)
+                          / (1024.0 * 1024.0);
+    std::cout << "\n存 " << N << " 個 int：\n";
+    std::cout.setf(std::ios::fixed);
+    std::cout.precision(1);
+    std::cout << "  vector 資料區約 " << vecMB  << " MB\n";
+    std::cout << "  list   節點共約 " << listMB << " MB\n";
+    std::cout.unsetf(std::ios::fixed);
+    std::cout << "→ 記憶體用得越多，同一份快取裝得下的元素越少，命中率越差。\n";
+
+    std::cout << "\n=== 2. 結構性事實：元素是否連續（可重現）===\n";
+    {
+        std::vector<int> v(10);
+        std::iota(v.begin(), v.end(), 0);
+        bool contiguous = true;
+        for (std::size_t i = 1; i < v.size(); ++i) {
+            if (&v[i] != &v[i - 1] + 1) { contiguous = false; break; }
+        }
+        std::cout << "vector 的相鄰元素位址是否恰好相差 sizeof(int)？ "
+                  << std::boolalpha << contiguous
+                  << "（標準保證連續）\n";
+    }
+    {
+        std::list<int> lst;
+        for (int i = 0; i < 10; ++i) lst.push_back(i);
+        bool allAdjacent = true;
+        const int* prev = nullptr;
+        for (const int& x : lst) {
+            if (prev != nullptr && &x != prev + 1) { allAdjacent = false; break; }
+            prev = &x;
+        }
+        std::cout << "list 的相鄰元素位址是否恰好相差 sizeof(int)？ "
+                  << allAdjacent
+                  << "（節點各自配置，通常不連續；實際位址每次執行都不同）\n";
+    }
+    std::cout << "→ 這就是硬體預取器對 vector 有效、對 list 無效的根本原因。\n";
+
+    std::cout << "\n=== 3. 原始示範：順序遍歷實測（耗時印在 stderr）===\n";
+    long long sumV = 0, sumL = 0;
 
     // 順序遍歷：vector vs list
     {
@@ -877,8 +1085,7 @@ int main() {
         std::iota(v.begin(), v.end(), 0);
 
         Timer t("vector 遍歷");
-        long long sum = 0;
-        for (int x : v) sum += x;
+        for (int x : v) sumV += x;
     }
 
     {
@@ -886,9 +1093,92 @@ int main() {
         for (int i = 0; i < N; ++i) lst.push_back(i);
 
         Timer t("list   遍歷");
-        long long sum = 0;
-        for (int x : lst) sum += x;
+        for (int x : lst) sumL += x;
     }
+
+    std::cout << "兩者計算結果相同：" << std::boolalpha << (sumV == sumL)
+              << "（總和 = " << sumV << "）\n";
+    std::cout << "耗時已印到 stderr——每次執行都不同，故不列入預期輸出。\n";
+    std::cout << "只看 stdout 請用：./demo12 2>/dev/null\n";
+    std::cout << "想看真正的硬體事件：perf stat -e cache-misses,cache-references ./demo12\n";
+
+    std::cout << "\n=== 4. list 真正的優勢：splice 是 O(1) ===\n";
+    std::list<int> a = {1, 2, 3};
+    std::list<int> b = {10, 20, 30, 40};
+    std::cout << "splice 前 a.size()=" << a.size() << ", b.size()=" << b.size() << "\n";
+    a.splice(a.end(), b);        // 把整個 b 接到 a 尾端，O(1)，不搬移任何資料
+    std::cout << "splice 後 a.size()=" << a.size() << ", b.size()=" << b.size() << "\n";
+    std::cout << "a 的內容：";
+    for (int x : a) std::cout << x << " ";
+    std::cout << "\n→ 這是 vector 做不到的：它必須複製或移動每一個元素。\n";
+    std::cout << "  若你的工作負載大量依賴這種整段搬移，list 才真的有價值。\n";
+
+    std::cout << "\n=== 日常實務：事件佇列用 vector + erase-remove ===\n";
+    std::vector<Event> queue = {
+        {1, 3}, {2, 1}, {3, 5}, {4, 1}, {5, 2}, {6, 1}, {7, 4}
+    };
+    std::cout << "初始事件數：" << queue.size() << "\n";
+    for (int tick = 1; tick <= 3; ++tick) {
+        std::size_t done = tickEvents(queue);
+        std::cout << "第 " << tick << " tick：完成 " << done
+                  << " 個，剩餘 " << queue.size() << " 個 → id: ";
+        for (const auto& e : queue) std::cout << e.id << " ";
+        std::cout << "\n";
+    }
+    std::cout << "→ 「常刪中間」直覺上該選 list，但事件是小 struct、\n";
+    std::cout << "  批次移除用 erase-remove 一次掃完是 O(n)，\n";
+    std::cout << "  而每輪都要做的遍歷在 vector 上快得多——實測往往 vector 勝。\n";
 
     return 0;
 }
+
+// 編譯: g++ -std=c++17 -Wall -Wextra "第 20 課：vector 效能分析與最佳實踐12.cpp" -o demo12
+// 只看 stdout: ./demo12 2>/dev/null
+// 看快取事件: perf stat -e cache-misses,cache-references ./demo12
+//
+// ⚠️ 但書：
+//   1. 第 3 節的耗時印在 stderr，每次執行都不同（受 CPU 頻率、快取狀態、
+//      其他行程影響），故不納入下方預期輸出。
+//   2. list 節點大小（24 位元組，本檔以 struct sizeof 實測）是本機 g++ 15.2 / libstdc++ 的實作值，
+//      非標準保證。
+//   3. 第 2 節只印「位址是否連續」的判定，不印實際位址——
+//      實際位址由 heap 配置決定，每次執行都不同。
+
+// === 預期輸出 ===
+// === 1. 結構性事實：記憶體佔用（可重現）===
+// sizeof(int)             = 4 位元組
+// list<int> 每節點        = 24 位元組（prev 8 + next 8 + 資料 4 + 尾端對齊補 4）
+// → 存同樣的資料，list 要用掉 vector 的 6 倍記憶體
+// （節點大小為本機 g++ 15.2 / libstdc++ 的實作值，非標準保證）
+//
+// 存 1000000 個 int：
+//   vector 資料區約 3.8 MB
+//   list   節點共約 22.9 MB
+// → 記憶體用得越多，同一份快取裝得下的元素越少，命中率越差。
+//
+// === 2. 結構性事實：元素是否連續（可重現）===
+// vector 的相鄰元素位址是否恰好相差 sizeof(int)？ true（標準保證連續）
+// list 的相鄰元素位址是否恰好相差 sizeof(int)？ false（節點各自配置，通常不連續；實際位址每次執行都不同）
+// → 這就是硬體預取器對 vector 有效、對 list 無效的根本原因。
+//
+// === 3. 原始示範：順序遍歷實測（耗時印在 stderr）===
+// 兩者計算結果相同：true（總和 = 499999500000）
+// 耗時已印到 stderr——每次執行都不同，故不列入預期輸出。
+// 只看 stdout 請用：./demo12 2>/dev/null
+// 想看真正的硬體事件：perf stat -e cache-misses,cache-references ./demo12
+//
+// === 4. list 真正的優勢：splice 是 O(1) ===
+// splice 前 a.size()=3, b.size()=4
+// splice 後 a.size()=7, b.size()=0
+// a 的內容：1 2 3 10 20 30 40
+// → 這是 vector 做不到的：它必須複製或移動每一個元素。
+//   若你的工作負載大量依賴這種整段搬移，list 才真的有價值。
+//
+// === 日常實務：事件佇列用 vector + erase-remove ===
+// 初始事件數：7
+// 第 1 tick：完成 3 個，剩餘 4 個 → id: 1 3 5 7
+// 第 2 tick：完成 1 個，剩餘 3 個 → id: 1 3 7
+// 第 3 tick：完成 1 個，剩餘 2 個 → id: 3 7
+// → 「常刪中間」直覺上該選 list，但事件是小 struct、
+//   批次移除用 erase-remove 一次掃完是 O(n)，
+//   而每輪都要做的遍歷在 vector 上快得多——實測往往 vector 勝。

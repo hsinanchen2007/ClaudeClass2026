@@ -1138,7 +1138,101 @@ Mango: $2.7
 現在你已經對 STL 有了完整的基礎認識，準備好進入**第二階段：序列容器 - vector**了嗎？
 */
 
-
+// =============================================================================
+//  第八課 16  —  Lambda × STL 演算法：以商品管理為例的綜合應用
+// =============================================================================
+//
+// 【主題資訊 Information】
+//   本檔用到的演算法（皆在 <algorithm>／<numeric>，皆為 C++98 起）：
+//     std::sort(first, last, comp)             O(n log n)，不穩定排序
+//     std::find_if(first, last, pred)          O(n)，回傳第一個符合的迭代器
+//     std::count_if(first, last, pred)         O(n)
+//     std::for_each(first, last, fn)           O(n)，回傳 fn 的副本
+//     std::transform(first, last, out, fn)     O(n)，一對一映射
+//     std::accumulate(first, last, init, op)   O(n)，<numeric>，摺疊
+//   Lambda 為 C++11；本檔全部語法在 C++11 即可編譯。
+//
+// 【詳細解釋 Explanation】
+//
+// 【1. STL 的核心設計：演算法與容器分離】
+//   STL 最重要的設計決策是「演算法不認識容器，只認識迭代器」。
+//   std::sort 不知道自己在排 vector 還是 array，它只要求
+//   RandomAccessIterator。這帶來 M×N → M+N 的組合爆炸削減：
+//   M 個容器 + N 個演算法，不需要寫 M×N 份程式碼。
+//   代價是「介面必須用一對迭代器表達」，這也是 C++20 Ranges 想改善的地方
+//   （ranges::sort(products, comp) 直接吃容器）。
+//
+// 【2. 為什麼「行為」要用 lambda 傳進去】
+//   演算法負責「走訪與搬移的骨架」，lambda 負責「這個問題特有的判斷」。
+//   本檔六個示範全是同一個模式：
+//       sort      + 「怎麼比大小」   → [](a,b){ return a.price < b.price; }
+//       find_if   + 「什麼算符合」   → [t](p){ return p.price > t; }
+//       count_if  + 「什麼要算進去」 → [](p){ return p.quantity < 100; }
+//       for_each  + 「對每個做什麼」 → [d](Product& p){ p.price *= d; }
+//       transform + 「怎麼映射」     → [](p){ return p.price; }
+//       accumulate+ 「怎麼摺疊」     → [](sum,p){ return sum + p.price*p.quantity; }
+//   把這六行 lambda 換掉，整個程式就變成另一個應用——這就是「把行為參數化」。
+//
+// 【3. accumulate 的兩個容易踩的點】
+//   (a) 初始值的型別決定累加型別。寫 std::accumulate(b, e, 0) 去加 double，
+//       累加器會是 int，小數全被截掉。本檔寫 0.0 是刻意的。
+//   (b) 二元操作的第一個參數是「累加器」，第二個才是元素，順序不能寫反。
+//
+// 【4. for_each vs transform 的分工】
+//   for_each 用於「就地改元素或產生副作用」（本檔打 9 折）；
+//   transform 用於「產生一份新資料」（本檔抽出價格列表）。
+//   若只是要改自己，用 transform 寫成 in-place 也可以，但語意上 for_each 更清楚。
+//
+// 【概念補充 Concept Deep Dive】
+//   本檔示範二用「反覆 find_if」找出所有符合的元素，這是很常見的手法，
+//   但有兩個細節值得說明：
+//     * 迴圈內必須從 ++it 開始下一輪搜尋，否則會在同一個位置無限迴圈。
+//     * ++it 只有在 it != end() 時才合法。本檔的 while 條件先保證了這點，
+//       所以 ++it 是安全的；但若把條件寫反或漏掉，對 end() 遞增就是 UB。
+//   若要「一次取出全部符合的元素」，用 std::copy_if 到另一個容器會更直接，
+//   也避開這個迭代器管理問題。
+//
+// 【注意事項 Pay Attention】
+// 1. std::sort 要求比較器滿足「嚴格弱序」（a<a 必須為 false、可傳遞）。
+//    寫成 <= 會破壞這個性質，是 UB——實務上可能崩潰或無限迴圈。
+// 2. std::sort 不是穩定排序；價格相同的商品相對順序未定義。
+//    需要穩定請用 std::stable_sort。
+// 3. std::transform 的輸出迭代器必須指向「已配置好足夠空間」的位置。
+//    本檔先寫 std::vector<double> prices(products.size()) 就是為此；
+//    若寫成空 vector 再傳 prices.begin() 就是越界寫入（UB）。
+//    要往空容器寫請用 std::back_inserter。
+// 4. 浮點數輸出：$1.5 而非 $1.50，因為預設格式會去掉尾隨 0。
+//    要固定兩位小數需 std::fixed << std::setprecision(2)（<iomanip>）。
+// 5. 打 9 折後價格是浮點乘法結果，可能出現 2.7 而非 2.70 這類顯示差異，
+//    金額計算在正式系統應使用整數分或定點數，避免浮點誤差累積。
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】Lambda 與 STL 演算法組合
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. STL 為什麼要把演算法和容器分開？這個設計換來什麼、又付出什麼？
+//     答：演算法只依賴迭代器介面，不依賴容器型別。M 個容器 × N 個演算法
+//         原本要寫 M×N 份實作，分離後只要 M+N 份。付出的代價是介面必須
+//         用「一對迭代器」表達，可讀性較差、也容易傳錯配對的迭代器。
+//     追問：C++20 對此做了什麼改善？→ Ranges 讓演算法可直接吃容器
+//         （std::ranges::sort(v, comp)），並且可組合（views），
+//         同時保留原本的迭代器版本。
+//
+// 🔥 Q2. std::accumulate(v.begin(), v.end(), 0) 拿來加一堆 double，會發生什麼？
+//     答：初始值 0 是 int，於是累加器型別被推導成 int，每一步相加後都會
+//         截斷小數，最後得到錯誤結果。必須寫 0.0（或明確指定型別）。
+//     追問：這是 UB 嗎？→ 不是。這是完全定義的行為——就是整數運算，
+//         只是語意上不是你要的。這類「編譯過、不崩潰、答案錯」的 bug 最難抓。
+//
+// ⚠️ 陷阱. 排序比較器寫成 [](const P& a, const P& b){ return a.price <= b.price; }
+//          「只是想讓相等的也算小於」，為什麼是嚴重錯誤？
+//     答：std::sort 要求嚴格弱序，其中一條是「非自反性」：comp(a, a) 必須為
+//         false。用 <= 時 comp(a, a) 為 true，違反契約，整個 sort 的行為
+//         變成 UB——實務上常見的表現是越界存取而崩潰，或在相等元素多時無限迴圈。
+//     為什麼會錯：直覺上以為比較器只是「回答誰在前面」，多包含一個相等
+//         情況應該無害。但 sort 的實作（introsort 的 partition）會依賴
+//         「必定存在一個不滿足比較的元素」來停住掃描指標；<= 讓這個
+//         哨兵條件失效，指標就一路衝出邊界。
+// ═══════════════════════════════════════════════════════════════════════════
 
 #include <iostream>
 #include <vector>
@@ -1146,12 +1240,73 @@ Mango: $2.7
 #include <numeric>
 #include <string>
 #include <functional>
+#include <iomanip>
+#include <set>
 
 struct Product {
     std::string name;
     double price;
     int quantity;
 };
+
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例 1】LeetCode 26. Remove Duplicates from Sorted Array
+//   題目：對已排序陣列就地去除重複元素，回傳去重後長度，前 k 個需為結果。
+//   為什麼用到本主題：這題正是「演算法 + 迭代器」的教科書案例。
+//     std::unique 把相鄰重複元素往後擠、回傳新的邏輯結尾——它不縮小容器，
+//     只重排元素，這正好對應題目「就地修改並回傳長度」的要求。
+//     第三個參數可傳自訂的「相等判斷」lambda，與本檔傳比較器給 sort 同一個模式。
+//   複雜度：O(n)。
+//   注意：std::unique 只移除「相鄰」的重複，所以輸入必須先排序。
+// -----------------------------------------------------------------------------
+int removeDuplicates(std::vector<int>& nums) {
+    auto new_end = std::unique(nums.begin(), nums.end(),
+                               [](int a, int b) { return a == b; });
+    return static_cast<int>(new_end - nums.begin());
+}
+
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例 2】LeetCode 349. Intersection of Two Arrays
+//   題目：回傳兩陣列的交集，結果中每個元素唯一，順序不限。
+//   為什麼用到本主題：示範多個 STL 演算法「串接」成一條處理管線——
+//     sort → unique+erase（去重）→ set_intersection（求交集）。
+//     每一步都是現成演算法，自己只需要提供資料流向；這正是本課
+//     「演算法與容器分離、以迭代器銜接」的實際威力。
+//   複雜度：O(n log n + m log m)，由兩次排序主導。
+//   注意：set_intersection 要求兩個輸入區間都「已排序」，這是前置條件；
+//     違反時不是 UB，但結果沒有意義。
+// -----------------------------------------------------------------------------
+std::vector<int> intersection(std::vector<int> a, std::vector<int> b) {
+    std::sort(a.begin(), a.end());
+    std::sort(b.begin(), b.end());
+    a.erase(std::unique(a.begin(), a.end()), a.end());
+    b.erase(std::unique(b.begin(), b.end()), b.end());
+
+    std::vector<int> out;
+    std::set_intersection(a.begin(), a.end(), b.begin(), b.end(),
+                          std::back_inserter(out));
+    return out;
+}
+
+// -----------------------------------------------------------------------------
+// 【日常實務範例】銷售報表：取營收前 N 名商品
+//   場景：後台每日產生「營收 Top 3 商品」報表。資料量可能上萬筆，
+//         但只要前 3 名。
+//   為什麼用 std::partial_sort：完整排序是 O(n log n)，但我們只要前 N 名。
+//     partial_sort 只保證「前 N 個位置是最小（或依比較器最前）的 N 個且已排序」，
+//     其餘位置順序未指定，複雜度約 O(n log N)——資料量大、N 很小時差距顯著。
+//   注意：因為「其餘位置順序未指定」，本函式只回傳前 N 筆，
+//     絕不可對後面的元素順序做任何假設。
+// -----------------------------------------------------------------------------
+std::vector<Product> topByRevenue(std::vector<Product> items, size_t n) {
+    if (n > items.size()) n = items.size();
+    std::partial_sort(items.begin(), items.begin() + static_cast<long>(n), items.end(),
+        [](const Product& a, const Product& b) {
+            return a.price * a.quantity > b.price * b.quantity;   // 營收由大到小
+        });
+    items.resize(n);      // 只保留前 N 筆；後面的順序未指定，不可使用
+    return items;
+}
 
 int main() {
     std::vector<Product> products = {
@@ -1221,6 +1376,97 @@ int main() {
         std::cout << "$" << price << " ";
     }
     std::cout << std::endl;
-    
+
+    // ---- LeetCode 26: std::unique ----
+    std::cout << "\n=== LeetCode 26. Remove Duplicates from Sorted Array ===" << std::endl;
+    std::vector<int> d1 = {1, 1, 2};
+    int k1 = removeDuplicates(d1);
+    std::cout << "[1,1,2] -> k=" << k1 << ", 前 k 個: ";
+    for (int i = 0; i < k1; ++i) std::cout << d1[i] << " ";
+    std::cout << std::endl;
+
+    std::vector<int> d2 = {0, 0, 1, 1, 1, 2, 2, 3, 3, 4};
+    int k2 = removeDuplicates(d2);
+    std::cout << "[0,0,1,1,1,2,2,3,3,4] -> k=" << k2 << ", 前 k 個: ";
+    for (int i = 0; i < k2; ++i) std::cout << d2[i] << " ";
+    std::cout << std::endl;
+    // 只印前 k 個：[k, size) 是「有效但未指定」的殘值，不可讀取其內容。
+
+    // ---- LeetCode 349: 演算法串接 ----
+    std::cout << "\n=== LeetCode 349. Intersection of Two Arrays ===" << std::endl;
+    std::cout << "[1,2,2,1] ∩ [2,2]       = ";
+    for (int n : intersection({1, 2, 2, 1}, {2, 2})) std::cout << n << " ";
+    std::cout << std::endl;
+    std::cout << "[4,9,5] ∩ [9,4,9,8,4]   = ";
+    for (int n : intersection({4, 9, 5}, {9, 4, 9, 8, 4})) std::cout << n << " ";
+    std::cout << std::endl;
+
+    // ---- 日常實務: 營收 Top N ----
+    std::cout << "\n=== 日常實務: 營收 Top 3 商品 ===" << std::endl;
+    // 刻意讓五筆營收兩兩相異（300 / 180 / 160 / 150 / 112.5）。
+    // partial_sort 不是穩定排序，若有兩筆營收相同，它們的先後是「未指定」的，
+    // 輸出就不該被當成固定結果來驗證。
+    std::vector<Product> catalog = {
+        {"Apple",  1.50, 100},   // 營收 150
+        {"Banana", 0.75, 150},   // 營收 112.5
+        {"Orange", 2.00,  80},   // 營收 160
+        {"Mango",  3.00,  60},   // 營收 180
+        {"Grape",  2.50, 120}    // 營收 300
+    };
+    std::cout << std::fixed << std::setprecision(2);
+    for (const auto& p : topByRevenue(catalog, 3)) {
+        std::cout << "  " << p.name << " 營收 $" << p.price * p.quantity << std::endl;
+    }
+    std::cout.unsetf(std::ios::fixed);
+    std::cout << std::setprecision(6);   // 還原預設格式
+
     return 0;
 }
+
+// 編譯: g++ -std=c++17 -Wall -Wextra 第八課：函數物件（Function Object）初探16.cpp -o stl_lambda_product
+
+// 【但書】浮點價格以預設格式輸出會去掉尾隨 0（$1.5 而非 $1.50）；
+//   只有「營收 Top 3」那段刻意套了 std::fixed << std::setprecision(2)。
+//   另外 std::partial_sort 不是穩定排序，本範例已刻意讓五筆營收互不相同，
+//   若資料中出現同營收，前後順序屬「未指定」，不應視為固定輸出。
+
+// === 預期輸出 ===
+// === 按價格排序 ===
+// Banana: $0.75
+// Apple: $1.5
+// Orange: $2
+// Grape: $2.5
+// Mango: $3
+//
+// === 價格超過 $2 ===
+// Grape: $2.5
+// Mango: $3
+//
+// === 總庫存價值 ===
+// 總價值: $872.5
+//
+// === 低庫存產品 ===
+// 低庫存產品數: 2
+//
+// === 打 9 折後 ===
+// Banana: $0.675
+// Apple: $1.35
+// Orange: $1.8
+// Grape: $2.25
+// Mango: $2.7
+//
+// === 價格列表 ===
+// 價格: $0.675 $1.35 $1.8 $2.25 $2.7 
+//
+// === LeetCode 26. Remove Duplicates from Sorted Array ===
+// [1,1,2] -> k=2, 前 k 個: 1 2 
+// [0,0,1,1,1,2,2,3,3,4] -> k=5, 前 k 個: 0 1 2 3 4 
+//
+// === LeetCode 349. Intersection of Two Arrays ===
+// [1,2,2,1] ∩ [2,2]       = 2 
+// [4,9,5] ∩ [9,4,9,8,4]   = 4 9 
+//
+// === 日常實務: 營收 Top 3 商品 ===
+//   Grape 營收 $300.00
+//   Mango 營收 $180.00
+//   Orange 營收 $160.00

@@ -762,17 +762,128 @@ getter/setter 模式會在第 21 課更深入探討。
 
 
 
+// =============================================================================
+//  第 11 課 -9  —  綜合實戰：從 BadStudent 到 GoodStudent（封裝的實際價值）
+// =============================================================================
+//
+// 【主題資訊 Information】
+//   本檔上半部是第 11 課的完整講義（以區塊註解保存），
+//   下半部是可執行的對照實戰：全 public 的 BadStudent vs 受控存取的 GoodStudent。
+//   語法：  class X { public: ... private: ... };
+//   標準：  C++98 起即有三種 access specifier；本檔用到預設成員初始化
+//           （string name = "未命名";）需 C++11 起。以 C++17 編譯。
+//   標頭檔：<iostream>、<string>
+//
+// 【詳細解釋 Explanation】
+//
+// 【1. 這組對照真正在示範什麼】
+//   關鍵不在「private 比較安全」，而在**誰來保證不變量**。
+//   BadStudent 把 age／gpa 開成 public，等於宣告
+//   「任何 int 都是合法年齡、任何 double 都是合法 GPA」——
+//   但這與現實不符。GoodStudent 把它們設為 private，
+//   讓唯一的修改途徑（setAge／setGpa）都經過檢查，
+//   於是「年齡在 0~150、GPA 在 0.0~4.0」這條規則
+//   從「靠大家自律」升級成「型別本身的保證」。
+//
+// 【2. 為什麼 setter 不等於 public】
+//   常見誤解：「加了 setter 只是把 public 換個寫法」。
+//   對**空殼 setter**（void setAge(int a) { age = a; }）而言確實如此 ——
+//   那種寫法一點價值也沒有。本檔的 setter 有價值，是因為它們**會拒絕**：
+//   setAge(-5) 不只沒改值，還印出診斷訊息。
+//   判準很簡單：**這個 setter 有沒有可能拒絕呼叫端？**
+//   有 → 它在保護不變量；沒有 → 它只是 public 的偽裝。
+//
+// 【3. 失敗要怎麼回報 —— 本檔的做法有侷限】
+//   目前 setAge 失敗時是「印訊息 + 靜默不改」。這在教學上夠清楚，
+//   但工程上有三個問題：
+//     (a) 函式庫不該擅自寫 stdout；
+//     (b) 呼叫端**無法得知**是否成功（回傳 void）；
+//     (c) 靜默失敗會讓錯誤延後爆發，難以追查。
+//   實務選項：回傳 bool、丟例外、回傳 std::optional／std::expected(C++23)，
+//   或在建構時就驗證並讓非法狀態根本無法被建立
+//   （下方【日常實務範例】示範最後這種做法）。
+//
+// 【4. BadStudent 還藏了第二個問題：未初始化的成員】
+//   注意 BadStudent 的 int age; 與 double gpa; **沒有初始器**。
+//   若寫 BadStudent s; 再讀 s.age，讀到的是**不確定值**（indeterminate value）——
+//   這是未定義行為，不保證是 0、不保證每次相同、也不保證會崩潰。
+//   GoodStudent 用預設成員初始化（int age = 0;）杜絕了這件事。
+//   ★ 本檔 main 刻意**不**建立 BadStudent 物件，就是為了不觸發這個 UB。
+//
+// 【概念補充 Concept Deep Dive】
+//   access specifier 是純編譯期的檢查，**沒有任何執行期成本**：
+//   private 與 public 成員在記憶體中沒有差別，機器碼裡也沒有權限檢查指令。
+//   它擋的是誤用，不是惡意存取 —— 透過指標算術或 reinterpret_cast
+//   一樣讀得到 private 的位元組（雖然那是 UB）。所以 private 不是安全機制。
+//
+//   另一個值得注意的設計缺口：本檔的 getName()／getAge()／getGpa()
+//   都**沒有加 const**。後果是 const GoodStudent 物件、
+//   以及 void print(const GoodStudent&) 這種很常見的參數形式，
+//   完全無法讀取這些值。唯讀的 getter 一律該是 const 成員函式 ——
+//   下方【日常實務範例】的 Student 已補上。
+//
+//   還有 getName() 回傳 string（複製一份）。對唯讀取用而言，
+//   回傳 const string& 可免掉複製；但要注意回傳引用會把
+//   物件的生命週期與回傳值綁在一起，物件銷毀後那個引用就懸空了。
+//
+// 【注意事項 Pay Attention】
+//   1. 沒有驗證邏輯的 setter 等同 public，不要為了「看起來封裝」而寫。
+//   2. public 資料成員會讓「改內部表示」變成 breaking change，
+//      因為實作細節被寫進了公開契約。
+//   3. 未初始化的內建型別成員讀取是 UB，值不確定，不可依賴。
+//   4. 唯讀 getter 應宣告為 const，否則 const 物件與 const 引用無法使用。
+//   5. private 不是安全邊界，別拿它保護密碼、金鑰等機密資料。
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】封裝與存取控制
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 把成員設 private 再配一組 getter/setter，就算封裝了嗎？
+//     答：不一定。若 setter 只是 { age = a; } 這種空殼，
+//         它與 public 完全等價，不變量一樣沒被保護。
+//         真正的封裝要看「這個 setter 有沒有可能拒絕呼叫端」——
+//         本檔的 setAge(-5) 會拒絕，那才是在保護不變量。
+//     追問：那更好的做法是什麼？
+//         → 不暴露欄位而暴露**操作**：與其 setBalance()，
+//           不如提供 deposit()／withdraw()，讓介面描述
+//           「這個物件能做什麼」而非「裡面有什麼」。
+//
+// 🔥 Q2. private 能防止別人讀到資料嗎？它是安全機制嗎？
+//     答：不是。access specifier 是純編譯期檢查，
+//         編譯後的機器碼中沒有任何權限檢查；private 與 public 成員
+//         在記憶體中也毫無區別。用 reinterpret_cast 或指標算術
+//         照樣讀得到那些位元組（雖然是 UB）。
+//         它擋的是「誤用」，不是「惡意存取」。
+//     追問：那為什麼還要用？
+//         → 為了讓編譯器幫你記住規則，並讓內部表示可以自由演進 ——
+//           private 成員改名、改型別、甚至刪掉，外界都不受影響。
+//
+// ⚠️ 陷阱. BadStudent 的 int age; 沒有初始器，寫 BadStudent s; 後讀 s.age 會得到 0 嗎？
+//     答：**不保證**。非靜態的內建型別成員若沒有初始器，
+//         在預設初始化下其值是**不確定的**（indeterminate），
+//         讀取它是未定義行為 —— 不保證是 0、不保證每次執行相同、
+//         也不保證會崩潰。Debug 版可能剛好是 0 而讓 bug 潛伏到正式版。
+//     為什麼會錯：多數人從「全域變數會自動歸零」推論到所有變數，
+//         但那條規則只適用於 static storage duration 的物件。
+//         自動儲存期與動態儲存期的物件都不會自動歸零。
+//         解法就是 GoodStudent 用的預設成員初始化：int age = 0;
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
+#include <vector>
+#include <optional>
+#include <map>
+#include <algorithm>
 using namespace std;
 
 // ===== 不好的設計 =====
 class BadStudent {
 public:
     string name;
-    int age;
-    double gpa;
-    // 問題：任何人都能設 age = -5 或 gpa = 999
+    int age;      // ⚠️ 沒有初始器 → 預設初始化後值不確定，讀取是 UB
+    double gpa;   // ⚠️ 同上
+    // 問題一：任何人都能設 age = -5 或 gpa = 999（不變量無人把關）
+    // 問題二：未初始化成員 —— 本檔刻意不建立此類別的物件以免觸發 UB
 };
 
 // ===== 好的設計 =====
@@ -815,7 +926,109 @@ private:
     double gpa = 0.0;
 };
 
+
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1396. Design Underground System
+//   題目：設計地鐵計費系統。checkIn(id, station, t) 記錄某乘客進站；
+//         checkOut(id, station, t) 記錄出站；
+//         getAverageTime(start, end) 回傳該路線所有已完成旅程的平均耗時。
+//   為什麼用到本主題：這題的核心正是**封裝與不變量** ——
+//         「一個乘客不能同時在兩段旅程中」「未進站不能出站」
+//         這些規則必須由類別自己保證。
+//         若把內部的 map 開成 public，任何人都能塞進矛盾狀態，
+//         系統就再也無法信任自己的資料。
+//         所以所有狀態都是 private，只透過三個受控的方法修改。
+//   複雜度：checkIn / checkOut 皆 O(1) 平均；getAverageTime O(1) 平均。
+// -----------------------------------------------------------------------------
+class UndergroundSystem {
+    // 全部 private：外界無法製造出「出站卻沒進站」這種矛盾狀態
+    struct Ongoing { string station; int time; };
+    struct Stat    { double totalTime = 0.0; int count = 0; };
+
+    map<int, Ongoing>    m_travelling;   // 尚在旅程中的乘客
+    map<string, Stat>    m_routeStats;   // "起站->迄站" 的累計統計
+
+    static string routeKey(const string& from, const string& to) {
+        return from + "->" + to;
+    }
+
+public:
+    void checkIn(int id, const string& stationName, int t) {
+        // 不變量：同一個 id 不能重複進站而未出站
+        if (m_travelling.count(id)) return;      // 靜默忽略非法操作
+        m_travelling[id] = Ongoing{stationName, t};
+    }
+
+    void checkOut(int id, const string& stationName, int t) {
+        auto it = m_travelling.find(id);
+        if (it == m_travelling.end()) return;    // 不變量：沒進站就不能出站
+        const Ongoing& start = it->second;
+        Stat& st = m_routeStats[routeKey(start.station, stationName)];
+        st.totalTime += (t - start.time);
+        st.count     += 1;
+        m_travelling.erase(it);                  // 旅程結束，離開「旅程中」集合
+    }
+
+    double getAverageTime(const string& startStation, const string& endStation) const {
+        auto it = m_routeStats.find(routeKey(startStation, endStation));
+        if (it == m_routeStats.end() || it->second.count == 0) return 0.0;
+        return it->second.totalTime / it->second.count;
+    }
+
+    // 唯讀查詢，示範 const 成員函式
+    size_t travellingCount() const { return m_travelling.size(); }
+};
+
+// -----------------------------------------------------------------------------
+// 【日常實務範例】讓「非法狀態根本無法被建立」——比 setter 驗證更強的做法
+//   情境：學生資料匯入。上面的 GoodStudent 是「先建立空物件，再逐一 set
+//         並在 set 時驗證」。這種做法有個縫隙：**物件在被填完之前，
+//         處於一個半成品的合法狀態**（name="未命名", age=0, gpa=0.0），
+//         而且呼叫端收不到失敗通知（setter 回傳 void）。
+//   更強的做法是把驗證搬到**建構的入口**，讓建立本身就可能失敗：
+//         用一個 static 工廠函式回傳 std::optional<Student>，
+//         驗證不過就回 nullopt —— 於是「拿得到 Student 物件」
+//         本身就等於「這筆資料一定合法」。
+//   為什麼用到本主題：這是封裝的最終形態 ——
+//         不變量不再靠每個 setter 各自把關，而是靠
+//         「private 建構函式 + 唯一的受控入口」從源頭保證。
+//   ★ 順帶補上 GoodStudent 缺的 const：所有唯讀 getter 都標 const。
+// -----------------------------------------------------------------------------
+class Student {
+    string m_name;
+    int    m_age;
+    double m_gpa;
+
+    // private 建構函式：外界無法繞過驗證直接建立
+    Student(string name, int age, double gpa)
+        : m_name(std::move(name)), m_age(age), m_gpa(gpa) {}
+
+public:
+    // 唯一的建立入口：驗證不過就回 nullopt，呼叫端無法忽略失敗
+    static optional<Student> create(const string& name, int age, double gpa) {
+        if (name.empty())              return nullopt;
+        if (age <= 0 || age >= 150)    return nullopt;
+        if (gpa < 0.0 || gpa > 4.0)    return nullopt;
+        return Student(name, age, gpa);
+    }
+
+    // 唯讀 getter 一律 const，const 物件與 const 引用才用得到
+    const string& name() const { return m_name; }
+    int           age()  const { return m_age;  }
+    double        gpa()  const { return m_gpa;  }
+
+    string describe() const {
+        return m_name + ", " + to_string(m_age) + " 歲, GPA: " + to_string(m_gpa).substr(0, 4);
+    }
+};
+
+// 因為 getter 都是 const，這個很常見的 const 引用參數才寫得出來
+void printStudent(const Student& s) {
+    cout << "    " << s.describe() << endl;
+}
+
 int main() {
+    cout << "=== 基本：受控 setter 會拒絕非法值 ===" << endl;
     GoodStudent s;
     s.setName("陳信安");
     s.setAge(25);
@@ -827,5 +1040,58 @@ int main() {
     s.setGpa(5.0);     // 被攔截
     s.show();           // 值沒變
 
+
+    cout << "\n=== LeetCode 1396. Design Underground System ===" << endl;
+    UndergroundSystem us;
+    us.checkIn(45, "Leyton", 3);
+    us.checkIn(32, "Paradise", 8);
+    us.checkIn(27, "Leyton", 10);
+    us.checkOut(45, "Waterloo", 15);      // Leyton->Waterloo 耗時 12
+    us.checkOut(27, "Waterloo", 20);      // Leyton->Waterloo 耗時 10
+    us.checkOut(32, "Cambridge", 22);     // Paradise->Cambridge 耗時 14
+    cout << "  Leyton->Waterloo 平均: " << us.getAverageTime("Leyton", "Waterloo") << endl;
+    cout << "  Paradise->Cambridge 平均: " << us.getAverageTime("Paradise", "Cambridge") << endl;
+    cout << "  尚在旅程中的人數: " << us.travellingCount() << endl;
+    us.checkOut(99, "Nowhere", 30);       // 沒進站就出站 -> 被不變量擋下
+    cout << "  未進站就出站後，統計未被污染: "
+         << us.getAverageTime("Leyton", "Waterloo") << endl;
+
+    cout << "\n=== 日常實務：讓非法狀態無法被建立 ===" << endl;
+    auto ok = Student::create("陳信安", 25, 3.8);
+    if (ok) { cout << "  建立成功:" << endl; printStudent(*ok); }
+
+    auto badAge = Student::create("小明", -5, 3.0);
+    cout << "  age=-5   -> " << (badAge ? "竟然建立成功(不該發生)" : "建立失敗，回傳 nullopt") << endl;
+
+    auto badGpa = Student::create("小華", 20, 5.0);
+    cout << "  gpa=5.0  -> " << (badGpa ? "竟然建立成功(不該發生)" : "建立失敗，回傳 nullopt") << endl;
+
+    auto noName = Student::create("", 20, 3.0);
+    cout << "  name=\"\" -> " << (noName ? "竟然建立成功(不該發生)" : "建立失敗，回傳 nullopt") << endl;
+    cout << "  ★ 拿得到 Student 物件，就代表資料一定合法" << endl;
+
     return 0;
 }
+
+// 編譯: g++ -std=c++17 -Wall -Wextra "第 11 課：存取修飾符——public、private、protected9.cpp" -o access9
+
+// === 預期輸出 ===
+// === 基本：受控 setter 會拒絕非法值 ===
+// 陳信安, 25 歲, GPA: 3.8
+// 無效年齡: -5
+// 無效 GPA: 5
+// 陳信安, 25 歲, GPA: 3.8
+// 
+// === LeetCode 1396. Design Underground System ===
+//   Leyton->Waterloo 平均: 11
+//   Paradise->Cambridge 平均: 14
+//   尚在旅程中的人數: 0
+//   未進站就出站後，統計未被污染: 11
+// 
+// === 日常實務：讓非法狀態無法被建立 ===
+//   建立成功:
+//     陳信安, 25 歲, GPA: 3.80
+//   age=-5   -> 建立失敗，回傳 nullopt
+//   gpa=5.0  -> 建立失敗，回傳 nullopt
+//   name="" -> 建立失敗，回傳 nullopt
+//   ★ 拿得到 Student 物件，就代表資料一定合法

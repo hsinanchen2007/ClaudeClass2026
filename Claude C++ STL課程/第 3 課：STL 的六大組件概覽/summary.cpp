@@ -22,6 +22,135 @@
  * ================================================================
  */
 
+// =============================================================================
+//  第 3 課 總複習  —  STL 六大組件
+// =============================================================================
+//
+// 【主題資訊 Information】
+//   六大組件與對應標頭檔：
+//     容器 Containers   <vector> <list> <deque> <set> <map> <array> …
+//     迭代器 Iterators  <iterator>（begin/end/advance/distance/各種 adapter）
+//     演算法 Algorithms <algorithm> <numeric>（sort/find/count/accumulate …）
+//     函數物件 Functors <functional>（less/greater/plus、bind、function）
+//     配接器 Adapters   <stack> <queue>（容器配接器）、back_inserter（迭代器配接器）
+//     配置器 Allocators <memory>（std::allocator）
+//
+//   本檔標準：C++17
+//
+// 【詳細解釋 Explanation】
+//
+// 【1. STL 真正的核心思想：正交分解】
+//   STL 最了不起的地方不是「提供了很多容器與演算法」，
+//   而是**把「資料怎麼存」與「對資料做什麼」徹底拆開**。
+//   如果沒有拆開，M 種容器 × N 種演算法就要寫 M×N 份程式碼；
+//   拆開之後只要寫 M + N 份。
+//   讓這件事成立的關鍵就是中間那層**迭代器**——
+//   它是一個共同語言，容器只要「會說」它，演算法就能用。
+//
+// 【2. 迭代器：黏合劑，也是效能的分水嶺】
+//   迭代器不只是「泛化的指標」，它還帶著**能力標籤**（iterator category）：
+//       input / output      → 只能走一次
+//       forward             → 可多次走訪
+//       bidirectional       → 可 ++ 也可 --（list、set、map）
+//       random access       → 可 +n、可相減（vector、deque、原始指標）
+//   演算法會依這個標籤選擇不同實作：
+//       std::sort 需要 random access → 所以 **list 不能用 std::sort**，
+//       它有自己的成員函式 lst.sort()。
+//       std::distance 對 random access 是 O(1)，對其他是 O(n)。
+//   **看到某個演算法對某容器不能用，多半是 iterator category 不夠。**
+//
+// 【3. 函數物件為什麼比函式指標好】
+//   函數物件（functor）是「重載了 operator() 的物件」。它勝過函式指標的地方：
+//     (a) 可以有狀態（成員變數），本檔的 IsDivisibleBy 就帶著除數
+//     (b) **可以被 inline**——函式指標要間接呼叫，編譯器通常無法內聯；
+//         functor 的型別在編譯期就確定，operator() 可以完全展開
+//     (c) 型別唯一，可以當模板參數（例如 set 的比較器）
+//   這就是為什麼 std::sort 通常比 C 的 qsort 快——
+//   ⚠️ 但這個差距**高度依賴最佳化等級**：-O0 時 qsort 甚至可能更快，
+//      因為 sort 的模板層層呼叫都還沒被 inline。任何效能宣稱都必須註明 -O 等級。
+//
+// 【4. 配接器：改介面，不改實作】
+//   STL 有三種配接器：
+//       容器配接器：stack / queue / priority_queue（包容器，**限制**介面）
+//       迭代器配接器：back_inserter / reverse_iterator（包迭代器，改變行為）
+//       函數配接器：bind / not_fn（包可呼叫物，改變參數）
+//   共同點是「不重新實作功能，只把既有的東西換一個介面呈現」。
+//   back_inserter 特別值得注意：它讓「賦值」變成「push_back」，
+//   於是 std::copy 這種只會寫入的演算法也能對空容器擴充。
+//
+// 【5. 配置器：最少被直接使用、卻無所不在的一層】
+//   每個容器其實都有第二個模板參數：vector<T, Allocator<T>>。
+//   allocator 把「取得記憶體」與「在上面建構物件」拆成兩步
+//   （allocate/deallocate vs construct/destroy），
+//   這正是 vector 能做到 reserve（有容量、沒元素）的原因。
+//   一般應用幾乎不需要自訂 allocator；
+//   會用到的場合是嵌入式記憶體池、遊戲引擎的 frame allocator、
+//   或需要精確追蹤配置行為時（第 20 課就用自訂 allocator 數過配置次數）。
+//
+// 【概念補充 Concept Deep Dive】
+//   ● 為什麼 std::sort 不能用在 list 上
+//     std::sort 內部是 introsort（quicksort + heapsort + insertion sort），
+//     需要隨機跳到「中位數位置」「分割點」——這要求 random access iterator。
+//     list 只有 bidirectional iterator，所以編譯就會失敗。
+//     list 提供自己的 sort()，用的是不需要隨機存取的 merge sort，
+//     而且只搬指標、不搬元素。
+//
+//   ● 演算法為什麼「不能改變容器大小」
+//     演算法只拿到一對迭代器，碰不到容器物件本身，
+//     所以 std::remove / std::unique 都只能「重排元素並回傳新結尾」，
+//     真正的刪除要靠容器的 erase（第 20 課的 erase-remove 慣用法）。
+//     這是正交分解必然的代價：換來泛用性，代價是這個兩段式慣用法。
+//
+//   ● 六大組件如何協作
+//     一個典型的 STL 敘述會同時用到多個組件：
+//         std::sort(v.begin(), v.end(), std::greater<int>());
+//         └─演算法─┘ └───迭代器───┘  └──函數物件──┘
+//     而 v 是容器、它內部用 allocator 配置記憶體。
+//     六個組件裡有五個出現在這一行。
+//
+// 【注意事項 Pay Attention】
+//   1. std::sort 需要 random access iterator → **list / set / map 不能用**。
+//   2. 演算法不能改變容器大小；remove/unique 只重排並回傳新結尾。
+//   3. set / map 的 key 是 const，不能透過迭代器修改。
+//   4. map::operator[] 在 key 不存在時會**新增元素**；查詢請用 find/count。
+//   5. 任何「A 比 B 快」的宣稱都必須註明**最佳化等級**——
+//      -O0 與 -O2 的結論可能完全相反。
+//   6. std::allocator 的介面在 C++17/20 有多次調整（如移除 construct/destroy），
+//      自訂 allocator 時要注意目標標準版本。
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】STL 六大組件
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. STL 為什麼要把容器與演算法分開？迭代器在中間扮演什麼角色？
+//     答：為了避免組合爆炸。若不分開，M 種容器 × N 種演算法要寫 M×N 份程式碼；
+//         分開之後只要 M + N 份。
+//         迭代器是兩者之間的**共同語言**：容器負責提供 begin()/end()，
+//         演算法只認迭代器、不認容器，於是同一個 std::find
+//         可以用在 vector、list、set，甚至原始陣列上。
+//     追問：這個設計有什麼代價？→ 演算法碰不到容器本身，
+//         所以無法改變容器大小。std::remove 只能重排元素並回傳新結尾，
+//         真正的刪除要另外呼叫容器的 erase——這就是 erase-remove 慣用法的由來。
+//
+// 🔥 Q2. 為什麼 std::sort 不能用在 std::list 上？
+//     答：std::sort 需要 **random access iterator**（它要跳到分割點、算中位數），
+//         而 list 只提供 bidirectional iterator，編譯就會失敗。
+//         list 有自己的成員函式 lst.sort()，用的是不需要隨機存取的 merge sort，
+//         而且只重接指標、不搬移元素。
+//     追問：怎麼知道某個演算法需要哪種迭代器？→ 看 cppreference 的參數名：
+//         RandomIt / BidirIt / ForwardIt / InputIt 直接標示了最低要求。
+//
+// ⚠️ 陷阱. 「函數物件一定比函式指標快，所以 std::sort 一定比 qsort 快」——
+//         這句話什麼時候會被打臉？
+//     答：**在 -O0 下就會**。functor 的優勢來自「型別在編譯期確定 → operator()
+//         可以被 inline」，但未開最佳化時編譯器根本不做 inline，
+//         此時 std::sort 層層模板呼叫的開銷反而可能輸給 qsort 的單層間接呼叫。
+//         開了 -O2 之後 functor 被完全展開，std::sort 才明顯勝出。
+//     為什麼會錯：把「這個設計有利於最佳化」當成「它在任何情況下都比較快」。
+//         零成本抽象的前提是**最佳化器有在工作**。
+//         這也是為什麼所有效能數據都必須註明編譯器與 -O 等級，
+//         否則那個數字無法解讀，也無法重現。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <vector>
 #include <list>
@@ -36,6 +165,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <type_traits>
 
 // ===== 重點一：容器（Containers） =====
 // STL 容器分為三大類：
@@ -451,6 +581,97 @@ void demo_all_components() {
     std::cout << std::endl;
 }
 
+// ================================================================
+// 【LeetCode 實戰範例 1】LeetCode 217. Contains Duplicate
+//   題目：判斷陣列中是否存在重複元素。
+//   為什麼用到本課主題：一題就同時動用三個組件——
+//     **容器**（set 提供自動去重）、**迭代器**（區間建構子吃 begin/end）、
+//     以及「容器與演算法解耦」的思想（同一段程式碼換成 vector 也能編譯）。
+// ================================================================
+bool containsDuplicate(const std::vector<int>& nums) {
+    std::set<int> unique(nums.begin(), nums.end());   // 迭代器區間 + 容器去重
+    return unique.size() < nums.size();
+}
+
+// ================================================================
+// 【LeetCode 實戰範例 2】LeetCode 349. Intersection of Two Arrays
+//   題目：回傳兩個陣列的交集，結果中每個元素只出現一次。
+//   為什麼用到本課主題：這題是六大組件協作的縮影——
+//     容器（set）、迭代器（begin/end）、演算法（set_intersection）、
+//     迭代器配接器（back_inserter，把「賦值」變成「push_back」）。
+//     用 std::set_intersection 而非手寫迴圈，正是「演算法可重用」的示範。
+// ================================================================
+std::vector<int> intersection(const std::vector<int>& nums1,
+                              const std::vector<int>& nums2) {
+    std::set<int> a(nums1.begin(), nums1.end());      // 去重 + 排序
+    std::set<int> b(nums2.begin(), nums2.end());
+    std::vector<int> result;
+    // set_intersection 要求兩個輸入都已排序——set 天生滿足
+    // back_inserter 讓演算法能對空的 result 擴充（迭代器配接器）
+    std::set_intersection(a.begin(), a.end(),
+                          b.begin(), b.end(),
+                          std::back_inserter(result));
+    return result;
+}
+
+// ================================================================
+// 【LeetCode 實戰範例 3】LeetCode 1480. Running Sum of 1d Array
+//   題目：回傳前綴和陣列，result[i] = nums[0] + ... + nums[i]。
+//   為什麼用到本課主題：這題有一個現成的標準演算法
+//     std::partial_sum（在 <numeric>），一行就解決。
+//     它示範了「先問標準庫有沒有」這個習慣——
+//     手寫迴圈不會比較快，但比較容易寫錯邊界。
+// ================================================================
+std::vector<int> runningSum(const std::vector<int>& nums) {
+    std::vector<int> result(nums.size());
+    std::partial_sum(nums.begin(), nums.end(), result.begin());
+    return result;
+}
+
+// ================================================================
+// 【日常實務範例】銷售資料分析：六大組件一次全用上
+//   情境：一份銷售紀錄（產品名、金額），要產出三份報表：
+//       ① 各產品總金額（依產品名排序）      → map（容器）+ operator[]
+//       ② 金額前 N 大的交易                → vector + partial_sort（演算法 + 函數物件）
+//       ③ 有交易的產品清單（不重複）        → set（容器自動去重）
+//   這正是實務中最常見的樣貌：不是「用某個容器」，
+//   而是**依每份報表的需求各挑合適的容器與演算法**。
+// ================================================================
+struct Sale {
+    std::string product;
+    int amount;
+};
+
+struct SalesReport {
+    std::map<std::string, int> totalByProduct;   // 自動依產品名排序
+    std::vector<Sale> topDeals;                  // 金額前 N 大
+    std::set<std::string> productNames;          // 不重複產品清單
+    int grandTotal = 0;
+};
+
+SalesReport analyzeSales(const std::vector<Sale>& sales, std::size_t topN) {
+    SalesReport r;
+
+    // ① 容器 map：operator[] 的「不存在就建立 0」在這裡正是我們要的
+    for (const Sale& s : sales) {
+        r.totalByProduct[s.product] += s.amount;
+        r.productNames.insert(s.product);        // ③ set：自動去重
+    }
+
+    // 演算法 + 函數物件：accumulate 搭配 lambda 算總額
+    r.grandTotal = std::accumulate(sales.begin(), sales.end(), 0,
+                                   [](int acc, const Sale& s) { return acc + s.amount; });
+
+    // ② 演算法 partial_sort：只排出前 N 大，比全排序省
+    r.topDeals = sales;
+    std::size_t n = std::min(topN, r.topDeals.size());
+    std::partial_sort(r.topDeals.begin(), r.topDeals.begin() + static_cast<long>(n),
+                      r.topDeals.end(),
+                      [](const Sale& a, const Sale& b) { return a.amount > b.amount; });
+    r.topDeals.resize(n);
+    return r;
+}
+
 int main() {
     std::cout << "================================================================" << std::endl;
     std::cout << "  第3課：STL 的六大組件概覽  總複習" << std::endl;
@@ -464,9 +685,225 @@ int main() {
     demo_allocators();
     demo_all_components();
 
+    // ================================================================
+    // 重點八：iterator category 決定了哪些演算法能用
+    // ================================================================
+    std::cout << "\n===== 重點八：iterator category 決定演算法可用性 =====" << std::endl;
+    std::cout << "vector 的 iterator 是 random access？ " << std::boolalpha
+              << std::is_same_v<
+                     std::iterator_traits<std::vector<int>::iterator>::iterator_category,
+                     std::random_access_iterator_tag> << std::endl;
+    std::cout << "list 的 iterator 是 bidirectional？   "
+              << std::is_same_v<
+                     std::iterator_traits<std::list<int>::iterator>::iterator_category,
+                     std::bidirectional_iterator_tag> << std::endl;
+    std::cout << "set 的 iterator 是 bidirectional？    "
+              << std::is_same_v<
+                     std::iterator_traits<std::set<int>::iterator>::iterator_category,
+                     std::bidirectional_iterator_tag> << std::endl;
+    std::cout << "→ std::sort 需要 random access，所以只有 vector/deque 能用；" << std::endl;
+    std::cout << "  list 要用自己的成員函式 lst.sort()（merge sort，只搬指標）。" << std::endl;
+
+    std::list<int> ls = {5, 2, 9, 1, 7};
+    // std::sort(ls.begin(), ls.end());   // ← 編譯失敗：iterator category 不夠
+    ls.sort();                            // ✅ list 自己的 sort
+    std::cout << "list 用成員函式 sort() 後：";
+    for (int x : ls) std::cout << x << " ";
+    std::cout << std::endl;
+
+    // ================================================================
+    // 重點九：演算法不能改變容器大小
+    // ================================================================
+    std::cout << "\n===== 重點九：演算法不能改變容器大小 =====" << std::endl;
+    std::vector<int> rv = {1, 2, 3, 4, 5, 6};
+    auto newEnd = std::remove_if(rv.begin(), rv.end(),
+                                 [](int x) { return x % 2 == 0; });
+    std::cout << "remove_if 之後 size = " << rv.size() << " ← 完全沒變！" << std::endl;
+    std::cout << "保留區內容：";
+    for (auto it = rv.begin(); it != newEnd; ++it) std::cout << *it << " ";
+    std::cout << std::endl;
+    rv.erase(newEnd, rv.end());          // 這一步才真的刪掉
+    std::cout << "再呼叫容器的 erase 之後 size = " << rv.size() << std::endl;
+    std::cout << "→ 演算法只拿到迭代器、碰不到容器本身，這是正交分解的必然代價。"
+              << std::endl;
+
+    // ================================================================
+    // LeetCode 實戰
+    // ================================================================
+    std::cout << "\n===== LeetCode 217. Contains Duplicate =====" << std::endl;
+    std::cout << "  [1,2,3,1]     → " << containsDuplicate({1, 2, 3, 1}) << std::endl;
+    std::cout << "  [1,2,3,4]     → " << containsDuplicate({1, 2, 3, 4}) << std::endl;
+    std::cout << "  [1,1,1,3,3,4] → " << containsDuplicate({1, 1, 1, 3, 3, 4}) << std::endl;
+
+    std::cout << "\n===== LeetCode 349. Intersection of Two Arrays =====" << std::endl;
+    auto show = [](const char* label, const std::vector<int>& r) {
+        std::cout << "  " << label;
+        for (std::size_t i = 0; i < r.size(); ++i)
+            std::cout << r[i] << (i + 1 < r.size() ? "," : "");
+        std::cout << std::endl;
+    };
+    show("[1,2,2,1] ∩ [2,2]     = ", intersection({1, 2, 2, 1}, {2, 2}));
+    show("[4,9,5] ∩ [9,4,9,8,4] = ", intersection({4, 9, 5}, {9, 4, 9, 8, 4}));
+    std::cout << "  → 用了容器(set)、迭代器、演算法(set_intersection)、"
+                 "迭代器配接器(back_inserter)" << std::endl;
+
+    std::cout << "\n===== LeetCode 1480. Running Sum of 1d Array =====" << std::endl;
+    show("[1,2,3,4]     → ", runningSum({1, 2, 3, 4}));
+    show("[1,1,1,1,1]   → ", runningSum({1, 1, 1, 1, 1}));
+    show("[3,1,2,10,1]  → ", runningSum({3, 1, 2, 10, 1}));
+    std::cout << "  → std::partial_sum 一行解決；先問標準庫有沒有，"
+                 "比手寫迴圈更不容易寫錯邊界" << std::endl;
+
+    // ================================================================
+    // 日常實務：銷售資料分析
+    // ================================================================
+    std::cout << "\n===== 日常實務：銷售資料分析 =====" << std::endl;
+    std::vector<Sale> sales = {
+        {"筆電",   45000}, {"滑鼠",   800},  {"筆電",   52000},
+        {"鍵盤",   2400},  {"螢幕",   9800}, {"滑鼠",   1200},
+        {"筆電",   38000}, {"螢幕",   12000}
+    };
+
+    SalesReport rep = analyzeSales(sales, 3);
+    std::cout << "交易筆數 " << sales.size()
+              << "，總金額 " << rep.grandTotal << std::endl;
+
+    std::cout << "① 各產品總金額（map 自動依名稱排序）：" << std::endl;
+    for (const auto& [product, total] : rep.totalByProduct) {
+        std::cout << "     " << product << " → " << total << std::endl;
+    }
+
+    std::cout << "② 金額前 3 大交易（partial_sort + lambda 比較器）：" << std::endl;
+    for (const Sale& s : rep.topDeals) {
+        std::cout << "     " << s.product << " " << s.amount << std::endl;
+    }
+
+    std::cout << "③ 有交易的產品（set 自動去重排序）共 "
+              << rep.productNames.size() << " 種：";
+    for (const std::string& p : rep.productNames) std::cout << p << " ";
+    std::cout << std::endl;
+    std::cout << "→ 一份資料、三種報表，各自挑合適的容器與演算法——" << std::endl;
+    std::cout << "  這就是六大組件在實務中真正的用法。" << std::endl;
+
     std::cout << "\n================================================================" << std::endl;
     std::cout << "  複習完畢！六大組件：容器、迭代器、演算法、函數物件、配接器、配置器" << std::endl;
     std::cout << "================================================================" << std::endl;
 
     return 0;
 }
+
+// 編譯: g++ -std=c++17 -Wall -Wextra summary.cpp -o summary
+
+// === 預期輸出 ===
+// ================================================================
+//   第3課：STL 的六大組件概覽  總複習
+// ================================================================
+// ===== 重點一：容器 =====
+// vector: 1 2 3 4 5
+// list(push_front 5): 5 10 20 30
+// deque: 50 100 200 300 400
+// set(自動排序去重): 10 20 30
+// map: Alice=25 Bob=30 Charlie=35
+//
+// ===== 重點二：迭代器 =====
+// 完整型別迭代器: 10 20 30 40 50
+// auto 迭代器: 10 20 30 40 50
+// 範圍 for: 10 20 30 40 50
+// const_iterator(cbegin/cend): 10 20 30 40 50
+// reverse_iterator: 50 40 30 20 10
+// vector 隨機存取: vit[2]=30, *(vit+3)=40
+// list 雙向迭代器: ++後--回原值=10
+//
+// ===== 重點三：演算法 =====
+// sort 升序: 1 2 3 4 5 6 7 8 9
+// find(7) 位置: 6
+// count(2): 4
+// accumulate: 45
+// min=1 max=9
+// find(5) in vector: 找到
+// find(5) in list:   找到
+// find(5) in deque:  找到
+//
+// ===== 重點四：函數物件 =====
+// 偶數個數（函數指標）: 5
+// 偶數個數（函數物件）: 5
+// 3的倍數個數: 3
+// 5的倍數個數: 2
+// 偶數個數（Lambda）: 5
+// 3的倍數個數（Lambda 捕獲）: 3
+// 平方: 1 4 9 16 25 36 49 64 81 100
+// 升序: 1 2 5 8 9
+// 降序(greater<int>): 9 8 5 2 1
+// plus<int>(3,4) = 7
+// minus<int>(10,3) = 7
+// multiplies<int>(5,6) = 30
+//
+// ===== 重點五：配接器 =====
+// stack(LIFO): 3 2 1
+// queue(FIFO): 1 2 3
+// priority_queue(最大優先): 50 30 20 10
+// 反向迭代(rbegin/rend): 5 4 3 2 1
+// back_inserter 結果: 10 20 30
+// ostream_iterator: 1 2 3 4 5
+// bind(大於5的個數): 5
+// Lambda(大於5的個數): 5
+//
+// ===== 重點六：配置器 =====
+// vec1[0]=1 vec2[0]=2
+// 手動配置陣列: 0 10 20 30 40
+// 記憶體已釋放
+//
+// ===== 重點七：六大組件協作 =====
+// 原始資料: 64 25 12 22 11 90 42
+// 降序排序: 90 64 42 25 22 12 11
+// 偶數: 90 64 42 22 12
+// 偶數加倍: 180 128 84 44 24
+//
+// ===== 重點八：iterator category 決定演算法可用性 =====
+// vector 的 iterator 是 random access？ true
+// list 的 iterator 是 bidirectional？   true
+// set 的 iterator 是 bidirectional？    true
+// → std::sort 需要 random access，所以只有 vector/deque 能用；
+//   list 要用自己的成員函式 lst.sort()（merge sort，只搬指標）。
+// list 用成員函式 sort() 後：1 2 5 7 9
+//
+// ===== 重點九：演算法不能改變容器大小 =====
+// remove_if 之後 size = 6 ← 完全沒變！
+// 保留區內容：1 3 5
+// 再呼叫容器的 erase 之後 size = 3
+// → 演算法只拿到迭代器、碰不到容器本身，這是正交分解的必然代價。
+//
+// ===== LeetCode 217. Contains Duplicate =====
+//   [1,2,3,1]     → true
+//   [1,2,3,4]     → false
+//   [1,1,1,3,3,4] → true
+//
+// ===== LeetCode 349. Intersection of Two Arrays =====
+//   [1,2,2,1] ∩ [2,2]     = 2
+//   [4,9,5] ∩ [9,4,9,8,4] = 4,9
+//   → 用了容器(set)、迭代器、演算法(set_intersection)、迭代器配接器(back_inserter)
+//
+// ===== LeetCode 1480. Running Sum of 1d Array =====
+//   [1,2,3,4]     → 1,3,6,10
+//   [1,1,1,1,1]   → 1,2,3,4,5
+//   [3,1,2,10,1]  → 3,4,6,16,17
+//   → std::partial_sum 一行解決；先問標準庫有沒有，比手寫迴圈更不容易寫錯邊界
+//
+// ===== 日常實務：銷售資料分析 =====
+// 交易筆數 8，總金額 161200
+// ① 各產品總金額（map 自動依名稱排序）：
+//      滑鼠 → 2000
+//      筆電 → 135000
+//      螢幕 → 21800
+//      鍵盤 → 2400
+// ② 金額前 3 大交易（partial_sort + lambda 比較器）：
+//      筆電 52000
+//      筆電 45000
+//      筆電 38000
+// ③ 有交易的產品（set 自動去重排序）共 4 種：滑鼠 筆電 螢幕 鍵盤
+// → 一份資料、三種報表，各自挑合適的容器與演算法——
+//   這就是六大組件在實務中真正的用法。
+//
+// ================================================================
+//   複習完畢！六大組件：容器、迭代器、演算法、函數物件、配接器、配置器
+// ================================================================

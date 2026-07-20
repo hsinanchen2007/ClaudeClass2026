@@ -1,3 +1,115 @@
+// =============================================================================
+//  第四課：迭代器的核心概念 12  —  本課教科書：自訂類別支援迭代器與範圍 for
+// =============================================================================
+//
+// 【主題資訊 Information】
+//   本檔是第四課的完整講義（下方 // 註解區為全文），
+//   最後附一個「自己寫一個能被範圍 for 走訪的類別」的完整範例。
+//   讓自訂類別支援範圍 for 的最低門檻：
+//     類別本身   提供 begin() 與 end()（成員函式，或 ADL 找得到的自由函式）
+//     迭代器類別 提供 operator*、operator++（前置）、operator!=
+//   若還要讓 STL 演算法能用，額外需要 iterator_traits 的五個 typedef：
+//     value_type、difference_type、pointer、reference、iterator_category
+//   標準版本：範圍 for 為 C++11；C++17 放寬 begin/end 可為不同型別（sentinel）；
+//             C++20 的 ranges 與 concepts 讓「合格迭代器」有了正式的編譯期檢查。
+//   複雜度：本範例的 IntRange 走訪為 O(N)，且不配置任何記憶體。
+//
+// 【詳細解釋 Explanation】
+//
+// 【1. 為什麼「不需要繼承任何基底類別」是關鍵設計】
+//   Java 的 for-each 要求物件實作 Iterable 介面；C# 要求 IEnumerable。
+//   C++ 完全不需要 —— 編譯器只是在展開範圍 for 時去「找找看有沒有 begin/end」，
+//   找到就用。這種「以行為而非繼承來定義相容性」的做法稱為 duck typing 的
+//   編譯期版本，在 C++ 中叫做「概念（concept）」。
+//   好處：
+//     (a) 零成本 —— 沒有虛擬函式、沒有 vtable、可完全 inline
+//     (b) 非侵入式 —— 你甚至可以為「別人寫的、不能改的類別」
+//         在外部提供自由函式 begin(obj)/end(obj)，讓它突然支援範圍 for
+//   代價：不滿足要求時的錯誤訊息很難讀（C++20 concepts 就是為了修這件事）。
+//
+// 【2. IntRange 示範的是「惰性序列」——不佔記憶體的容器】
+//   IntRange(1, 1000000) 並沒有真的產生一百萬個 int，
+//   它只存了 start_ 與 end_ 兩個整數；元素是在走訪時「算出來」的。
+//   這正是 Python 的 range()、C++20 的 std::views::iota 背後的想法：
+//   **迭代器不必指向真實存在的記憶體**，它只要能回答「現在的值是什麼」
+//   與「怎麼走到下一個」即可。
+//   這也解釋了為什麼 operator* 回傳 int 而非 int& —— 沒有元素可以被參考。
+//   （這種迭代器不滿足 Forward Iterator 的要求，因為 Forward 要求
+//     operator* 回傳真正的參考；它只是一個 Input Iterator。）
+//
+// 【3. 為什麼最少只要 *、++、!= 三個運算子】
+//   直接看範圍 for 展開後的樣子就明白：
+//       for (; __begin != __end; ++__begin) { int n = *__begin; ... }
+//   全部用到的就是這三個。至於 ==、--、+n、<，範圍 for 一個都不需要。
+//   （但若你想讓 std::find 等演算法也能用，就得補上 iterator_traits 的
+//     五個 typedef，否則樣板實例化會失敗。）
+//
+// 【4. begin() 與 end() 為什麼要是 const 成員】
+//   本範例中兩者都宣告成 const，這讓 `const IntRange r(1,6);`
+//   也能被範圍 for 走訪。如果忘了加 const，
+//   對 const 物件的範圍 for 就會編譯失敗 —— 這是自訂容器最常見的疏漏之一。
+//   標準容器則同時提供 const 與非 const 兩組多載。
+//
+// 【概念補充 Concept Deep Dive】
+//   如何判斷你的自訂迭代器「夠不夠格」給 STL 演算法用？
+//   關鍵在 std::iterator_traits<It> 能不能取得五個型別。
+//   本檔的 IntRange::Iterator **不能**直接用在 std::find 上，
+//   因為它沒有提供那些 typedef。要讓它合格，需在類別內加上：
+//       using iterator_category = std::input_iterator_tag;
+//       using value_type        = int;
+//       using difference_type   = std::ptrdiff_t;
+//       using pointer           = const int*;
+//       using reference         = int;          // 惰性序列回傳值而非參考
+//   （C++17 以前的舊教材會教你繼承 std::iterator<...>，
+//     但那個基底類別在 C++17 已被 deprecated，請改用直接宣告 typedef。）
+//   加上之後 std::find(r.begin(), r.end(), 3) 才能編譯。
+//   本範例刻意不加，是為了凸顯「範圍 for 的門檻」比「STL 演算法的門檻」低很多。
+//
+// 【注意事項 Pay Attention】
+//   1. begin()/end() 必須宣告成 const 成員，否則 const 物件無法被範圍 for 走訪。
+//   2. 只實作 *、++、!= 僅足以支援範圍 for；要餵給 STL 演算法還需要
+//      iterator_traits 的五個 typedef。
+//   3. 惰性序列的 operator* 回傳「值」而非「參考」，因此它只是 Input Iterator，
+//      不能用在要求 Forward Iterator 以上的演算法（如 std::unique）。
+//   4. 自訂迭代器要小心「半開區間」語意：end() 必須是一個不會被解參考、
+//      且從 begin() 一定走得到的值，否則會無窮迴圈。
+//   5. std::iterator<...> 基底類別在 C++17 已 deprecated，不要再繼承它。
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】自訂類別支援迭代器
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 要讓自訂類別能被範圍 for 走訪，最少需要實作什麼？
+//     答：類別要提供 begin() 與 end()（成員函式，或 ADL 找得到的自由函式）；
+//         它們回傳的迭代器物件最少要支援 operator*、前置 operator++
+//         與 operator!=。就這三個，因為範圍 for 展開後只用到它們。
+//         **不需要**繼承任何基底類別或實作任何介面。
+//     追問：那要讓 std::find 也能用呢？
+//           → 還要提供 iterator_traits 需要的五個 typedef：
+//             iterator_category、value_type、difference_type、pointer、reference。
+//             注意舊式的「繼承 std::iterator<>」寫法在 C++17 已 deprecated。
+//
+// 🔥 Q2. 為什麼 IntRange(1, 1000000) 不會佔用一百萬個 int 的記憶體？
+//     答：因為它是「惰性序列」—— 物件本身只存 start_ 與 end_ 兩個整數，
+//         元素在走訪時才被計算出來。迭代器不必指向真實存在的記憶體，
+//         它只要能回答「目前的值」與「如何前進」即可。
+//         Python 的 range()、C++20 的 std::views::iota 都是同樣的想法。
+//     追問：這種迭代器的 operator* 應該回傳 int 還是 int&？
+//           → 只能回傳 int（值）。因為沒有真實元素可供參考。
+//             這也決定了它只能是 Input Iterator ——
+//             Forward Iterator 以上要求 operator* 回傳真正的參考。
+//
+// ⚠️ 陷阱. 自訂容器寫好 begin()/end() 後，`const MyRange r(1,6); for (int n : r)`
+//          卻編譯失敗，為什麼？
+//     答：因為 begin()/end() 忘了宣告成 const 成員函式。
+//         對 const 物件只能呼叫 const 成員函式，
+//         非 const 的 begin() 無法被選中 → 找不到可用的 begin → 編譯錯誤。
+//         標準容器之所以沒這個問題，是因為它們同時提供 const 與非 const 兩組多載。
+//     為什麼會錯：測試時用的都是非 const 物件，所以一路都沒問題；
+//         直到某天有人把它放進 const 參考參數（例如
+//         void print(const MyRange& r)）才爆出來。
+//         寫自訂容器時請養成習慣：begin/end 一律先寫 const 版本。
+// ═══════════════════════════════════════════════════════════════════════════
+
 ///*
 //# 第四課：迭代器（Iterator）的核心概念
 //
@@ -923,7 +1035,86 @@
 
 #include <iostream>
 #include <vector>
+#include <string>
+#include <iterator>
 #include <algorithm>
+
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】不強加。
+//   理由：本檔的主題是「自己寫一個迭代器讓類別支援範圍 for」。
+//         LeetCode 一律直接給你 vector/string 作為輸入，
+//         沒有任何一題會要求你實作自訂迭代器 —— 真那樣寫還會被視為過度設計。
+//         這個技能的價值在函式庫與框架設計（讓自己的型別融入 STL 生態），
+//         正是下面兩個實務範例展示的場景。
+//         同一課的 summary.cpp 已用 LeetCode 118. Pascal's Triangle
+//         示範「用迭代器解題」，此處不重複。
+// -----------------------------------------------------------------------------
+
+// -----------------------------------------------------------------------------
+// 【日常實務範例 1】讓自家的環形緩衝區（ring buffer）支援範圍 for
+//   情境：嵌入式／低延遲系統常用固定大小的環形緩衝區保留「最近 N 筆」資料
+//         （感測器讀數、log、封包）。寫滿後會繞回頭覆蓋最舊的那筆。
+//   為什麼用到本主題：使用者當然希望能直接寫 for (int v : buffer)，
+//         但「從最舊的一筆開始、走到陣列尾端要繞回開頭」這個順序
+//         沒辦法用普通指標表達 —— 必須自訂迭代器把繞行邏輯封裝進 operator++。
+//         這正是自訂迭代器最有價值的用途：**把複雜的走訪順序藏起來**，
+//         讓呼叫端用起來就像在走訪一般容器。
+// -----------------------------------------------------------------------------
+class RingBuffer {
+    static const std::size_t CAP = 5;
+    int         data_[CAP] = {};
+    std::size_t head_  = 0;    // 最舊元素的索引
+    std::size_t count_ = 0;    // 目前有幾筆
+
+public:
+    void push(int v) {
+        if (count_ < CAP) {
+            data_[(head_ + count_) % CAP] = v;
+            ++count_;
+        } else {
+            data_[head_] = v;              // 覆蓋最舊的那筆
+            head_ = (head_ + 1) % CAP;     // 頭往前移一格
+        }
+    }
+
+    std::size_t size() const { return count_; }
+
+    // 自訂迭代器：把「繞回頭」的取模運算封裝在裡面
+    class Iterator {
+        const RingBuffer* buf_;
+        std::size_t       step_;   // 已走了幾步（0 .. count_）
+    public:
+        Iterator(const RingBuffer* b, std::size_t s) : buf_(b), step_(s) {}
+
+        int operator*() const {
+            return buf_->data_[(buf_->head_ + step_) % CAP];   // 繞行邏輯在這
+        }
+        Iterator& operator++() { ++step_; return *this; }
+        bool operator!=(const Iterator& o) const { return step_ != o.step_; }
+    };
+
+    // 注意：兩者都宣告成 const 成員，const 物件才能被範圍 for 走訪
+    Iterator begin() const { return Iterator(this, 0); }
+    Iterator end()   const { return Iterator(this, count_); }
+};
+
+// -----------------------------------------------------------------------------
+// 【日常實務範例 2】惰性序列 vs 先建容器：記憶體差異
+//   情境：對「1 到 N」做統計時，常見的寫法是先建一個裝滿數字的 vector 再走訪。
+//         N 很大時等於白白配置 N * sizeof(int) 的記憶體。
+//   為什麼用到本主題：IntRange 這種惰性序列只存兩個整數，
+//         元素在走訪時才計算 —— 完全不配置任何堆積記憶體。
+//         這正是 Python range() 與 C++20 std::views::iota 背後的原理。
+// -----------------------------------------------------------------------------
+long long sumRangeEager(int n) {          // 先建容器：需要 n * 4 bytes
+    std::vector<int> tmp;
+    tmp.reserve(static_cast<std::size_t>(n));
+    for (int i = 1; i <= n; ++i) tmp.push_back(i);
+
+    long long total = 0;
+    for (int v : tmp) total += v;
+    return total;
+}
 
 class IntRange {
 private:
@@ -975,6 +1166,72 @@ int main() {
         std::cout << *it << " ";
     }
     std::cout << std::endl;
-    
+
+    // begin/end 是 const 成員 → const 物件也能走訪
+    std::cout << "\n=== begin()/end() 為什麼要是 const 成員 ===" << std::endl;
+    const IntRange const_range(10, 15);      // 注意這裡是 const 物件
+    std::cout << "const 物件的範圍 for: ";
+    for (int n : const_range) std::cout << n << " ";
+    std::cout << "  ← 因為 begin()/end() 宣告成 const 才編得過" << std::endl;
+
+    // 惰性序列不佔記憶體
+    std::cout << "\n=== 惰性序列 vs 先建容器 ===" << std::endl;
+    const int N = 100000;
+    std::cout << "  IntRange(1, " << N << ") 物件大小 = "
+              << sizeof(IntRange) << " bytes（只存兩個 int）" << std::endl;
+    std::cout << "  先建 vector<int> 需要配置   = "
+              << (static_cast<long long>(N) * static_cast<long long>(sizeof(int)) / 1024)
+              << " KB 的堆積記憶體" << std::endl;
+
+    long long lazy_sum = 0;
+    for (int n : IntRange(1, N + 1)) lazy_sum += n;      // 零配置
+    long long eager_sum = sumRangeEager(N);              // 要配置 N*4 bytes
+
+    std::cout << "  惰性走訪求和 1.." << N << " = " << lazy_sum << std::endl;
+    std::cout << "  先建容器求和 1.." << N << " = " << eager_sum << std::endl;
+    std::cout << "  兩者結果相同，但惰性版本沒有配置任何堆積記憶體" << std::endl;
+
+    std::cout << "\n=== 日常實務：環形緩衝區支援範圍 for ===" << std::endl;
+    RingBuffer rb;   // 容量 5
+    std::cout << "  推入 1..3（未滿）: ";
+    for (int v : {1, 2, 3}) rb.push(v);
+    for (int v : rb) std::cout << v << " ";
+    std::cout << " (size=" << rb.size() << ")" << std::endl;
+
+    std::cout << "  推入 4..5（剛好滿）: ";
+    for (int v : {4, 5}) rb.push(v);
+    for (int v : rb) std::cout << v << " ";
+    std::cout << " (size=" << rb.size() << ")" << std::endl;
+
+    std::cout << "  再推入 6、7（開始覆蓋最舊的）: ";
+    for (int v : {6, 7}) rb.push(v);
+    for (int v : rb) std::cout << v << " ";
+    std::cout << " (size=" << rb.size() << ")" << std::endl;
+    std::cout << "  → 走訪順序永遠是「最舊到最新」，"
+                 "繞行邏輯完全藏在 operator++ 裡面" << std::endl;
+
     return 0;
 }
+
+// 編譯: g++ -std=c++17 -Wall -Wextra 第四課：迭代器（Iterator）的核心概念12.cpp -o demo12
+
+// === 預期輸出 ===
+// === 自訂 IntRange 類別 ===
+// 範圍 for: 1 2 3 4 5
+// 迭代器: 1 2 3 4 5
+//
+// === begin()/end() 為什麼要是 const 成員 ===
+// const 物件的範圍 for: 10 11 12 13 14   ← 因為 begin()/end() 宣告成 const 才編得過
+//
+// === 惰性序列 vs 先建容器 ===
+//   IntRange(1, 100000) 物件大小 = 8 bytes（只存兩個 int）
+//   先建 vector<int> 需要配置   = 390 KB 的堆積記憶體
+//   惰性走訪求和 1..100000 = 5000050000
+//   先建容器求和 1..100000 = 5000050000
+//   兩者結果相同，但惰性版本沒有配置任何堆積記憶體
+//
+// === 日常實務：環形緩衝區支援範圍 for ===
+//   推入 1..3（未滿）: 1 2 3  (size=3)
+//   推入 4..5（剛好滿）: 1 2 3 4 5  (size=5)
+//   再推入 6、7（開始覆蓋最舊的）: 3 4 5 6 7  (size=5)
+//   → 走訪順序永遠是「最舊到最新」，繞行邏輯完全藏在 operator++ 裡面

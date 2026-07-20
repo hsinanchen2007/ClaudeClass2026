@@ -1,3 +1,136 @@
+// =============================================================================
+//  第 17 課 範例 8  —  解構函數綜合實戰：Session 管理多個資料庫連接
+// =============================================================================
+//
+//  ※ 本檔結構說明：
+//    第 1 行起是一大段 /* ... */ 的課程講義（Markdown 格式，含多個示範用的
+//    程式片段，那些片段「不會被編譯」）。真正會被編譯執行的程式碼從
+//    `#include <iostream>` 那一行開始。閱讀時請注意區分。
+//
+// 【主題資訊 Information】
+//   語法    ：~ClassName();      // 無回傳值、無參數、不可多載、每類別僅一個
+//   標準版本：C++98 起；C++11 起解構函數預設隱含 noexcept
+//   標頭檔  ：<iostream>、<string>、<memory>（unique_ptr 版本用）
+//   複雜度  ：解構本身 O(1)，但會連帶解構所有成員／釋放所持有的資源
+//
+// 【詳細解釋 Explanation】
+//
+// 【1. 這個範例在示範什麼】
+//   Session 持有兩個動態配置的 DatabaseConnection。重點在於：
+//   使用者只要讓 session 離開 scope，兩條連接就會自動、依序、可靠地關閉。
+//   呼叫端完全不需要寫任何 close/disconnect —— 這就是 RAII 的核心價值：
+//   「把資源的生命週期綁定在物件的生命週期上」。
+//
+// 【2. 解構的連鎖反應（本範例最重要的觀察）】
+//   離開區塊時發生的事情是一條完整的鏈：
+//       離開 scope
+//         → Session::~Session() 被呼叫
+//           → delete cacheDb  → DatabaseConnection::~DatabaseConnection()（快取連接斷開）
+//           → delete mainDb   → DatabaseConnection::~DatabaseConnection()（主連接斷開）
+//         → 接著才解構 Session 的成員（sessionName 這個 string）
+//         → 最後回收 Session 本身的儲存空間
+//   注意 delete 的順序是程式碼「自己寫的」（先 cache 後 main），
+//   而不是語言規定的。成員的解構才是語言規定的反序。
+//   實務上這個順序常常有意義：先關依賴方（快取），再關被依賴方（主庫）。
+//
+// 【3. 為什麼解構函數裡要先檢查 isConnected】
+//   DatabaseConnection 的解構函數先判斷 isConnected 才輸出「已斷開」。
+//   這是資源管理類別的標準寫法：解構函數必須能安全地處理
+//   「資源根本沒拿到」或「已經被提前釋放」的狀態，不能盲目地釋放。
+//   同樣的道理，delete 一個 nullptr 是合法且安全的（什麼都不做），
+//   所以資源類別的解構函數通常不需要寫 `if (p) delete p;`。
+//
+// 【4. ⚠️ 這個 Session 有一個真實存在的設計缺陷：違反 Rule of Three】
+//   Session 自訂了解構函數，並且用「裸指標」持有資源，
+//   卻沒有自訂複製建構函數與複製賦值運算子。
+//   編譯器產生的預設版本會做「淺複製」——只把指標值抄過去。
+//   於是兩個 Session 物件會指向同一組 DatabaseConnection，
+//   兩者解構時各自 delete 一次，形成 double free（未定義行為）。
+//     Rule of Three：若你需要自訂 解構函數／複製建構／複製賦值 三者之一，
+//                    通常三者都需要自訂。
+//     Rule of Five ：C++11 起再加上 移動建構／移動賦值。
+//     Rule of Zero ：最好的做法是「一個都不要自訂」——
+//                    改用 unique_ptr 等 RAII 成員，讓編譯器自動產生正確版本。
+//   本檔在下方新增了 SafeSession，示範 Rule of Zero 的修法。
+//   為了安全，違規的複製「只以註解說明，不實際執行」（見 main 內的說明）。
+//
+// 【概念補充 Concept Deep Dive】
+//   `delete p` 實際上做兩件事，順序不可顛倒：
+//     (1) 呼叫 p 所指物件的解構函數；
+//     (2) 把那塊記憶體還給配置器（呼叫 operator delete）。
+//   所以「解構函數」與「釋放記憶體」是兩個獨立的步驟。
+//   這也解釋了為什麼 placement new 建立的物件要「手動呼叫解構函數」
+//   卻「不能 delete」——那塊記憶體不是 operator new 配置的。
+//
+//   另外，如果 DatabaseConnection 之後被當成多型基底使用
+//   （例如衍生出 MySqlConnection、PostgresConnection，並以
+//   DatabaseConnection* 持有再 delete），那麼它的解構函數
+//   必須宣告為 virtual，否則只會呼叫到基底的解構函數，
+//   衍生類別的資源不會被釋放，且屬未定義行為。
+//   本範例沒有繼承，所以維持非 virtual 是正確且省成本的選擇
+//   （非 virtual 代表物件不需要 vptr，sizeof 較小）。
+//
+// 【注意事項 Pay Attention】
+// 1. 解構函數不應讓例外逸出。C++11 起它預設是 noexcept，
+//    若例外真的逸出，程式會呼叫 std::terminate()。
+//    這是標準規定的結果，不是未定義行為——兩者要分清楚。
+// 2. 上述的 double free 是未定義行為，標準不保證任何特定結果
+//    （可能崩潰、可能靜默毀損堆積、也可能看似正常）。
+//    本檔絕不實際執行它，只以註解與 SafeSession 的對照說明。
+// 3. static 成員 nextId 用來配發連接編號。它不屬於任何實例，
+//    所有物件共用一份，且多執行緒下的 nextId++ 並非原子操作。
+// 4. 本檔使用 `using namespace std;`，在教學小檔可接受，
+//    但標頭檔與大型專案應避免（容易與自訂名稱撞名）。
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】解構函數與資源管理
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 一個類別自訂了解構函數來 delete 成員指標，這樣就安全了嗎？
+//     答：不安全。這正是 Rule of Three 要解決的問題。
+//         只要類別以裸指標持有資源並自訂了解構函數，
+//         編譯器預設產生的複製建構／複製賦值就會做淺複製，
+//         讓兩個物件指向同一塊資源，各自解構時就會 double free。
+//         必須同時處理複製語意（自訂或 = delete），
+//         最好的做法則是改用 unique_ptr 走 Rule of Zero。
+//     追問：那你會怎麼修這個 Session？
+//         → 把 DatabaseConnection* 換成 std::unique_ptr<DatabaseConnection>。
+//           unique_ptr 不可複製但可移動，於是 Session 自動變成
+//           「不可複製、可移動」，連解構函數都可以整個刪掉不寫。
+//           （本檔的 SafeSession 就是這個修法。）
+//
+// 🔥 Q2. 基底類別的解構函數什麼時候必須是 virtual？
+//     答：當你會透過「基底類別的指標」去 delete 一個衍生類別物件時。
+//         若基底解構函數不是 virtual，這是未定義行為，
+//         實務上通常只呼叫到基底的解構函數，衍生類別持有的資源就洩漏了。
+//     追問：那是不是所有類別的解構函數都乾脆加 virtual 比較保險？
+//         → 不是。virtual 會替物件加上 vptr，增加大小、破壞
+//           trivially copyable 等性質，也可能妨礙最佳化。
+//           判準是「這個類別會不會被當成多型基底」：
+//           會 → virtual（或 protected 非 virtual）；不會 → 維持非 virtual。
+//
+// ⚠️ 陷阱. 「解構函數裡要記得檢查指標是不是 nullptr，
+//           不然 delete 到空指標會崩潰。」
+//     答：不需要。對 nullptr 執行 delete 是標準明確定義的合法操作，
+//         它什麼都不做。寫 `if (p) delete p;` 中的判斷是多餘的。
+//     為什麼會錯：把 delete 和 C 的 free 之外的經驗混在一起，
+//         或是延續「指標用前一定要判空」的習慣。
+//         真正需要小心的不是 delete nullptr，而是
+//         「delete 兩次」與「delete 之後又拿來用」——
+//         那兩個才是未定義行為。順帶一提，delete 之後把指標設為
+//         nullptr 是好習慣，正是因為它能讓後續誤觸的 delete 變成無害。
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】—— 本檔不附
+//   理由：本檔主題是「解構函數如何自動釋放資源、以及 Rule of Three/Zero」，
+//   屬於資源所有權與物件生命週期的語言機制。LeetCode 評測的是演算法的
+//   輸入輸出，沒有題目的結果會因為「資源在哪一行被釋放」而改變；
+//   設計類題目（146 LRU Cache、707 Design Linked List 等）雖然會操作節點，
+//   但考點是資料結構操作而非解構時機。
+//   依規格「寧缺勿濫」從缺——本檔的 Session／DatabaseConnection
+//   本身就是最貼近真實工程的範例（連線管理），下方另補 unique_ptr 修法。
+// -----------------------------------------------------------------------------
+
 /*
 好的，信安！讓我們進入建構函數的「鏡像」。
 
@@ -883,6 +1016,7 @@ g++ -std=c++17 -o lesson17 lesson17.cpp
 
 #include <iostream>
 #include <string>
+#include <memory>
 using namespace std;
 
 // ============================================================
@@ -963,6 +1097,47 @@ public:
     }
 };
 
+// -----------------------------------------------------------------------------
+// 【日常實務範例】同一個 Session 的 Rule of Zero 版本
+//   情境：與上面的 Session 完全相同（一條主庫連接 + 一條快取連接），
+//         但改用 std::unique_ptr 持有資源。
+//   差別：
+//     * 不需要自己寫解構函數 —— unique_ptr 的解構函數會自動 delete。
+//     * 自動獲得正確的複製語意：unique_ptr 不可複製，
+//       所以 SafeSession 也自動變成「不可複製、但可移動」，
+//       上面 Session 的 double free 風險從根本上不存在。
+//     * 程式碼更短，且不可能忘記釋放某一條連接。
+//   這是現代 C++ 管理資源的預設寫法：Rule of Zero —— 五個特殊成員一個都不寫。
+// -----------------------------------------------------------------------------
+class SafeSession {
+private:
+    string sessionName;
+    unique_ptr<DatabaseConnection> mainDb;
+    unique_ptr<DatabaseConnection> cacheDb;
+
+public:
+    SafeSession(const string& name,
+                const string& mainConn,
+                const string& cacheConn)
+        : sessionName(name),
+          mainDb(make_unique<DatabaseConnection>(mainConn)),
+          cacheDb(make_unique<DatabaseConnection>(cacheConn))
+    {
+        cout << "  [SafeSession] " << sessionName << " 啟動" << endl;
+    }
+
+    // 注意：這裡「沒有」解構函數。
+    // 成員 unique_ptr 會在 SafeSession 被銷毀時自動 delete 各自的連接，
+    // 且順序是成員宣告順序的反序（先 cacheDb 後 mainDb），由語言保證。
+
+    void doWork() const {
+        mainDb->query("SELECT * FROM orders");
+        cacheDb->query("GET order:2002");
+    }
+
+    const string& name() const { return sessionName; }
+};
+
 int main() {
     cout << "============================================" << endl;
     cout << "   第 17 課：解構函數 綜合範例" << endl;
@@ -984,7 +1159,97 @@ int main() {
     // 2. 解構函數中 delete cacheDb → DatabaseConnection 解構
     // 3. 解構函數中 delete mainDb → DatabaseConnection 解構
     
+    cout << "\n============================================" << endl;
+    cout << "   對照：Rule of Zero（unique_ptr）版本" << endl;
+    cout << "============================================" << endl;
+    {
+        SafeSession safe("OrderService",
+                         "mysql://localhost:3306/orders",
+                         "redis://localhost:6379");
+        cout << "\n--- 執行工作 ---" << endl;
+        safe.doWork();
+        cout << "\n--- 工作完成，即將離開區塊（沒有自訂解構函數）---" << endl;
+    }
+    // SafeSession 沒有寫任何解構函數，兩條連接依然被正確關閉：
+    // 成員 unique_ptr 以「宣告順序的反序」被解構 → 先 cacheDb、後 mainDb。
+
+    cout << "\n--- 關於複製：為什麼上面的 Session 不安全 ---" << endl;
+    cout << "  Session 以裸指標持有資源又自訂了解構函數，卻沒處理複製語意。" << endl;
+    cout << "  若寫成 Session copy = session; 兩者會指向同一組連接，" << endl;
+    cout << "  各自解構時各 delete 一次 → double free（未定義行為）。" << endl;
+    cout << "  以下這一行刻意保持註解，絕不執行：" << endl;
+    cout << "      // Session copy = session;   // ← 未定義行為，切勿取消註解" << endl;
+    cout << "  SafeSession 則因為成員是 unique_ptr（不可複製），" << endl;
+    cout << "  這種寫法會直接編譯失敗 —— 在編譯期就擋下來，這才是正確的設計。" << endl;
+
     cout << "\n--- 所有資源已自動清理 ---" << endl;
     
     return 0;
 }
+
+// 編譯: g++ -std=c++17 -Wall -Wextra "第 17 課：解構函數（Destructor）8.cpp" -o destructor8
+
+// ── 輸出但書 ────────────────────────────────────────────────────────────
+// 1. 本檔輸出完全由語言規則與程式邏輯決定，逐位元組可重現
+//    （實測連跑 10 次 md5 完全相同）。
+// 2. 連接編號 #1..#4 來自 static 成員 nextId 的遞增，故建立順序固定。
+// 3. 請對照兩組關閉順序：
+//    * Session（自訂解構函數）：#2 → #1，順序是解構函數裡「自己寫」的
+//      delete cacheDb; delete mainDb; 決定的。
+//    * SafeSession（Rule of Zero，沒有解構函數）：#4 → #3，
+//      這是「成員以宣告順序的反序解構」的語言保證所產生的結果。
+//      兩者都先關快取、後關主庫，但成因完全不同。
+// 4. 「Session copy = session;」造成的 double free 是未定義行為，
+//    標準不保證任何特定結果，本檔全程未執行該行，僅以文字說明。
+// 5. 文中「SafeSession 複製會編譯失敗」一句已實測驗證：
+//    加入 `SafeSession probe = safe;` 後，GCC 15.2.0 回報
+//    error: use of deleted function 'SafeSession::SafeSession(const SafeSession&)'
+//    （因成員 unique_ptr 的複製建構為 deleted），確認會在編譯期被擋下。
+// 6. 本機環境：GCC 15.2.0 (Ubuntu 15.2.0-16ubuntu1) / libstdc++ / x86-64。
+
+// === 預期輸出 ===
+// ============================================
+//    第 17 課：解構函數 綜合範例
+// ============================================
+//
+// --- 建立工作階段 ---
+//   [連接 #1] 已建立: mysql://localhost:3306/mydb
+//   [連接 #2] 已建立: redis://localhost:6379
+//   [Session] UserService 啟動
+//
+// --- 執行工作 ---
+//   [連接 #1] 執行: SELECT * FROM users
+//   [連接 #2] 執行: GET user:1001
+//   [連接 #1] 執行: UPDATE users SET active = 1
+//
+// --- 工作完成，即將離開區塊 ---
+//   [Session] UserService 關閉中...
+//   [連接 #2] 已斷開: redis://localhost:6379
+//   [連接 #1] 已斷開: mysql://localhost:3306/mydb
+//   [Session] UserService 已完全關閉
+//
+// ============================================
+//    對照：Rule of Zero（unique_ptr）版本
+// ============================================
+//   [連接 #3] 已建立: mysql://localhost:3306/orders
+//   [連接 #4] 已建立: redis://localhost:6379
+//   [SafeSession] OrderService 啟動
+//
+// --- 執行工作 ---
+//   [連接 #3] 執行: SELECT * FROM orders
+//   [連接 #4] 執行: GET order:2002
+//
+// --- 工作完成，即將離開區塊（沒有自訂解構函數）---
+//   [連接 #4] 已斷開: redis://localhost:6379
+//   [連接 #3] 已斷開: mysql://localhost:3306/orders
+//
+// --- 關於複製：為什麼上面的 Session 不安全 ---
+//   Session 以裸指標持有資源又自訂了解構函數，卻沒處理複製語意。
+//   若寫成 Session copy = session; 兩者會指向同一組連接，
+//   各自解構時各 delete 一次 → double free（未定義行為）。
+//   以下這一行刻意保持註解，絕不執行：
+//       // Session copy = session;   // ← 未定義行為，切勿取消註解
+//   SafeSession 則因為成員是 unique_ptr（不可複製），
+//   這種寫法會直接編譯失敗 —— 在編譯期就擋下來，這才是正確的設計。
+//
+// --- 所有資源已自動清理 ---

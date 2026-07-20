@@ -1,52 +1,209 @@
+// =============================================================================
+//  第 32 課 -1  —  移動建構函數：偷走資源，而不是複製資源
+// =============================================================================
+//
+// 【主題資訊 Information】
+//   簽名     ： ClassName(ClassName&& other) noexcept;
+//   三個步驟 ： ① 接手來源的資源（複製指標值，不配置新記憶體）
+//               ② 把來源置空（nullptr / 0），避免兩者都持有同一塊記憶體
+//               ③ 複製基本型別成員（長度、容量等）
+//   標準版本 ： C++11
+//   標頭檔   ： <utility>（std::move、std::swap）
+//   複雜度   ： O(1) —— 與資料量無關；對照拷貝建構的 O(n)
+//   noexcept ： 必須標，否則 vector 擴容時不會採用（見本課 -2）
+//
+// 【詳細解釋 Explanation】
+//
+// 【1. 移動建構函數解決什麼問題】
+//   拷貝建構函數要「配置一塊新記憶體，再把內容逐位元組複製過去」，
+//   成本 O(n)。但很多時候來源根本不會再被使用 ——
+//   例如它是個暫時物件，或呼叫端已用 std::move 明確表示放棄它。
+//   這種情況下複製是純粹的浪費：更好的做法是直接把指標接過來。
+//   移動建構函數就是這件事，成本 O(1)，與資料多大完全無關。
+//
+// 【2. 為什麼「置空來源」是必要的，不是禮貌】
+//   步驟 ② 的 other.m_data = nullptr; 不能省。
+//   接手指標後，若不把來源置空，兩個物件的 m_data 會指向同一塊記憶體，
+//   各自解構時都會 delete[] 一次 —— double free，未定義行為。
+//   置空之後來源的解構函數變成 delete[] nullptr，那是標準保證的空操作。
+//   換句話說：「偷」必須是完整的轉移，不能是共享。
+//
+// 【3. 移動之後來源處於什麼狀態】
+//   標準的說法是 valid but unspecified（有效但未指定）：
+//   物件還活著、解構一定安全、所有「沒有前置條件」的操作都能呼叫
+//   （重新賦值、clear()、size()），但它的「內容」沒有任何保證。
+//   本檔的 SimpleString 是自己寫的類別，我們自己把 m_data 設成 nullptr、
+//   m_len 設成 0，所以可以放心印出 "(null)"——
+//   那是「本程式明確歸零的成員」，不是去讀未指定的內容。
+//   ⚠️ 但若成員換成 std::string，就「不可以」印出被移動後的內容 ——
+//   標準庫對此不給任何保證。（見第 31 課 -4）
+//   測試 4 示範的正是標準真正保證的事：被移動過的物件可以重新賦值。
+//
+// 【4. 左值走拷貝、右值走移動：分岔由重載解析決定】
+//   SimpleString b = a;              // a 是左值 → 拷貝建構（O(n)）
+//   SimpleString c = std::move(a);   // 轉成右值 → 移動建構（O(1)）
+//   std::move 本身不搬任何東西，它只是把 a 標記成右值，
+//   讓編譯器選中吃 SimpleString&& 的那個建構函數（見第 31 課 -4）。
+//
+// 【概念補充 Concept Deep Dive】
+//
+// (A) ★ 測試 1 為什麼看不到「移動建構」
+//   原始註解寫「SimpleString("Dragon Sword") 是右值 → 呼叫移動建構函數」，
+//   這在 C++17 是不正確的：輸出只有一次 [建構]，沒有 [移動建構]。
+//   因為 SimpleString("Dragon Sword") 是純右值（prvalue），
+//   而 C++17 保證「純右值初始化」的省略 ——
+//   它直接就地建構在 a 的位置上，從頭到尾只有一個物件，沒有任何搬移。
+//   本機實測對照：
+//       C++17                            → 只有 [建構]
+//       C++14 + -fno-elide-constructors  → [建構] 之後才出現 [移動建構]
+//   後者才是原始註解描述的情境，那是 C++14 以前的模型。
+//   （對照第 28 課 -2：C++17 只保證 prvalue 初始化的省略，NRVO 仍是可選的。）
+//   真正示範移動建構的是測試 3，那裡有具名變數 a 與明確的 std::move。
+//
+// (B) ★ 本檔為什麼不印記憶體位址
+//   原始版本印的是 static_cast<void*>(m_data) 這種原始位址。
+//   位址會因為 ASLR（位址空間配置隨機化）每次執行都不同，
+//   本機實測連跑三次得到 0x617015516030 / 0x5d34deef2030 / 0x58aeb8a53030，
+//   完全無法寫成可對照的預期輸出。
+//   本檔改用「緩衝區編號 buf#N」：每次真正配置記憶體時給一個遞增編號，
+//   而這個編號會「跟著緩衝區一起移動」。
+//   於是「偷走資源」這件事變成可重現的證據 ——
+//   測試 3 可以清楚看到 buf#1 從 a 轉移到 c，而不是產生新的 buf。
+//   對照測試 2 的拷貝建構產生了全新的 buf#2，兩者差異一目了然。
+//
+// (C) delete[] nullptr 是安全的
+//   標準保證對空指標執行 delete / delete[] 是無效果的空操作。
+//   所以移動後的來源解構時不需要額外檢查。
+//   本檔的解構函數仍然寫了 if (m_data)，那是為了「印出不同訊息」，
+//   不是為了避免 delete 出錯。
+//
+// (D) 成員宣告順序決定初始化順序（-Wreorder）
+//   m_data 的初始值用到了 m_len（new char[m_len + 1]），
+//   所以 m_len 必須宣告在 m_data 之前 —— 檔案中已是正確順序。
+//   若兩者對調，m_data 會用到尚未初始化的 m_len 當長度，
+//   配置出錯誤大小的緩衝區，接著 strcpy 就寫出界（heap buffer overflow）。
+//   編譯時加 -Wreorder 可讓編譯器抓出這類不一致。
+//
+// 【注意事項 Pay Attention】
+//   1. 移動建構函數務必標 noexcept，否則 vector 擴容時會改用拷貝（本課 -2）。
+//   2. 一定要把來源置空，否則兩個物件持有同一塊記憶體 → double free。
+//   3. 被移動後的物件是 valid but unspecified：可以重新賦值、可以解構，
+//      但不該讀它的內容。本檔能安全印出 "(null)" 是因為那是我們自己歸零的成員；
+//      標準庫型別（如 std::string）被移動後則不可以這樣印。
+//   4. C++17 起，用暫時物件初始化時看不到移動建構是正常的（保證省略），
+//      不代表移動語義沒生效 —— 見【概念補充 A】。
+//   5. 教材輸出不要印原始位址（ASLR 每次不同）；
+//      要證明「資源被偷走」請用可重現的識別方式 —— 見【概念補充 B】。
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】移動建構函數
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 移動建構函數要做哪幾件事？少做哪一件會出大問題？
+//     答：三件：接手來源的資源指標、把來源置空、複製基本型別成員。
+//         少了「把來源置空」最致命 —— 兩個物件的指標會指向同一塊記憶體，
+//         各自解構時各 delete[] 一次，就是 double free（未定義行為）。
+//         置空之後來源解構時執行的是 delete[] nullptr，
+//         那是標準保證的空操作。
+//     追問：移動建構函數的複雜度是多少？
+//         → O(1)，與資料量無關，因為只複製指標值；
+//           對照拷貝建構要配置記憶體並逐位元組複製，是 O(n)。
+//
+// 🔥 Q2. SimpleString c = std::move(a); 之後，a 還能不能用？
+//     答：能用，但要看怎麼用。標準說它處於 valid but unspecified：
+//         物件仍然有效，解構安全，所有沒有前置條件的操作都可以呼叫 ——
+//         重新賦值、clear()、size()。
+//         但它的內容沒有保證，所以不該去讀。
+//         本檔測試 4 示範的就是標準真正保證的用法：重新賦值。
+//     追問：那本檔為什麼可以印出 a 是 "(null)"？
+//         → 因為 SimpleString 是我們自己寫的類別，
+//           移動建構函數裡明確把 m_data 設成 nullptr、m_len 設成 0，
+//           印的是「自己歸零的成員」。
+//           若成員換成 std::string，被移動後的內容沒有任何保證，就不可以這樣印。
+//
+// ⚠️ 陷阱. 「SimpleString a = SimpleString("Dragon Sword"); 這行會先建構暫時物件，
+//           再移動建構到 a，所以應該看到 [建構] 和 [移動建構] 兩行。」
+//     答：在 C++17 不會，只會看到一行 [建構]。
+//         SimpleString("Dragon Sword") 是純右值，C++17 保證省略這種初始化：
+//         它直接就地建構在 a 的位置上，從頭到尾只有一個物件。
+//         本機實測要退到 C++14 並加上 -fno-elide-constructors，
+//         才會看到 [建構] 之後的 [移動建構]。
+//     為什麼會錯：沿用 C++14 以前的心智模型 ——
+//         「暫時物件是一個真實存在的物件，需要被搬進目標」。
+//         C++17 重新定義了 prvalue：它不再代表物件，
+//         而是「一份尚未具體化的初始化配方」，直接用來初始化目標。
+//         （本檔原始註解正是照舊模型寫的，已在【概念補充 A】更正。）
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// 【LeetCode 實戰範例】—— 本檔從缺，理由如下
+//   移動建構函數解決的是「資源轉移的成本」，屬於資源管理與效能議題。
+//   LeetCode 只驗證演算法的輸入輸出與整體時間限制，
+//   評測系統既不會拷貝也不會移動你的物件，
+//   無從觀察走的是 O(1) 的移動還是 O(n) 的拷貝。
+//   硬掛設計類題號只會誤導，故從缺 ——
+//   本檔改以「緩衝區編號隨資源轉移」的可重現實驗直接呈現偷取行為。
+//
+// -----------------------------------------------------------------------------
 // lesson32_move_constructor.cpp
-// 編譯：g++ -std=c++17 -Wall -Wextra -g -o lesson32 lesson32_move_constructor.cpp
+// -----------------------------------------------------------------------------
 
 #include <iostream>
 #include <cstring>
 #include <utility>  // std::move, std::swap
 
+namespace {
+// 緩衝區編號產生器：每次「真正配置一塊新記憶體」時遞增。
+// 用它取代原始位址，因為位址受 ASLR 影響、每次執行都不同（見檔頭【概念補充 B】）。
+int g_nextBufId = 0;
+}  // namespace
+
 class SimpleString {
 private:
-    char* m_data;
+    // ⚠️ 成員的初始化順序由「宣告順序」決定，與初始化列表的書寫順序無關。
+    //    m_data 的初始值用到了 m_len，所以 m_len 必須宣告在前。
     std::size_t m_len;
+    char* m_data;
+    int m_bufId;    // 跟著「緩衝區」走的穩定編號；被移動時會一起轉移
 
 public:
     // ──────── 一般建構函數 ────────
     SimpleString(const char* str = "")
         : m_len(std::strlen(str))
         , m_data(new char[m_len + 1])
+        , m_bufId(++g_nextBufId)          // 配置了新記憶體 → 新編號
     {
         std::strcpy(m_data, str);
-        std::cout << "  [建構] \"" << m_data << "\" @ "
-                  << static_cast<void*>(m_data) << "\n";
+        std::cout << "  [建構] \"" << m_data << "\" 配置 buf#" << m_bufId << "\n";
     }
 
     // ──────── 拷貝建構函數（深拷貝）────────
     SimpleString(const SimpleString& other)
         : m_len(other.m_len)
         , m_data(new char[m_len + 1])
+        , m_bufId(++g_nextBufId)          // 又配置了一塊新記憶體 → 又一個新編號
     {
         std::strcpy(m_data, other.m_data);
-        std::cout << "  [拷貝建構] \"" << m_data << "\" 新 @ "
-                  << static_cast<void*>(m_data) << "\n";
+        std::cout << "  [拷貝建構] \"" << m_data << "\" 從 buf#" << other.m_bufId
+                  << " 複製到「新的」buf#" << m_bufId << "\n";
     }
 
     // ════════════════════════════════════════════
     // ★ 移動建構函數 ★
     // ════════════════════════════════════════════
     SimpleString(SimpleString&& other) noexcept
-        : m_data(other.m_data)     // 步驟 1：偷走指標
-        , m_len(other.m_len)       // 步驟 3：複製基本型別
+        : m_len(other.m_len)       // 步驟 3：複製基本型別（順序依宣告順序）
+        , m_data(other.m_data)     // 步驟 1：偷走指標（不配置新記憶體！）
+        , m_bufId(other.m_bufId)   //          編號跟著緩衝區一起轉移
     {
-        other.m_data = nullptr;    // 步驟 2：置空來源
+        other.m_data = nullptr;    // 步驟 2：置空來源 —— 少了這行就是 double free
         other.m_len = 0;
+        other.m_bufId = 0;
 
-        std::cout << "  [移動建構] \"" << m_data << "\" 偷自 @ "
-                  << static_cast<void*>(m_data)
-                  << " (other 現在是 nullptr)\n";
+        std::cout << "  [移動建構] \"" << m_data << "\" 直接接手 buf#" << m_bufId
+                  << "（沒有配置新記憶體，來源已置空）\n";
     }
 
-    // ──────── 拷貝賦值運算子（Copy-and-Swap）────────
+    // ──────── 統一賦值運算子（Copy-and-Swap）────────
+    // 傳值 + swap：傳左值時參數由拷貝建構，傳右值時由移動建構。詳見第 33 課 -2。
     SimpleString& operator=(SimpleString other) {
         std::cout << "  [賦值] swap\n";
         swap(other);
@@ -56,46 +213,105 @@ public:
     // ──────── 解構函數 ────────
     ~SimpleString() {
         if (m_data) {
-            std::cout << "  [解構] \"" << m_data << "\" @ "
-                      << static_cast<void*>(m_data) << "\n";
+            std::cout << "  [解構] \"" << m_data << "\" 釋放 buf#" << m_bufId << "\n";
         } else {
-            std::cout << "  [解構] (已被移動，nullptr)\n";
+            std::cout << "  [解構] (已被移動，nullptr —— 沒有記憶體要釋放)\n";
         }
-        delete[] m_data;  // delete nullptr 是安全的
+        delete[] m_data;  // delete[] nullptr 是標準保證的空操作
     }
 
     // ──────── swap ────────
     void swap(SimpleString& other) noexcept {
         std::swap(m_data, other.m_data);
         std::swap(m_len, other.m_len);
+        std::swap(m_bufId, other.m_bufId);
     }
 
     // ──────── 存取 ────────
     const char* c_str() const { return m_data ? m_data : "(null)"; }
     std::size_t length() const { return m_len; }
     bool empty() const { return m_data == nullptr || m_len == 0; }
+    int bufId() const { return m_bufId; }
 };
 
 int main() {
-    std::cout << "===== 測試 1：從暫時物件移動建構 =====\n";
+    std::cout << "===== 測試 1：用暫時物件初始化（C++17 保證省略）=====\n";
     SimpleString a = SimpleString("Dragon Sword");
-    // SimpleString("Dragon Sword") 是右值 → 呼叫移動建構函數
-    std::cout << "  a = \"" << a.c_str() << "\"\n\n";
+    // ★ 注意：這裡「看不到」移動建構。
+    //   SimpleString("Dragon Sword") 是純右值，C++17 保證省略這種初始化，
+    //   它直接就地建構在 a 的位置上 —— 從頭到尾只有一個物件。
+    //   （原始註解寫「呼叫移動建構函數」是 C++14 以前的模型，已更正；
+    //     詳見檔頭【概念補充 A】的實測對照。）
+    std::cout << "  a = \"" << a.c_str() << "\"（持有 buf#" << a.bufId() << "）\n\n";
 
-    std::cout << "===== 測試 2：拷貝建構（左值）=====\n";
+    std::cout << "===== 測試 2：拷貝建構（左值）→ 配置新緩衝區 =====\n";
     SimpleString b = a;  // a 是左值 → 呼叫拷貝建構函數
-    std::cout << "  a = \"" << a.c_str() << "\"\n";
-    std::cout << "  b = \"" << b.c_str() << "\"\n\n";
+    std::cout << "  a = \"" << a.c_str() << "\"（buf#" << a.bufId() << "）\n";
+    std::cout << "  b = \"" << b.c_str() << "\"（buf#" << b.bufId()
+              << "  ← 全新的編號，代表真的多配置了一塊記憶體）\n\n";
 
-    std::cout << "===== 測試 3：用 std::move 強制移動 =====\n";
+    std::cout << "===== 測試 3：用 std::move 強制移動 → 緩衝區被接手 =====\n";
+    const int aBufBefore = a.bufId();
     SimpleString c = std::move(a);  // std::move(a) 是右值 → 移動建構
-    std::cout << "  a = \"" << a.c_str() << "\" (已被移動)\n";
-    std::cout << "  c = \"" << c.c_str() << "\"\n\n";
+    std::cout << "  a = \"" << a.c_str() << "\"（已被移動，buf#" << a.bufId() << "）\n";
+    std::cout << "  c = \"" << c.c_str() << "\"（buf#" << c.bufId() << "）\n";
+    std::cout << "  c 拿到的是不是 a 原本那塊緩衝區？ " << std::boolalpha
+              << (c.bufId() == aBufBefore)
+              << "  ← 這就是「偷」而不是「複製」的證據\n\n";
 
-    std::cout << "===== 測試 4：move 後的物件可以重新賦值 =====\n";
+    std::cout << "===== 測試 4：move 後的物件可以重新賦值（標準保證安全）=====\n";
     a = SimpleString("Phoenix Staff");  // 對被移動的物件重新賦值
-    std::cout << "  a = \"" << a.c_str() << "\" (重生了！)\n\n";
+    std::cout << "  a = \"" << a.c_str() << "\"（buf#" << a.bufId() << "，重生了！）\n\n";
 
-    std::cout << "===== 開始解構 =====\n";
+    std::cout << "===== 開始解構（區域物件以宣告的相反順序銷毀：c → b → a）=====\n";
     return 0;
 }
+
+// 編譯: g++ -std=c++17 -Wall -Wextra -Wreorder "第 32 課：移動建構函數（Move Constructor）1.cpp" -o lesson32
+
+// ── 輸出說明（讀之前先看這裡）────────────────────────────────────────────
+// * 本檔輸出完全決定性：本機實測連跑 5 次逐位元組相同。
+//   原始版本會印記憶體位址，那受 ASLR 影響、每次執行都不同
+//   （實測三次得到三組完全不同的位址），無法當作預期輸出。
+//   本檔改用「buf#N」緩衝區編號 —— 編號在真正配置記憶體時遞增，
+//   並且會跟著緩衝區一起被移動，因此既可重現、又能證明資源轉移。
+// * 三段對照，這是本檔的核心證據：
+//       測試 2 拷貝建構 → 出現「全新的 buf#2」（真的多配置了一塊記憶體）
+//       測試 3 移動建構 → 沒有新編號，c 直接接手 buf#1
+//                          最後一行的 true 就是「偷而不是複製」的證明
+//       測試 1 什麼都沒有 → C++17 保證省略，連物件都只產生一個
+// * 測試 3 印出 a 是 "(null)"、buf#0 是安全的：那是移動建構函數裡
+//   我們自己明確歸零的成員，不是去讀 valid but unspecified 的內容。
+//   若成員換成 std::string，就「不可以」印出被移動後的內容。
+// * 測試 4 中間那行 [解構] (已被移動，nullptr) 是統一賦值的參數離場時印的：
+//   swap 之後參數帶走的是 a 原本的「空狀態」，所以沒有記憶體要釋放。
+// * 結尾三行 [解構] 依 c、b、a 的順序（區域物件以宣告的相反順序銷毀），
+//   對應 buf#1、buf#2、buf#3。
+// ─────────────────────────────────────────────────────────────────────────
+
+// === 預期輸出 ===
+// ===== 測試 1：用暫時物件初始化（C++17 保證省略）=====
+//   [建構] "Dragon Sword" 配置 buf#1
+//   a = "Dragon Sword"（持有 buf#1）
+//
+// ===== 測試 2：拷貝建構（左值）→ 配置新緩衝區 =====
+//   [拷貝建構] "Dragon Sword" 從 buf#1 複製到「新的」buf#2
+//   a = "Dragon Sword"（buf#1）
+//   b = "Dragon Sword"（buf#2  ← 全新的編號，代表真的多配置了一塊記憶體）
+//
+// ===== 測試 3：用 std::move 強制移動 → 緩衝區被接手 =====
+//   [移動建構] "Dragon Sword" 直接接手 buf#1（沒有配置新記憶體，來源已置空）
+//   a = "(null)"（已被移動，buf#0）
+//   c = "Dragon Sword"（buf#1）
+//   c 拿到的是不是 a 原本那塊緩衝區？ true  ← 這就是「偷」而不是「複製」的證據
+//
+// ===== 測試 4：move 後的物件可以重新賦值（標準保證安全）=====
+//   [建構] "Phoenix Staff" 配置 buf#3
+//   [賦值] swap
+//   [解構] (已被移動，nullptr —— 沒有記憶體要釋放)
+//   a = "Phoenix Staff"（buf#3，重生了！）
+//
+// ===== 開始解構（區域物件以宣告的相反順序銷毀：c → b → a）=====
+//   [解構] "Dragon Sword" 釋放 buf#1
+//   [解構] "Dragon Sword" 釋放 buf#2
+//   [解構] "Phoenix Staff" 釋放 buf#3

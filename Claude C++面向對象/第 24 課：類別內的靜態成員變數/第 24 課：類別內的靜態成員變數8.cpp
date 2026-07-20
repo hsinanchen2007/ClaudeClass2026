@@ -1,3 +1,122 @@
+// =============================================================================
+//  第 24 課：類別內的靜態成員變數 8（綜合）  —  類別級別的共享狀態
+// =============================================================================
+//
+// 【主題資訊 Information】
+//   宣告:  class C { static T member; };                       // C++98
+//   定義:  T C::member = init;                                 // 類別外，C++98 必要
+//   就地:  class C { inline static T member = init; };         // C++17
+//   常數:  class C { static constexpr T N = 常數運算式; };      // C++11（C++17 起隱含 inline）
+//   複雜度: 存取 O(1)，不經 this、不需要物件
+//   標頭檔: <string>；本檔的執行緒範例另需 <atomic> <thread> <vector>
+//
+// 【詳細解釋 Explanation】
+//
+// 【1. 一句話定義：static 決定「有幾份」】
+//   非靜態成員：每個物件各一份，存在物件內部，生命期跟著物件。
+//   靜態成員：整個程式一份，存在靜態儲存區（.data / .bss），
+//             main 之前建構、main 之後解構，與任何物件無關。
+//   判斷準則只有一個問題：這個值「對每個物件都應該一樣嗎」?
+//   一樣 → static；不一樣 → 一般成員。
+//   本檔的 Entity 就是標準示範：name_/id_ 屬於個體，
+//   nextId_/activeCount_/MAX_ENTITIES 屬於整個類別。
+//
+// 【2. 三種初始化寫法的演進】
+//   (a) C++98：類別內宣告、類別外定義。漏寫定義 → 連結期 undefined reference。
+//       這是最經典的新手陷阱，因為錯誤訊息出現在連結階段而非編譯階段。
+//   (b) C++11：static constexpr 可以就地初始化，但 odr-use 時仍需類別外定義。
+//   (c) C++17：inline static 讓非 const 成員也能就地定義並初始化，
+//       且 constexpr static 隱含 inline。從此標頭檔就能寫完，不必再開 .cpp。
+//   本檔用的是 (c)，所以整個檔案沒有任何類別外定義。
+//
+// 【3. 靜態成員函式：沒有 this，所以只能碰 static】
+//   static 成員函式不接收 this 指標，因此：
+//     * 可以在沒有任何物件的情況下呼叫（Entity::printStatistics()）。
+//     * 只能存取靜態成員；要碰一般成員必須明確傳入物件。
+//   本檔在建立任何 Entity 之前就呼叫 printStatistics()，
+//   輸出全為 0 —— 這證明它確實不需要物件。
+//
+// 【4. ID 產生器模式：nextId_++】
+//   id_(nextId_++) 是很常見的「自動編號」寫法：
+//   每個物件在建構時取走目前值，再把計數器往前推。
+//   注意這裡有兩個獨立的統計語意：
+//     * totalCreated_ / totalDestroyed_：累計量，只增不減。
+//     * activeCount_：即時量，會上下浮動。
+//   本檔刻意讓 deactivate() 只減 activeCount_ 而不動累計量，
+//   就是要凸顯兩者不可互相取代。
+//
+// 【5. 靜態成員是全域可變狀態，代價要認清】
+//   方便的另一面是：任何程式碼都能改、單元測試之間狀態會殘留、
+//   多執行緒必須自行同步。下方 LeetCode 段落會用可執行的例子
+//   證明「用了 static 就會跨測資污染」這個真實後果。
+//
+// 【概念補充 Concept Deep Dive】
+//   * 記憶體佈局：靜態成員不佔物件空間，sizeof(Entity) 只含
+//     name_/type_/id_/active_。前一個檔案（6.cpp）已用 sizeof 實測驗證。
+//   * 有初值的靜態成員放 .data，零初值的放 .bss（.bss 不佔執行檔體積）。
+//   * 靜態物件的解構透過 __cxa_atexit 註冊（Itanium ABI），
+//     所以 std::exit 會執行解構子，而 std::abort / _Exit 不會。
+//   * activeCount_++ 是「讀-改-寫」三個步驟，不是原子操作。
+//     兩條執行緒同時做就是資料競爭（未定義行為），
+//     不會只是「數字少一點」而已 —— 標準對資料競爭不給任何保證。
+//     正解是 std::atomic<int>，本檔實務範例會實測其正確性。
+//   * 跨 translation unit 的靜態初始化順序是 unspecified
+//     （static initialization order fiasco），解法是 Meyers Singleton：
+//     把物件放進函式內的 static，第一次呼叫才建構。
+//
+// 【注意事項 Pay Attention】
+//   1. C++17 之前必須寫類別外定義，否則連結期 undefined reference。
+//   2. static 成員函式沒有 this，不能存取一般成員變數。
+//   3. 「累計數」與「即時數」語意不同，命名就要分清楚。
+//   4. 靜態成員的遞增在多執行緒下是資料競爭，需 std::atomic 或加鎖。
+//   5. 靜態狀態跨測試/跨測資殘留，是「單筆對、整批錯」的常見元凶。
+//   6. private static 不等於執行緒安全 —— 存取控制是編譯期概念。
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】類別內的靜態成員變數（綜合）
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 靜態成員變數要在哪裡初始化?不同標準版本有什麼差別?
+//     答：C++98 必須在類別外定義並初始化（int C::x = 0;），
+//         類別內那行只是宣告；漏寫會在連結期得到 undefined reference。
+//         C++11 讓 static constexpr 可以就地初始化。
+//         C++17 引入 inline static，非 const 成員也能在類別內
+//         直接定義並初始化，從此標頭檔就能寫完。
+//     追問：為什麼漏寫定義是「連結錯誤」而不是「編譯錯誤」?
+//         → 因為類別內那行只告訴編譯器「有這個名字、型別是什麼」，
+//         符號解析要到連結階段才做，那時才發現沒有任何 TU 提供實體。
+//
+// 🔥 Q2. 靜態成員函式和一般成員函式的根本差別是什麼?
+//     答：靜態成員函式沒有 this 指標。
+//         因此它可以在沒有物件的情況下被呼叫（C::f()），
+//         但也因此只能存取靜態成員 —— 一般成員必須先知道是哪個物件。
+//         它也不能宣告成 const / virtual（兩者都是在修飾 this）。
+//     追問：那 static 成員函式能存取 private static 成員嗎?
+//         → 能。存取控制是「類別層級」的，
+//         同類別的成員函式本來就能碰自己的 private。
+//
+// 🔥 Q3. 為什麼靜態成員不計入 sizeof?
+//     答：sizeof 量的是「單一物件必須攜帶多少資料」。
+//         靜態成員整個程式只有一份，放在靜態儲存區，
+//         不屬於物件表示的一部分，所以不計入。
+//         這是標準規定的語意，不是編譯器最佳化 —— -O0 結果一樣。
+//     追問：那空類別的 sizeof 是多少?
+//         → 至少 1（本機 GCC 實測為 1），
+//         因為標準要求不同物件必須有不同位址。
+//
+// ⚠️ 陷阱. 「LeetCode 上我把計數器寫成 static 也能過，
+//            所以 static 只是寫法習慣問題。」
+//     答：那是因為只跑了一筆測資。判題程式通常在「同一個行程」內
+//         連續建立多次你的類別跑多筆測資，
+//         而 static 成員不會隨物件重建而重置 ——
+//         第二筆測資看到的是第一筆殘留下來的狀態。
+//         症狀就是「本機單測都對、送出去卻 Wrong Answer」，
+//         而且錯的還常常不是第一筆，極難 debug。
+//     為什麼會錯：把「建立了新物件」直覺推論成「狀態重新開始」。
+//         但 static 成員的生命期綁的是「程式」不是「物件」，
+//         new 一個新物件對它毫無影響。
+//         下方 LeetCode 段落用可執行的對照組實測這個現象。
+// ═══════════════════════════════════════════════════════════════════════════
+
 /*
 # 第 24 課：類別內的靜態成員變數
 
@@ -1003,8 +1122,12 @@ g++ -std=c++17 -o lesson24 lesson24.cpp
 
 
 
+#include <algorithm>
+#include <atomic>
 #include <iostream>
 #include <string>
+#include <thread>
+#include <vector>
 using namespace std;
 
 class Entity {
@@ -1089,6 +1212,82 @@ public:
     }
 };
 
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 155. Min Stack
+//   題目：設計一個支援 push / pop / top / getMin 的堆疊，四個操作都是 O(1)。
+//   為什麼用到本主題：這題本身考的是「用輔助堆疊記住每層的最小值」，
+//         但它同時是「static 誤用」最經典的受害者 ——
+//         判題程式會在同一個行程內連續建立多個 MinStack 跑不同測資。
+//         成員變數若寫成 static，第二筆測資就會看到第一筆的殘留資料。
+//   下面同時給出正確版與錯誤版，並實跑兩筆測資對照結果。
+// -----------------------------------------------------------------------------
+
+// 正確版：狀態是「每個物件各一份」，所以用一般成員變數
+class MinStack {
+private:
+    vector<int> data_;     // 主堆疊
+    vector<int> mins_;     // 輔助堆疊：mins_.back() 永遠是目前最小值
+
+public:
+    void push(int val) {
+        data_.push_back(val);
+        // 空的時候直接放；否則放「新值與目前最小值之中較小者」
+        if (mins_.empty() || val <= mins_.back()) mins_.push_back(val);
+        else                                      mins_.push_back(mins_.back());
+    }
+    void pop() {
+        if (data_.empty()) return;
+        data_.pop_back();
+        mins_.pop_back();
+    }
+    int top()    const { return data_.back(); }
+    int getMin() const { return mins_.back(); }   // O(1)
+    bool empty() const { return data_.empty(); }
+};
+
+// 錯誤版：把狀態寫成 static —— 語法完全合法，單筆測資也會過
+class MinStackStaticBug {
+private:
+    inline static vector<int> data_;   // ← 整個程式共用一份
+    inline static vector<int> mins_;   // ← 整個程式共用一份
+
+public:
+    void push(int val) {
+        data_.push_back(val);
+        if (mins_.empty() || val <= mins_.back()) mins_.push_back(val);
+        else                                      mins_.push_back(mins_.back());
+    }
+    void pop() {
+        if (data_.empty()) return;
+        data_.pop_back();
+        mins_.pop_back();
+    }
+    int top()    const { return data_.back(); }
+    int getMin() const { return mins_.back(); }
+    bool empty() const { return data_.empty(); }
+};
+
+// -----------------------------------------------------------------------------
+// 【日常實務範例】跨執行緒的請求 ID 產生器
+//   情境：Web 服務要給每筆進來的請求一個唯一的 request id，
+//         用來串起分散式追蹤的 log。這個計數器天生就是類別級別的共享狀態。
+//   關鍵：多條工作執行緒會同時取號。
+//         普通的 int 遞增是「讀-改-寫」三步，同時做就是資料競爭（未定義行為），
+//         所以必須用 std::atomic。
+//   驗證方式：用「計數」而非「計時」——
+//         8 條執行緒各取 10000 個號碼，最終計數器必須精確等於 80001
+//         （從 1 開始發號），且沒有任何號碼重複。這個結果每次執行都相同。
+// -----------------------------------------------------------------------------
+class RequestIdGenerator {
+private:
+    // atomic 的 fetch_add 是不可分割的讀-改-寫，多執行緒下有定義且正確
+    inline static atomic<long> nextId_{1};
+
+public:
+    static long next() { return nextId_.fetch_add(1, memory_order_relaxed); }
+    static long peek() { return nextId_.load(memory_order_relaxed); }
+};
+
 int main() {
     cout << "============================================" << endl;
     cout << "   第 24 課：靜態成員變數 綜合範例" << endl;
@@ -1131,5 +1330,190 @@ int main() {
     cout << "\n=== 最終統計 ===" << endl;
     Entity::printStatistics();
 
+    // ─────────────────────────────────────────────────────────
+    // LeetCode 155. Min Stack —— 正確版 vs static 誤用版
+    // 模擬判題程式：同一個行程內連續跑兩筆測資
+    // ─────────────────────────────────────────────────────────
+    cout << "\n=== LeetCode 155. Min Stack（正確版：一般成員）===" << endl;
+    {
+        cout << "  測資 1：push(-2) push(0) push(-3)" << endl;
+        MinStack s1;
+        s1.push(-2); s1.push(0); s1.push(-3);
+        cout << "    getMin() = " << s1.getMin() << "（預期 -3）" << endl;
+        s1.pop();
+        cout << "    pop 後 top()    = " << s1.top()    << "（預期 0）"  << endl;
+        cout << "    pop 後 getMin() = " << s1.getMin() << "（預期 -2）" << endl;
+
+        cout << "  測資 2：全新物件，push(5) push(7)" << endl;
+        MinStack s2;
+        s2.push(5); s2.push(7);
+        cout << "    getMin() = " << s2.getMin() << "（預期 5）" << endl;
+        cout << "    ✔ 第二筆測資完全乾淨，不受第一筆影響" << endl;
+    }
+
+    cout << "\n=== 同一題的 static 誤用版（示範跨測資污染）===" << endl;
+    {
+        cout << "  測資 1：push(-2) push(0) push(-3)" << endl;
+        MinStackStaticBug b1;
+        b1.push(-2); b1.push(0); b1.push(-3);
+        cout << "    getMin() = " << b1.getMin() << "（預期 -3，這裡還是對的）" << endl;
+
+        cout << "  測資 2：建立全新物件，push(5) push(7)" << endl;
+        MinStackStaticBug b2;          // 新物件，但 static 狀態沒有跟著重置
+        b2.push(5); b2.push(7);
+        cout << "    getMin() = " << b2.getMin()
+             << "（應為 5，卻拿到上一筆殘留的最小值）" << endl;
+        cout << "    ✘ 新物件並沒有讓 static 狀態重新開始 ——" << endl;
+        cout << "      這就是「本機單筆測資對、送出去卻 WA」的成因。" << endl;
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // 日常實務：多執行緒請求 ID 產生器（用計數驗證，不用計時）
+    // ─────────────────────────────────────────────────────────
+    cout << "\n=== 日常實務：多執行緒請求 ID 產生器 ===" << endl;
+    {
+        constexpr int kThreads = 8;
+        constexpr int kPerThread = 10000;
+
+        const long before = RequestIdGenerator::peek();
+
+        vector<vector<long>> got(kThreads);
+        vector<thread> workers;
+        workers.reserve(kThreads);
+
+        for (int t = 0; t < kThreads; ++t) {
+            got[t].reserve(kPerThread);
+            workers.emplace_back([&got, t] {
+                for (int i = 0; i < kPerThread; ++i) {
+                    got[t].push_back(RequestIdGenerator::next());
+                }
+            });
+        }
+        for (auto& w : workers) w.join();
+
+        const long after = RequestIdGenerator::peek();
+
+        // 驗證 1：計數器精確前進 kThreads * kPerThread
+        const long expected = static_cast<long>(kThreads) * kPerThread;
+        cout << "  " << kThreads << " 條執行緒 × 每條 " << kPerThread << " 個號碼" << endl;
+        cout << "  計數器前進量 = " << (after - before)
+             << "（預期 " << expected << "）" << endl;
+
+        // 驗證 2：所有號碼皆不重複（排序後檢查相鄰是否相等）
+        vector<long> all;
+        all.reserve(static_cast<size_t>(expected));
+        for (auto& v : got) all.insert(all.end(), v.begin(), v.end());
+
+        sort(all.begin(), all.end());
+        size_t duplicates = 0;
+        for (size_t i = 1; i < all.size(); ++i) {
+            if (all[i] == all[i - 1]) ++duplicates;
+        }
+        cout << "  取得號碼總數 = " << all.size() << "，重複個數 = " << duplicates << endl;
+        cout << "  結果：" << ((after - before) == expected && duplicates == 0
+                              ? "✔ 完全正確（atomic 保證不遺失、不重複）"
+                              : "✘ 出現遺失或重複") << endl;
+        cout << "  註：這裡刻意用「計數」而非「耗時」來驗證，" << endl;
+        cout << "      所以結果是確定的，每次執行都相同。" << endl;
+        cout << "      若把 atomic<long> 換成普通 long，就是資料競爭（未定義行為），" << endl;
+        cout << "      標準不保證任何結果 —— 不是「只會少一點」而已。" << endl;
+    }
+
     return 0;
 }
+
+// 編譯: g++ -std=c++17 -Wall -Wextra -pthread 第 24 課：類別內的靜態成員變數8.cpp -o static_member8
+
+// === 預期輸出 ===
+// ============================================
+//    第 24 課：靜態成員變數 綜合範例
+// ============================================
+//
+// === 初始狀態 ===
+//   ┌─────────────────────────┐
+//   │ 實體管理統計             │
+//   │ 已創建：0
+//   │ 已銷毀：0
+//   │ 活躍中：0
+//   │ 上限：  100
+//   └─────────────────────────┘
+//
+// === 創建實體 ===
+//   [+] 玩家 "勇者" (ID:1) 已創建 [活躍:1]
+//   [+] NPC "村長" (ID:2) 已創建 [活躍:2]
+//
+// === 進入戰鬥區域 ===
+//   [+] 敵人 "哥布林" (ID:3) 已創建 [活躍:3]
+//   [+] 敵人 "骷髏兵" (ID:4) 已創建 [活躍:4]
+//   [+] 陷阱 "地刺陷阱" (ID:5) 已創建 [活躍:5]
+//   ┌─────────────────────────┐
+//   │ 實體管理統計             │
+//   │ 已創建：5
+//   │ 已銷毀：0
+//   │ 活躍中：5
+//   │ 上限：  100
+//   └─────────────────────────┘
+//
+// --- 陷阱觸發 ---
+//   [x] 地刺陷阱 已停用 [活躍:4]
+//   ┌─────────────────────────┐
+//   │ 實體管理統計             │
+//   │ 已創建：5
+//   │ 已銷毀：0
+//   │ 活躍中：4
+//   │ 上限：  100
+//   └─────────────────────────┘
+//
+// --- 離開戰鬥區域 ---
+//   [-] 陷阱 "地刺陷阱" (ID:5) 已銷毀 [活躍:4]
+//   [-] 敵人 "骷髏兵" (ID:4) 已銷毀 [活躍:3]
+//   [-] 敵人 "哥布林" (ID:3) 已銷毀 [活躍:2]
+//
+// === 回到安全區 ===
+//   ┌─────────────────────────┐
+//   │ 實體管理統計             │
+//   │ 已創建：5
+//   │ 已銷毀：3
+//   │ 活躍中：2
+//   │ 上限：  100
+//   └─────────────────────────┘
+//
+// === 清理 ===
+//   [-] NPC "村長" (ID:2) 已銷毀 [活躍:1]
+//   [-] 玩家 "勇者" (ID:1) 已銷毀 [活躍:0]
+//
+// === 最終統計 ===
+//   ┌─────────────────────────┐
+//   │ 實體管理統計             │
+//   │ 已創建：5
+//   │ 已銷毀：5
+//   │ 活躍中：0
+//   │ 上限：  100
+//   └─────────────────────────┘
+//
+// === LeetCode 155. Min Stack（正確版：一般成員）===
+//   測資 1：push(-2) push(0) push(-3)
+//     getMin() = -3（預期 -3）
+//     pop 後 top()    = 0（預期 0）
+//     pop 後 getMin() = -2（預期 -2）
+//   測資 2：全新物件，push(5) push(7)
+//     getMin() = 5（預期 5）
+//     ✔ 第二筆測資完全乾淨，不受第一筆影響
+//
+// === 同一題的 static 誤用版（示範跨測資污染）===
+//   測資 1：push(-2) push(0) push(-3)
+//     getMin() = -3（預期 -3，這裡還是對的）
+//   測資 2：建立全新物件，push(5) push(7)
+//     getMin() = -3（應為 5，卻拿到上一筆殘留的最小值）
+//     ✘ 新物件並沒有讓 static 狀態重新開始 ——
+//       這就是「本機單筆測資對、送出去卻 WA」的成因。
+//
+// === 日常實務：多執行緒請求 ID 產生器 ===
+//   8 條執行緒 × 每條 10000 個號碼
+//   計數器前進量 = 80000（預期 80000）
+//   取得號碼總數 = 80000，重複個數 = 0
+//   結果：✔ 完全正確（atomic 保證不遺失、不重複）
+//   註：這裡刻意用「計數」而非「耗時」來驗證，
+//       所以結果是確定的，每次執行都相同。
+//       若把 atomic<long> 換成普通 long，就是資料競爭（未定義行為），
+//       標準不保證任何結果 —— 不是「只會少一點」而已。

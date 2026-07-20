@@ -1,3 +1,111 @@
+// =============================================================================
+//  第 25 課：類別內的靜態成員函數 8（綜合）  —  沒有 this 的成員函式
+// =============================================================================
+//
+// 【主題資訊 Information】
+//   宣告:  class C { static R f(Args...); };
+//   定義:  R C::f(Args...) { ... }        // 類別外定義時「不再寫 static」
+//   呼叫:  C::f(...)（推薦） / obj.f(...)（合法但誤導）
+//   標準版本: C++98；Meyers Singleton 的執行緒安全保證是 C++11 起
+//   複雜度: 與一般函式相同，且少傳一個隱含的 this 參數
+//   標頭檔: <string>
+//
+// 【詳細解釋 Explanation】
+//
+// 【1. 全部規則都來自同一件事：沒有 this】
+//   一般成員函式概念上隱含收一個參數：
+//       void Achievement::unlock()          →  void unlock(Achievement* this)
+//       static void Achievement::progress() →  void progress()          // 沒有 this
+//   由此可直接推出四條規則，不必死背：
+//     * 不需要物件就能呼叫  → 不必準備 this
+//     * 不能存取非靜態成員  → 不知道是「哪個物件」的
+//     * 不能加 const        → const 修飾的是 *this
+//     * 不能是 virtual      → 虛擬分派要靠物件內的 vptr
+//
+// 【2. 靜態函式仍是「成員」，權限完整】
+//   它碰不到的只有「隱含的那個物件」，不是「所有物件」。
+//   把物件當參數傳進去，一樣能存取 private 成員：
+//       static void compare(const Achievement& a, const Achievement& b);
+//   這是它與全域函式最大的差別 —— 全域函式要碰 private 得宣告 friend。
+//
+// 【3. 四大典型用途（本檔全部出現）】
+//   (a) 工廠函式：createFirst() / createMilestone()。
+//       建構子不能取名字、也不能「失敗時不產生物件」，工廠兩者都能做。
+//   (b) 類別層級的統計：printProgress() 讀 static 計數器，
+//       不需要任何 Achievement 物件就能呼叫。
+//   (c) 工具函式類：純運算，不依賴物件狀態（見下方 LeetCode 段落）。
+//   (d) 單例存取點：Meyers Singleton（本課 5.cpp 有完整實測）。
+//
+// 【4. 累計量與即時量要分清楚】
+//   本檔 totalCount_ 是「總共有幾個成就」，unlockedCount_ 是「已解鎖幾個」。
+//   前者只在建構時增加，後者會隨解鎖變動。
+//   unlock() 特意檢查「是否已解鎖」再遞增 ——
+//   漏掉這個檢查，重複解鎖就會讓計數超過總數。
+//   輸出中「嘗試重複解鎖」那段正是在驗證這道防線。
+//
+// 【概念補充 Concept Deep Dive】
+//   * 類別外定義靜態成員函式時不可重複寫 static（那是宣告時的說明子）。
+//   * 靜態成員函式的位址是普通函式指標 R(*)(Args)，
+//     不是成員函式指標 R(C::*)(Args) —— 所以能直接當 C API callback，
+//     也能直接交給 std::sort 當比較函式。
+//   * 靜態函式讀寫的 static 資料是全域共享狀態：
+//     多執行緒下 unlockedCount_++ 是非原子的讀-改-寫，屬資料競爭（未定義行為）。
+//   * 靜態狀態會跨單元測試/跨測資殘留，
+//     這是「單筆測資對、整批跑就錯」的常見元凶（本課 24 綜合檔有可執行示範）。
+//   * 若一組函式完全不需要碰 private 或 static 狀態，
+//     用命名空間比「只有靜態成員的類別」更輕量（見本課 7.cpp）。
+//
+// 【注意事項 Pay Attention】
+//   1. 類別外定義時不要再寫 static，否則編譯錯誤。
+//   2. 靜態函式不能加 const / virtual，因為兩者修飾的都是 this。
+//   3. obj.f() 呼叫靜態函式時，物件運算式仍會被求值（副作用照樣發生）。
+//   4. 靜態函式操作的共享狀態需自行同步（atomic 或鎖）。
+//   5. 工具類要禁止實例化，用 = delete 比 private 建構子清楚。
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】類別內的靜態成員函數（綜合）
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 靜態成員函數為什麼不能是 const，也不能是 virtual?
+//     答：兩者修飾／依賴的都是 this。
+//         const 成員函式是把 C* this 變成 const C* this，
+//         沒有 this 就沒有東西可以修飾；
+//         virtual 的動態分派要靠物件內部的 vptr 找 vtable，
+//         沒有物件就無從分派。因此語法上直接禁止這兩種寫法。
+//     追問：那要怎麼做到「由子類別決定建立哪種物件」?
+//         → 那是 factory method pattern，用非靜態的 virtual 函式實作，
+//         與靜態工廠（named constructor idiom）是不同的機制。
+//
+// 🔥 Q2. 靜態成員函數能存取 private 成員嗎?和全域函數差在哪?
+//     答：能。存取控制是類別層級的，只要是該類別的成員函式，
+//         不論靜不靜態都有完整權限 ——
+//         把物件當參數傳進來就能讀它的 private 欄位。
+//         全域函式要做到同樣的事必須宣告成 friend，
+//         而且沒有歸屬、容易撞名、也無法維護類別的 static 狀態。
+//     追問：那和命名空間函式比呢?
+//         → 若完全不需要碰 private 或 static 狀態，命名空間更輕量，
+//         還能跨檔案擴充並支援 ADL。判準是「需不需要類別的內部實作」。
+//
+// 🔥 Q3. 為什麼工廠函式一定要是 static?
+//     答：因為呼叫它的當下還沒有物件 —— 它的任務就是把物件生出來。
+//         非靜態成員函式需要 this，等於要求「先有物件才能造物件」，
+//         邏輯上自相矛盾。
+//     追問：工廠回傳物件時會發生幾次拷貝?
+//         → C++17 起是零次。return C(...) 回傳純右值，
+//         標準規定直接在呼叫端的儲存空間就地建構（guaranteed copy elision）。
+//
+// ⚠️ 陷阱. 「obj.staticFunc() 是用物件呼叫的，
+//            所以那個物件至少必須是有效的、而且會影響結果。」
+//     答：都不對。編譯器只從運算式取出「型別」來決定呼叫哪個函式，
+//         物件本身完全沒被使用，產生的機器碼與 Class::staticFunc() 相同，
+//         結果也與那個物件的狀態無關。
+//         但有一個真實差異要注意：物件「運算式」仍然會被求值 ——
+//         makeObj().staticFunc() 裡的 makeObj() 照樣會執行，副作用照樣發生。
+//     為什麼會錯：把點運算子一律理解成「對這個物件做事」。
+//         點運算子在這裡只負責名稱查找，
+//         真正決定行為的是「這個函式有沒有 this」。
+//         正因為容易誤讀，才建議一律寫成 Class::func()。
+// ═══════════════════════════════════════════════════════════════════════════
+
 /*
 # 第 25 課：類別內的靜態成員函數
 
@@ -1023,6 +1131,8 @@ g++ -std=c++17 -o lesson25 lesson25.cpp
 
 #include <iostream>
 #include <string>
+#include <unordered_set>
+#include <vector>
 using namespace std;
 
 class Achievement {
@@ -1122,6 +1232,106 @@ public:
     }
 };
 
+// ============================================================================
+//  【LeetCode 實戰範例】靜態成員函數作為「工具函式類」
+//    這兩題的共同點：結果完全由參數決定，沒有任何物件狀態可言。
+//    這正是「該不該寫成 static」的判準 ——
+//    若函式體裡完全用不到 this 指向的任何成員，它就不該是非靜態的。
+// ============================================================================
+class ValidationUtil {
+public:
+    ValidationUtil() = delete;      // 純工具類：禁止實例化
+
+    // ------------------------------------------------------------------
+    // 【LeetCode 實戰範例 1】LeetCode 20. Valid Parentheses
+    //   題目：判斷只含 ()[]{} 的字串是否括號配對正確。
+    //   為什麼用到本主題：純函式，輸入決定輸出，不需要任何物件狀態。
+    //   解法：用堆疊；遇左括號推入，遇右括號檢查堆疊頂端是否為對應左括號。
+    //   關鍵邊界：字串掃完後堆疊必須為空（"(" 這種只有左括號的要判 false）。
+    //   複雜度：時間 O(n)，空間 O(n)。
+    // ------------------------------------------------------------------
+    static bool isValidParentheses(const string& s) {
+        vector<char> stack;
+        for (char c : s) {
+            if (c == '(' || c == '[' || c == '{') {
+                stack.push_back(c);
+            } else {
+                if (stack.empty()) return false;      // 右括號多於左括號
+                const char top = stack.back();
+                if ((c == ')' && top != '(') ||
+                    (c == ']' && top != '[') ||
+                    (c == '}' && top != '{')) {
+                    return false;                     // 類型不匹配
+                }
+                stack.pop_back();
+            }
+        }
+        return stack.empty();                         // 還有沒配對的左括號就是 false
+    }
+
+    // ------------------------------------------------------------------
+    // 【LeetCode 實戰範例 2】LeetCode 217. Contains Duplicate
+    //   題目：判斷陣列中是否有任何值出現至少兩次。
+    //   為什麼用到本主題：同樣是純函式。
+    //   解法：用 unordered_set 邊插入邊檢查，一發現重複立刻回傳。
+    //   複雜度：時間平均 O(n)，空間 O(n)。
+    //         （若允許改動輸入，排序後檢查相鄰可做到 O(1) 額外空間）
+    // ------------------------------------------------------------------
+    static bool containsDuplicate(const vector<int>& nums) {
+        unordered_set<int> seen;
+        for (int n : nums) {
+            if (!seen.insert(n).second) return true;  // insert 回傳 false 代表已存在
+        }
+        return false;
+    }
+};
+
+// ============================================================================
+//  【日常實務範例】使用者註冊表單的欄位驗證
+//    情境：註冊 API 收到表單後要逐欄驗證。這些驗證規則是純粹的
+//          「輸入 → 是否合法」判斷，與任何 User 物件都無關 ——
+//          總不能為了驗證一個還沒建立的使用者，先建一個 User 出來。
+//    因此寫成靜態工具函式最自然，也方便單獨做單元測試。
+// ============================================================================
+class FormValidator {
+public:
+    FormValidator() = delete;
+
+    // 使用者名稱：3~16 個字元，只允許英數字與底線
+    static bool isValidUsername(const string& name) {
+        if (name.size() < 3 || name.size() > 16) return false;
+        for (char c : name) {
+            const bool ok = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+                            (c >= '0' && c <= '9') || c == '_';
+            if (!ok) return false;
+        }
+        return true;
+    }
+
+    // Email：教學用的簡化規則 —— 只檢查「有一個 @、@ 前後皆非空、後段含 .」
+    // 真正的 RFC 5322 遠比這複雜，實務上通常交給函式庫或直接寄驗證信
+    static bool isValidEmail(const string& email) {
+        const size_t at = email.find('@');
+        if (at == string::npos) return false;             // 沒有 @
+        if (at == 0 || at + 1 >= email.size()) return false;  // @ 在頭或尾
+        if (email.find('@', at + 1) != string::npos) return false;  // 多個 @
+        const size_t dot = email.find('.', at + 1);
+        if (dot == string::npos || dot + 1 >= email.size()) return false;  // 網域缺 .
+        return true;
+    }
+
+    // 密碼強度：至少 8 碼，且同時含有字母與數字
+    static bool isStrongPassword(const string& pw) {
+        if (pw.size() < 8) return false;
+        bool hasAlpha = false, hasDigit = false;
+        for (char c : pw) {
+            if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) hasAlpha = true;
+            else if (c >= '0' && c <= '9')                        hasDigit = true;
+        }
+        return hasAlpha && hasDigit;
+    }
+};
+
 int main() {
     cout << "============================================" << endl;
     cout << "   第 25 課：靜態成員函數 綜合範例" << endl;
@@ -1168,5 +1378,165 @@ int main() {
     explorer.printInfo();
     master.printInfo();
 
+    // ─────────────────────────────────────────────────────────
+    // LeetCode 展示：靜態工具函式（不需要任何物件）
+    // ─────────────────────────────────────────────────────────
+    cout << "\n=== LeetCode 20. Valid Parentheses ===" << endl;
+    {
+        const string cases[] = {"()", "()[]{}", "(]", "([)]", "{[]}", "(", ""};
+        for (const auto& s : cases) {
+            cout << "  \"" << s << "\" → " << boolalpha
+                 << ValidationUtil::isValidParentheses(s) << endl;
+        }
+        cout << "  註：空字串視為合法；\"(\" 因結尾堆疊非空而不合法。" << endl;
+    }
+
+    cout << "\n=== LeetCode 217. Contains Duplicate ===" << endl;
+    {
+        vector<vector<int>> cases{
+            {1, 2, 3, 1},
+            {1, 2, 3, 4},
+            {1, 1, 1, 3, 3, 4, 3, 2, 4, 2},
+            {}
+        };
+        for (const auto& v : cases) {
+            cout << "  [";
+            for (size_t i = 0; i < v.size(); ++i) {
+                cout << v[i];
+                if (i + 1 < v.size()) cout << ",";
+            }
+            cout << "] → " << boolalpha
+                 << ValidationUtil::containsDuplicate(v) << endl;
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // 日常實務：註冊表單驗證
+    // ─────────────────────────────────────────────────────────
+    cout << "\n=== 日常實務：註冊表單欄位驗證 ===" << endl;
+    {
+        cout << "  --- 使用者名稱（3~16 字元，僅英數與底線）---" << endl;
+        const string names[] = {"hsinan", "ab", "user_2026", "bad name", "hsinan@x"};
+        for (const auto& n : names) {
+            cout << "    \"" << n << "\" → " << boolalpha
+                 << FormValidator::isValidUsername(n) << endl;
+        }
+
+        cout << "  --- Email（教學用簡化規則）---" << endl;
+        const string mails[] = {
+            "user@example.com", "a@b.co", "no-at-sign", "@example.com",
+            "user@", "a@@b.com", "user@localhost"
+        };
+        for (const auto& m : mails) {
+            cout << "    \"" << m << "\" → " << boolalpha
+                 << FormValidator::isValidEmail(m) << endl;
+        }
+        cout << "    註：user@localhost 被判為不合法，是因為簡化規則要求" << endl;
+        cout << "        網域必須含有 '.'。真正的 RFC 5322 遠比這複雜，" << endl;
+        cout << "        實務上應交給函式庫，或乾脆寄一封驗證信。" << endl;
+
+        cout << "  --- 密碼強度（至少 8 碼且含字母與數字）---" << endl;
+        const string pws[] = {"abc123", "abcdefgh", "12345678", "abcd1234"};
+        for (const auto& p : pws) {
+            cout << "    \"" << p << "\" → " << boolalpha
+                 << FormValidator::isStrongPassword(p) << endl;
+        }
+
+        cout << "  ↑ 這些驗證都不需要任何 User 物件 ——" << endl;
+        cout << "    總不能為了驗證一個還沒建立的使用者，先建一個出來。" << endl;
+    }
+
     return 0;
 }
+
+// 編譯: g++ -std=c++17 -Wall -Wextra 第 25 課：類別內的靜態成員函數8.cpp -o static_func8
+
+// === 預期輸出 ===
+// ============================================
+//    第 25 課：靜態成員函數 綜合範例
+// ============================================
+//
+// === 初始化成就系統 ===
+//   ╔════════════════════════════╗
+//   ║      成 就 進 度           ║
+//   ╠════════════════════════════╣
+//   ║ 解鎖：0 / 5
+//   ║ 點數：0 / 230
+//   ║ 完成率：0%
+//   ╚════════════════════════════╝
+//
+// === 成就列表 ===
+//   🔒 初次擊殺 (10點) — 第一次擊殺的紀念
+//   🔒 屠龍者 (50點) — 擊敗第一個Boss
+//   🔒 收藏家 (30點) — 收集 100 件物品
+//   🔒 探索者 (40點) — 發現所有區域
+//   🔒 大師之路 (100點) — 里程碑成就
+//
+// === 遊戲進行中... ===
+//   🏆 成就解鎖！「初次擊殺」 +10 點
+//     第一次擊殺的紀念
+//   🏆 成就解鎖！「屠龍者」 +50 點
+//     擊敗第一個Boss
+//   🏆 成就解鎖！「探索者」 +40 點
+//     發現所有區域
+//
+// --- 嘗試重複解鎖 ---
+//   「初次擊殺」已經解鎖過了
+//
+// === 當前進度 ===
+//   ╔════════════════════════════╗
+//   ║      成 就 進 度           ║
+//   ╠════════════════════════════╣
+//   ║ 解鎖：3 / 5
+//   ║ 點數：100 / 230
+//   ║ 完成率：60%
+//   ╚════════════════════════════╝
+//
+// === 最終成就列表 ===
+//   🏆 初次擊殺 (10點)
+//   🏆 屠龍者 (50點)
+//   🔒 收藏家 (30點) — 收集 100 件物品
+//   🏆 探索者 (40點)
+//   🔒 大師之路 (100點) — 里程碑成就
+//
+// === LeetCode 20. Valid Parentheses ===
+//   "()" → true
+//   "()[]{}" → true
+//   "(]" → false
+//   "([)]" → false
+//   "{[]}" → true
+//   "(" → false
+//   "" → true
+//   註：空字串視為合法；"(" 因結尾堆疊非空而不合法。
+//
+// === LeetCode 217. Contains Duplicate ===
+//   [1,2,3,1] → true
+//   [1,2,3,4] → false
+//   [1,1,1,3,3,4,3,2,4,2] → true
+//   [] → false
+//
+// === 日常實務：註冊表單欄位驗證 ===
+//   --- 使用者名稱（3~16 字元，僅英數與底線）---
+//     "hsinan" → true
+//     "ab" → false
+//     "user_2026" → true
+//     "bad name" → false
+//     "hsinan@x" → false
+//   --- Email（教學用簡化規則）---
+//     "user@example.com" → true
+//     "a@b.co" → true
+//     "no-at-sign" → false
+//     "@example.com" → false
+//     "user@" → false
+//     "a@@b.com" → false
+//     "user@localhost" → false
+//     註：user@localhost 被判為不合法，是因為簡化規則要求
+//         網域必須含有 '.'。真正的 RFC 5322 遠比這複雜，
+//         實務上應交給函式庫，或乾脆寄一封驗證信。
+//   --- 密碼強度（至少 8 碼且含字母與數字）---
+//     "abc123" → false
+//     "abcdefgh" → false
+//     "12345678" → false
+//     "abcd1234" → true
+//   ↑ 這些驗證都不需要任何 User 物件 ——
+//     總不能為了驗證一個還沒建立的使用者，先建一個出來。

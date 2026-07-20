@@ -1,4 +1,27 @@
 # 布林值（Boolean）是一種基本資料類型，表示真（True）或假（False）的值。在Python中，布林值通常用於條件判斷和邏輯運算。
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 【面試題】布林值 bool
+# ───────────────────────────────────────────────────────────────────────────
+# 🔥 Q1. bool 在 Python 中是什麼型別？
+#     答：`bool` 是 **`int` 的子類**。實測 `isinstance(True, int)` → True、
+#     `True + True` → 2、`False == 0` → True。
+#     所以布林值可以直接參與算術，`sum([True, False, True])` 就是在數 True 的個數。
+#     追問：`1 is True` 呢？（False——`is` 比的是身分，且兩者型別不同）
+#
+# 🔥 Q2. 哪些值是 falsy？
+#     答：實測 `bool()` 為 False 的有：`0`、`0.0`、`''`、`[]`、`{}`、`set()`、
+#     `None`、`False`（還有 `0j`、`()`，以及自訂 `__bool__`／`__len__` 回傳假值的物件）。
+#     其餘一律 truthy。
+#     追問：怎麼判斷一個物件是不是 falsy？（`bool(x)` 或直接 `if x:`）
+#
+# ⚠️ 陷阱. `bool('False')` 是什麼？
+#     答：實測 **True**。`bool('0')` 也是 **True**。
+#     字串的真假只看**長度**——只有空字串 `''` 才是 falsy，內容是什麼完全不影響。
+#     為什麼會錯：把字串「內容的語意」誤當成「布林值」，
+#     於是寫出 `if input("y/n"):` 這種永遠成立的判斷。
+# ═══════════════════════════════════════════════════════════════════════════
+
 is_student = True
 is_raining = False
 
@@ -100,10 +123,27 @@ print(bool("False"))     # 注意：這是字串 "False"！
 print(True + True + False)
 
 
+# 執行: python3 第 8 課：基本資料型別（三）— 布林值 bool1.py
 
-
-
-
-
-
-
+# === 預期輸出 (節錄) ===
+# True
+# False
+# <class 'bool'>
+# <class 'bool'>
+# True
+# False
+# True
+# True
+# True
+# False
+# True
+# False
+# True
+# False
+# True
+# False
+# False
+# False
+# False
+# False
+# …（後略，完整輸出共 43 行）

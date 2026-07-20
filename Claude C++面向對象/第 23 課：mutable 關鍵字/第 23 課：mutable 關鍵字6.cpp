@@ -1,3 +1,126 @@
+// =============================================================================
+//  第 23 課：mutable 關鍵字 6  —  講義全文 + mutable vs const_cast 的關鍵差異
+// =============================================================================
+//
+// 【主題資訊 Information】
+//   本檔結構： 開頭是一大段 /* ... */ 的課程講義全文(23.1 ~ 23.11),
+//             講義裡的程式碼片段是「文字」不會被編譯;
+//             真正被編譯執行的只有講義結束後的 Counter 類別與 main()。
+//   語法    ： mutable <型別> <成員名>;
+//             const_cast<T*>(expr) / const_cast<T&>(expr)
+//   標準版本： mutable 為 C++98;const_cast 亦為 C++98
+//   標頭檔  ： 無(皆為語言關鍵字)
+//
+// 【詳細解釋 Explanation】
+//
+// 【1. 本檔真正要對比的兩條路】
+//   同樣是「在 const 成員函式裡修改成員」,C++ 有兩種寫法,而它們的合法性天差地遠:
+//     (a) mutable      —— 標準明文允許。編譯器知道這個成員可能被改,
+//                          因此不會把物件放進唯讀記憶體。永遠安全。
+//     (b) const_cast   —— 把 const 丟掉再寫入。是否安全 取決於物件本身是不是 const:
+//                          * 物件本體非 const,只是透過 const 參考拿到 → 合法。
+//                          * 物件本體就宣告為 const → 寫入是 undefined behavior。
+//   本檔 main() 裡的 const Counter c; 屬於後者,所以 c.incrementBad() 是 UB。
+//
+// 【2. 為什麼「物件本體是不是 const」是分水嶺】
+//   關鍵在於編譯器被允許做什麼假設:
+//     * 對於宣告為 const 且沒有 mutable 成員的物件,編譯器可以假設它永不改變。
+//       它因此可以把物件放進 .rodata(唯讀區段)、可以把讀取結果快取在暫存器、
+//       可以把整個運算式在編譯期算完。
+//     * 一旦你用 const_cast 偷偷寫入,這些假設就被違反了。
+//       標準不保證任何後果——可能寫入成功、可能被最佳化掉、可能觸發記憶體保護。
+//   反之,如果原始物件是非 const,只是某處用 const 參考觀察它,
+//   那編譯器不能做上述假設,const_cast 回去寫入就是完全合法的
+//   (這也是 const_cast 存在的正當理由,例如包裝舊的 C API)。
+//
+// 【3. 本檔的 UB 究竟會發生什麼】
+//   實測(本機 g++ 15.2、無最佳化)輸出 count = 1 與 2,看起來「正常運作」。
+//   但這 不是 保證,只是這次的觀察結果:
+//     * const Counter c; 是自動儲存期(在 stack 上)的區域物件,
+//       不會被放進唯讀區段,所以沒有觸發記憶體保護。
+//     * 換成 static const Counter c; 或全域 const 物件,就可能被放進 .rodata,
+//       屆時寫入的行為由平台決定。
+//     * 提高最佳化等級後,編譯器也可能因為「c 是 const」而把讀取結果
+//       常數摺疊,使輸出與無最佳化時不同。
+//   結論:能跑不代表對。UB 最惡劣的性質就是「它常常看起來能用」。
+//
+// 【4. 正確的做法只有一個】
+//   把 count_ 宣告成 mutable,increment() 就能名正言順地是 const 成員函式,
+//   不需要任何轉型,也沒有任何 UB 疑慮。本檔在 main() 中加了 GoodCounter
+//   作為對照組,兩者輸出並列,差別一目了然。
+//
+// 【概念補充 Concept Deep Dive】
+//   (A) const_cast<Counter*>(this) 這個寫法的細節。
+//       在 const 成員函式內 this 的型別是 const Counter*。
+//       const_cast 把它變回 Counter*,於是 ->count_++ 得以通過編譯期檢查。
+//       請注意:const_cast 只影響「編譯期的型別檢查」,它不會產生任何機器碼,
+//       也不會改變物件實際存放的位置。所以它擋不住「物件真的在唯讀記憶體」的後果。
+//
+//   (B) 四種轉型的分工。
+//       static_cast      —— 有關聯型別之間的轉換(數值、繼承體系向上/向下)
+//       const_cast       —— 唯一能增減 const / volatile 的轉型
+//       reinterpret_cast —— 位元層級重新解讀,幾乎都是 UB 邊緣
+//       dynamic_cast     —— 多型型別的執行期安全向下轉型(需要 RTTI)
+//       C 風格的 (T)x 會依序嘗試上述組合,正因為看不出意圖才不建議使用。
+//
+//   (C) const_cast 真正的正當用途。
+//       最常見的是包裝只接受非 const 指標的舊 C API,而你確知底層物件非 const:
+//           void legacy_api(char* buf);           // 其實不會修改 buf
+//           void wrapper(std::string& s) {
+//               legacy_api(&s[0]);                 // 現代寫法根本不需要轉型
+//           }
+//       另一個是 Scott Meyers 的「以非 const 版本呼叫 const 版本」慣用法,
+//       用來避免兩個多載函式的實作重複。
+//
+//   (D) 為什麼標準不乾脆禁止對 const 物件做 const_cast 寫入。
+//       因為編譯器在轉型當下無法知道原始物件的來源——
+//       指標可能來自任何地方。標準的做法是:允許你寫,但把後果定為 UB,
+//       責任歸於程式設計者。這是 C++「信任程式設計者」哲學的典型體現。
+//
+// 【注意事項 Pay Attention】
+//   1. 本檔 main() 的 c.incrementBad() 是 undefined behavior。
+//      實測輸出 1、2 只是本機這次的觀察結果,換編譯器、換最佳化等級、
+//      把物件改成 static 或全域,結果都可能不同。請勿把它當成規格。
+//      誠實補充:本機以 -O0 與 -O2 各編一次,兩者輸出「恰好相同」。
+//      這不代表這樣寫是安全的——UB 的定義是標準不規範其行為,
+//      而不是「一定會出錯」。實測沒踩到,只表示這次沒踩到。
+//   2. 需要在 const 成員函式裡修改成員時,正解永遠是 mutable,不是 const_cast。
+//   3. const_cast 只在「原始物件確定非 const」時才安全。
+//   4. 講義區塊裡的程式碼不會被編譯,其中的「預期輸出」是講義說明,
+//      不是本檔實際執行結果。本檔實際輸出見檔尾。
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】mutable vs const_cast
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. mutable 和 const_cast 都能在 const 成員函式裡改成員,差在哪?
+//     答：mutable 是標準允許的機制,編譯器知情,因此不會對該物件做
+//         「永不改變」的最佳化假設,永遠安全。
+//         const_cast 只是騙過編譯期的型別檢查,不改變物件的實際性質:
+//         若原始物件本體宣告為 const,寫入就是 UB。
+//     追問：那什麼時候 const_cast 是安全的?
+//         → 當原始物件本體是非 const,只是你手上這條路徑帶了 const 的時候。
+//         例如包裝一個只吃非 const 指標、但實際不寫入的舊 C API。
+//
+// 🔥 Q2. 這段程式跑起來輸出 1、2 完全正常,為什麼還說它是 UB?
+//     答：UB 的定義是「標準不規範其行為」,不是「一定會崩潰」。
+//         這裡的物件在 stack 上、又沒開最佳化,所以恰好寫得進去。
+//         換成 static const 或全域 const 物件就可能落在唯讀區段,
+//         開最佳化也可能因為常數摺疊而讀到舊值。
+//         「這次能跑」不能證明「這樣寫沒問題」。
+//     追問：那要怎麼在 CI 抓到這種問題?
+//         → UBSan 對這類 const 違規的覆蓋有限,
+//         比較可靠的做法是 code review 全面禁止 const_cast 寫入,
+//         或以靜態分析工具(clang-tidy 的 cppcoreguidelines-pro-type-const-cast)攔截。
+//
+// ⚠️ 陷阱. 「const_cast 之後就變成一般物件了,想怎麼改都行。」
+//     答：錯。const_cast 不產生任何機器碼,它只是把編譯器的型別檢查關掉。
+//         物件實際存放在哪(stack、heap、還是唯讀區段)完全沒有改變。
+//         如果它本來就在唯讀記憶體,轉型之後照樣寫不進去。
+//     為什麼會錯：把轉型想像成「把東西搬到另一個型別的容器裡」。
+//         實際上 const_cast 是純編譯期的標註調整,執行期什麼都沒發生——
+//         這正是它危險的原因:它讓你以為問題解決了,其實只是把警報關掉。
+// ═══════════════════════════════════════════════════════════════════════════
+
 /*
 # 第 23 課：mutable 關鍵字
 
@@ -829,9 +952,14 @@ const_cast：
 準備好進入 **第 24 課：類別內的靜態成員變數** 了嗎？
 */
 
-
+// ============================================================================
+// ↑ 以上為講義全文（純註解，不會被編譯）
+// ↓ 以下才是本檔實際編譯執行的程式碼
+// ============================================================================
 
 #include <iostream>
+#include <string>
+#include <map>
 using namespace std;
 
 class Counter {
@@ -858,17 +986,140 @@ public:
     int getCount() const { return count_; }
 };
 
+// ===== 對照組：正確的做法（mutable）=====
+// 同樣是「在 const 成員函式裡累加計數」，但這個版本完全合法、沒有任何 UB。
+// 差別只有兩處：count_ 加了 mutable、increment() 不需要任何轉型。
+class GoodCounter {
+private:
+    mutable int count_;   // ✅ 標準允許在 const 成員函式中修改
+
+public:
+    GoodCounter() : count_(0) {}
+
+    void increment() const {
+        count_++;                      // 不需要 const_cast
+        cout << "  mutable  方式：count = " << count_ << endl;
+    }
+
+    int getCount() const { return count_; }
+};
+
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】—— 本檔從缺,理由如下
+//   本檔的主題是「const_cast 對 const 物件寫入為何是 UB」,
+//   這是語言規則與編譯器最佳化假設的問題,不是演算法問題。
+//   LeetCode 全部題目都以「輸出是否正確」評分,而 UB 的特徵恰恰是
+//   「這次輸出剛好正確」——也就是說,一份含此種 UB 的解答可以全部 AC。
+//   掛一題上來反而會強化「能 AC 就是對」的錯誤觀念,因此刻意從缺。
+// -----------------------------------------------------------------------------
+
+// -----------------------------------------------------------------------------
+// 【日常實務範例】const_cast 的正當用途：非 const 版本委派給 const 版本
+//   情境：一個設定表類別要同時提供可讀寫與唯讀兩種 find。
+//         兩個多載的查找邏輯完全一樣，若各寫一份，日後改了一邊忘了另一邊就會不一致。
+//   慣用法（Scott Meyers, Effective C++ Item 3）：
+//         讓「非 const 版本」呼叫「const 版本」，再把回傳值的 const 拿掉。
+//   為什麼這裡的 const_cast 安全：
+//         能呼叫到非 const 版本，代表 *this 本體就是非 const 物件；
+//         我們只是把「自己剛剛臨時加上去的 const」再拿掉，
+//         不是在對一個真正的 const 物件動手。這正是本檔開頭說的分水嶺。
+//   方向很重要：只能「非 const 委派給 const」。反過來寫（const 版本呼叫非 const 版本）
+//         就必須對一個可能真的是 const 的物件去 const，那才是危險的。
+// -----------------------------------------------------------------------------
+class SettingsTable {
+private:
+    map<string, string> kv_;
+
+public:
+    void set(const string& k, const string& v) { kv_[k] = v; }
+
+    // const 版本：真正的實作放這裡
+    const string* find(const string& key) const {
+        auto it = kv_.find(key);
+        return it == kv_.end() ? nullptr : &it->second;
+    }
+
+    // 非 const 版本：委派給 const 版本，避免重複實作
+    string* find(const string& key) {
+        // 1) static_cast 加上 const，藉此呼叫到上面的 const 版本
+        // 2) const_cast 把回傳值的 const 拿掉
+        // 安全性來自：能進到這個函式，就代表 *this 本體非 const
+        return const_cast<string*>(static_cast<const SettingsTable&>(*this).find(key));
+    }
+};
+
 int main() {
     cout << "=== mutable vs const_cast ===" << endl;
 
+    cout << "\n--- ❌ const_cast 對 const 物件寫入（未定義行為）---" << endl;
     const Counter c;     // const 對象
-    c.incrementBad();    // 技術上能跑，但...
+    c.incrementBad();    // 技術上能跑，但這是 UB
     c.incrementBad();
 
     // ⚠ 對 const 對象使用 const_cast 修改數據
     // 在標準中是「未定義行為」！
     // 編譯器可能把 const 對象放在只讀記憶體中，
     // 強制修改可能導致崩潰。
+    // 上面印出的 1、2 只是本機這次的觀察結果，不是標準保證的行為。
+
+    cout << "\n--- ✅ mutable（標準允許，永遠安全）---" << endl;
+    const GoodCounter g;   // 同樣是 const 對象
+    g.increment();         // 完全合法：count_ 是 mutable
+    g.increment();
+    cout << "  最終 count = " << g.getCount() << endl;
+
+    cout << "\n=== 日常實務: const_cast 的正當用途（非 const 委派給 const）===" << endl;
+    SettingsTable cfg;
+    cfg.set("log.level", "info");
+    cfg.set("http.port", "8080");
+
+    // 非 const 物件 -> 選到非 const 版本 -> 可以就地修改
+    if (string* level = cfg.find("log.level")) {
+        cout << "  修改前 log.level = " << *level << endl;
+        *level = "debug";
+        cout << "  修改後 log.level = " << *level << endl;
+    }
+
+    // const 參考 -> 只選得到 const 版本 -> 只能讀
+    const SettingsTable& ro = cfg;
+    if (const string* port = ro.find("http.port")) {
+        cout << "  唯讀讀取 http.port = " << *port << endl;
+    }
+    if (ro.find("db.host") == nullptr) {
+        cout << "  查詢不存在的鍵 db.host -> nullptr" << endl;
+    }
 
     return 0;
 }
+
+// 編譯: g++ -std=c++17 -Wall -Wextra 第\ 23\ 課：mutable\ 關鍵字6.cpp -o mutable6
+
+// 【輸出說明 —— 重要】
+//   1. 「const_cast 方式：count = 1 / 2」這兩行是 undefined behavior 的產物。
+//      本機 g++ 15.2 以 -O0 與 -O2 各編譯執行一次，兩者輸出恰好相同，
+//      但這不是標準保證，只是這次的觀察結果。把 const Counter c 改成
+//      static const 或全域物件、或換一套編譯器，行為都可能不同。
+//      請勿把這兩行當成「const_cast 可以這樣用」的證據。
+//   2. 「mutable 方式：count = 1 / 2」則是標準保證的行為，任何符合標準的
+//      編譯器都必須產生這個結果。
+//   3. 實務段的 find() 多載示範：非 const 物件選到非 const 版本（可改），
+//      const 參考只選得到 const 版本（唯讀）。查不到時回傳 nullptr。
+//   4. 除了第 1 點屬於 UB 之外，本檔其餘輸出均為決定性。
+
+// === 預期輸出 ===
+// === mutable vs const_cast ===
+//
+// --- ❌ const_cast 對 const 物件寫入（未定義行為）---
+//   const_cast 方式：count = 1
+//   const_cast 方式：count = 2
+//
+// --- ✅ mutable（標準允許，永遠安全）---
+//   mutable  方式：count = 1
+//   mutable  方式：count = 2
+//   最終 count = 2
+//
+// === 日常實務: const_cast 的正當用途（非 const 委派給 const）===
+//   修改前 log.level = info
+//   修改後 log.level = debug
+//   唯讀讀取 http.port = 8080
+//   查詢不存在的鍵 db.host -> nullptr

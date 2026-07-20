@@ -1,3 +1,98 @@
+// =============================================================================
+//  第 14 課：預設建構函數 10  —  綜合實戰：= default / 全預設參數 / = delete
+// =============================================================================
+//
+// 【主題資訊 Information】
+//   主題：本課完整講義 + 三種控制預設建構函式的手法各出一個可執行範例
+//   標準版本：`= default` 與 `= delete` 需 C++11；全預設參數 C++98 起即可
+//   標頭檔：<string>、<vector>
+//   本檔結構：① 下方大段課程講義（markdown）② 三個對照範例 Config / Timer / FileHandle
+//
+// 【詳細解釋 Explanation】
+//
+// 【1. 三個範例分別代表三種設計決策】
+//   * Config   → `= default`：「我要編譯器原本的行為，只是它被我的帶參版本擠掉了」
+//   * Timer    → 全預設參數：「一個建構函式同時涵蓋 0~3 個引數的所有情況」
+//   * FileHandle → `= delete`：「沒有檔名的檔案 handle 沒有意義，禁止建立」
+//   選哪一種取決於「無參建立這件事在語意上成不成立」，而不是哪個寫起來方便。
+//
+// 【2. Config 用 `= default` 的隱藏風險】
+//   `Config() = default;` 不會初始化 width/height/fullscreen ——
+//   它就是編譯器原本的行為，對內建型別什麼都不做。
+//   所以 `Config c1;` 之後讀取 c1.width 是 undefined behavior。
+//   本檔在講義的範例中示範了這個現象，實際輸出請看檔尾的注意事項。
+//   若要「既保留 `= default` 又保證有初值」，正解是搭配 NSDMI：
+//       int width = 800;  int height = 600;  bool fullscreen = false;
+//       Config() = default;
+//   本檔新增的 ConfigSafe 即是此寫法，兩者可直接對照。
+//
+// 【3. Timer 的全預設參數：一個函式扮演四種角色】
+//   `Timer(int h = 0, int m = 0, int s = 0)` 同時是預設建構函式與帶參建構函式。
+//   注意它不能再多寫一個 `Timer()` —— 兩者對 `Timer t;` 都可行，會產生歧義。
+//   它的驗證策略是「超出範圍就歸零」，與第 6 檔的 Color 相同，
+//   同樣有「25 點變成 0 點」這種不易察覺的問題；本檔在 TimerSafe 中改用 clamp 對照。
+//
+// 【4. FileHandle 用 `= delete` 的理由】
+//   一個沒有檔名的檔案 handle 是「合法存在但沒有意義」的東西。
+//   允許它存在的代價是：後續每個使用點都得先檢查「這個 handle 有效嗎」。
+//   用 `= delete` 把它在編譯期消滅，等於用型別系統宣告
+//   「拿到 FileHandle 就一定綁定了某個檔案」——後續程式碼因此變乾淨。
+//
+// 【概念補充 Concept Deep Dive】
+//   * 這三種手法可以組合：實務上很常見的是
+//     「`= delete` 預設建構 + `= delete` 複製 + 提供移動建構」，
+//     這正是 unique_ptr、fstream、lock_guard 這類 RAII 型別的標準形狀。
+//   * `= default` 與手寫 `{}` 在值初始化時行為不同（見第 5 檔），
+//     這是本課最容易被面試問到的細節。
+//   * 「全預設參數的建構函式也是預設建構函式」是標準定義的直接推論：
+//     預設建構函式的定義是「不需要引數就能呼叫」，不是「參數列為空」。
+//
+// 【注意事項 Pay Attention】
+//   1. `= default` 不會初始化內建型別成員 —— 要保證初值請搭配 NSDMI。
+//   2. 全預設參數的建構函式不可與無參建構函式並存（歧義）。
+//   3. `= delete` 之後，該型別就不能用於需要預設建構的容器用法
+//      （`vector<T> v(n)`、`T arr[n]`），請改用 emplace_back。
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】預設建構函數綜合
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 讓一個「已經有帶參建構函式」的類別重新支援無參建立，有哪些做法？
+//     答：三種：① 手寫一個無參建構函式（可自訂初值）；
+//         ② `X() = default;`（要編譯器原本的行為，通常搭配 NSDMI）；
+//         ③ 讓帶參版本的所有參數都有預設值（一個函式涵蓋所有情況）。
+//         第三種不能再另外寫 `X()`，否則 `X x;` 會歧義。
+//     追問：三者怎麼選？→ 要自訂初值用 ①；只要編譯器行為用 ②＋NSDMI；
+//           參數本來就有合理預設值時 ③ 最簡潔。
+//
+// 🔥 Q2. `Config() = default;` 之後，`Config c; cout << c.width;` 安全嗎？
+//     答：不安全。`= default` 就是編譯器原本的行為 —— 對 int/bool 什麼都不做，
+//         所以 width 的值不確定，讀取它是 undefined behavior。
+//         要保證有初值必須搭配 NSDMI（`int width = 800;`）。
+//     追問：那 `Config c{};` 呢？→ 這個安全。因為 `Config()` 非 user-provided，
+//           值初始化會先零初始化整個物件。但這要靠呼叫端記得寫大括號，
+//           類別作者無法強制，所以 NSDMI 仍是更可靠的做法。
+//
+// 🔥 Q3. 什麼時候該用 `= delete` 而不是「乾脆不寫」？
+//     答：當「不可無參建立」是刻意的設計決策時。兩者都會讓編譯失敗，
+//         但 `= delete` 讓錯誤訊息變成明確的 "use of deleted function"，
+//         並把設計意圖寫進程式碼，日後維護者不會誤以為是漏寫。
+//     追問：deleted 函式還有什麼妙用？→ 因為它仍參與多載解析，
+//           可以用 `void f(char) = delete;` 精準攔截「型別對但語意錯」的呼叫。
+//
+// ⚠️ 陷阱. 下面這樣寫為什麼編譯不過？
+//         class Timer {
+//         public:
+//             Timer() { }
+//             Timer(int h = 0, int m = 0, int s = 0) { }
+//         };
+//         Timer t;
+//     答：兩個建構函式都能以「不提供任何引數」的方式被呼叫，
+//         overload resolution 找不到唯一最佳解 → ambiguous，編譯錯誤。
+//     為什麼會錯：以為「無參版本」與「全預設參數版本」是不同的兩個函式，
+//         可以共存。實際上判斷歧義看的是「這個呼叫式能匹配幾個候選」，
+//         而 `Timer t;` 對兩者都成立。一個類別最多只能有一個可無引數呼叫的建構函式。
+// ═══════════════════════════════════════════════════════════════════════════
+
 /*
 好的，信安！讓我們繼續。
 
@@ -645,6 +740,7 @@ timers[2]:   00:00:00
 
 #include <iostream>
 #include <string>
+#include <vector>
 using namespace std;
 
 // ============================================================
@@ -695,6 +791,59 @@ public:
     }
 };
 
+// ------------------------------------------------------------
+// 對照組 A：= default + NSDMI —— 讓「無參建立」也保證有初值
+//   Config 的 `= default` 不會初始化 width/height/fullscreen，
+//   所以 `Config c;` 之後讀取它們是 UB。加上 NSDMI 之後，
+//   不論 `ConfigSafe c;` 或 `ConfigSafe c{}` 都有確定的值。
+// ------------------------------------------------------------
+class ConfigSafe {
+public:
+    int  width      = 800;     // NSDMI：類別作者的保證，呼叫端無從搞砸
+    int  height     = 600;
+    bool fullscreen = false;
+
+    ConfigSafe() = default;
+    ConfigSafe(int w, int h, bool fs) : width(w), height(h), fullscreen(fs) {}
+
+    void print() const {
+        cout << "  " << width << "x" << height
+             << (fullscreen ? " [全螢幕]" : " [視窗]") << endl;
+    }
+};
+
+// ------------------------------------------------------------
+// 對照組 B：clamp 取代歸零
+//   Timer 對超範圍的值一律歸零：Timer(25, 70, 99) 變成 00:00:00。
+//   「25 點」變成「0 點」在畫面上完全看不出異常，除錯時很難聯想。
+//   clamp 到邊界（23:59:59）至少保留了「這個值太大」的線索。
+// ------------------------------------------------------------
+class TimerSafe {
+public:
+    TimerSafe(int h = 0, int m = 0, int s = 0)
+        : hours(clampTo(h, 23)), minutes(clampTo(m, 59)), seconds(clampTo(s, 59)) {}
+
+    void print() const {
+        cout << "  ";
+        if (hours < 10) cout << "0";
+        cout << hours << ":";
+        if (minutes < 10) cout << "0";
+        cout << minutes << ":";
+        if (seconds < 10) cout << "0";
+        cout << seconds << endl;
+    }
+
+private:
+    static int clampTo(int v, int hi) {
+        if (v < 0)  return 0;
+        if (v > hi) return hi;
+        return v;
+    }
+    int hours;      // 宣告順序 = 初始化順序
+    int minutes;
+    int seconds;
+};
+
 // ============================================================
 // 範例 3：= delete 禁止預設建構
 // ============================================================
@@ -716,6 +865,100 @@ public:
         cout << "  檔案: " << filename 
              << " [" << (isOpen ? "開啟" : "關閉") << "]" << endl;
     }
+};
+
+// -----------------------------------------------------------------------------
+// 【日常實務範例】應用程式設定的三層合併（預設值 → 設定檔 → 環境變數）
+//   情境：真實服務的設定幾乎都是分層疊加的：
+//     (1) 程式內建的預設值（一定要有，且必須安全）
+//     (2) 設定檔覆蓋其中一部分
+//     (3) 環境變數再覆蓋（部署時臨時調整）
+//   這正是本課三種手法的實戰匯集：
+//     * NSDMI 提供第 (1) 層 —— 由類別作者保證，任何建構路徑都生效，
+//       不像「值初始化」那樣要靠呼叫端記得寫大括號
+//     * `= default` 讓「只要預設值」的呼叫端寫一行就好
+//     * 每一層只覆蓋「有提供的欄位」，沒提供的自動沿用上一層
+//   關鍵設計：預設值必須是「安全的那一邊」——workerThreads 預設 4 而非 0，
+//   maxRequestMb 預設 10 而非無上限。忘記設定時系統仍能正常且安全地運作。
+// -----------------------------------------------------------------------------
+class AppSettings {
+public:
+    // 第 (1) 層：NSDMI 內建預設值 —— 類別作者的保證，呼叫端無從搞砸
+    string host          = "0.0.0.0";
+    int    port          = 8080;
+    int    workerThreads = 4;        // 不是 0：0 個工作執行緒等於服務停擺
+    int    maxRequestMb  = 10;       // 不是無上限：避免被超大請求打爆
+    bool   enableMetrics = true;
+
+    AppSettings() = default;         // 只要預設值時，這樣就夠了
+
+    // 第 (2)(3) 層：只覆蓋「有提供」的欄位，其餘沿用既有值
+    void applyOverride(const string& key, const string& value) {
+        if (value.empty()) return;                       // 空值視為未提供
+        if      (key == "host")          host = value;
+        else if (key == "port")          port = toInt(value, port);
+        else if (key == "workers")       workerThreads = toInt(value, workerThreads);
+        else if (key == "max_request_mb") maxRequestMb = toInt(value, maxRequestMb);
+        else if (key == "metrics")       enableMetrics = (value == "true" || value == "1");
+
+        // 覆蓋之後仍要守住安全下限 —— 外部輸入永遠不可信任
+        if (workerThreads < 1)  workerThreads = 1;
+        if (maxRequestMb  < 1)  maxRequestMb  = 1;
+        if (port < 1 || port > 65535) port = 8080;
+    }
+
+    void describe(const string& label) const {
+        cout << "    " << label << ": " << host << ":" << port
+             << "  workers=" << workerThreads
+             << ", maxReq=" << maxRequestMb << "MB"
+             << ", metrics=" << (enableMetrics ? "on" : "off") << endl;
+    }
+
+private:
+    // 解析失敗就沿用原值，而不是變成 0 —— 靜默歸零是本課反覆強調的反面教材
+    static int toInt(const string& s, int fallback) {
+        try { return stoi(s); }
+        catch (const exception&) { return fallback; }
+    }
+};
+
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 155. Min Stack
+//   題目：設計一個支援 push / pop / top / getMin 的堆疊，四個操作都要 O(1)。
+//   為什麼用到本主題：題目給的簽名 MinStack() 就是一個**預設建構函數**——
+//         「初始化這個堆疊物件」。它正好示範了本課最正面的一課：
+//         當所有成員都是自己會初始化的型別（這裡是兩個 std::vector）時，
+//         你**什麼都不必寫**，一行 = default 就夠了，
+//         而且不會有任何「忘記初始化」的風險。
+//         對照本課反覆出現的反面教材（int 成員沒有 NSDMI 就是不確定值），
+//         這說明了「成員自己負責初始化」為什麼是最省事的設計。
+//   關鍵想法：另開一個 minStack_，每次 push 都同步壓入「目前為止的最小值」，
+//         使 getMin() 退化成一次 back()，達成 O(1)。
+//   複雜度：四個操作皆為 O(1)；空間 O(n)。
+// -----------------------------------------------------------------------------
+class MinStack {
+private:
+    vector<int> data_;      // 兩個成員都是 vector，各自預設建構為空
+    vector<int> minStack_;  // 與 data_ 等長，記錄「到此為止的最小值」
+
+public:
+    MinStack() = default;   // 成員都會自己初始化 → 這裡什麼都不必寫
+
+    void push(int val) {
+        data_.push_back(val);
+        if (minStack_.empty() || val < minStack_.back()) minStack_.push_back(val);
+        else                                             minStack_.push_back(minStack_.back());
+    }
+
+    void pop() {
+        if (data_.empty()) return;
+        data_.pop_back();
+        minStack_.pop_back();
+    }
+
+    int  top()   const { return data_.back(); }
+    int  getMin() const { return minStack_.back(); }
+    bool empty() const { return data_.empty(); }
 };
 
 int main() {
@@ -756,6 +999,147 @@ int main() {
     FileHandle f2("config.json");
     f1.print();
     f2.print();
-    
+
+    // ─────────────────────────────────────────────────────────
+    cout << "\n[5] = default 的隱藏風險：成員仍未被初始化" << endl;
+    // Config c0;  cout << c0.width;   // ⚠️ UB：= default 不初始化內建型別成員
+    cout << "  `Config c0; cout << c0.width;` 是 UB —— = default 不做初始化" << endl;
+    Config valueInit{};                 // 值初始化：非 user-provided → 先零初始化
+    cout << "  `Config c{};` 值初始化 -> ";
+    valueInit.print();
+    cout << "  ↑ 這個安全，但要靠呼叫端記得寫大括號，類別作者無法強制" << endl;
+
+    ConfigSafe cs1;                     // NSDMI：類別作者的保證
+    ConfigSafe cs2{};
+    cout << "  ConfigSafe cs1;  -> "; cs1.print();
+    cout << "  ConfigSafe cs2{}; -> "; cs2.print();
+    cout << "  ↑ NSDMI 讓兩種寫法都安全 —— 這才是可靠的做法" << endl;
+
+    // ─────────────────────────────────────────────────────────
+    cout << "\n[6] 驗證策略對照：歸零 vs clamp" << endl;
+    Timer bad(25, 70, 99);              // 全部超出範圍
+    cout << "  Timer(25, 70, 99)      -> "; bad.print();
+    cout << "     ↑ 全部歸零成 00:00:00，「25 點」變成「0 點」很難察覺" << endl;
+
+    TimerSafe better(25, 70, 99);
+    cout << "  TimerSafe(25, 70, 99)  -> "; better.print();
+    cout << "     ↑ clamp 到 23:59:59，保留了「這是個過大的值」的線索" << endl;
+
+    // ─────────────────────────────────────────────────────────
+    cout << "\n[7] 實務：三種手法組合成一個 RAII 型別" << endl;
+    vector<FileHandle> handles;
+    handles.reserve(3);                 // reserve 不需要預設建構函式
+    handles.emplace_back("access.log");
+    handles.emplace_back("error.log");
+    handles.emplace_back("audit.log");
+    cout << "  用 emplace_back 建立了 " << handles.size() << " 個 handle:" << endl;
+    for (const FileHandle& h : handles) h.print();
+    // vector<FileHandle> bad2(3);      // ❌ 需要預設建構函式，已被 delete
+    cout << "  （`vector<FileHandle> v(3);` 會編譯失敗 —— 正是 = delete 的目的）" << endl;
+
+    // ─────────────────────────────────────────────────────────
+    cout << "\n[8] 實務：設定的三層合併" << endl;
+    AppSettings cfg;                                   // 第 (1) 層：NSDMI 預設值
+    cfg.describe("內建預設值        ");
+
+    // 第 (2) 層：設定檔只提供了兩個欄位
+    cfg.applyOverride("port", "9090");
+    cfg.applyOverride("workers", "16");
+    cfg.describe("套用設定檔後      ");
+
+    // 第 (3) 層：部署時用環境變數再覆蓋一個
+    cfg.applyOverride("host", "127.0.0.1");
+    cfg.describe("套用環境變數後    ");
+
+    // 非法輸入一律被安全下限攔住，不會歸零或溢位
+    AppSettings badCfg;
+    badCfg.applyOverride("workers", "0");
+    badCfg.applyOverride("port", "99999");
+    badCfg.applyOverride("max_request_mb", "不是數字");
+    badCfg.describe("非法輸入（已修正）");
+    cout << "  ↑ NSDMI 保證「沒提供的欄位」一定有安全的值，" << endl;
+    cout << "    而不是依賴呼叫端記得寫 `AppSettings cfg{};`。" << endl;
+
+    // --- LeetCode 155. Min Stack ---
+    cout << "\n[LeetCode 155] Min Stack（MinStack() 就是一個預設建構函數）" << endl;
+    MinStack ms;
+    cout << "  MinStack ms;  → empty = " << (ms.empty() ? "true" : "false")
+         << "（兩個 vector 成員自己初始化為空，= default 就夠）" << endl;
+    ms.push(-2); ms.push(0); ms.push(-3);
+    cout << "  push(-2), push(0), push(-3)" << endl;
+    cout << "  getMin() = " << ms.getMin() << "   (期望 -3)" << endl;
+    ms.pop();
+    cout << "  pop() 之後 top() = " << ms.top() << "   (期望 0)" << endl;
+    cout << "  getMin() = " << ms.getMin() << "   (期望 -2)" << endl;
+
     return 0;
 }
+
+// 編譯: g++ -std=c++17 -Wall -Wextra "第 14 課：預設建構函數（Default Constructor）10.cpp" -o demo10
+// 註：`= default` 與 `= delete` 需 C++11 以上。
+
+
+// === 預期輸出 ===
+// ========================================
+//    第 14 課：預設建構函數 綜合範例
+// ========================================
+//
+// [1] Config (= default)
+// c1:   0x0 [視窗]
+// c2:   1920x1080 [全螢幕]
+//
+// [2] Timer (全預設參數)
+// t1:   00:00:00
+// t2:   14:00:00
+// t3:   08:30:00
+// t4:   23:59:59
+//
+// [3] Timer 陣列
+// timers[0]:   00:00:00
+// timers[1]:   00:00:00
+// timers[2]:   00:00:00
+//
+// [4] FileHandle (= delete)
+//   打開檔案: data.txt
+//   打開檔案: config.json
+//   檔案: data.txt [開啟]
+//   檔案: config.json [開啟]
+//
+// [5] = default 的隱藏風險：成員仍未被初始化
+//   `Config c0; cout << c0.width;` 是 UB —— = default 不做初始化
+//   `Config c{};` 值初始化 ->   0x0 [視窗]
+//   ↑ 這個安全，但要靠呼叫端記得寫大括號，類別作者無法強制
+//   ConfigSafe cs1;  ->   800x600 [視窗]
+//   ConfigSafe cs2{}; ->   800x600 [視窗]
+//   ↑ NSDMI 讓兩種寫法都安全 —— 這才是可靠的做法
+//
+// [6] 驗證策略對照：歸零 vs clamp
+//   Timer(25, 70, 99)      ->   00:00:00
+//      ↑ 全部歸零成 00:00:00，「25 點」變成「0 點」很難察覺
+//   TimerSafe(25, 70, 99)  ->   23:59:59
+//      ↑ clamp 到 23:59:59，保留了「這是個過大的值」的線索
+//
+// [7] 實務：三種手法組合成一個 RAII 型別
+//   打開檔案: access.log
+//   打開檔案: error.log
+//   打開檔案: audit.log
+//   用 emplace_back 建立了 3 個 handle:
+//   檔案: access.log [開啟]
+//   檔案: error.log [開啟]
+//   檔案: audit.log [開啟]
+//   （`vector<FileHandle> v(3);` 會編譯失敗 —— 正是 = delete 的目的）
+//
+// [8] 實務：設定的三層合併
+//     內建預設值        : 0.0.0.0:8080  workers=4, maxReq=10MB, metrics=on
+//     套用設定檔後      : 0.0.0.0:9090  workers=16, maxReq=10MB, metrics=on
+//     套用環境變數後    : 127.0.0.1:9090  workers=16, maxReq=10MB, metrics=on
+//     非法輸入（已修正）: 0.0.0.0:8080  workers=1, maxReq=10MB, metrics=on
+//   ↑ NSDMI 保證「沒提供的欄位」一定有安全的值，
+//     而不是依賴呼叫端記得寫 `AppSettings cfg{};`。
+//
+// [LeetCode 155] Min Stack（MinStack() 就是一個預設建構函數）
+//   MinStack ms;  → empty = true（兩個 vector 成員自己初始化為空，= default 就夠）
+//   push(-2), push(0), push(-3)
+//   getMin() = -3   (期望 -3)
+//   pop() 之後 top() = 0   (期望 0)
+//   getMin() = -2   (期望 -2)

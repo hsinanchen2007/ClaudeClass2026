@@ -133,3 +133,122 @@
 | CUDA（新，另一套慣例） | 185 課 | — | Claude 2/185（進度見 README.md） |
 
 待處理：無（各課 summary 已補齊；`Claude Code C++by Examples/` 各主題子目錄亦皆已有 summary.cpp）
+
+---
+
+## 📋 教材增強工程紀錄（2026-07-19 ~ 07-20）
+
+> **給未來的 session：先讀這節，再決定要做什麼。**
+> 這裡記錄「已經對哪些檔案做過哪些加工」，以及**怎麼用指令找出還沒做的檔案**，
+> 這樣下次只要處理增量，不必從頭重跑一遍（那會浪費好幾小時）。
+
+### 已完成的三種加工
+
+| 加工 | 標記（用來偵測是否已做） | 說明 |
+|---|---|---|
+| **A. 面試題區塊** | 檔案含 `【面試題】` | 每檔 2–5 題，分 🔥高頻／進階／⚠️陷阱，每題含「答／追問」 |
+| **B. 編譯指令** | 檔案含 `// 編譯:`（Python 為 `# 執行:`） | 該檔**真正需要**的那條指令（含 `-std=` 與必要的 `-pthread`／`-ltbb`） |
+| **C. 預期輸出** | 檔案含 `=== 預期輸出` | **實際編譯執行取得**，不是手寫 |
+
+### 各目錄狀態
+
+| 目錄 | 檔數 | A 面試題 | B 編譯指令 | C 預期輸出 |
+|---|---:|---|---|---|
+| `Claude Code C++by Examples/` | 405 | ✅ 全部 | ✅ 全部 | ✅ 全部 |
+| `Claude C++面向對象/` | 281 | ✅ 全部 | ✅ 全部 | ✅ 全部 |
+| `Claude C++ STL課程/` | 308 | ✅ 全部 | ✅ 全部 | ✅ 全部 |
+| `Claude C++ STL多線程課程/` | 153 | ✅ 全部 | ✅ 全部 | ✅ 全部 |
+| `Claude C++11 到 C++26 課程/` | 82 | ✅ 全部 | ✅ 全部 | ✅ 全部 |
+| `Claude Python課程/` | 71 | ✅ 全部 | ✅ 全部 | ✅ 全部 |
+| `Claude AI CUDA課程/` | — | ❌ 不適用 | 用 `BUILD.md` | 在 `NOTE.md` 內 |
+
+> CUDA 課刻意採不同慣例（`NOTE.md` + `src/`），**不要**把面試題區塊加進去。
+> `Claude AI CUDA課程/` 裡唯一的 `.cpp`（`amdahl_gustafson.cpp`）是純 host 範例，不屬 C++ 教材體系，**不加**面試題。
+
+> **2026-07-20 全數完工**：1300 支教材檔全部三種加工到齊（1229 支 C++ 教材 + 71 支 Python；
+> `Claude Code C++by Examples/` 405 支為 07-19 完成）。最終稽核：**1230 支 `.cpp` 以
+> `g++ -std=c++17/20 -Wall -Wextra`（多執行緒加 `-pthread`）全數編過、0 失敗**；71 支 Python
+> `py_compile` 全過；輸出抽查 0 真實不符（計時／位址／stdin 驅動皆已加但書或非決定性標註）；
+> 全庫重複面試題／重複預期輸出區塊皆為 **0**。
+
+### 🔍 找出「還沒加工」的檔案（下次從這裡開始）
+
+```bash
+cd ~/AI/github/ClaudeClass2026
+# 缺面試題的 .cpp（排除 Codex 與 CUDA 課）
+find . -name '*.cpp' -not -path './Codex*' -not -path './Claude AI CUDA*' \
+  -exec grep -L '【面試題】' {} +
+# 缺編譯指令 / 缺預期輸出
+find . -name '*.cpp' -not -path './Codex*' -exec grep -L '^// 編譯:' {} +
+find . -name '*.cpp' -not -path './Codex*' -exec grep -L '=== 預期輸出' {} +
+# Python 版
+find "Claude Python課程" -name '*.py' -exec grep -L '【面試題】' {} +
+```
+
+### 題庫位置（**不要重做研究**）
+
+`~/Downloads/cpp_interview_research/`（不在 repo 內，屬本機工作資產）
+
+- 我的研究：7 個主題檔，536 題；`_README.md` 為索引
+- `_claude_compile_verification.md`：本機編譯器實測紀錄
+- `Python_course.md`：Python 75 題（CPython 3.14.4 實測）
+- `_gemini_gap_analysis.md`／`_grok_gap_analysis.md`／`_codex_gap_analysis.md`：
+  與另三家題庫比對的結果（採納／駁回理由都寫在裡面）
+
+四家比對結論：**我的題庫覆蓋率最高**（Grok 578 題有 94.5% 已被涵蓋），
+Gemini 補 3 條、Grok 補 11 條、Codex 補 25 條。**投入產出已明顯遞減，不建議再找第五家。**
+
+### ⚠️ 已知的「刻意示範」——不要把它們當 bug 修掉
+
+有些檔案**故意**會 abort／卡住／崩潰，那就是課程要教的東西：
+
+- `第 27 課：淺拷貝與深拷貝` → 故意 double free
+- `課程 5.4：互斥鎖的常見錯誤` → 故意死鎖（會逾時）
+- `課程 4.4：資料競爭範例分析` → 故意 data race
+- `第 12 課：vector 元素存取` → 故意越界（libstdc++ 15 預設開 hardened assertion 會 abort）
+- `C++_MultiThread/14_thread_sanitizer.cpp` → 故意保留 race，內含 spin loop 不會結束
+- `18_VirtualDestructor.cpp`／`02_static_cast.cpp` → UB 示範，已改成 `-DDEMONSTRATE_UB` opt-in
+
+**判準**：UB 不可以被描述成固定結果（不可寫「一定會洩漏」「一定 crash」）；
+會卡住的程式必須明講它不會自己結束。
+
+### 🔧 這輪修掉的真缺陷（別讓它們回來）
+
+- **成員初始化順序**：`char* m_data;` 宣告在 `std::size_t m_len;` 之前，卻寫
+  `: m_len(...), m_data(new char[m_len+1])` → 用未初始化的 `m_len` 配置記憶體。
+  `bad_alloc` 只是堆積損毀的下游症狀，ASan 才看得到真因。**`-Wreorder` 早就警告了。**
+- **self-deadlock**：以位址排序的轉帳函式在 `&a == &b` 時對同一把非遞迴 mutex 連鎖兩次
+  （`scoped_lock(m, m)` 一樣會卡）。TSan 抓不到，因為那不是 data race。
+- **`<cctype>` 前置條件**：`char` 必須先轉 `unsigned char`（UTF-8 下就是 `tolower(-61)`）。
+- **`high_resolution_clock`**：libstdc++ 上別名是 **`system_clock`**（`is_steady=false`），
+  不是常說的 `steady_clock`。
+- 完整清單見 `~/Downloads/cpp_interview_research/_codex_gap_analysis.md`。
+
+### 🧰 可重用的工具（在 `/tmp`，會被清掉，必要時照下面重建）
+
+| 工具 | 用途 |
+|---|---|
+| `runone.sh` | 對單檔逐一嘗試 `c++17→20→23`（+`-pthread`／`-ltbb`），回報可用組合並取得輸出 |
+| `collect*.sh` | 全量平行編譯執行、把輸出存到 `/tmp/out*/` |
+| `verify_lines.sh` | 驗證「檔案裡貼的每一行輸出是否真的出現在實際執行結果中」 |
+| `shacheck.sh` | 去註解後比對 SHA-256，證明只動註解、程式碼未變 |
+
+**踩過的坑（重建時注意）**：
+1. `-ltbb` **必須放在來源檔之後**，否則 undefined reference。
+2. 每支都要在**獨立暫存目錄**執行——有些範例會寫檔（`raii_demo.txt`）污染 repo。
+3. 驗證輸出**不能只比第一行**：節錄區塊本來就可能從中段開始。
+4. 位址／執行緒 id／耗時每次不同 → 要加「每次執行都不同」但書，不要假裝可重現。
+5. **不可把收集時的暫存路徑寫進檔案**（`/tmp/tmp.XXXX`），要換成 `<執行目錄>`。
+
+### 🚧 共用 repo 的鐵則
+
+本 repo 由 Claude 與 Codex 共用。**commit 一律要帶 pathspec**：
+
+```bash
+git add -- "Claude Code C++by Examples" "Claude Python課程" ...   # 列出自己的路徑
+git commit -- <同樣的路徑>
+```
+
+`git add -A` 或無範圍的 `git commit` 會把對方**正在暫存中**的工作一起提交。
+2026-07-20 曾差點發生（對方當時有 405 個檔案 staged），只是時間差躲過。
+commit 後務必複核：`git show --name-only --format= HEAD | grep -c '^Codex'` 應為 0。

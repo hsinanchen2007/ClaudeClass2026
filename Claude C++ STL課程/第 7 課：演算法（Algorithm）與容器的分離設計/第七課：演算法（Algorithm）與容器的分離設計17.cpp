@@ -1,3 +1,104 @@
+// =============================================================================
+//  第七課：演算法（Algorithm）與容器的分離設計17.cpp
+//    —  本課完整講義（全文收錄於下方註解）＋ 學生成績分析綜合實作
+// =============================================================================
+//
+// 【主題資訊 Information】
+//   本檔性質：**第 7 課的完整講義全文**（7.1 ～ 7.13，收在下方 /* */ 註解中），
+//             檔案末端附一個把本課演算法串起來的綜合範例（學生成績分析）。
+//             講義本體請直接往下閱讀，本區塊只補充規格摘要與檔尾的面試題。
+//
+//   涵蓋章節：
+//     7.1  為什麼要分離（M×N 爆炸 → M+N）
+//     7.2  迭代器作為橋樑
+//     7.3  演算法的參數形式
+//     7.4  搜尋 find / find_if / find_if_not / adjacent_find
+//     7.5  計數與條件 count / count_if / all_of / any_of / none_of
+//     7.6  for_each 與 copy 家族
+//     7.7  transform / fill / generate
+//     7.8  replace / remove 與 erase-remove idiom
+//     7.9  reverse / rotate / unique
+//     7.10 sort / stable_sort / partial_sort / nth_element
+//     7.11 二分搜尋家族
+//     7.12 數值演算法 <numeric>
+//     7.13 課後練習
+//
+//   末端可執行範例用到的演算法（皆在 <algorithm>／<numeric>）：
+//     void sort       (RandomIt f, RandomIt l, Compare comp);        // C++98
+//     InputIt find_if (InputIt f, InputIt l, UnaryPred p);           // C++98
+//     T   accumulate  (InputIt f, InputIt l, T init, BinaryOp op);   // C++98
+//     difference_type count_if(InputIt f, InputIt l, UnaryPred p);   // C++98
+//     OutIt transform (InputIt f, InputIt l, OutIt d, UnaryOp op);   // C++98
+//     pair<It,It> minmax_element(FwdIt f, FwdIt l, Compare comp);    // C++11 ★
+//
+//   標準版本：核心演算法為 C++98；**std::minmax_element 是 C++11 新增**
+//   迭代器需求：sort 需 Random Access；其餘只需 Input / Forward Iterator
+//   複雜度：sort 為 O(N log N)；find_if / accumulate / count_if / transform 為 O(N)；
+//           minmax_element 約 1.5N 次比較（比分別呼叫 min_element + max_element 的 2N 少）
+//   標頭檔：<algorithm>、<numeric>、<string>、<vector>
+//
+//   ★ 末端範例的關鍵技巧（值得先看過再讀程式碼）：
+//     先用 sort 依分數降序排好，再用 find_if 找「第一個不及 90 分的位置」——
+//     於是 [begin, 該位置) 就是全部的優秀學生。
+//     **排序讓「篩選」退化成一次線性掃描**，這是排序最常見的真正用途：
+//     排序本身不是目的，而是為了讓後續演算法能用更簡單的方式完成工作。
+//
+// 【詳細解釋 Explanation】
+//   ★ 逐節說明見下方講義本體（7.1～7.13），此處只補三個貫穿全課的主軸：
+//
+//   【1. 分離的代價與收穫：M×N → M+N】
+//      若每個容器各自實作每個演算法，M 個容器 × N 個演算法要寫 M*N 份程式碼，
+//      而且每新增一個容器就要補 N 個函式。STL 讓演算法只認 iterator、不認容器，
+//      於是只需要 M 份容器 + N 份演算法 = M+N。
+//      真正付出的代價是：演算法失去了容器的內部知識，
+//      因此無法做「只有容器自己做得到」的最佳化 —— 這正是下一點的由來。
+//
+//   【2. 為什麼有些演算法必須由容器自己提供】
+//      std::sort 需要 **random access iterator**，而 list 的 iterator 只是
+//      bidirectional，所以 std::sort **無法**用在 list 上；list 因此自備
+//      成員函式 sort()（改接指標的 merge sort，不搬移元素）。
+//      同理，std::remove 只能搬移、無法改變容器大小（它根本碰不到容器），
+//      所以才需要 erase-remove idiom；而 list::remove 是成員函式，能真的刪節點。
+//      「什麼時候該用演算法、什麼時候該用成員函式」正是本課最實用的判斷力。
+//
+//   【3. iterator category 決定了演算法能不能用】
+//      演算法對 iterator 的要求由弱到強：
+//      Input/Output → Forward → Bidirectional → Random Access。
+//      find/count 只要 Input；reverse 要 Bidirectional；sort/nth_element 要 Random Access。
+//      這個階層不是形式主義 —— 它是「這個演算法需要什麼能力」的精確描述，
+//      也是編譯期就能擋下錯誤組合的機制。
+//
+// 【概念補充 Concept Deep Dive】
+//   演算法是怎麼「不認識容器」還能運作的？
+//   關鍵在 iterator 把「走訪」抽象成一組固定的運算（*it、++it、it != last），
+//   並透過 std::iterator_traits 暴露 value_type、difference_type、
+//   iterator_category 等型別資訊。演算法用 tag dispatch（依 iterator_category
+//   選擇不同實作）在**編譯期**挑最快的路徑：例如 std::distance 對 random access
+//   iterator 直接用 last - first（O(1)），對其他則逐一遞增（O(n)）。
+//   因為全部在編譯期決定並內聯，這層抽象通常是零成本的 ——
+//   泛型並沒有換來執行期的間接呼叫，這與虛擬函式的多型有本質差異。
+//
+//   原生指標為什麼也能當 iterator？
+//   因為 T* 天生就支援 *p、++p、p != q、p - q，完全符合 random access iterator
+//   的要求，iterator_traits 也對指標做了特化。這就是 std::find(arr, arr+5, x)
+//   能直接運作的原因，也說明 STL 的抽象是「符合介面即可」，而非「必須繼承某個基底」。
+//
+// 【注意事項 Pay Attention】
+//   1. **std::remove 不會刪除元素**。它把要保留的元素往前搬，回傳新的邏輯尾端，
+//      容器的 size() 完全沒變、尾端殘留舊值。必須配 erase：
+//        v.erase(std::remove(v.begin(), v.end(), x), v.end());
+//      （C++20 起可改用 std::erase(v, x) 一行完成。）
+//   2. **std::sort 不能用在 std::list / forward_list**（iterator 不是 random access），
+//      要用它們的成員函式 sort()。編譯期就會擋下來，錯誤訊息通常很長。
+//   3. 傳給演算法的兩個 iterator 必須來自**同一個容器**且 first 能走到 last，
+//      否則是 UB —— 標準不保證任何特定症狀。
+//   4. 會改變容器大小的操作（erase/insert）可能使 iterator 失效；
+//      不要在遍歷過程中直接改動容器，除非你正確處理了回傳的新 iterator。
+//   5. 排序的**穩定性**：std::sort **不保證**相等元素的相對順序，
+//      需要保證時用 std::stable_sort（代價是可能額外配置記憶體）。
+//
+// =============================================================================
+
 /*
 # 第七課：演算法（Algorithm）與容器的分離設計
 
@@ -1435,3 +1536,83 @@ int main() {
     
     return 0;
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】第 7 課綜合：演算法與容器的分離設計
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 上面的程式先 sort 再用 find_if 找「第一個 < 90 分的位置」，
+//        為什麼不直接用 copy_if 把 >= 90 的挑出來？兩者差在哪？
+//     答：兩者都對，取捨在於「後續還要不要用到排序結果」。
+//         本例已經為了排行榜排過序，此時**排序讓篩選退化成一次線性掃描**：
+//         降序排好後，>= 90 的必定連續集中在最前面，find_if 找到分界點即可，
+//         連額外容器都不用配置，[begin, it) 就是答案。
+//         若原本不需要排序，單純只要篩選，那 copy_if 是 O(N)，
+//         比「先排序 O(N log N) 再找」更划算。
+//     追問：這個「找分界點」的做法有更精準的工具嗎？→ 有，
+//         std::partition_point（C++11）。它對已分區的範圍是 O(log N)，
+//         比 find_if 的 O(N) 更快；前提是資料確實已依該判準分區——
+//         本例排序後正好滿足。
+//
+// 🔥 Q2. 講義 7.8 說 std::remove 不會真的刪除元素。請說明原因，
+//        並寫出正確的刪除寫法。
+//     答：因為演算法只拿到 [first, last) 兩個迭代器，**拿不到容器本體**。
+//         刪除要改變 size、可能要釋放記憶體，那是容器成員函式的職責；
+//         remove 沒有能力呼叫 vector::erase，甚至不知道這段範圍屬於哪個容器。
+//         所以它只能把要保留的元素往前搬並回傳新的邏輯結尾：
+//             v.erase(std::remove(v.begin(), v.end(), val), v.end());
+//         C++20 起可直接寫 std::erase(v, val)，一行且不會忘記。
+//     追問：這是 STL 的設計缺陷嗎？→ 是分離設計的必然代價，
+//         換來的是同一個 remove 能用在 vector、deque、array 和原生陣列上。
+//         但 remove 這個**名字**確實取得不好（其他語言的 remove 都是真刪除），
+//         這點是公認的設計失誤，C++20 才用 std::erase 補救。
+//
+// 🔥 Q3. 這個範例把 Student 依分數排序用的是 std::sort。
+//        如果 students 改成 std::list<Student>，程式會怎樣？
+//     答：**編譯失敗**。std::sort 要求 Random Access Iterator（要選 pivot、
+//         算中點、用索引算 heap 父子節點），而 list 只提供 Bidirectional Iterator，
+//         其 iterator 沒有定義 operator+ / operator-。
+//         list 必須改用成員函式 lst.sort(comp)。
+//     追問：list::sort 有什麼額外好處？→ 它用 merge sort **只重新串接節點指標、
+//         元素本身完全不移動**，所以排序後既有的 iterator / reference / pointer
+//         仍指向同一個元素、依然有效；而且它保證穩定。std::sort 兩者都做不到。
+//
+// ⚠️ 陷阱. 範例中的比較器寫成 return a.score > b.score;（降序）。
+//        若改成 return a.score >= b.score; 會發生什麼？
+//     答：**未定義行為**。std::sort 要求比較器滿足嚴格弱序，其中一條是
+//         非自反性：comp(a, a) 必須為 false。用 >= 時 comp(a, a) 回傳 true，
+//         分數相同的學生會被判定成「互相大於對方」，
+//         排序內部的邊界判斷因此失效，指標可能跑出容器範圍造成記憶體越界。
+//     為什麼會錯：直覺覺得「加上等號比較保險、涵蓋相等的情況」，
+//         但排序需要的是**嚴格**的次序關係（<），不是「小於或等於」。
+//         更麻煩的是本例只有 7 筆資料——libstdc++ 對 16 個元素以下的區間
+//         走 insertion sort，**根本不會觸發越界**，測試完全正常。
+//         等到資料量變大走到 quicksort 分割才會爆，而且不保證每次都爆。
+// ═══════════════════════════════════════════════════════════════════════════
+
+// 編譯: g++ -std=c++17 -Wall -Wextra 第七課：演算法（Algorithm）與容器的分離設計17.cpp -o demo17
+
+// === 預期輸出 ===
+// === 按分數排序 ===
+// Diana: 95
+// Bob: 92
+// Grace: 91
+// Eve: 88
+// Alice: 85
+// Charlie: 78
+// Frank: 72
+//
+// === 分數 >= 90 ===
+// 優秀學生: Diana Bob Grace 
+//
+// === 平均分 ===
+// 平均分: 85.8571
+//
+// === 及格人數 ===
+// 及格人數: 5/7
+//
+// === 提取分數 ===
+// 所有分數: 95 92 91 88 85 78 72 
+//
+// === 最高最低分 ===
+// 最高分: Diana (95)
+// 最低分: Frank (72)

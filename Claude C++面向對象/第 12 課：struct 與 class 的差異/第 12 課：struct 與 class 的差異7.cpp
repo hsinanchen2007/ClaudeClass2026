@@ -1,3 +1,102 @@
+// =============================================================================
+//  第 12 課：struct 與 class 的差異 7  —  綜合實戰：用 struct 裝資料、class 管狀態
+// =============================================================================
+//
+// 【主題資訊 Information】
+//   主題：本課總整理 —— struct/class 的語法差異、選用準則，以及兩者如何互相組合
+//   標準版本：C++98 起 struct/class 即等價；本檔的 NSDMI 需 C++11
+//   標頭檔：<string>、<cmath>、<vector>
+//   本檔結構：① 下方大段課程講義（markdown）② 可執行的遊戲角色系統實作
+//
+// 【詳細解釋 Explanation】
+//
+// 【1. 本課的核心結論：語法上幾乎相同，語意上分工明確】
+//   語言層面 struct 與 class 只差兩件事：成員的預設存取權、繼承的預設存取權。
+//   但既然功能等價，業界就用這兩個關鍵字來「傳達設計意圖」：
+//     * struct → 純資料聚合，各欄位可獨立自由變動，沒有不變條件要守
+//     * class  → 有不變條件要維護，需要把資料藏起來、只開放受控的修改入口
+//   本檔的遊戲角色系統正是這個分工的完整示範。
+//
+// 【2. 為什麼 CharacterStats / Vector2D 用 struct？】
+//   CharacterStats 是「角色的先天屬性表」：maxHp、attack、defense 各自獨立，
+//   任何數值組合都是合法設定（策劃想調成什麼都行），沒有跨欄位規則要守。
+//   Vector2D 同理 —— 任何 (x, y) 都是合法座標。
+//   這兩個型別若硬套 getter/setter，只會讓「調整數值表」這件事變得極其囉唆，
+//   而且擋不掉任何錯誤。用 struct 是正確選擇。
+//
+// 【3. 為什麼 GameCharacter 必須用 class？】
+//   它有多條不變條件，一旦被繞過遊戲就壞了：
+//     * 0 <= currentHp <= stats.maxHp   （血量不可為負，也不可超過上限）
+//     * 0 <= currentMp <= stats.maxMp
+//     * 技能必須先檢查 MP 足夠才能扣除
+//   如果 currentHp 是 public，任何一行 `player.currentHp = -5;` 都會讓後續
+//   的存活判定、UI 血條、結算邏輯全部出錯，而且極難追查是誰寫壞的。
+//   把它設為 private、只開放 takeDamage()/useSkill()，這些規則就由型別系統保證。
+//
+// 【4. 組合（composition）：class 內含 struct 是最常見的搭配】
+//   GameCharacter 內部同時擁有 CharacterStats（先天屬性）與 Vector2D（位置），
+//   這是典型的 has-a 關係。要注意的是：
+//   把 struct 當成 private 成員之後，外界就無法直接改它 —— 封裝的保護
+//   會「傳染」給被包含的成員。所以 struct 本身不封裝完全沒問題，
+//   只要包住它的那一層有做好把關即可。
+//
+// 【5. 傷害公式為什麼要保底 1 點？】
+//   actualDamage = damage - defense 若允許為負或 0，高防禦角色會變成無敵，
+//   遊戲平衡直接崩潰。保底 1 點是遊戲設計上的常見手法，
+//   而它之所以能被可靠地執行，正是因為傷害計算被收斂在 takeDamage() 這一個入口。
+//
+// 【概念補充 Concept Deep Dive】
+//   * struct 當成員時是「內嵌」而非指標：CharacterStats 直接嵌在 GameCharacter
+//     的記憶體裡，不需要額外配置、也沒有指標追蹤成本。這是 C++ 相對於
+//     Java/C# 的重要優勢（那些語言的物件成員預設是參考）。
+//   * GameCharacter 因為含有 std::string 而不再是 trivially copyable，
+//     不能 memcpy；但 CharacterStats 與 Vector2D 本身仍然是（見本課第 3 檔）。
+//   * moveTo() 每次呼叫都會算一次 sqrt。真實遊戲的移動系統若在熱路徑上，
+//     常改用平方距離判斷是否抵達，只在真的需要正規化方向向量時才開根號。
+//
+// 【注意事項 Pay Attention】
+//   1. 所有不修改狀態的查詢函式（length、showStatus、getters）都該標 const，
+//      否則 const GameCharacter& 傳進函式後連狀態都印不出來。本檔已全部補上。
+//   2. init() 是建構函式尚未教到之前的過渡寫法。它的缺陷是物件在 init() 之前
+//      處於「已建構但未初始化」的空窗期。第 13 課的建構函式才是正解。
+//   3. 除以距離前務必檢查 dist > 0，否則會產生 0/0 → NaN，
+//      而 NaN 會靜默污染後續所有計算（NaN 參與的比較永遠為 false）。
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】struct 與 class 綜合
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. C++ 的 struct 和 class 到底差在哪？請完整回答。
+//     答：語言層面只有兩點：① 成員預設存取權（struct=public、class=private）；
+//         ② 繼承預設存取權（struct=public、class=private）。其餘完全等價 ——
+//         struct 一樣能有建構函式、virtual、繼承、模板。實務上用它們傳達意圖：
+//         純資料用 struct、需維護不變條件用 class。
+//     追問：那 template<class T> 和 template<typename T> 差在哪？→ 完全等價，
+//           只是歷史遺留的兩種寫法，與本題的 struct/class 是不同層面的事。
+//
+// 🔥 Q2. 這個遊戲角色系統中，為什麼 CharacterStats 用 struct 而 GameCharacter 用 class？
+//     答：CharacterStats 的每個欄位都能獨立自由設定，任何數值組合都合法，
+//         沒有不變條件 → struct。GameCharacter 有「0 <= currentHp <= maxHp」
+//         等跨欄位規則必須永遠成立，若欄位公開就會被繞過 → class。
+//     追問：把 struct 當 private 成員，它會變得安全嗎？→ 會。外界拿不到它，
+//           所有修改都必須經過外層 class 的受控介面，保護會「傳染」下去。
+//
+// 🔥 Q3. class 內含 struct 成員時，記憶體是怎麼配置的？
+//     答：直接內嵌，不是指標。CharacterStats 的所有欄位就躺在 GameCharacter
+//         的物件記憶體內，不需額外 heap 配置、沒有間接存取成本。
+//         這與 Java/C# 預設把物件成員當參考的模型完全不同。
+//     追問：那 sizeof(GameCharacter) 怎麼算？→ 各成員大小加總再加對齊 padding，
+//           實際值是實作定義的（本檔輸出有實測）。
+//
+// ⚠️ 陷阱. moveTo() 裡如果不檢查 dist > 0 會怎樣？
+//     答：目標與現在位置相同時 dist 為 0，direction.x / dist 就是 0.0/0.0，
+//         IEEE 754 下產生 NaN。NaN 會靜默傳染 —— 位置變 NaN、之後所有距離計算
+//         都是 NaN，而且 NaN 參與的任何比較（含 == 自己）都回 false，
+//         連 `if (pos.x != pos.x)` 以外的檢查都抓不到，極難除錯。
+//     為什麼會錯：多數人以為除以零會 crash 或丟例外。整數除以零確實是 UB，
+//         但浮點除以零在 IEEE 754 下有明確定義（產生 inf 或 NaN），程式照跑不誤，
+//         錯誤會延後到很遠的地方才爆發。
+// ═══════════════════════════════════════════════════════════════════════════
+
 /*
 # 第 12 課：struct 與 class 的差異
 
@@ -648,18 +747,27 @@ MP: 0/120
 #include <iostream>
 #include <string>
 #include <cmath>
+#include <vector>
+#include <algorithm>
 using namespace std;
 
 // ===== struct：純資料 =====
+// x 與 y 彼此獨立、任何值都是合法座標 → 沒有不變條件 → 用 struct 正確
 struct Vector2D {
     double x = 0;
     double y = 0;
 
-    double length() {
+    // 查詢函式一律標 const：不改狀態，且讓 const Vector2D& 也能呼叫
+    double length() const {
         return sqrt(x * x + y * y);
     }
 
-    Vector2D add(const Vector2D& other) {
+    // 只需要比大小時用平方長度，可省去一次 sqrt
+    double lengthSquared() const {
+        return x * x + y * y;
+    }
+
+    Vector2D add(const Vector2D& other) const {
         Vector2D result;
         result.x = x + other.x;
         result.y = y + other.y;
@@ -723,7 +831,8 @@ public:
         return true;
     }
 
-    void showStatus() {
+    // 查詢函式標 const：const GameCharacter& 傳進函式後仍能印出狀態
+    void showStatus() const {
         cout << "--- " << name << " ---" << endl;
         cout << "HP: " << currentHp << "/" << stats.maxHp << endl;
         cout << "MP: " << currentMp << "/" << stats.maxMp << endl;
@@ -731,13 +840,73 @@ public:
         cout << "攻擊: " << stats.attack << " / 防禦: " << stats.defense << endl;
     }
 
+    // 唯讀存取器：外界能看狀態，但改不了 —— 這正是 class 的價值
+    bool     isAlive() const { return currentHp > 0; }
+    int      getHp()   const { return currentHp; }
+    string   getName() const { return name; }
+    Vector2D getPos()  const { return position; }
+
 private:
     string name;
-    CharacterStats stats;   // struct 作為 class 的成員
+    CharacterStats stats;   // struct 作為 class 的成員（直接內嵌，不是指標）
     Vector2D position;      // struct 作為 class 的成員
     int currentHp = 0;
     int currentMp = 0;
 };
+
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1266. Minimum Time Visiting All Points
+//   題目：平面上給一串點，必須「依序」走訪。每秒可以水平、垂直或斜向移動一格，
+//         求走完所有點的最短秒數。
+//   為什麼用到本主題：這題的輸入天生就是一串座標，正好用本檔的 Vector2D
+//         這種純資料 struct 表達。核心觀察是：因為允許斜走，兩點間的最短時間
+//         是「切比雪夫距離」max(|dx|, |dy|) —— 斜走能同時消耗一格 x 與一格 y，
+//         所以較短的那個軸是「順便」走完的，不額外花時間。
+//   複雜度：O(N) 時間、O(1) 額外空間。
+// -----------------------------------------------------------------------------
+int minTimeToVisitAllPoints(const vector<Vector2D>& points) {
+    int total = 0;
+    for (size_t i = 1; i < points.size(); ++i) {
+        double dx = fabs(points[i].x - points[i - 1].x);
+        double dy = fabs(points[i].y - points[i - 1].y);
+        total += static_cast<int>(max(dx, dy));   // 切比雪夫距離
+    }
+    return total;
+}
+
+// -----------------------------------------------------------------------------
+// 【日常實務範例】戰鬥結算報表：從一群角色中統計存活狀況
+//   情境：回合制遊戲每回合結束時，伺服器要產生一份戰報 —— 誰還活著、
+//   總血量剩多少、誰血量最低（優先補血目標）。
+//   重點在於：這個函式只需要「讀」角色狀態，因此參數用 const 參考傳入。
+//   而它之所以能安全地只讀，正是因為 GameCharacter 把資料設成 private 並
+//   只開放 const 存取器 —— 呼叫端就算想改也改不了，編譯器直接擋下。
+//   這是封裝在多人協作專案中最實際的價值。
+//   回傳型別用 struct：四個欄位彼此獨立、沒有不變條件，正是 struct 的標準用途。
+// -----------------------------------------------------------------------------
+struct BattleReport {
+    int    aliveCount = 0;
+    int    totalHp = 0;
+    string weakestName;      // 血量最低的存活者，優先補血
+    int    weakestHp = 0;
+};
+
+BattleReport summarizeBattle(const vector<GameCharacter>& party) {
+    BattleReport report;
+    bool foundAny = false;
+
+    for (const GameCharacter& c : party) {     // const 參考：不複製、也不可修改
+        if (!c.isAlive()) continue;            // 只統計存活者
+        ++report.aliveCount;
+        report.totalHp += c.getHp();
+        if (!foundAny || c.getHp() < report.weakestHp) {
+            report.weakestHp   = c.getHp();
+            report.weakestName = c.getName();
+            foundAny = true;
+        }
+    }
+    return report;
+}
 
 int main() {
     // 用 struct 定義角色屬性（純資料）
@@ -787,5 +956,107 @@ int main() {
     cout << endl;
     mage.showStatus();
 
+    // ─────────────────────────────────────────────────────────
+    cout << "\n===== LeetCode 1266. Minimum Time Visiting All Points =====" << endl;
+    // 官方範例 1：[[1,1],[3,4],[-1,0]] → 7
+    vector<Vector2D> path1 = {{1, 1}, {3, 4}, {-1, 0}};
+    cout << "  [[1,1],[3,4],[-1,0]] -> " << minTimeToVisitAllPoints(path1)
+         << " 秒（預期 7）" << endl;
+    // 官方範例 2：[[3,2],[-2,2]] → 5
+    vector<Vector2D> path2 = {{3, 2}, {-2, 2}};
+    cout << "  [[3,2],[-2,2]]       -> " << minTimeToVisitAllPoints(path2)
+         << " 秒（預期 5）" << endl;
+
+    // ─────────────────────────────────────────────────────────
+    cout << "\n===== 實務：戰鬥結算報表 =====" << endl;
+    vector<GameCharacter> party;
+    party.push_back(warrior);
+    party.push_back(mage);
+
+    GameCharacter rogue;
+    CharacterStats rogueStats;
+    rogueStats.maxHp = 90;
+    rogueStats.defense = 5;
+    rogue.init("盜賊", rogueStats);
+    rogue.takeDamage(200);          // 盜賊陣亡，驗證存活統計會排除他
+    party.push_back(rogue);
+
+    BattleReport rep = summarizeBattle(party);
+    cout << "  存活人數: " << rep.aliveCount << " / " << party.size() << endl;
+    cout << "  存活者總 HP: " << rep.totalHp << endl;
+    cout << "  優先補血對象: " << rep.weakestName
+         << "（HP " << rep.weakestHp << "）" << endl;
+
+    // ─────────────────────────────────────────────────────────
+    cout << "\n===== 封裝驗證 =====" << endl;
+    // warrior.currentHp = 9999;   // ❌ 編譯錯誤：private，非法狀態無法被表達
+    const GameCharacter& cref = warrior;
+    cout << "  透過 const 參考唯讀查詢: " << cref.getName()
+         << " HP=" << cref.getHp()
+         << " 存活=" << (cref.isAlive() ? "是" : "否") << endl;
+    // cref.takeDamage(1);         // ❌ 編譯錯誤：非 const 成員函式
+
+    cout << "\n===== 記憶體佈局（實作定義，本機 GCC 15.2 x86-64）=====" << endl;
+    cout << "  sizeof(Vector2D)       = " << sizeof(Vector2D) << endl;
+    cout << "  sizeof(CharacterStats) = " << sizeof(CharacterStats) << endl;
+    cout << "  sizeof(GameCharacter)  = " << sizeof(GameCharacter)
+         << "（含內嵌的兩個 struct，非指標）" << endl;
+
     return 0;
 }
+
+// 編譯: g++ -std=c++17 -Wall -Wextra "第 12 課：struct 與 class 的差異7.cpp" -o demo7
+
+// === 預期輸出 ===
+// ===== 初始狀態 =====
+// --- 戰士 ---
+// HP: 150/150
+// MP: 30/30
+// 位置: (0, 0)
+// 攻擊: 20 / 防禦: 12
+//
+// --- 法師 ---
+// HP: 80/80
+// MP: 120/120
+// 位置: (0, 0)
+// 攻擊: 8 / 防禦: 3
+//
+// ===== 戰鬥 =====
+// 戰士 移動到 (0.685994, 0.411597)
+// 法師 使用技能（MP: 80/120）
+// 戰士 受到 23 點傷害（HP: 127/150）
+// 戰士 受到 23 點傷害（HP: 104/150）
+// 法師 使用技能（MP: 40/120）
+// 法師 使用技能（MP: 0/120）
+// 法師: MP 不足！
+//
+// ===== 最終狀態 =====
+// --- 戰士 ---
+// HP: 104/150
+// MP: 30/30
+// 位置: (0.685994, 0.411597)
+// 攻擊: 20 / 防禦: 12
+//
+// --- 法師 ---
+// HP: 80/80
+// MP: 0/120
+// 位置: (0, 0)
+// 攻擊: 8 / 防禦: 3
+//
+// ===== LeetCode 1266. Minimum Time Visiting All Points =====
+//   [[1,1],[3,4],[-1,0]] -> 7 秒（預期 7）
+//   [[3,2],[-2,2]]       -> 5 秒（預期 5）
+//
+// ===== 實務：戰鬥結算報表 =====
+// 盜賊 受到 195 點傷害（HP: 0/90）
+//   存活人數: 2 / 3
+//   存活者總 HP: 184
+//   優先補血對象: 法師（HP 80）
+//
+// ===== 封裝驗證 =====
+//   透過 const 參考唯讀查詢: 戰士 HP=104 存活=是
+//
+// ===== 記憶體佈局（實作定義，本機 GCC 15.2 x86-64）=====
+//   sizeof(Vector2D)       = 16
+//   sizeof(CharacterStats) = 24
+//   sizeof(GameCharacter)  = 80（含內嵌的兩個 struct，非指標）

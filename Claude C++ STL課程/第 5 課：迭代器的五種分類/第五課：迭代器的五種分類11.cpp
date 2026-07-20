@@ -1,4 +1,132 @@
-﻿/*
+﻿// =============================================================================
+//  第五課：迭代器的五種分類 11  —  本課教科書：用分類寫出「對每種容器都最佳」的泛型碼
+// =============================================================================
+//
+// 【主題資訊 Information】
+//   本檔是第五課的完整講義（下方 /* ... */ 內為全文），
+//   最後附兩個把分類知識直接兌現的泛型工具：
+//     get_nth_element(c, n)  用 std::advance → 對 vector O(1)、對 list O(n)
+//     sort_container(c)      用 if constexpr → Random Access 走 std::sort，
+//                            其餘走容器成員 sort()
+//   標頭檔：<iterator>（iterator_traits、advance、五個 tag）、
+//           <algorithm>（sort）、<type_traits>（is_same_v / is_base_of_v）
+//   標準版本：**if constexpr 與 is_same_v 都是 C++17**，本檔必須以
+//             -std=c++17 以上編譯；尾端回傳型別（-> typename ...）是 C++11。
+//   複雜度：get_nth_element 對 Random Access 是 O(1)、其餘 O(n)；
+//           sort_container 一律 O(N log N)。
+//
+// 【詳細解釋 Explanation】
+//
+// 【1. 這兩個函式在示範什麼：把「分類」當成可程式化的資訊】
+//   前面幾個範例都在「觀察」分類；這裡開始**使用**它。
+//   兩個工具解決的是同一個問題：
+//   「我想寫一份程式碼，但不同容器該用不同做法。」
+//   傳統作法是為每種容器寫一個多載（M 份程式碼）；
+//   靠 iterator_traits 之後只需寫一份，讓編譯器在編譯期選路。
+//
+// 【2. get_nth_element：advance 幫你隱藏差異，但沒有隱藏成本】
+//   std::advance 內部用標籤分派：Random Access 走 `it += n`（O(1)），
+//   其餘走迴圈（O(n)）。呼叫端寫法完全一樣。
+//   但要特別強調：**這不是把 list 變快了**。
+//   get_nth_element(lst, 2) 依然是 O(n) 的走訪 ——
+//   advance 只是讓「同一份程式碼能編過所有容器」，複雜度誠實反映底層。
+//   若在迴圈裡反覆呼叫 get_nth_element(lst, i)，就會得到意外的 O(n²)。
+//   這是很常見的效能陷阱：**介面統一 ≠ 成本統一**。
+//
+// 【3. sort_container：if constexpr 的「未選中分支不實例化」是關鍵】
+//       if constexpr (是 Random Access) { std::sort(c.begin(), c.end()); }
+//       else                            { c.sort(); }
+//   這段程式碼若改成**普通的 if**，會編譯失敗 ——
+//   因為對 list 而言 std::sort(...) 那一行仍然會被實例化（即使執行不到），
+//   而 list::iterator 沒有 operator+ → 樣板實例化失敗。
+//   反之對 vector，`c.sort()` 那行也會失敗（vector 沒有 sort 成員）。
+//   **if constexpr 的價值正在於此：未被選中的分支根本不會被實例化。**
+//   C++17 之前只能用標籤分派（多載解析）達到同樣效果。
+//
+// 【4. 本檔用 is_same_v 的侷限（誠實說明）】
+//   sort_container 用的是
+//       std::is_same_v<category, std::random_access_iterator_tag>
+//   這是**精確比對**。若某天迭代器的 category 換成能力更強的
+//   contiguous_iterator_tag（C++20），這個判斷會回傳 false，
+//   於是走進 else 分支去呼叫 c.sort() —— 而 vector 沒有 sort 成員 → 編譯錯誤。
+//   更穩健的寫法是用 is_base_of_v（利用 tag 的繼承關係）：
+//       if constexpr (std::is_base_of_v<std::random_access_iterator_tag, category>)
+//   本檔保留原始的 is_same_v 寫法（在 C++17 / libstdc++ 下完全正確），
+//   但把這個侷限寫進註解；下方新增的 medianOf 則採用穩健的 is_base_of_v 寫法，
+//   兩者可直接對照。
+//
+// 【概念補充 Concept Deep Dive】
+//   為什麼「編譯期選路」比「執行期 if」重要得多？
+//   考慮一個執行期版本：
+//       if (is_random_access) { it += n; } else { while (n--) ++it; }
+//   這根本編譯不過 —— `it += n` 對 list::iterator 不存在，
+//   而編譯器必須為**所有**分支產生程式碼，不管執行期會不會走到。
+//   這就是 C++ 樣板與執行期多型的根本差異：
+//     - 執行期多型（虛擬函式）：所有分支都必須是合法的、都會被編譯
+//     - 編譯期多型（樣板 + if constexpr / 標籤分派）：
+//       只有被選中的分支存在，其餘連編都不編
+//   後者讓「對不同型別做完全不同的事」成為可能，
+//   而且沒有任何執行期成本（沒有分支預測、沒有虛擬呼叫）。
+//   代價是每種型別各產生一份機器碼（code bloat）與較長的編譯時間。
+//
+// 【注意事項 Pay Attention】
+//   1. if constexpr 是 C++17；本檔必須以 -std=c++17 以上編譯。
+//   2. 把 if constexpr 改成普通 if 會編譯失敗 ——
+//      因為未選中的分支仍會被實例化。
+//   3. std::advance 統一了介面但**沒有統一複雜度**：對 list 仍是 O(n)。
+//      在迴圈裡反覆呼叫 get_nth_element(lst, i) 會是 O(n²)。
+//   4. 檢查「至少是某等級」應用 is_base_of_v；is_same_v 是精確比對，
+//      會拒絕能力更強的分類（見 §4）。
+//   5. sort_container 的 else 分支假設容器有 sort() 成員 ——
+//      對 deque（Random Access 但沒有 sort 成員）恰好會走 if 分支，沒問題；
+//      但對 set 這類「既非 Random Access 也沒有 sort()」的容器會編譯失敗。
+//      真正通用的版本需要更多條件判斷。
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】用迭代器分類寫泛型程式碼
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. sort_container 裡的 if constexpr 若改成普通的 if，會發生什麼事？
+//     答：**編譯失敗**。普通 if 的兩個分支都會被實例化（不管執行期走不走到），
+//         所以對 list 而言 `std::sort(c.begin(), c.end())` 那行仍要編譯，
+//         而 list::iterator 沒有 operator+ → 樣板實例化錯誤。
+//         反過來對 vector，`c.sort()` 也會失敗（vector 沒有 sort 成員）。
+//         if constexpr 的核心價值就是「未被選中的分支根本不會被實例化」。
+//     追問：C++17 之前怎麼做？
+//           → 標籤分派：寫兩個多載，各自多接一個 tag 參數，
+//             呼叫時傳 `typename iterator_traits<It>::iterator_category()`，
+//             由多載解析在編譯期選路。STL 內部（std::advance / std::distance）
+//             至今仍是這樣寫的。
+//
+// 🔥 Q2. get_nth_element 用了 std::advance，是不是就讓 list 的隨機存取變快了？
+//     答：完全沒有。std::advance 只統一了**介面** ——
+//         它用標籤分派選擇實作（Random Access 走 `+= n`，其餘走迴圈），
+//         但複雜度誠實反映底層：對 list 仍然是 O(n) 的逐節點走訪。
+//         真正的風險是：介面看起來一樣，讓人誤以為成本也一樣，
+//         於是在迴圈裡反覆呼叫 → 意外的 O(n²)。
+//     追問：那要怎麼避免這個陷阱？
+//           → 對非 Random Access 容器，改成「持有迭代器往前走」而非
+//             「每次從 begin 重新 advance」；或一開始就選對容器。
+//             這也是為什麼 STL 讓 list 沒有 operator[] ——
+//             不提供會騙人的介面。
+//
+// ⚠️ 陷阱. sort_container 用 is_same_v 檢查 random_access_iterator_tag，
+//          在 C++17 完全正確；為什麼它其實是個未來的地雷？
+//     答：因為 is_same_v 是**精確比對**。C++20 新增了
+//         contiguous_iterator_tag（繼承自 random_access_iterator_tag，能力只多不少）。
+//         若某個標準函式庫日後把 vector 迭代器的 category 改成 contiguous，
+//         `is_same_v<cat, random_access_iterator_tag>` 會變成 false，
+//         程式就會走進 else 去呼叫 `c.sort()` —— 而 vector 沒有 sort 成員，
+//         直接編譯錯誤。一個原本正確的程式因為「能力變強」而壞掉。
+//     為什麼會錯：把 tag 當成五個彼此無關的標記，
+//         而忽略它們構成的是一個**能力的偏序**（有繼承關係）。
+//         判斷「夠不夠強」要用 is_base_of_v（是否為其祖先），
+//         判斷「是不是剛好這一種」才用 is_same_v。
+//         附帶一提，libstdc++ 目前為了 ABI 相容，
+//         即使在 C++20 下 vector 迭代器仍回報 random_access_iterator_tag ——
+//         所以這個地雷還沒被引爆，但寫法本身就是脆弱的。
+// ═══════════════════════════════════════════════════════════════════════════
+
+/*
 # 第五課：迭代器的五種分類
 
 ---
@@ -1007,8 +1135,10 @@ list[2] = 30
 #include <iostream>
 #include <vector>
 #include <list>
+#include <string>
 #include <algorithm>
 #include <iterator>
+#include <type_traits>
  
 // 通用的「取得第 n 個元素」函數
 template <typename Container>
@@ -1037,6 +1167,85 @@ void sort_container(Container& c) {
     }
 }
  
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 179. Largest Number
+//   題目：給一組非負整數，重排後串接，組出數值最大的字串（[3,30,34,5,9] → "9534330"）。
+//   為什麼用到本主題：這題必須用 std::sort 搭配自訂比較器，
+//         而 **std::sort 的最低要求正是 Random Access Iterator** ——
+//         這是本課「演算法對分類的要求」最直接的體現。
+//         下面刻意同時給出 vector 版（可用 std::sort）與 list 版
+//         （只有 Bidirectional，必須改用成員 sort），
+//         讓「分類決定你能用哪個工具」變成可執行的對照。
+//   複雜度：時間 O(N log N × L)（L 為數字字串長度）、空間 O(N)。
+//   注意：比較器 a+b > b+a 使用嚴格的 >，滿足嚴格弱序；
+//         寫成 >= 會讓 sort 進入未定義行為。
+// -----------------------------------------------------------------------------
+std::string largestNumberVector(const std::vector<int>& nums) {
+    std::vector<std::string> parts;
+    parts.reserve(nums.size());
+    for (int n : nums) parts.push_back(std::to_string(n));
+
+    // std::sort 需要 Random Access → vector 可以
+    std::sort(parts.begin(), parts.end(),
+              [](const std::string& a, const std::string& b) { return a + b > b + a; });
+
+    if (!parts.empty() && parts[0] == "0") return "0";   // 全 0 的特例
+    std::string result;
+    for (const std::string& p : parts) result += p;
+    return result;
+}
+
+std::string largestNumberList(const std::vector<int>& nums) {
+    std::list<std::string> parts;
+    for (int n : nums) parts.push_back(std::to_string(n));
+
+    // std::sort(parts.begin(), parts.end(), cmp);   // 編譯錯誤！list 只有 Bidirectional
+    parts.sort([](const std::string& a, const std::string& b) { return a + b > b + a; });
+
+    if (!parts.empty() && parts.front() == "0") return "0";
+    std::string result;
+    for (const std::string& p : parts) result += p;
+    return result;
+}
+
+// -----------------------------------------------------------------------------
+// 【日常實務範例】寫一個「取中位數」工具，對每種容器都用最佳策略
+//   情境：監控系統要算延遲的中位數。資料可能存在 vector（一般情況）
+//         或 list（需要頻繁插入的即時串流緩衝）。
+//   為什麼用到本主題：中位數需要「排序 + 取中間」，而兩個步驟都受分類影響：
+//         排序    → Random Access 用 std::sort，其餘用成員 sort()
+//         取中間  → Random Access 可 O(1) 跳，其餘只能 O(n) 走
+//         用 iterator_traits + if constexpr，一份程式碼就能對兩者都最佳。
+//   注意：這裡刻意用 is_base_of_v 而非 is_same_v ——
+//         與上方 sort_container 的寫法對照，正是〈注意事項 §4〉說明的差異。
+//         本函式會複製一份資料再排序，不會動到呼叫端的容器。
+// -----------------------------------------------------------------------------
+template <typename Container>
+double medianOf(Container c) {          // 刻意傳值：排序不影響呼叫端
+    using iterator = typename Container::iterator;
+    using category = typename std::iterator_traits<iterator>::iterator_category;
+
+    if (c.empty()) return 0.0;
+
+    // 步驟 1：排序 —— 依分類選工具（用 is_base_of_v，可容納更強的分類）
+    if constexpr (std::is_base_of_v<std::random_access_iterator_tag, category>) {
+        std::sort(c.begin(), c.end());
+    } else {
+        c.sort();
+    }
+
+    // 步驟 2：取中間 —— advance 對兩者都成立（但成本不同）
+    std::size_t n = c.size();
+    auto mid = c.begin();
+    std::advance(mid, static_cast<std::ptrdiff_t>(n / 2));
+
+    if (n % 2 == 1) return static_cast<double>(*mid);
+
+    auto lo = mid;
+    --lo;                                // 偶數個時取中間兩個的平均
+    return (static_cast<double>(*lo) + static_cast<double>(*mid)) / 2.0;
+}
+
 int main() {
     std::cout << "=== get_nth_element ===" << std::endl;
     
@@ -1060,7 +1269,78 @@ int main() {
     sort_container(l);
     for (int n : l) std::cout << n << " ";
     std::cout << std::endl;
-    
+
+    // advance 統一介面，但沒有統一成本
+    std::cout << "\n=== advance 統一介面，不統一成本 ===" << std::endl;
+    std::cout << "  get_nth_element(vector, 2) 內部走 it += 2 → O(1)" << std::endl;
+    std::cout << "  get_nth_element(list,   2) 內部走 ++ 兩次 → O(n)" << std::endl;
+    std::cout << "  → 在迴圈裡反覆對 list 呼叫，就是意外的 O(n^2)" << std::endl;
+
+    std::cout << "\n=== LeetCode 179. Largest Number ===" << std::endl;
+    std::cout << "  [vector 版，用 std::sort]" << std::endl;
+    std::cout << "    [10,2]        → " << largestNumberVector({10, 2}) << std::endl;
+    std::cout << "    [3,30,34,5,9] → " << largestNumberVector({3, 30, 34, 5, 9}) << std::endl;
+    std::cout << "    [0,0]         → " << largestNumberVector({0, 0}) << std::endl;
+    std::cout << "  [list 版，只能用成員 sort()]" << std::endl;
+    std::cout << "    [3,30,34,5,9] → " << largestNumberList({3, 30, 34, 5, 9}) << std::endl;
+    std::cout << "  → 同一個演算法需求，因為迭代器分類不同而必須換工具" << std::endl;
+
+    std::cout << "\n=== 日常實務：跨容器的中位數工具 ===" << std::endl;
+    {
+        std::vector<int> latency_vec = {120, 95, 240, 180, 310, 150, 88};
+        std::list<int>   latency_lst(latency_vec.begin(), latency_vec.end());
+
+        std::cout << "  資料: 120 95 240 180 310 150 88（7 筆，奇數）" << std::endl;
+        std::cout << "    vector 中位數 = " << medianOf(latency_vec) << std::endl;
+        std::cout << "    list   中位數 = " << medianOf(latency_lst) << std::endl;
+
+        std::vector<int> even_vec = {10, 20, 30, 40};
+        std::list<int>   even_lst(even_vec.begin(), even_vec.end());
+        std::cout << "  資料: 10 20 30 40（4 筆，偶數 → 取中間兩個平均）" << std::endl;
+        std::cout << "    vector 中位數 = " << medianOf(even_vec) << std::endl;
+        std::cout << "    list   中位數 = " << medianOf(even_lst) << std::endl;
+
+        std::cout << "    （呼叫端資料未被更動：latency_vec 首元素仍是 "
+                  << latency_vec.front() << "）" << std::endl;
+        std::cout << "  → 一份程式碼，兩種容器各自走最佳路徑" << std::endl;
+    }
+
     return 0;
 }
- 
+
+// 編譯: g++ -std=c++17 -Wall -Wextra 第五課：迭代器的五種分類11.cpp -o demo11
+
+// === 預期輸出 ===
+// === get_nth_element ===
+// vector[2] = 30
+// list[2] = 30
+//
+// === sort_container ===
+// 排序 vector: 使用 std::sort
+// 1 2 5 8 9
+// 排序 list: 使用容器成員函數 sort
+// 1 2 5 8 9
+//
+// === advance 統一介面，不統一成本 ===
+//   get_nth_element(vector, 2) 內部走 it += 2 → O(1)
+//   get_nth_element(list,   2) 內部走 ++ 兩次 → O(n)
+//   → 在迴圈裡反覆對 list 呼叫，就是意外的 O(n^2)
+//
+// === LeetCode 179. Largest Number ===
+//   [vector 版，用 std::sort]
+//     [10,2]        → 210
+//     [3,30,34,5,9] → 9534330
+//     [0,0]         → 0
+//   [list 版，只能用成員 sort()]
+//     [3,30,34,5,9] → 9534330
+//   → 同一個演算法需求，因為迭代器分類不同而必須換工具
+//
+// === 日常實務：跨容器的中位數工具 ===
+//   資料: 120 95 240 180 310 150 88（7 筆，奇數）
+//     vector 中位數 = 150
+//     list   中位數 = 150
+//   資料: 10 20 30 40（4 筆，偶數 → 取中間兩個平均）
+//     vector 中位數 = 25
+//     list   中位數 = 25
+//     （呼叫端資料未被更動：latency_vec 首元素仍是 120）
+//   → 一份程式碼，兩種容器各自走最佳路徑

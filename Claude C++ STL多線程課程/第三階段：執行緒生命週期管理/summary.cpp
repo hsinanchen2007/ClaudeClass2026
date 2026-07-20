@@ -1,3 +1,212 @@
+// =============================================================================
+//  第三階段：執行緒生命週期管理 — 總複習 summary.cpp
+// =============================================================================
+//
+// 【主題資訊 Information】
+//   本檔是第三階段(3.1–3.6)的教科書式總整理,涵蓋六個主題:
+//
+//     3.1 RAII 與執行緒管理      ThreadGuard / ScopedThread / FlexibleThread
+//     3.2 執行緒守衛類別設計      JoiningThread / ManagedThread<Policy>
+//     3.3 std::jthread (C++20)   自動 join + stop_token 協作取消
+//     3.4 執行緒例外處理          exception_ptr / future / promise
+//     3.5 執行緒本地儲存          thread_local
+//     3.6 執行緒安全的初始化      call_once / magic static
+//
+//   標準版本：本檔的【可執行部分】只用 C++11/14/17,以 -std=c++17 編譯零警告;
+//             jthread / stop_token 的示範函式刻意保留為註解(需 C++20),
+//             完整可執行版本請見「課程 3.3：std jthread (C++20)2–7」各檔。
+//   標頭檔  ：<thread>、<mutex>、<future>、<exception>、<atomic>
+//
+// 【詳細解釋 Explanation】
+//
+// 【1. 貫穿整個第三階段的那一條規則】
+//   一切都源自 std::thread 解構函式的這一行([thread.thread.destr]):
+//
+//       ~thread() { if (joinable()) std::terminate(); }
+//
+//   請務必精確理解它的性質:這是【標準明文規定的確定行為】,
+//   不是未定義行為、不是「可能崩潰」,而且 catch 攔不到 ——
+//   std::terminate() 根本不走例外機制。
+//
+//   為什麼標準要這麼激烈?因為另外兩個選項都更糟:
+//     自動 join()   → 解構函式無預警阻塞,可能永遠不返回
+//     自動 detach() → 執行緒存取已銷毀的區域變數,懸空參考
+//   標準的判斷是:「立刻大聲失敗」勝過「安靜地做錯事」。
+//   於是「必須明確選擇 join 或 detach」成了程式設計者的責任 ——
+//   而第三階段的全部內容,都是在回答「怎麼讓這個責任不被遺忘」。
+//
+// 【2. 守衛類別的演進脈絡:每一步都在解決前一步的問題】
+//   ┌────────────────┬──────────┬────────────┬──────────┬────────────────┐
+//   │ 設計           │ 所有權   │ 可入容器   │ 解構策略 │ 它解決了什麼   │
+//   ├────────────────┼──────────┼────────────┼──────────┼────────────────┤
+//   │ ThreadGuard    │ 否(參考)│ 否         │ join     │ 例外跳過 join  │
+//   │ ScopedThread   │ 是       │ 否(不可移)│ join     │ 宣告順序依賴   │
+//   │ FlexibleThread │ 是       │ 否(不可移)│ join/det │ 策略需可選     │
+//   │ JoiningThread  │ 是       │ 是(可移動)│ join     │ 動態數量管理   │
+//   │ ManagedThread  │ 是       │ 是         │ 編譯期   │ 執行期分支成本 │
+//   │ std::jthread   │ 是       │ 是         │ stop+join│ 全部,且標準化 │
+//   └────────────────┴──────────┴────────────┴──────────┴────────────────┘
+//   理解這條線比背下任何一個類別都重要:每個設計都是在回答
+//   「前一個設計留下了什麼問題」。
+//
+// 【3. ⚠️ 三種「移動賦值到 joinable 目標」的規則,彼此完全不同】
+//   這是本階段最容易被含混帶過、面試卻最愛問的一點:
+//
+//       std::thread   a = std::move(b);   → 【std::terminate()】程式死亡
+//       JoiningThread a = std::move(b);   → 先 join 自己的(可能阻塞)再接手
+//       std::jthread  a = std::move(b);   → request_stop() + join() 再接手,
+//                                            程式【存活】
+//
+//   三者是【不同的規則】,不是「類似的行為」。特別注意 jthread 之所以
+//   敢自動 join,是因為它同時提供了 stop_token 這條協作取消管道 ——
+//   沒有那條管道,自動 join 就等於「可能永遠不返回」。
+//
+//   ⚠️ 由此延伸出一個實務陷阱:自己寫的類別若持有 std::thread 成員,
+//   把移動賦值寫成 = default 會【逐成員移動】,直接踩到第一條規則
+//   → std::terminate()。必須顯式實作,先按自己的策略處置舊資源。
+//   (本階段「執行緒守衛類別設計3/4」有可實際觀察的重現路徑。)
+//
+// 【4. 例外處理的四種方案,以及各自的適用時機】
+//   前提:例外機制以【執行緒】為單位。例外從執行緒進入函式逸出即
+//   std::terminate(),包在 join() 外面的 try/catch 永遠攔不到。
+//   所以必須有人【顯式地把例外物件搬過去】:
+//
+//     (a) 執行緒內就地捕獲     最簡單,但呼叫端完全感知不到失敗
+//     (b) exception_ptr 成員   可跨執行緒傳遞任意型別,但同步要自己管
+//     (c) std::future/async    推薦:自動裝箱、get() 自動 rethrow
+//     (d) std::promise         最靈活:可精確控制何時、以什麼回覆
+//
+//   核心機制都是 std::current_exception() 把例外【型別抹除】成
+//   exception_ptr,再由 std::rethrow_exception() 在另一條執行緒
+//   以【原始型別】重新拋出 —— 自訂例外類別的額外欄位完整保留。
+//
+// 【5. thread_local:最好的同步是不需要同步】
+//   面對共享可變狀態,你只有三個選擇:加鎖、改用 atomic、或【不共享】。
+//   thread_local 是第三條路的語言層支援:每條執行緒一份獨立實體,
+//   彼此是不同的物件(連位址都不同),因此不可能有 data race。
+//   ⚠️ 但它解決不了 race condition —— 那是邏輯層的時序問題。
+//   ⚠️ 也不可用它管理必須釋放的資源:detached thread 與 std::exit()
+//      的情況下,thread_local 的解構【不保證】發生。
+//
+// 【6. 執行緒安全初始化:call_once vs magic static】
+//   兩者都保證「只初始化一次,且其他執行緒會等到完成」:
+//     * static 區域變數(magic static,C++11 起保證執行緒安全)
+//       —— 單例模式首選,最簡潔,編譯器用 guard variable 實作。
+//     * std::call_once + std::once_flag
+//       —— 適合初始化邏輯不在建構函式裡、或需要傳參數的情況。
+//       重要性質:若初始化函式【拋出例外】,once_flag【不會】被設定,
+//       下一個執行緒會重新嘗試 —— 這讓「可重試的初始化」得以實作,
+//       是它勝過 magic static 的關鍵場景。
+//
+// 【概念補充 Concept Deep Dive】
+//
+// (A) join() 本身就是同步點
+//   join() 返回之後,子執行緒的所有寫入對呼叫端都保證可見 ——
+//   兩者之間有 happens-before 關係([thread.thread.member])。
+//   所以「join 完再讀子執行緒寫的變數」不需要任何 mutex 或 atomic。
+//   這是初學者最常畫蛇添足的地方。
+//
+// (B) 為什麼守衛類別的解構函式不該讓例外逸出
+//   C++11 起解構函式預設 noexcept(true)。若例外從中逸出,直接
+//   std::terminate();若又發生在 stack unwinding 期間更是必死。
+//   而 join() 確實可能丟 std::system_error。所以生產等級的守衛
+//   應該寫成 try { ... } catch (...) { /* log */ } —— 吞例外不漂亮,
+//   但比 terminate 好,這是解構函式的普遍兩難。
+//
+// (C) 為什麼 std::thread 不像 unique_ptr 那樣「解構就釋放」
+//   因為「釋放執行緒」有兩種語意完全不同的做法(join 阻塞 / detach 懸空),
+//   標準無法替你選;而 unique_ptr 的「釋放記憶體」只有一種意思。
+//   標準的態度一貫是:模稜兩可時,要求你明講。
+//
+// (D) 執行緒不是越多越好
+//   每條執行緒佔用核心資源與預設 8 MB 的 stack 虛擬位址空間。
+//   CPU-bound 工作開超過核心數(本機 hardware_concurrency() 實測 16)
+//   只會增加 context switch;I/O-bound 才可能受益於超額訂閱。
+//   生產做法是固定大小的 thread pool 重複利用執行緒。
+//
+// 【注意事項 Pay Attention】
+//   1. 解構 joinable 的 std::thread → std::terminate(),標準保證的確定
+//      行為,不是未定義行為,catch 攔不到。
+//   2. 持有 std::thread 成員的類別,移動賦值【不可】寫成 = default
+//      (會逐成員移動 → 撞上 terminate 規則)。
+//   3. std::thread / JoiningThread / std::jthread 的移動賦值規則
+//      【三者各不相同】,不可混為一談。
+//   4. 例外不會自動跨執行緒;包在 join() 外的 try/catch 攔不到。
+//   5. thread_local 的解構在 detached thread 與 std::exit() 時不保證發生。
+//   6. call_once 的初始化函式若拋例外,flag 不會被設定,可以重試;
+//      magic static 亦然(下一個執行緒會重新嘗試初始化)。
+//   7. 本檔的 jthread 示範函式刻意保留為註解(需 C++20);
+//      可執行版本見「課程 3.3：std jthread (C++20)2–7」。
+//   8. 本檔多處由多條執行緒直接輸出,行的先後順序【每次執行都不同】。
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】執行緒生命週期管理(第三階段總覽)
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 一個 joinable 的 std::thread 被解構會發生什麼?為什麼標準要這樣設計?
+//     答：呼叫 std::terminate(),程式終止。這是標準明文規定的【確定行為】,
+//         不是未定義行為,而且 catch 攔不到(terminate 不走例外機制)。
+//         設計理由:自動 join 會讓解構函式無預警阻塞、可能永遠不返回;
+//         自動 detach 會讓執行緒存取已銷毀的區域變數。兩者都比「立刻
+//         大聲失敗」更難除錯,所以標準要求程式設計者明確做出選擇。
+//     追問：那 C++20 的 jthread 為什麼就敢自動 join?
+//         → 因為它同時內建 stop_token 協作取消管道。解構時先
+//           request_stop() 再 join(),寫得好的工作函式會看到停止請求
+//           並主動返回,那個 join 才不會無限期阻塞。是【先補上前提條件,
+//           才敢做那件事】,不是單純放寬規則。
+//
+// 🔥 Q2. std::thread、JoiningThread、std::jthread 三者的移動賦值,
+//        在「目標本身仍 joinable」時各自會怎樣?
+//     答：三條規則完全不同。std::thread → std::terminate(),程式死亡;
+//         JoiningThread(自訂)→ 先對自己持有的執行緒 join(可能阻塞)
+//         再接手;std::jthread → 先 request_stop() 再 join(),然後接手,
+//         程式【存活】。它們是不同的規則,不是「類似的行為」。
+//     追問：所以自己寫的類別持有 std::thread 成員時,移動賦值能不能
+//         寫成 = default?
+//         → 絕對不行。= default 會逐成員移動,對 std::thread 成員就是
+//           呼叫它的移動賦值 → 目標若仍 joinable 就 std::terminate()。
+//           必須顯式實作:先按自己的策略處置舊資源,再接手來源。
+//           順帶一提,移動【建構】= default 是安全的(目標還沒有舊資源),
+//           這個不對稱正是 Rule of Five 的核心。
+//
+// 🔥 Q3. 子執行緒裡拋出的例外,怎麼讓主執行緒處理?
+//     答：例外機制以執行緒為單位,例外從執行緒進入函式逸出即
+//         std::terminate() —— 包在 join() 外面的 try/catch 永遠攔不到。
+//         必須在子執行緒內 catch,用 std::current_exception() 裝箱成
+//         std::exception_ptr,再透過 promise/future(或自訂成員 + join)
+//         搬到主執行緒,由 std::rethrow_exception() 重新拋出。
+//         實務上最推薦 std::async/future —— 它把整套流程包好了,
+//         get() 會自動重新拋出,呼叫端的寫法與同步程式完全一樣。
+//     追問：exception_ptr 會不會把例外降級成基底類別?
+//         → 不會。它是型別抹除的持有者,保存的是例外物件本身(含動態
+//           型別),rethrow_exception() 拋出的是原始型別,自訂例外類別的
+//           額外欄位完整可取。
+//
+// ⚠️ 陷阱 1. 「join() 之後要讀子執行緒寫的變數,是不是該加個 mutex?」
+//     答：不用,加了是多餘的。join() 的返回與子執行緒的結束之間有
+//         happens-before 關係,子執行緒所有寫入在 join() 返回後都保證可見。
+//     為什麼會錯：把「多執行緒」直接等同於「一律要同步原語」,
+//         忽略了 join()(以及 thread 的建構)本身就是標準規定的同步點。
+//         真正需要同步的是「兩條執行緒【同時存活期間】」的共享存取。
+//
+// ⚠️ 陷阱 2. 「thread_local 的物件一定會在執行緒結束時解構,
+//              所以可以拿它做 RAII 管理資源。」
+//     答：不可靠。解構只在執行緒【正常結束】時保證發生。被 detach 的
+//         執行緒若在 main() 之後才被系統終止,解構不保證執行;呼叫
+//         std::exit() 或 std::abort() 時,其他執行緒的 thread_local
+//         解構完全不會執行。拿它管必須釋放的資源(檔案、連線)會漏。
+//     為什麼會錯：把 thread_local 的解構保證等同於區域物件的 RAII 保證。
+//         區域物件由作用域嚴格保證;thread_local 則依賴「執行緒正常結束」
+//         這個並不總是成立的前提。
+//
+// ⚠️ 陷阱 3. 「call_once 的初始化函式丟了例外,那個 once_flag 就廢了吧?」
+//     答：正好相反。標準規定:初始化函式若以例外結束,該次呼叫【不算】
+//         完成,once_flag 不會被設定,下一個(或同一個)執行緒呼叫
+//         call_once 時會【重新嘗試】執行。這正是它支援「可重試初始化」
+//         的關鍵性質 —— 例如連線資料庫失敗後可以再試。
+//     為什麼會錯：把 once_flag 想成「呼叫過就標記完成」的布林旗標。
+//         它記錄的其實是「是否有一次【成功完成】的初始化」。
+// ═══════════════════════════════════════════════════════════════════════════
+
 /*
  * ============================================================
  * 【第三階段：執行緒生命週期管理】總複習 summary.cpp
@@ -58,19 +267,24 @@
  * ============================================================
  */
 
-#include <iostream>
-#include <thread>
-#include <mutex>
-#include <future>
-#include <exception>
-#include <stdexcept>
 #include <atomic>
-#include <random>
-#include <memory>
-#include <string>
-#include <vector>
-#include <utility>
 #include <chrono>
+#include <condition_variable>
+#include <exception>
+#include <functional>
+#include <future>
+#include <iostream>
+#include <memory>
+#include <mutex>
+#include <queue>
+#include <random>
+#include <stdexcept>
+#include <string>
+#include <thread>
+#include <utility>
+#include <algorithm>
+#include <vector>
+#include <vector>
 
 
 // ============================================================
@@ -1205,6 +1419,259 @@ void demo_singleton() {
 // ===== main()：示範本階段所有關鍵概念 =====
 // ============================================================
 
+// =============================================================================
+// 【LeetCode 實戰範例】—— 本階段【刻意不提供】
+//
+//   說明:LeetCode 現有的多執行緒題(1114 Print in Order、1115 Print FooBar
+//   Alternately、1116 Print Zero Even Odd、1117 Building H2O、
+//   1195 Fizz Buzz Multithreaded)考的全是【執行緒之間的順序協調】,
+//   解法核心是 condition_variable / semaphore / atomic ——
+//   那是第四、第五階段的主題。
+//
+//   本階段(執行緒生命週期管理)的所有主題 —— RAII 守衛、join/detach
+//   的選擇、terminate 規則、跨執行緒例外傳遞、thread_local、call_once ——
+//   在那些題目裡【完全不會出現】:執行緒由評測框架建立與回收,作答者
+//   拿不到 std::thread 物件,題目也沒有錯誤路徑與初始化競爭。
+//   硬套一題只會建立錯誤的關聯,故從缺。
+//   (LeetCode 1114 與 1116 的真實解法已在【第一階段 summary.cpp】完整示範,
+//    另可參考「課程 3.2：執行緒守衛類別設計2」——該處以
+//    std::vector<JoiningThread> 驅動 1114 的三條執行緒,與該檔主題相符。)
+// =============================================================================
+
+// =============================================================================
+// 【日常實務範例】影像縮圖服務:把第三階段六個主題全部串起來
+//
+//   情境:一個上傳影像後產生縮圖的背景服務。它必須:
+//     1. 延遲載入設定(第一次真的要用時才讀,且只讀一次)      → 3.6 call_once
+//     2. 開固定數量的 worker 處理佇列                        → 3.2 守衛 + 容器
+//     3. 每個 worker 統計自己處理了幾張、失敗幾張(免鎖)     → 3.5 thread_local
+//     4. 任何一張圖失敗都要把【原因】回報給呼叫端            → 3.4 例外傳遞
+//     5. 關閉時必須等所有 worker 收工,不能有半張圖寫到一半  → 3.1 RAII
+//     6. 即使中途丟例外,也絕不能讓 joinable 的 thread 被解構 → 3.1 terminate 規則
+//
+//   這六件事在真實服務裡是同時發生的,本範例把它們組裝成一個可執行的整體。
+//
+//   ⚠️ 設計重點(也是最容易寫錯的地方):
+//     * 成員宣告順序 —— workers 必須宣告在【最後】。成員以宣告順序建構、
+//       【反向】解構,所以 workers 會最先被解構(先 join),此時佇列、
+//       mutex、統計都還活著,worker 才能安全收尾。順序寫反就是懸空存取。
+//     * 關閉流程三步缺一不可:設旗標 → notify_all → 等待退出。
+//       少了 notify_all,阻塞在 cv.wait() 上的 worker 永遠不會醒來,
+//       解構函式會永久卡死。
+//     * thread_local 統計無法被主執行緒直接讀(那是各執行緒自己的物件),
+//       所以 worker 在【結束前】主動把自己的統計寫回共享結果 ——
+//       這正是 thread_local「避免共享」與「最終仍需匯總」的正確配合方式。
+// =============================================================================
+namespace thumbnail_service {
+
+// ---- 3.6:延遲且只做一次的設定載入(可重試)----------------------------------
+struct Config {
+    int maxWidth;
+    int maxHeight;
+};
+
+std::once_flag        g_configFlag;
+std::unique_ptr<Config> g_config;
+std::atomic<int>      g_configLoadAttempts{0};
+
+const Config& getConfig() {
+    // call_once 保證:即使多條 worker 同時第一次呼叫,也只有一條真的載入,
+    // 其餘會【等待】它完成後才返回 —— 不是「跳過」,是「等待」。
+    std::call_once(g_configFlag, []() {
+        g_configLoadAttempts.fetch_add(1, std::memory_order_relaxed);
+        g_config = std::make_unique<Config>(Config{256, 256});
+    });
+    return *g_config;
+}
+
+// ---- 3.5:每個 worker 自己的統計,完全免鎖 ------------------------------------
+thread_local int tls_processed = 0;
+thread_local int tls_failed    = 0;
+
+struct WorkerStat {
+    int processed = 0;
+    int failed    = 0;
+};
+
+// ---- 3.4:自訂例外型別,帶得回失敗的檔名 -------------------------------------
+class ThumbnailError : public std::runtime_error {
+    std::string file_;
+public:
+    ThumbnailError(const std::string& file, const std::string& why)
+        : std::runtime_error(why), file_(file) {}
+    const std::string& file() const noexcept { return file_; }
+};
+
+struct Job {
+    std::string name;
+    int         width;
+    int         height;
+    bool        corrupted;
+};
+
+// ---- 3.1 / 3.2:RAII 守衛 —— 解構時一定 join,例外路徑也一樣 -----------------
+class JoiningWorker {
+    std::thread t_;
+public:
+    JoiningWorker() noexcept = default;
+    template <typename Fn>
+    explicit JoiningWorker(Fn&& fn) : t_(std::forward<Fn>(fn)) {}
+
+    JoiningWorker(JoiningWorker&& o) noexcept : t_(std::move(o.t_)) {}
+    JoiningWorker& operator=(JoiningWorker&& o) noexcept {
+        if (this != &o) {
+            // ⚠️ 絕不能寫成 = default:那會逐成員移動,
+            //    目標若仍 joinable 就是 std::terminate()
+            if (t_.joinable()) t_.join();
+            t_ = std::move(o.t_);
+        }
+        return *this;
+    }
+    JoiningWorker(const JoiningWorker&) = delete;
+    JoiningWorker& operator=(const JoiningWorker&) = delete;
+
+    ~JoiningWorker() {
+        // 解構函式不可讓例外逸出(隱含 noexcept → 逸出即 terminate)
+        try {
+            if (t_.joinable()) t_.join();
+        } catch (...) {
+            // 生產環境應記 log;這裡吞掉以保證解構不拋
+        }
+    }
+};
+
+class ThumbnailService {
+    std::queue<Job>             jobs_;
+    std::mutex                  m_;
+    std::condition_variable     cv_;
+    bool                        stopping_ = false;
+
+    std::mutex                  resultMutex_;
+    std::vector<WorkerStat>     stats_;
+    std::vector<std::string>    errors_;
+
+    // ⚠️ 必須宣告在最後:成員反向解構 → workers 先 join,
+    //    此時 jobs_/m_/cv_/stats_ 都還活著
+    std::vector<JoiningWorker>  workers_;
+
+public:
+    explicit ThumbnailService(unsigned n) : stats_(n) {
+        workers_.reserve(n);
+        for (unsigned i = 0; i < n; ++i) {
+            workers_.emplace_back([this, i]() { workerLoop(i); });
+        }
+    }
+
+    void submit(const Job& j) {
+        {
+            std::lock_guard<std::mutex> lk(m_);
+            jobs_.push(j);
+        }
+        cv_.notify_one();
+    }
+
+    // 關閉三步:設旗標 → 喚醒全部 → 等待退出(由 workers_ 解構完成)
+    void shutdown() {
+        {
+            std::lock_guard<std::mutex> lk(m_);
+            stopping_ = true;
+        }
+        cv_.notify_all();
+        workers_.clear();   // 逐一解構 → 各自 join
+    }
+
+    ~ThumbnailService() {
+        if (!workers_.empty()) shutdown();
+    }
+
+    WorkerStat total() const {
+        WorkerStat t;
+        for (const auto& s : stats_) { t.processed += s.processed; t.failed += s.failed; }
+        return t;
+    }
+    const std::vector<std::string>& errors() const { return errors_; }
+
+private:
+    void workerLoop(unsigned id) {
+        const Config& cfg = getConfig();   // 3.6:只有第一個到的會真的載入
+
+        for (;;) {
+            Job job;
+            {
+                std::unique_lock<std::mutex> lk(m_);
+                cv_.wait(lk, [this] { return stopping_ || !jobs_.empty(); });
+                if (stopping_ && jobs_.empty()) break;   // 唯一的退出點
+                job = std::move(jobs_.front());
+                jobs_.pop();
+            }
+
+            // 3.4:失敗以例外表達,但【不能讓它逸出執行緒進入函式】
+            try {
+                processOne(job, cfg);
+                ++tls_processed;                    // 3.5:免鎖,這是本執行緒獨有的
+            } catch (const ThumbnailError& e) {
+                ++tls_failed;
+                std::lock_guard<std::mutex> lk(resultMutex_);
+                errors_.push_back(std::string("[") + e.file() + "] " + e.what());
+            }
+        }
+
+        // thread_local 是本執行緒私有的,主執行緒讀不到 →
+        // 結束前主動把統計寫回共享結果
+        std::lock_guard<std::mutex> lk(resultMutex_);
+        stats_[id].processed = tls_processed;
+        stats_[id].failed    = tls_failed;
+    }
+
+    static void processOne(const Job& j, const Config& cfg) {
+        if (j.corrupted) {
+            throw ThumbnailError(j.name, "decode failed: corrupted header");
+        }
+        // 模擬等比例縮圖運算
+        double scale = std::min(static_cast<double>(cfg.maxWidth)  / j.width,
+                                static_cast<double>(cfg.maxHeight) / j.height);
+        volatile double w = j.width * scale;   // volatile 防止整段被最佳化掉
+        volatile double h = j.height * scale;
+        (void)w; (void)h;
+    }
+};
+
+void demo() {
+    const unsigned WORKERS = 4;
+    const int      TOTAL   = 40;
+    const int      BAD     = 5;   // 每第 8 張損毀
+
+    ThumbnailService svc(WORKERS);
+
+    for (int i = 0; i < TOTAL; ++i) {
+        svc.submit(Job{"img_" + std::to_string(i) + ".jpg",
+                       1920, 1080, (i % 8 == 7)});
+    }
+    svc.shutdown();   // 設旗標 → 喚醒 → join 全部
+
+    WorkerStat t = svc.total();
+    std::cout << "  提交 " << TOTAL << " 張,成功 " << t.processed
+              << " 張,失敗 " << t.failed << " 張" << std::endl;
+    std::cout << "  成功+失敗 = " << (t.processed + t.failed)
+              << " (應等於提交數:" << std::boolalpha
+              << (t.processed + t.failed == TOTAL) << ")" << std::endl;
+    std::cout << "  預期失敗數 " << BAD << ",實際 " << t.failed
+              << " → " << (t.failed == BAD ? "相符" : "不符") << std::endl;
+    std::cout << "  設定實際載入次數 = " << g_configLoadAttempts.load()
+              << " (call_once 保證只載入一次,即使 " << WORKERS
+              << " 條 worker 同時第一次呼叫)" << std::endl;
+    std::cout << "  前兩筆錯誤訊息(型別完整保留,取得到檔名):" << std::endl;
+    for (std::size_t i = 0; i < svc.errors().size() && i < 2; ++i) {
+        std::cout << "    " << svc.errors()[i] << std::endl;
+    }
+    std::cout << "  ← 每個 worker 的統計用 thread_local 累計(全程免鎖),"
+              << std::endl;
+    std::cout << "    結束前才寫回共享結果;workers 宣告在最後,"
+              << "解構時先 join 再拆佇列。" << std::endl;
+}
+
+}  // namespace thumbnail_service
+
 int main() {
     std::cout << "\n"
               << "============================================================\n"
@@ -1297,6 +1764,9 @@ int main() {
     std::cout << "\n[3.6.4] 延遲初始化（Lazy Init）：\n";
     demo_lazy_init();
 
+    std::cout << "\n--- 日常實務：影像縮圖服務（六個主題整合）---\n\n";
+    thumbnail_service::demo();
+
     std::cout << "\n"
               << "============================================================\n"
               << " 第三階段所有示範執行完成！\n"
@@ -1346,3 +1816,165 @@ int main() {
  *
  * ============================================================
  */
+
+// 編譯: g++ -std=c++17 -Wall -Wextra -pthread summary.cpp -o summary3
+//   本檔【可執行的部分】只用到 C++11/14/17,以 -std=c++17 編譯零警告通過。
+//   檔中 std::jthread / stop_token / stop_callback 的示範函式刻意保留為註解
+//   (它們需要 -std=c++20);完整可執行版本請見
+//   「課程 3.3：std jthread (C++20)2 ~ 7」各檔。
+
+// 註:本檔多處由多條執行緒直接輸出,以下內容含【非決定性】成分,每次執行都不同:
+//   * [Vector] Worker 0~3、[thread_local]、[LazyCache] 等段落的【行序】——
+//     std::cout 保證不會有 data race,但【不保證整行的原子性】,
+//     缺少輸出鎖時行序會變、甚至同一行被切開(輸出中的
+//     「[LazyCache] Thread 1: [LazyCache] 正在初始化快取...」正是這種交錯,
+//     不是 bug,也不是未定義行為);
+//   * 執行緒 id 與任何毫秒數(實作定義 / 受排程影響)。
+//   ⚠️ 相對地,以下數值是【確定的】,可以拿來驗證正確性:
+//   * 影像縮圖服務:提交 40 張 → 成功 35 + 失敗 5,兩者相加必等於 40;
+//   * 設定載入次數必為 1(call_once 的保證,即使 4 條 worker 同時第一次呼叫);
+//   * call_once 失敗重試示範中,最終必定成功初始化一次。
+//   以下為本機(16 邏輯核心)某一次的實際執行結果。
+
+// === 預期輸出 ===
+//
+// ============================================================
+//  第三階段：執行緒生命週期管理 - 總複習示範
+// ============================================================
+//
+// --- 課程 3.1：RAII 與執行緒管理 ---
+//
+// [3.1.1] ThreadGuard（引用版 RAII）：
+// [ThreadGuard] 執行緒工作完成
+//
+// [3.1.2] ScopedThread（擁有版 RAII）：
+// [ScopedThread] 安全的執行緒，自動 join
+//
+// [3.1.3] FlexibleThread（可選 join/detach）：
+// [FlexibleThread] join 我
+//
+// --- 課程 3.2：執行緒守衛類別設計 ---
+//
+// [3.2.1] JoiningThread（完整守衛類別）：
+// [JoiningThread] 方式一：直接建構
+// [JoiningThread] 方式二：從 std::thread 移動
+// [JoiningThread] 方式三：帶參數 x=42 s=hello
+//
+// [3.2.2] JoiningThread 放入 vector：
+// [Vector] Worker 0 執行中
+// [Vector] Worker 1 執行中
+// [Vector] Worker 2 執行中
+// [Vector] Worker [Vector] 所有執行緒已建立，等待結束...3 執行中
+//
+//
+// [3.2.3] ManagedThread（編譯期決定行為）：
+// [ManagedThread] AutoJoinThread：離開作用域時自動 join
+//
+// --- 課程 3.3：std::jthread (C++20) ---
+//
+// [3.3] std::jthread 需要 C++20，請參閱上方已注釋的示範函式：
+//       demo_jthread_basic()          → 基本使用
+//       demo_jthread_exception_safe() → 例外安全
+//       demo_jthread_stop_token()     → stop_token 取消
+//       demo_jthread_stop_callback()  → stop_callback 回調
+//       demo_jthread_vector()         → vector 中的 jthread
+//
+// --- 課程 3.4：執行緒例外處理 ---
+//
+// [3.4.A] 執行緒內部捕獲：
+// [方案A] 執行緒內捕獲：執行緒內的錯誤！
+// [方案A] 主執行緒：程式正常繼續
+//
+// [3.4.B] std::exception_ptr 跨執行緒傳遞：
+// [方案B] 主執行緒捕獲例外：來自工作執行緒的錯誤！
+//
+// [3.4.C] SafeThread RAII 包裝：
+// [SafeThread] 主執行緒捕獲：SafeThread 內的錯誤！
+//
+// [3.4.D] std::future / std::async（推薦）：
+// [future] Task 0 結果：0
+// [future] Task 1 結果：10
+// [future] Task 2 例外：Task 2 失敗（模擬錯誤）
+// [future] Task 3 結果：30
+// [future] Task 4 結果：40
+//
+// [3.4.E] std::promise 精確控制：
+// [promise] 主執行緒捕獲：Promise worker 發生錯誤！
+//
+// --- 課程 3.5：執行緒本地儲存 ---
+//
+// [3.5.1] thread_local 基本示範（各自獨立計數）：
+// [thread_local] Thread A: counter = 1
+// [thread_local] Thread A: counter = 2
+// [thread_local] Thread A: counter = 3
+// [thread_local] Thread B: counter = 1
+// [thread_local] Thread B: counter = 2
+// [thread_local] Thread B: counter = 3
+//
+// [3.5.2] 全域變數 vs thread_local 對比：
+// [對比] A global=1 local=1
+// [對比] B global=2 local=1
+// [對比] C global=3 local=1
+//
+// [3.5.3] 用途一：執行緒專屬錯誤碼：
+// [errno] Thread 1 error: 100
+// [errno] Thread 2 error: 200
+//
+// [3.5.4] 用途二：執行緒專屬快取：
+// [cache] [cache] [cache] Thread 1 首次計算...
+// Thread-1-result
+// [cache] Thread-1-result (快取)
+// [cache] Thread 2 首次計算...
+// Thread-2-result
+// [cache] Thread-2-result (快取)
+//
+// [3.5.5] 用途三：執行緒專屬隨機數產生器：
+// [rng] Thread 1: [rng] Thread 2: 55, 57, 26
+// 38, 41, 76
+//
+// --- 課程 3.6：執行緒安全的初始化 ---
+//
+// [3.6.1] std::call_once 基本示範：
+// [Database] 初始化（id=42）
+// [Database] Thread 1 查詢中（db id=42）
+// [Database] Thread 3 查詢中（db id=42）
+// [Database] Thread 2 查詢中（db id=42）
+//
+// [3.6.2] call_once 與例外（失敗後重試）：
+// [call_once] 嘗試 #1
+// [call_once] 嘗試 #2
+// [call_once] 捕獲例外：初始化失敗（模擬）
+// [call_once] 捕獲例外：初始化失敗（模擬）
+// [call_once] 嘗試 #3
+// [call_once] 初始化成功！
+// [call_once] 繼續執行...
+// [call_once] 繼續執行...
+//
+// [3.6.3] 執行緒安全的單例模式：
+// [Singleton v1] 建立（call_once 版本）
+// [Singleton v1] 執行工作
+// [Singleton v1] 執行工作
+// [Singleton v2] 建立（static 局部變數版本）
+// [Singleton v2] 執行工作
+// [Singleton v2] 執行工作
+//
+// [3.6.4] 延遲初始化（Lazy Init）：
+// [LazyCache] Thread 2: [LazyCache] 正在初始化快取...
+// [LazyCache] Thread 1: 快取資料（只初始化一次）
+// 快取資料（只初始化一次）
+//
+// --- 日常實務：影像縮圖服務（六個主題整合）---
+//
+//   提交 40 張,成功 35 張,失敗 5 張
+//   成功+失敗 = 40 (應等於提交數:true)
+//   預期失敗數 5,實際 5 → 相符
+//   設定實際載入次數 = 1 (call_once 保證只載入一次,即使 4 條 worker 同時第一次呼叫)
+//   前兩筆錯誤訊息(型別完整保留,取得到檔名):
+//     [img_7.jpg] decode failed: corrupted header
+//     [img_23.jpg] decode failed: corrupted header
+//   ← 每個 worker 的統計用 thread_local 累計(全程免鎖),
+//     結束前才寫回共享結果;workers 宣告在最後,解構時先 join 再拆佇列。
+//
+// ============================================================
+//  第三階段所有示範執行完成！
+// ============================================================

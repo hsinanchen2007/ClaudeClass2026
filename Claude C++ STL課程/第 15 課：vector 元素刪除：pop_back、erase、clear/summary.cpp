@@ -32,11 +32,152 @@
  * ============================================================
  */
 
+// =============================================================================
+//  第 15 課 總複習  —  vector 的元素刪除
+// =============================================================================
+//
+// 【主題資訊 Information】
+//   刪除相關 API 一覽（除註明外皆在 <vector>）：
+//     void     pop_back();                    O(1)   前置條件 !empty()
+//     iterator erase(pos);                    O(n)   回傳下一個有效迭代器
+//     iterator erase(first, last);            O(n)   半開區間
+//     void     clear() noexcept;              O(n)   capacity 不變
+//     void     resize(n);                     縮短時等同截斷
+//     std::remove / remove_if  <algorithm>    O(n)   只搬移，不改 size
+//     std::erase / erase_if    <vector>       O(n)   **C++20**，回傳刪除數量
+//   本檔宣稱可用 -std=c++17 編譯，所以 C++20 的部分用 feature-test macro
+//   （__cpp_lib_erase_if）分流，兩種標準下都能跑。
+//
+// 【詳細解釋 Explanation】
+//
+// 【1. 一張表看懂該用哪個】
+//   要刪什麼                        用什麼                    複雜度
+//   ─────────────────────────────────────────────────────────────────
+//   最後一個                        pop_back()                O(1)
+//   指定位置一個                    erase(pos)                O(n)
+//   連續一段                        erase(first, last)        O(n)（只搬一次）
+//   尾段（截斷）                    resize(n) 或 erase(it,end) O(刪除數)
+//   全部                            clear()                   O(n)
+//   所有符合條件的（保序）          erase-remove 慣用法        O(n)
+//   所有符合條件的（C++20）         std::erase_if(v, pred)     O(n)
+//   任意一個，且不在乎順序          swap-and-pop               O(1)
+//   決策的兩個關鍵問題是：【要不要保持順序】與【一次刪幾個】。
+//
+// 【2. 貫穿本課的一條主線：size 與 capacity 是兩件事】
+//   本課所有刪除操作都【不會縮小 capacity】：
+//     pop_back、erase、clear、resize(較小值)——全部只動 size。
+//   這是 STL 一致的策略：容量只增不減，除非你明確要求。
+//   理由是「刪了通常還會再加回來」，反覆配置/釋放代價很高。
+//   真的要還記憶體：shrink_to_fit()（非約束性請求，實作可忽略）
+//   或 std::vector<T>().swap(v)（保證有效）。
+//
+// 【3. 另一條主線：演算法碰不到容器】
+//   std::remove_if 不會改變 size，因為它只拿到迭代器、
+//   根本不知道容器是誰。這不是缺陷，而是「容器與演算法正交」
+//   這個設計的必然代價——同一個 remove_if 才能同時服務
+//   vector、array、原生指標。
+//   於是產生了 erase-remove 這個兩步驟慣用法，
+//   也產生了「忘記第二步」這個最經典的錯誤。
+//   C++20 的 std::erase_if 就是為了把它收編成一步。
+//
+// 【4. 迭代器失效：本課最容易出錯的地方】
+//     pop_back()        → 最後一個元素的迭代器、end()
+//     erase(pos)        → pos 及其之後全部
+//     erase(first,last) → first 及其之後全部
+//     clear()           → 全部
+//   實務規則很簡單：任何刪除之後，就當作手上的迭代器全部失效，
+//   一律用 erase 的【回傳值】接續。
+//   索引也不是絕對安全——用 swap-and-pop 時，
+//   被搬動元素的索引會【靜默改變】，比迭代器失效更難察覺。
+//
+// 【概念補充 Concept Deep Dive】
+//
+// (A) 為什麼刪除操作大多是 O(n)，而 list 卻是 O(1)
+//     vector 的核心保證是「元素連續存放」，這讓 operator[] 能用
+//     `data() + i` 一次算出位址。代價就是刪除中間元素不能留洞，
+//     必須搬移後半段。
+//     list 是節點式的，刪除只要改前後節點的指標，不搬資料，所以 O(1)。
+//     但 list 沒有隨機存取、每個元素多兩個指標的開銷、cache 局部性差。
+//     這是資料結構最典型的取捨——沒有哪個「比較好」，只有適不適合。
+//
+// (B) 本課的「不保證」清單（教材裡最容易被寫死的部分）
+//     * shrink_to_fit 不保證縮容（non-binding request）
+//     * remove_if 之後尾段元素是「有效但未指定」，不可讀
+//     * 移動走的物件狀態是「有效但未指定」（libstdc++ 的 string
+//       剛好是空字串，但那是實作行為）
+//     * clear 的解構順序未規定（本機是由前往後）
+//     * 述詞被呼叫的次數未規定（所以別在裡面放計數器）
+//     這些地方常被教材寫成確定的行為，實際上都只是實作巧合。
+//
+// (C) 例外安全與 noexcept 在本課的角色
+//     * pop_back 不回傳值，正是為了避免「複製失敗導致資料遺失」
+//     * clear() 是 noexcept，因為它只做解構與重設指標
+//     * erase 只在元素的移動賦值不拋例外時才保證不拋
+//     * 元素的移動建構子若沒標 noexcept，vector 擴容會退回用複製
+//     一個共同主題：C++ 的容器設計非常在意「操作失敗時能否回復」。
+//
+// 【注意事項 Pay Attention】
+//   1. 所有刪除操作都不縮小 capacity。
+//   2. 對空 vector 呼叫 pop_back() 是未定義行為，先檢查 !empty()。
+//   3. erase(pos) 的 pos 不能是 end()（find 找不到時就是 end()）。
+//   4. remove/remove_if 不改變 size，一定要接 erase。
+//   5. 迴圈刪除一律用 `it = v.erase(it)`，for 的第三格留空。
+//   6. 迴圈逐一 erase 是 O(n²)；批次刪除用 erase-remove 或 erase_if。
+//   7. swap-and-pop 是 O(1) 但會打亂順序，且會讓外部持有的索引靜默失準。
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】vector 的元素刪除
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. vector 有哪些刪除方式？各自的複雜度是多少？
+//     答：pop_back() O(1)；erase(pos) O(n)；erase(first,last) O(n)
+//         （但搬移只發生一次，與刪除數量無關）；clear() O(n)。
+//         批次刪除符合條件的元素用 erase-remove 慣用法或 C++20 的
+//         std::erase_if，都是 O(n)。
+//         不在乎順序時，swap-and-pop 可讓單一元素刪除變成 O(1)。
+//         共同點：全部都【不會縮小 capacity】。
+//     追問：為什麼只有尾端刪除是 O(1)？
+//         → 因為 vector 保證元素連續，刪中間會留洞、破壞
+//           `data() + i` 的定址方式，所以必須搬移後半段補上。
+//           刪最後一個不會留洞，只要解構 + size 減一。
+//
+// 🔥 Q2. 為什麼 std::remove 不會真的移除元素？
+//     答：因為它是【演算法】，只拿到一對迭代器，不知道這段區間
+//         屬於哪個容器，也就無法呼叫容器的成員函式來改變 size。
+//         它只能重排元素（把要保留的往前搬）並回傳「新的邏輯結尾」。
+//         真正縮小 size 只有容器的 erase 做得到，
+//         兩者合起來就是 erase-remove 慣用法。
+//     追問：C++20 有改善嗎？
+//         → 有。std::erase / std::erase_if 是【自由函式】，
+//           它們知道容器是誰，所以能一步完成，而且回傳刪除數量。
+//           效能與 erase-remove 相同（內部就是它），
+//           省的是出錯機會，不是時間。
+//
+// ⚠️ 陷阱. 「我在迴圈裡用 `for (auto it = v.begin(); it != v.end(); ++it)`
+//         搭配 `v.erase(it)`，在我的測試資料上結果完全正確，
+//         所以這樣寫沒問題。」——錯在哪？
+//     答：erase 之後 it 已經失效，接著的 ++it 是未定義行為。
+//         它「看起來能跑」是因為 vector 的迭代器實作上就是指標，
+//         而 erase 之後那個位址剛好還在容器內、指向補位過來的元素。
+//         但這是實作細節不是保證：
+//           * 用 -D_GLIBCXX_DEBUG 編譯會直接 abort
+//           * 若刪到最後一個，it 就等於 end()，++it 後直接越界
+//           * 而且即使不崩潰，它也會【跳過】補位過來的那個元素
+//         正確寫法是 for 的第三格留空，刪除時寫 `it = v.erase(it);`，
+//         不刪除時才 ++it。
+//     為什麼會錯：把「測試通過」當成「行為正確」。
+//         未定義行為最危險的形態就是「這次剛好對」——
+//         它讓錯誤潛伏到換編譯器、開最佳化、或資料變化時才爆發。
+//         而且這個例子還疊加了一個邏輯 bug（跳過元素），
+//         只有在「連續兩個都該刪」時才會現形，小測資很容易避開。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <vector>
 #include <iostream>
 #include <algorithm>
 #include <chrono>
 #include <string>
+#include <map>
+#include <numeric>
 
 // ===== 重點一：pop_back() — 刪除尾端元素 =====
 // pop_back() 是最簡單也最高效的刪除方式
@@ -356,11 +497,46 @@ void demo_performance() {
     auto ms1 = std::chrono::duration_cast<std::chrono::milliseconds>(end1 - start1).count();
     auto ms2 = std::chrono::duration_cast<std::chrono::milliseconds>(end2 - start2).count();
 
-    std::cout << "逐一 erase（O(n²)）:   " << ms1 << " ms" << std::endl;
-    std::cout << "Erase-Remove（O(n)）: " << ms2 << " ms" << std::endl;
-    std::cout << "結論：Erase-Remove 快了大約 "
-              << (ms1 > 0 && ms2 > 0 ? ms1 / ms2 : 100)
-              << "x 以上（N 越大差距越明顯）" << std::endl;
+    // 耗時每次執行都不同（受 CPU 頻率與系統負載影響）→ 走 stderr，
+    // 不列入預期輸出。stdout 只保留可重現的內容。
+    std::cerr << "[計時 | 每次執行都不同，故不列入預期輸出]" << std::endl;
+    std::cerr << "  逐一 erase（O(n²)）:  " << ms1 << " ms" << std::endl;
+    std::cerr << "  Erase-Remove（O(n)）: " << ms2 << " ms" << std::endl;
+
+    // stdout 印「操作次數」——那是資料與演算法決定的，完全確定。
+    // 這才是複雜度差異的直接證據，而且換機器也不會變。
+    std::cout << "N = " << N << "，刪除所有偶數（剛好一半）" << std::endl;
+    std::cout << "元素搬移次數（完全可重現）:" << std::endl;
+
+    long long loopMoves = 0;
+    {
+        std::vector<int> v;
+        v.reserve(static_cast<size_t>(N));
+        for (int i = 0; i < N; ++i) v.push_back(i);
+        for (auto it = v.begin(); it != v.end(); ) {
+            if (*it % 2 == 0) {
+                loopMoves += (v.end() - it) - 1;   // 這次 erase 會搬移幾個
+                it = v.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+    // erase-remove 的搬移次數：每個「第一個被刪元素之後的保留元素」各搬一次
+    long long erMoves = 0;
+    {
+        bool seenRemoved = false;
+        for (int i = 0; i < N; ++i) {
+            if (i % 2 == 0) seenRemoved = true;
+            else if (seenRemoved) ++erMoves;
+        }
+    }
+    std::cout << "  逐一 erase   : " << loopMoves << " 次" << std::endl;
+    std::cout << "  Erase-Remove : " << erMoves << " 次" << std::endl;
+    std::cout << "  倍數         : " << (erMoves > 0 ? loopMoves / erMoves : 0)
+              << "x（N 越大差距越明顯，因為那是 O(n²) 對 O(n)）" << std::endl;
+    std::cout << "  耗時已輸出到 stderr —— 它每次執行都不同，不適合當預期輸出"
+              << std::endl;
 }
 
 // ===== 重點十一：觀察元素的建構/移動/銷毀過程（搭配 erase）=====
@@ -409,6 +585,82 @@ void demo_destruction_order() {
     v.clear();
 }
 
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 26. Remove Duplicates from Sorted Array
+//   題目：給定【已排序】的陣列 nums，就地移除重複元素使每個值只出現一次，
+//         回傳新長度 k；前 k 個元素必須是去重後的結果，且保持排序。
+//   為什麼用到本主題：這題是本課兩個核心觀念的交會點——
+//     ① 它就是 std::unique 的定義：unique 也只「搬移 + 回傳新邏輯結尾」，
+//        不改變容器 size，理由與 std::remove 完全相同（演算法碰不到容器）。
+//     ② 題目只要長度、不要縮小陣列，正好解釋了為什麼標準演算法
+//        要設計成「兩步驟」——第二步該不該做，只有呼叫端知道。
+//   複雜度：O(n) 時間、O(1) 額外空間。
+//   注意：std::unique 只移除【相鄰】的重複，所以輸入必須先排序。
+// -----------------------------------------------------------------------------
+int removeDuplicates(std::vector<int>& nums) {
+    auto newEnd = std::unique(nums.begin(), nums.end());
+    // 和 LeetCode 27 一樣：題目只要長度，所以【不】呼叫 erase
+    return static_cast<int>(newEnd - nums.begin());
+}
+
+// -----------------------------------------------------------------------------
+// 【日常實務範例】購物車：三種刪除需求，三種不同的做法
+//   情境：電商購物車要支援
+//     ① 移除某一件商品（使用者點「刪除」）        → 少量、需保序
+//     ② 清掉所有已下架的商品（結帳前檢查）        → 批次、需保序
+//     ③ 整車清空（使用者點「清空購物車」）        → 全部
+//   為什麼用到本主題：這是本課決策表的完整演練——
+//     同一個容器，三種刪除需求，各自對應不同的最佳 API。
+//     選錯的代價：①用 erase-remove 是殺雞用牛刀；
+//     ②用迴圈逐一 erase 在大購物車上是 O(n²)；
+//     ③用 erase(begin,end) 則不如 clear() 直接。
+// -----------------------------------------------------------------------------
+struct CartItem {
+    int         sku;
+    std::string name;
+    int         qty;
+    bool        discontinued;   // 已下架
+};
+
+class ShoppingCart {
+public:
+    void add(int sku, const std::string& name, int qty, bool discontinued = false) {
+        items_.push_back({sku, name, qty, discontinued});
+    }
+
+    // ① 移除單一商品：少量、需保序 → find_if + erase(pos)
+    bool removeBySku(int sku) {
+        auto it = std::find_if(items_.begin(), items_.end(),
+                               [sku](const CartItem& i) { return i.sku == sku; });
+        if (it == items_.end()) return false;   // 關鍵：erase(end()) 是 UB
+        items_.erase(it);
+        return true;
+    }
+
+    // ② 批次清掉已下架商品：需保序 → erase-remove（O(n)）
+    size_t purgeDiscontinued() {
+        auto it = std::remove_if(items_.begin(), items_.end(),
+                                 [](const CartItem& i) { return i.discontinued; });
+        size_t removed = static_cast<size_t>(std::distance(it, items_.end()));
+        items_.erase(it, items_.end());
+        return removed;
+    }
+
+    // ③ 整車清空 → clear()（capacity 保留，使用者常會再加東西）
+    void clearAll() { items_.clear(); }
+
+    size_t size()     const { return items_.size(); }
+    size_t capacity() const { return items_.capacity(); }
+    int    totalQty() const {
+        return std::accumulate(items_.begin(), items_.end(), 0,
+                               [](int acc, const CartItem& i) { return acc + i.qty; });
+    }
+    const std::vector<CartItem>& items() const { return items_; }
+
+private:
+    std::vector<CartItem> items_;
+};
+
 int main() {
     std::cout << "==========================================" << std::endl;
     std::cout << " 第 15 課：vector 元素刪除總複習" << std::endl;
@@ -426,6 +678,65 @@ int main() {
     demo_performance();
     demo_destruction_order();
 
+    std::cout << "\n===== LeetCode 26. Remove Duplicates from Sorted Array =====" << std::endl;
+    {
+        auto run = [](std::vector<int> nums) {
+            std::cout << "  [";
+            for (size_t i = 0; i < nums.size(); ++i) std::cout << (i ? "," : "") << nums[i];
+            std::cout << "]  ->  ";
+            int k = removeDuplicates(nums);
+            std::cout << "k=" << k << ", 前 k 個=[";
+            for (int i = 0; i < k; ++i) std::cout << (i ? "," : "") << nums[i];
+            std::cout << "]\n";
+        };
+        run({1, 1, 2});
+        run({0, 0, 1, 1, 1, 2, 2, 3, 3, 4});
+        run({1, 2, 3});
+        std::cout << "  std::unique 和 std::remove 一樣只搬移、不改 size——" << std::endl;
+        std::cout << "  理由相同：演算法拿不到容器，無法改變它的大小。" << std::endl;
+        std::cout << "  注意 unique 只移除【相鄰】重複，所以輸入必須先排序。" << std::endl;
+    }
+
+    std::cout << "\n===== 日常實務：購物車的三種刪除需求 =====" << std::endl;
+    {
+        ShoppingCart cart;
+        cart.add(1001, "機械鍵盤",     1);
+        cart.add(1002, "滑鼠墊",       2, true);   // 已下架
+        cart.add(1003, "USB-C 傳輸線", 3);
+        cart.add(1004, "螢幕支架",     1, true);   // 已下架
+        cart.add(1005, "耳機",         1);
+
+        std::cout << "初始購物車 " << cart.size() << " 項，共 "
+                  << cart.totalQty() << " 件" << std::endl;
+
+        // ① 使用者手動移除一項 → erase(pos)，O(n) 但只做一次
+        std::cout << "\n① 使用者刪除 sku=1003 -> "
+                  << (cart.removeBySku(1003) ? "成功" : "找不到") << std::endl;
+        std::cout << "   再刪一次同樣的 sku  -> "
+                  << (cart.removeBySku(1003) ? "成功" : "找不到（安全，沒有 erase(end())）")
+                  << std::endl;
+
+        // ② 結帳前清掉已下架 → erase-remove，O(n)
+        size_t gone = cart.purgeDiscontinued();
+        std::cout << "\n② 結帳前清掉已下架商品: 移除了 " << gone << " 項" << std::endl;
+        std::cout << "   剩餘：";
+        for (const auto& i : cart.items()) std::cout << i.name << "(" << i.qty << ") ";
+        std::cout << std::endl;
+        std::cout << "   用 erase-remove 而非迴圈逐一 erase：後者是 O(n²)" << std::endl;
+
+        // ③ 清空 → clear()
+        size_t capBefore = cart.capacity();
+        cart.clearAll();
+        std::cout << "\n③ 清空購物車: size=" << cart.size()
+                  << ", capacity=" << cart.capacity()
+                  << "（清空前是 " << capBefore << "）" << std::endl;
+        std::cout << "   capacity 保留是好事：使用者通常會馬上再加東西，" << std::endl;
+        std::cout << "   不必重新配置記憶體。" << std::endl;
+
+        std::cout << "\n→ 同一個容器、三種刪除需求、三種不同的最佳 API。" << std::endl;
+        std::cout << "  決策的兩個問題永遠是：要不要保序？一次刪幾個？" << std::endl;
+    }
+
     std::cout << "\n===== 本課核心重點整理 =====" << std::endl;
     std::cout << "1. pop_back()：O(1)，空 vector 呼叫是 UB，要先 empty() 檢查" << std::endl;
     std::cout << "2. erase(pos)：O(n)，回傳下一個有效迭代器" << std::endl;
@@ -438,3 +749,117 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++17 -Wall -Wextra summary.cpp -o summary
+// 也可用 C++20（會走 std::erase_if 分支）:
+//        g++ -std=c++20 -Wall -Wextra summary.cpp -o summary
+
+// === 預期輸出 ===
+// ==========================================
+//  第 15 課：vector 元素刪除總複習
+// ==========================================
+//
+// ===== pop_back() 示範 =====
+// 原始: 1 2 3 4 5
+// pop_back 兩次後: 1 2 3
+// size: 3
+// capacity: 10
+// vector 是空的，不能呼叫 pop_back()
+//
+// ===== erase(pos) 示範 =====
+// 刪除第一個後: 20 30 40 50
+// 刪除索引 2 後: 20 30 50
+// 刪除最後後: 20 30
+//
+// ===== erase 回傳值示範 =====
+// 刪除 30 後，it 指向: 40
+// it 現在是 end()（刪除最後元素的情況）
+//
+// ===== erase(first, last) 範圍刪除 =====
+// 刪除索引 2~4 後: 1 2 6 7 8 9 10
+// 再刪除前三個後: 7 8 9 10
+// 全部刪除後 size: 0
+//
+// ===== clear() 示範 =====
+// clear 前 - size: 5, capacity: 100
+// clear 後 - size: 0, capacity: 100
+//
+// ===== 迴圈中安全刪除 =====
+// 刪除偶數後: 1 3 5 7 9
+//
+// ===== Erase-Remove 慣用法 =====
+// remove_if 後的原始資料（尾部有殘留）: 1 3 5 7 9 6 7 8 9 10
+// 邏輯大小: 5
+// 實際 size: 10
+// erase 後: 1 3 5 7 9
+// 一行版 Erase-Remove: 1 3 5 7 9
+//
+// ===== C++20 std::erase / std::erase_if =====
+// 刪除了 3 個 2: 1 3 4 5   (C++17 erase-remove 慣用法)
+// 刪除了 5 個偶數: 1 3 5 7 9   (C++17 erase-remove 慣用法)
+//
+// ===== 不保持順序的快速刪除（O(1)）=====
+// 原始: 10 20 30 40 50
+// fast_erase(v, 1) 後: 10 50 30 40
+// 注意：50 從尾端移到了索引 1 的位置（順序已改變）
+//
+// ===== 效能比較：逐一 erase vs Erase-Remove =====
+// N = 50000，刪除所有偶數（剛好一半）
+// 元素搬移次數（完全可重現）:
+//   逐一 erase   : 625000000 次
+//   Erase-Remove : 25000 次
+//   倍數         : 25000x（N 越大差距越明顯，因為那是 O(n²) 對 O(n)）
+//   耗時已輸出到 stderr —— 它每次執行都不同，不適合當預期輸出
+//
+// ===== erase 時的元素銷毀觀察 =====
+//   建構: A
+//   建構: B
+//   建構: C
+//   建構: D
+//
+// --- 刪除 B（索引 1）---
+//   移動賦值: C
+//   移動賦值: D
+//   銷毀: (已移走)
+//
+// 現在的內容：A C D
+//
+// --- 呼叫 clear() ---
+//   銷毀: A
+//   銷毀: C
+//   銷毀: D
+//
+// ===== LeetCode 26. Remove Duplicates from Sorted Array =====
+//   [1,1,2]  ->  k=2, 前 k 個=[1,2]
+//   [0,0,1,1,1,2,2,3,3,4]  ->  k=5, 前 k 個=[0,1,2,3,4]
+//   [1,2,3]  ->  k=3, 前 k 個=[1,2,3]
+//   std::unique 和 std::remove 一樣只搬移、不改 size——
+//   理由相同：演算法拿不到容器，無法改變它的大小。
+//   注意 unique 只移除【相鄰】重複，所以輸入必須先排序。
+//
+// ===== 日常實務：購物車的三種刪除需求 =====
+// 初始購物車 5 項，共 8 件
+//
+// ① 使用者刪除 sku=1003 -> 成功
+//    再刪一次同樣的 sku  -> 找不到（安全，沒有 erase(end())）
+//
+// ② 結帳前清掉已下架商品: 移除了 2 項
+//    剩餘：機械鍵盤(1) 耳機(1)
+//    用 erase-remove 而非迴圈逐一 erase：後者是 O(n²)
+//
+// ③ 清空購物車: size=0, capacity=8（清空前是 8）
+//    capacity 保留是好事：使用者通常會馬上再加東西，
+//    不必重新配置記憶體。
+//
+// → 同一個容器、三種刪除需求、三種不同的最佳 API。
+//   決策的兩個問題永遠是：要不要保序？一次刪幾個？
+//
+// ===== 本課核心重點整理 =====
+// 1. pop_back()：O(1)，空 vector 呼叫是 UB，要先 empty() 檢查
+// 2. erase(pos)：O(n)，回傳下一個有效迭代器
+// 3. erase(first,last)：O(n)，範圍刪除
+// 4. clear()：size=0，capacity 不變（設計目的：避免重新配置）
+// 5. 迴圈刪除要用 it = v.erase(it) 而非 v.erase(it); ++it
+// 6. Erase-Remove 慣用法：O(n)，比逐一 erase(O(n²)) 快百倍
+// 7. C++20 std::erase_if：更簡潔的批量刪除，回傳刪除數量
+// 8. 不保持順序時，swap-and-pop 可做到 O(1) 刪除

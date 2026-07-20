@@ -1,3 +1,121 @@
+// =============================================================================
+//  第三課：STL 的六大組件概覽 13  —  本課教科書：六大組件的整合與協作
+// =============================================================================
+//
+// 【主題資訊 Information】
+//   本檔是第三課的完整講義（下方 /* ... */ 內為全文），
+//   最後附一支把六大組件全部串起來的整合範例。
+//   六大組件與各自的標頭檔：
+//     1. 容器 Containers    <vector> <list> <deque> <set> <map> <unordered_*> ...
+//     2. 迭代器 Iterators   <iterator>（容器自帶 begin/end；配接器在此）
+//     3. 演算法 Algorithms  <algorithm> <numeric>
+//     4. 函數物件 Functors  <functional>（lambda 為語言特性，不需標頭檔）
+//     5. 配接器 Adapters    <stack> <queue>（容器配接器）、<iterator>（迭代器配接器）
+//     6. 配置器 Allocators  <memory>
+//   標準版本：六大組件框架自 C++98；lambda C++11；透明比較器 C++14；
+//             std::pmr C++17；ranges（迭代器模型的現代化包裝）C++20。
+//
+// 【詳細解釋 Explanation】
+//
+// 【1. 六大組件不是六個並列的工具箱，而是一個有方向的架構】
+//   真正的依賴關係是：
+//       配置器  →  容器  →（產生）迭代器  ←（消費）演算法  ←  函數物件
+//                              ↑
+//                            配接器（包裝容器或迭代器，改變其介面）
+//   讀法：
+//     - 配置器在最底層，決定記憶體從哪來；容器用它管理元素。
+//     - 容器對外只暴露迭代器，不暴露內部結構。
+//     - 演算法只認迭代器，因此完全不知道容器是誰。
+//     - 函數物件是演算法的「可替換零件」，決定比較/過濾/轉換的具體行為。
+//     - 配接器是黏著劑：容器配接器限制介面（stack），
+//       迭代器配接器把非迭代器的東西偽裝成迭代器（back_inserter、ostream_iterator）。
+//
+// 【2. 這個架構解決的核心問題：M×N → M+N】
+//   若沒有迭代器這層抽象，M 個容器與 N 個演算法需要 M×N 份實作。
+//   有了它，容器只需實作「產生合格迭代器」，演算法只需針對迭代器類別撰寫，
+//   總量降為 M+N。這也是為什麼你自己寫的類別只要提供 begin()/end()，
+//   立刻能使用全部 STL 演算法與範圍 for —— 不需要繼承任何基底類別。
+//
+// 【3. 為什麼是編譯期多型而不是繼承】
+//   Java 的做法是讓所有容器實作 Collection 介面，靠虛擬函式做執行期多型。
+//   STL 選擇樣板：
+//     優點 —— 零額外執行期成本（無虛擬函式表、無間接跳躍、可完全 inline）；
+//             元素型別不必是 Object，int 就是 int，不需要裝箱。
+//     缺點 —— 二進位檔膨脹（每個型別各一份實例化）、編譯變慢、
+//             型別錯誤訊息極長（C++20 的 concepts 就是為此而生）。
+//   理解這個取捨，就理解了 STL 為什麼長成這樣。
+//
+// 【4. 六大組件在一支程式中的實際協作】
+//   本檔最後的 main() 刻意讓六者同時登場：
+//       vector<int>                       ← 容器（背後有 allocator 配置記憶體）
+//       numbers.begin() / end()           ← 迭代器
+//       sort / copy_if / transform        ← 演算法
+//       greater<int>() / lambda           ← 函數物件
+//       back_inserter / ostream_iterator  ← 迭代器配接器
+//   六個組件、五行程式碼，這就是 STL 的表達力。
+//
+// 【概念補充 Concept Deep Dive】
+//   「哪個演算法需要哪一級迭代器」是理解整個架構的關鍵表格：
+//       Input Iterator        find / count / accumulate / equal
+//       Output Iterator       copy / transform 的**目的地**
+//       Forward Iterator      replace / remove / unique / rotate
+//       Bidirectional         reverse / copy_backward / next_permutation
+//       Random Access         sort / nth_element / binary_search / random_shuffle
+//   要求越高的演算法，能用的容器越少：
+//       sort 只能用在 vector / deque / array / 原生陣列；
+//       list 與 forward_list 必須改用自己的成員函式 sort()。
+//   反過來說，寫泛型程式碼時應該**只要求你真正需要的最低等級**，
+//   這樣才能服務最多的容器 —— 這是 STL 設計者留下的一條實用準則。
+//
+// 【注意事項 Pay Attention】
+//   1. 演算法不會改變容器大小。std::remove 只是把元素往前搬並回傳新邏輯尾端，
+//      真的刪除必須配合 erase（erase-remove 慣用法）。
+//   2. 容器有同名成員函式時優先用成員版：lst.sort() / lst.remove() / s.find()
+//      都比泛型版更快，且提供更強的迭代器有效性保證。
+//   3. 容器配接器（stack/queue/priority_queue）**沒有迭代器**，
+//      不能用範圍 for，也不能套任何 STL 演算法。
+//   4. transform / copy 的目的地必須已有足夠元素，或使用 back_inserter；
+//      對空 vector 傳 begin() 是未定義行為。
+//   5. 修改容器可能使迭代器失效，且各容器規則不同
+//      （vector 的 push_back 可能全部失效；list 的插入完全不失效）。
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】STL 六大組件與整體架構
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. STL 的六大組件是哪些？它們之間的依賴關係是什麼？
+//     答：容器、迭代器、演算法、函數物件、配接器、配置器。
+//         關係是：配置器供給容器記憶體；容器對外只暴露迭代器；
+//         演算法只透過迭代器工作，完全不認識容器；
+//         函數物件是演算法的可替換零件（比較/過濾/轉換）；
+//         配接器則包裝容器（stack 限制介面）或包裝其他東西成迭代器
+//         （back_inserter 讓 copy 能自動 push_back）。
+//     追問：這個設計最大的好處是什麼？
+//           → 把 M×N 份實作降為 M+N。而且自訂類別只要提供合格的 begin()/end()，
+//             不必繼承任何東西就能免費用上全部 STL 演算法。
+//
+// 🔥 Q2. STL 為什麼用樣板（編譯期多型）而不是繼承（執行期多型）？
+//     答：為了零額外執行期成本 —— 沒有虛擬函式表、沒有間接跳躍、
+//         operator() 與 ++it 都能完全 inline；而且 int 就是 int，不需要裝箱。
+//         代價是二進位檔膨脹、編譯變慢、型別錯誤訊息冗長。
+//         這是 C++「不為你沒用到的東西付錢」哲學的直接體現。
+//     追問：那 C++20 的 concepts 在這裡解決了什麼？
+//           → 把「這個樣板參數需要滿足什麼條件」寫進宣告，
+//             於是錯誤在呼叫點就被攔下並給出人話訊息，
+//             而不是在樣板實例化的第 20 層才爆出幾百行錯誤。
+//
+// ⚠️ 陷阱. 「我用 std::remove 把 vector 裡的 3 都刪掉了，為什麼 size() 沒變？」
+//     答：因為 std::remove 是**演算法**，而演算法只透過迭代器工作 ——
+//         它根本碰不到容器本身，自然無法改變 size。
+//         它做的是把要保留的元素往前搬，回傳「新的邏輯尾端」，
+//         尾端到 end() 之間的元素則處於「有效但未指定」的狀態。
+//         真的要縮短容器必須自己呼叫成員函式：
+//             v.erase(std::remove(v.begin(), v.end(), 3), v.end());
+//     為什麼會錯：把 remove 想成容器操作。
+//         這其實正好反映了「演算法與容器解耦」這個核心設計 ——
+//         解耦的代價就是演算法無法做任何改變容器大小的事。
+//         C++20 提供了 std::erase(v, 3) 一行完成，正是為了收掉這個長年陷阱。
+// ═══════════════════════════════════════════════════════════════════════════
+
 /*
 # 第三課：STL 的六大組件概覽
 
@@ -965,9 +1083,67 @@ int main() {
 
 #include <iostream>
 #include <vector>
+#include <string>
 #include <algorithm>
+#include <numeric>
 #include <iterator>
 #include <functional>
+
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 349. Intersection of Two Arrays
+//   題目：回傳兩個陣列的交集（結果中每個元素只出現一次）。
+//   為什麼用到本主題：這一題能在一支函式裡同時用到**五個**組件，
+//         是六大組件協作的最佳縮影：
+//           容器      vector
+//           迭代器    begin() / end()
+//           演算法    sort / set_intersection / unique
+//           函數物件  std::less（set_intersection 的預設比較器）
+//           配接器    back_inserter（迭代器配接器，讓演算法能自動長大目的容器）
+//         （配置器在背後默默替 vector 配置記憶體。）
+//   複雜度：時間 O(N log N + M log M)、空間 O(min(N, M))。
+// -----------------------------------------------------------------------------
+std::vector<int> intersection(std::vector<int> a, std::vector<int> b) {
+    std::sort(a.begin(), a.end());              // 演算法：set_intersection 要求已排序
+    std::sort(b.begin(), b.end());
+
+    std::vector<int> out;
+    std::set_intersection(a.begin(), a.end(),
+                          b.begin(), b.end(),
+                          std::back_inserter(out));   // 配接器：自動 push_back
+    // set_intersection 對重複元素保留 min(count_a, count_b) 份，本題要求唯一 → 去重
+    out.erase(std::unique(out.begin(), out.end()), out.end());
+    return out;
+}
+
+// -----------------------------------------------------------------------------
+// 【日常實務範例】伺服器存取紀錄分析：找出高流量來源 IP
+//   情境：維運要從一批存取紀錄中找出「請求數超過門檻」的來源 IP，
+//         依請求數由多到少列出，並輸出成一行報表。
+//   為什麼用到本主題：這是六大組件在真實工作中的典型組合 ——
+//         用 vector 收資料、用演算法過濾與排序、用 lambda 表達條件、
+//         用 back_inserter 收集結果、用 ostream_iterator 輸出。
+//         整段沒有一個手寫的索引迴圈。
+// -----------------------------------------------------------------------------
+struct AccessCount {
+    std::string ip;
+    int         requests;
+};
+
+std::vector<AccessCount> findHeavyHitters(const std::vector<AccessCount>& logs,
+                                          int threshold) {
+    std::vector<AccessCount> heavy;
+
+    // 演算法 copy_if + 函數物件（lambda 捕獲門檻）+ 配接器 back_inserter
+    std::copy_if(logs.begin(), logs.end(), std::back_inserter(heavy),
+                 [threshold](const AccessCount& a) { return a.requests > threshold; });
+
+    // 演算法 sort + 函數物件（lambda 比較器，用 > 維持嚴格弱序）
+    std::sort(heavy.begin(), heavy.end(),
+              [](const AccessCount& x, const AccessCount& y) {
+                  return x.requests > y.requests;
+              });
+    return heavy;
+}
 
 int main() {
     // 【容器】儲存資料
@@ -1009,6 +1185,101 @@ int main() {
     std::copy(doubled.begin(), doubled.end(),
               std::ostream_iterator<int>(std::cout, " "));
     std::cout << std::endl;
-    
+
+    // 【演算法】accumulate（<numeric>）—— 同樣只透過迭代器工作
+    std::cout << "偶數總和: "
+              << std::accumulate(even_numbers.begin(), even_numbers.end(), 0)
+              << std::endl;
+
+    // 六大組件在上面這段程式中的分工
+    std::cout << "\n=== 這段程式用到的六大組件 ===" << std::endl;
+    std::cout << "  1. 容器      vector<int> numbers / even_numbers / doubled" << std::endl;
+    std::cout << "  2. 迭代器    numbers.begin() / end()" << std::endl;
+    std::cout << "  3. 演算法    sort / copy_if / transform / copy / accumulate" << std::endl;
+    std::cout << "  4. 函數物件  greater<int>() 與兩個 lambda" << std::endl;
+    std::cout << "  5. 配接器    back_inserter / ostream_iterator（迭代器配接器）" << std::endl;
+    std::cout << "  6. 配置器    allocator<int>（在背後替 vector 配置記憶體）" << std::endl;
+
+    // 「演算法改不了容器大小」的實際演示
+    std::cout << "\n=== 為什麼 std::remove 之後 size() 不變 ===" << std::endl;
+    std::vector<int> r = {1, 3, 2, 3, 4, 3, 5};
+    std::cout << "  原始 size = " << r.size() << std::endl;
+    auto new_end = std::remove(r.begin(), r.end(), 3);
+    std::cout << "  remove(3) 後 size = " << r.size()
+              << "  ← 沒變！演算法碰不到容器本身" << std::endl;
+    std::cout << "  但邏輯上只剩 " << (new_end - r.begin()) << " 個有效元素" << std::endl;
+    r.erase(new_end, r.end());          // 這一步才真的縮短容器
+    std::cout << "  erase 之後 size = " << r.size() << "，內容 = ";
+    for (int n : r) std::cout << n << " ";
+    std::cout << std::endl;
+
+    std::cout << "\n=== LeetCode 349. Intersection of Two Arrays ===" << std::endl;
+    std::cout << "  [1,2,2,1] ∩ [2,2]     = ";
+    for (int n : intersection({1, 2, 2, 1}, {2, 2})) std::cout << n << " ";
+    std::cout << std::endl;
+    std::cout << "  [4,9,5] ∩ [9,4,9,8,4] = ";
+    for (int n : intersection({4, 9, 5}, {9, 4, 9, 8, 4})) std::cout << n << " ";
+    std::cout << std::endl;
+
+    std::cout << "\n=== 日常實務：找出高流量來源 IP ===" << std::endl;
+    std::vector<AccessCount> logs = {
+        {"10.0.0.7",     142}, {"192.168.1.20",  38}, {"10.0.0.99",  2571},
+        {"172.16.5.3",   890}, {"10.0.0.7",       0}, {"203.0.113.9",  17},
+        {"198.51.100.4", 455},
+    };
+    const int threshold = 100;
+    std::vector<AccessCount> heavy = findHeavyHitters(logs, threshold);
+
+    std::cout << "  門檻 " << threshold << " 次，命中 " << heavy.size() << " 個來源：" << std::endl;
+    for (const AccessCount& a : heavy) {
+        std::cout << "    " << a.ip << "  " << a.requests << " 次" << std::endl;
+    }
+
+    // 用 transform + ostream_iterator 產生一行報表
+    std::vector<std::string> labels;
+    std::transform(heavy.begin(), heavy.end(), std::back_inserter(labels),
+                   [](const AccessCount& a) {
+                       return a.ip + "(" + std::to_string(a.requests) + ")";
+                   });
+    std::cout << "  報表: ";
+    std::copy(labels.begin(), labels.end(),
+              std::ostream_iterator<std::string>(std::cout, " "));
+    std::cout << std::endl;
+
     return 0;
 }
+
+// 編譯: g++ -std=c++17 -Wall -Wextra 第三課：STL 的六大組件概覽13.cpp -o demo13
+
+// === 預期輸出 ===
+// 原始資料: 64 25 12 22 11 90 42
+// 降序排序: 90 64 42 25 22 12 11
+// 偶數: 90 64 42 22 12
+// 偶數加倍: 180 128 84 44 24
+// 偶數總和: 230
+//
+// === 這段程式用到的六大組件 ===
+//   1. 容器      vector<int> numbers / even_numbers / doubled
+//   2. 迭代器    numbers.begin() / end()
+//   3. 演算法    sort / copy_if / transform / copy / accumulate
+//   4. 函數物件  greater<int>() 與兩個 lambda
+//   5. 配接器    back_inserter / ostream_iterator（迭代器配接器）
+//   6. 配置器    allocator<int>（在背後替 vector 配置記憶體）
+//
+// === 為什麼 std::remove 之後 size() 不變 ===
+//   原始 size = 7
+//   remove(3) 後 size = 7  ← 沒變！演算法碰不到容器本身
+//   但邏輯上只剩 4 個有效元素
+//   erase 之後 size = 4，內容 = 1 2 4 5
+//
+// === LeetCode 349. Intersection of Two Arrays ===
+//   [1,2,2,1] ∩ [2,2]     = 2
+//   [4,9,5] ∩ [9,4,9,8,4] = 4 9
+//
+// === 日常實務：找出高流量來源 IP ===
+//   門檻 100 次，命中 4 個來源：
+//     10.0.0.99  2571 次
+//     172.16.5.3  890 次
+//     198.51.100.4  455 次
+//     10.0.0.7  142 次
+//   報表: 10.0.0.99(2571) 172.16.5.3(890) 198.51.100.4(455) 10.0.0.7(142)

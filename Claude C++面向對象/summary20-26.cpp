@@ -20,6 +20,195 @@
  * ============================================================================
  */
 
+// =============================================================================
+//
+// 【主題資訊 Information】
+//   範圍：  封裝的目的（20）→ 存取介面設計（21）→ const 正確性（22）
+//           → mutable 的例外（23）→ static 成員（24、25）→ this（26）
+//   標準：  本檔以 C++17 為基準。涉及版本的關鍵點：
+//             * inline static 資料成員 —— C++17（在此之前必須類外定義）
+//             * constexpr static 資料成員隱含 inline —— C++17
+//             * 區域 static 的執行緒安全初始化（magic static）—— C++11
+//   標頭檔：<iostream> <string> <vector> <algorithm> <cmath>
+//   關鍵詞：encapsulation、invariant、const correctness、bitwise vs logical
+//           const、mutable、static storage duration、this、method chaining
+//
+// 【詳細解釋 Explanation】
+//
+// 【1. 這七課其實在講同一件事：誰有權改變狀態，以及何時】
+// 表面上是七個獨立主題，實際上是一條主線：
+//     第 20 課    把狀態關起來             → 決定「誰」能改
+//     第 21 課    開放受控的存取介面       → 決定「怎麼」改
+//     第 22 課    const 標記不改狀態的操作 → 由編譯器驗證「這個不會改」
+//     第 23 課    mutable 開一個受控例外   → 「邏輯上沒改，實體上改了」
+//     第 24/25 課 static 屬於類別而非物件  → 狀態的「歸屬」不是物件
+//     第 26 課    this 指向被操作的那個物件 → 前面一切的執行期基礎
+// 把這條線看懂，比背七組語法有用得多。
+//
+// 【2. const 成員函式的真正語意：bitwise const，不是 logical const】
+// 這是本專題最容易誤解的一點。`void f() const` 對編譯器的意義是：
+//     在這個函式裡，this 的型別是 const T* const，
+//     因此不能對「非 mutable 的非靜態資料成員」賦值。
+// 它檢查的是**位元層面**（bitwise const），而不是「這個物件在語意上沒變」
+//（logical const）。兩者的落差造成兩個方向的問題：
+//   (a) bitwise const 成立，但 logical 不 const：
+//       成員是 T* 時，const 保護的是「指標本身不能改指向」，
+//       **不保護它指向的內容**。所以 const 函式裡照樣能寫 *ptr = 999;
+//       本檔的 ShallowConst22::sneakyModify() 正是這個示範
+//       —— 這是 const 最大的漏洞。
+//   (b) logical const 成立，但 bitwise 不 const：
+//       快取、惰性求值、計數器、mutex 這些「改了但外界觀察不到」的欄位，
+//       在 const 函式裡改會被編譯器擋下。這正是 mutable 存在的理由，
+//       本檔的 Circle23 用 mutable 同時做到快取與存取計數。
+// 判準（第 23 課的核心）：把該欄位拿掉，外部觀察到的行為是否完全相同？
+//   是 → 適合 mutable（快取、統計、鎖）
+//   否 → 不適合（那是真正的狀態，如 BadMutable23 的 hp_，屬於濫用）
+//
+// 【3. 為什麼「回傳非 const 引用的 getter」等於沒有封裝】
+// 第 21 課點到但值得講透。比較三種 getter：
+//     int         hp() const   { return hp_; }     // 安全：回傳副本
+//     const Inv&  inv() const  { return inv_; }    // 安全：唯讀視圖
+//     Inv&        inv()        { return inv_; }    // 危險：可寫通道
+// 第三種讓呼叫端拿到可寫的 reference，於是能繞過所有驗證與副作用：
+//     obj.inv().clear();      // 沒有經過任何一行你寫的檢查程式碼
+// 表面上「有 getter、成員是 private」，實質上與 public 無異，而且更隱蔽
+// —— 因為程式碼審查時看起來像是有封裝的。
+// 檢查自己的類別時，該問的不是「成員有沒有標 private」，
+// 而是「所有 public 函式的回傳型別裡，有沒有非 const 的 reference／指標指向內部」。
+//
+// 【4. static 成員的兩個層面：儲存期與存取權是正交的】
+// static 資料成員的性質常被混為一談，實際上是兩件獨立的事：
+//   * 儲存期（storage duration）：static 成員存在靜態儲存區，
+//     生命週期是整個程式，**不隨物件建立或銷毀**，也不計入 sizeof。
+//   * 存取權（access）：它照樣受 public/private/protected 管轄。
+//     private static 成員一樣只有類別自己與 friend 碰得到。
+// 所以「static 就是全域變數」是錯的 —— 它有歸屬、有存取控制、有命名空間。
+// static 成員函式沒有 this，因此
+//   (a) 不能存取非靜態成員（沒有物件可指）
+//   (b) 不能標 const（const 修飾的是 this 指向的物件，沒有 this 就無意義）
+//   (c) 也不能是 virtual（虛擬派發需要物件裡的 vptr）
+//   (d) 可以用 Class::func() 呼叫，不需要任何物件存在
+//
+// 【5. this 的型別會隨函式的 const 限定而改變】
+// 這是把第 22 與第 26 課串起來的關鍵：
+//     void f()               →  this 的型別是        T* const
+//     void f() const         →  this 的型別是  const T* const
+//     void f() volatile      →  volatile T* const
+//     static void f()        →  沒有 this
+// 注意 this 本身**永遠是 const 指標**（不能改指向別的物件），
+// 差別只在它指向的東西是不是 const。
+// 這也解釋了為什麼 const 函式只能呼叫 const 函式：
+// 傳進去的 this 已經是 const T*，非 const 函式要求 T*，型別不相容。
+//
+// 【概念補充 Concept Deep Dive】
+// (A) 成員初始化順序永遠依「宣告順序」，不是初始化列表的順序
+//     本檔的 Buffer26 保留了這個教學點（並會產生 -Wreorder 警告）：
+//         int* data_;      // 先宣告
+//         int  size_;      // 後宣告
+//         Buffer26(int size) : size_(size), data_(new int[size]) { ... }
+//     初始化列表寫成 size_ 在前，但實際執行順序是 data_ 先、size_ 後。
+//     這裡之所以安全，是因為 data_(new int[size]) 用的是**參數 size**，
+//     而不是尚未初始化的成員 size_。若寫成 data_(new int[size_])，
+//     就會從未初始化的成員讀值 —— 那是 UB，標準不保證任何結果。
+//     ⚠️ 本檔保留 -Wreorder 警告是刻意的：讓你親眼看到編譯器會替你抓出
+//        「初始化列表順序與宣告順序不一致」這個危險訊號。
+//        實務上正確做法是讓兩者順序一致，警告自然消失。
+//
+// (B) magic static：區域 static 的初始化在 C++11 起保證執行緒安全
+//     單例最常見的寫法
+//         static T& instance() { static T inst; return inst; }
+//     在 C++11 之前，多執行緒同時首次呼叫可能重複建構（著名的 DCLP 問題）。
+//     C++11 起標準保證這個初始化是執行緒安全的（俗稱 magic static），
+//     編譯器會自動加上一次性的同步。這是現代單例首選此寫法的主因。
+//
+// (C) static 資料成員在 C++17 之前必須「類外定義」
+//     C++17 之前：類內只是宣告，還要在某個 .cpp 寫 int Foo::count_ = 0;
+//                 漏寫就是連結錯誤（undefined reference）。
+//     C++17 起：可寫 inline static int count_ = 0; 直接在類內完成定義，
+//               header-only 函式庫因此方便許多。
+//     另注意 constexpr static 資料成員自 C++17 起隱含 inline，不必再類外定義
+//     —— 本檔 Circle23 的 static constexpr double PI 正是靠這條規則。
+//
+// (D) const 多載：同名函式可以只差 const 限定
+//         const char& at(size_t i) const;   // const 物件呼叫這個
+//         char&       at(size_t i);         // 非 const 物件呼叫這個
+//     這是標準容器普遍採用的模式，讓唯讀路徑回傳唯讀視圖、
+//     可寫路徑回傳可寫視圖，兩者共用同一個名字。
+//
+// (E) 鏈式呼叫（method chaining）與回傳型別的選擇
+//     `return *this;` 有兩種回傳型別，語意完全不同：
+//         T&  chain() { ...; return *this; }   // 回傳引用：不複製，可連續呼叫
+//         T   chain() { ...; return *this; }   // 回傳值：每次複製，效率差且語意怪
+//     Builder 模式一律用前者。本檔的 QueryBuilder26 即為此模式。
+//
+// 【注意事項 Pay Attention】
+// 1. const 是 bitwise 不是 logical：成員為指標時，const 函式仍可改它指向的內容。
+// 2. mutable 只該用於「外界觀察不到」的欄位（快取／統計／鎖），不可用於核心狀態。
+// 3. 回傳非 const 引用的 getter 等於解除封裝，比 public 成員更隱蔽。
+// 4. static 成員函式沒有 this，因此不能加 const、不能是 virtual、不能存取非靜態成員。
+// 5. static 資料成員不計入 sizeof；C++17 前需類外定義，否則連結錯誤。
+// 6. 成員初始化依「宣告順序」，與初始化列表的書寫順序無關 —— 讓兩者一致以免踩雷。
+// 7. 建構函式中把 this 傳出去有風險：此時物件尚未完全初始化，虛擬函式也還沒就位。
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】封裝、const、mutable、static、this
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. const 成員函式到底承諾了什麼？它保護得了指標成員指向的內容嗎？
+//     答：它承諾「不修改本物件的非 mutable 非靜態資料成員」，
+//         實作上是把 this 的型別變成 const T* const。
+//         它是 bitwise const，**保護不了指標指向的內容** ——
+//         成員為 int* 時，const 函式不能改 data_ 本身指向哪裡，
+//         但可以自由地寫 *data_ = 999。這是 const 最常被誤解的漏洞。
+//     追問：那要怎麼讓指向的內容也唯讀？
+//         → 把成員型別改成 const int*（指向 const），
+//           或改用 std::vector 這類值語意容器，const 就會自然傳遞下去。
+//
+// 🔥 Q2. mutable 什麼時候該用？什麼時候是濫用？
+//     答：判準是「把這個欄位拿掉，外部觀察到的行為會不會改變」。
+//         不會改變 → 適合（快取結果、呼叫次數統計、mutex、惰性初始化旗標）。
+//         會改變   → 那是真正的狀態，用 mutable 等於讓 const 完全失效。
+//         例：Circle23 快取算好的面積是合理的；
+//             BadMutable23 用 mutable 存 hp_ 並提供 const 的 takeDamage()
+//             就是濫用 —— 呼叫端看到 const 卻被改了核心狀態。
+//     追問：mutable 和 const_cast 哪個好？
+//         → mutable。對「原本就宣告為 const 的物件」用 const_cast 去 const
+//           再修改是 UB；mutable 是語言正式支援的機制，安全且意圖明確。
+//
+// 🔥 Q3. static 成員函式為什麼不能加 const，也不能是 virtual？
+//     答：const 修飾的是隱含的 this 所指向的物件；static 成員函式沒有 this
+//         （它不屬於任何物件），所以 const 沒有東西可修飾。
+//         virtual 需要透過物件裡的 vptr 做執行期派發，static 函式同樣沒有物件，
+//         兩者都在語法層面直接禁止。
+//     追問：static 成員函式能存取 private 成員嗎？
+//         → 能。存取權以類別為單位，與有沒有 this 無關；
+//           只是它必須透過參數拿到物件，例如 static bool cmp(const T& a, const T& b)。
+//
+// ⚠️ 陷阱 1. 這個建構函式為什麼可能配置出錯誤大小的記憶體？
+//         class B { int* data_; int size_;
+//                   B(int n) : size_(n), data_(new int[size_]) {} };
+//     答：因為成員初始化順序**只依宣告順序**，與初始化列表的書寫順序無關。
+//         data_ 先宣告，所以 data_ 先初始化 —— 此時 size_ 還沒被賦值，
+//         new int[size_] 讀的是未初始化的值。這是 UB，
+//         標準不保證任何結果（可能配置出巨大長度、可能拋 bad_alloc、
+//         也可能「看起來正常」而在別處爆炸）。
+//     為什麼會錯：多數人直覺認為「初始化列表由左至右執行」，
+//         把它當成一般的敘述序列。但標準明確規定順序由宣告順序決定，
+//         列表只是提供初始值。編譯器的 -Wreorder 警告正是為此而生 ——
+//         看到它就該把兩者順序對齊，而不是忽略。
+//         （本檔 Buffer26 刻意保留此警告作為教學示範，
+//           但它用的是參數 size 而非成員 size_，所以實際行為是正確的。）
+//
+// ⚠️ 陷阱 2. 「這個類別成員都是 private，也有 getter，所以封裝做好了」——不一定，為什麼？
+//     答：要看 getter 的回傳型別。若是 `Inventory& inv() { return inv_; }`
+//         這種非 const 引用，呼叫端可以寫 obj.inv().clear()，
+//         完全繞過你所有的驗證與副作用 —— 封裝在此處已被解除，
+//         而且比直接寫 public 更難察覺，因為表面上「有 getter」。
+//     為什麼會錯：把封裝當成一個語法特徵（成員有沒有標 private）來檢查，
+//         而不是當成一個資訊流問題（有沒有可寫的通道洩漏到外部）。
+//         正確的自我檢查是掃過所有 public 函式的回傳型別，
+//         看有沒有非 const 的 reference 或指標指向內部狀態。
+// ═══════════════════════════════════════════════════════════════════════════
+
 #include <iostream>
 #include <string>
 #include <vector>
@@ -829,8 +1018,11 @@ public:
 // 自我賦值檢查 + 同名消歧
 class Buffer26 {
 private:
+    // ★ 宣告順序：長度在前、指標在後。
+    //   成員初始化順序永遠依**宣告順序**，與初始化列的書寫順序無關；
+    //   把 size_ 放前面，初始化列的順序才與實際順序一致（也消除 -Wreorder 警告）。
+    int  size_;
     int* data_;
-    int size_;
 public:
     Buffer26(int size) : size_(size), data_(new int[size]) {
         for (int i = 0; i < size; i++) data_[i] = i;
@@ -973,6 +1165,185 @@ void demo_lesson26() {
 }
 
 // ============================================================================
+// 【LeetCode 實戰範例】LeetCode 155. Min Stack
+// ============================================================================
+//   題目：設計一個支援 push / pop / top / getMin 的堆疊，
+//         且 getMin 必須是 O(1)（不是掃描整個堆疊）。
+//   為什麼用到本主題：這題是「封裝一個不變量」的教科書案例。
+//         不變量 (I)：minStack_.top() 永遠等於 data_ 內所有元素的最小值。
+//         這條規則靠的是「每次 push/pop 都同步維護第二個堆疊」，
+//         而它成立的唯一前提，就是**外界只能透過這四個函式改變狀態**。
+//         若把 data_ 開成 public（或提供回傳非 const 引用的 getter），
+//         任何人 push_back 一個更小的值就會讓 getMin 永久回報錯誤答案。
+//         這正是第 20、21 課在講的事。
+//   本主題的其他對應點：
+//         * top()/getMin()/empty() 都是唯讀 → 標 const（第 22 課）
+//         * 兩個 vector 是 private，只暴露操作不暴露容器（第 21 課）
+//   複雜度：四個操作皆為 O(1)；空間 O(n)。
+//   註：LeetCode 保證呼叫 pop/top/getMin 時堆疊非空；
+//       這裡仍加上防禦性檢查，因為實務程式碼不該假設呼叫端守規矩。
+// ============================================================================
+class MinStack {
+private:
+    vector<int> data_;      // 實際資料
+    vector<int> minStack_;  // 與 data_ 等長；minStack_[i] = data_[0..i] 的最小值
+
+public:
+    void push(int val) {
+        data_.push_back(val);
+        // 維護不變量：新的最小值 = min(舊的最小值, val)
+        if (minStack_.empty()) {
+            minStack_.push_back(val);
+        } else {
+            minStack_.push_back(std::min(minStack_.back(), val));
+        }
+    }
+
+    void pop() {
+        if (data_.empty()) return;      // 防禦：實務上不假設呼叫端守規矩
+        data_.pop_back();
+        minStack_.pop_back();           // 兩者必須同步，不變量才成立
+    }
+
+    // 唯讀操作 → const（第 22 課）
+    int  top()    const { return data_.empty() ? 0 : data_.back(); }
+    int  getMin() const { return minStack_.empty() ? 0 : minStack_.back(); }
+    bool empty()  const { return data_.empty(); }
+    size_t size() const { return data_.size(); }
+
+    // 刻意「不」提供 vector<int>& data() —— 那會讓不變量瞬間失守
+};
+
+// ============================================================================
+// 【日常實務範例】設定檔快取：mutable + static + const 的綜合應用
+// ============================================================================
+//   情境：服務啟動後要頻繁讀取設定值（如逾時秒數、重試次數）。
+//   實務需求：
+//     (a) 讀取設定是唯讀操作 → 介面應該是 const，讓 const ConfigStore& 也能查
+//     (b) 解析設定值有成本（實務上可能是查資料庫或解析字串）
+//         → 第一次算完就快取，之後直接回傳
+//     (c) 快取本身「外界觀察不到」→ 正是 mutable 的正當用途（第 23 課）
+//     (d) 全域統計「總共查詢了幾次」屬於類別層級而非物件層級 → static（第 24 課）
+//     (e) 修改設定時必須讓快取失效，否則會回傳過期資料 —— 這是快取的頭號 bug
+//
+//   這個範例把第 22、23、24、25 課全部串起來，也是實務上最常見的
+//   「logical const」場景：getTimeout() 從外部看是純查詢，
+//   內部卻改了快取與計數器。
+// ============================================================================
+class ConfigStore {
+private:
+    string  m_rawTimeout;              // 原始設定值（字串，模擬從檔案讀入）
+    int     m_retries;
+
+    // ── 以下三個是 mutable：外界觀察不到，只影響效能 ──
+    mutable bool m_timeoutCached = false;
+    mutable int  m_cachedTimeout = 0;
+    mutable int  m_readCount = 0;      // 本物件被查詢次數
+
+    // static：屬於類別，所有物件共享，不計入 sizeof（第 24 課）
+    // C++17 的 inline static，不需要類外定義
+    inline static int s_totalReads = 0;
+
+    // private static 輔助函式：解析邏輯是實作細節（第 25 課）
+    static int parseSeconds(const string& s) {
+        int v = 0;
+        for (char c : s) {
+            if (c >= '0' && c <= '9') v = v * 10 + (c - '0');
+            else break;                // 遇到 "30s" 的 's' 就停
+        }
+        return v;
+    }
+
+public:
+    ConfigStore(const string& timeout, int retries)
+        : m_rawTimeout(timeout), m_retries(retries) {}
+
+    // const 函式，但內部改了 mutable 成員 —— logical const
+    int getTimeout() const {
+        ++m_readCount;
+        ++s_totalReads;                // static 成員在 const 函式中也可修改
+                                       // （它不屬於本物件，不受 this 的 const 影響）
+        if (!m_timeoutCached) {
+            cout << "    [解析] 計算 timeout（僅第一次）" << endl;
+            m_cachedTimeout = parseSeconds(m_rawTimeout);
+            m_timeoutCached = true;
+        } else {
+            cout << "    [快取] 直接回傳快取值" << endl;
+        }
+        return m_cachedTimeout;
+    }
+
+    int  retries()   const { return m_retries; }
+    int  readCount() const { return m_readCount; }
+
+    // 修改設定 → 必須讓快取失效（快取最常見的 bug 就是忘了這一步）
+    void setTimeout(const string& s) {
+        m_rawTimeout = s;
+        m_timeoutCached = false;       // 關鍵：不做這行就會回傳過期資料
+        cout << "    [更新] timeout 設為 \"" << s << "\"，快取已失效" << endl;
+    }
+
+    // static 成員函式：沒有 this，用 Class::func() 呼叫（第 25 課）
+    static int totalReads() { return s_totalReads; }
+};
+
+void demo_leetcode_and_practice() {
+    cout << "\n╔══════════════════════════════════════════╗" << endl;
+    cout << "║  LeetCode 155. Min Stack                 ║" << endl;
+    cout << "╚══════════════════════════════════════════╝" << endl;
+
+    MinStack st;
+    st.push(-2); st.push(0); st.push(-3);
+    cout << "  push(-2), push(0), push(-3)" << endl;
+    cout << "  getMin() = " << st.getMin() << "   （預期 -3）" << endl;
+    st.pop();
+    cout << "  pop()" << endl;
+    cout << "  top()    = " << st.top()    << "   （預期 0）" << endl;
+    cout << "  getMin() = " << st.getMin() << "   （預期 -2）" << endl;
+    cout << "  → 不變量「minStack_.top() 等於目前最小值」全程成立，" << endl;
+    cout << "     因為外界只能透過 push/pop 改變狀態。" << endl;
+
+    // 證明唯讀介面可被 const reference 呼叫（第 22 課）
+    const MinStack& ref = st;
+    cout << "  const MinStack& 也能呼叫 top()/getMin()/size()："
+         << ref.top() << " / " << ref.getMin() << " / " << ref.size() << endl;
+
+    cout << "\n╔══════════════════════════════════════════╗" << endl;
+    cout << "║  日常實務：設定檔快取（mutable + static）║" << endl;
+    cout << "╚══════════════════════════════════════════╝" << endl;
+
+    ConfigStore cfg("30s", 3);
+    // 注意：先把結果取出再印。若直接寫 cout << cfg.getTimeout()，
+    //       getTimeout() 內部的 [解析]/[快取] 訊息會插進這一行的中間，
+    //       輸出看起來會錯亂 —— 這是「函式有副作用又被嵌進輸出運算式」的典型後果。
+    cout << "  第一次查詢：" << endl;
+    int t1 = cfg.getTimeout();
+    cout << "    timeout = " << t1 << " 秒" << endl;
+
+    cout << "  第二次查詢（應走快取）：" << endl;
+    int t2 = cfg.getTimeout();
+    cout << "    timeout = " << t2 << " 秒" << endl;
+
+    cout << "  更新設定後，快取必須失效：" << endl;
+    cfg.setTimeout("60s");
+    int t3 = cfg.getTimeout();
+    cout << "    timeout = " << t3 << " 秒（重新解析）" << endl;
+
+    // const 物件一樣能查詢 —— 這正是 getTimeout() 標 const 的價值
+    const ConfigStore frozen("15s", 5);
+    cout << "  const 物件也能查詢（因為 getTimeout 是 const）：" << endl;
+    int t4 = frozen.getTimeout();
+    cout << "    timeout = " << t4 << " 秒" << endl;
+
+    cout << "  本物件查詢次數 cfg.readCount() = " << cfg.readCount() << endl;
+    cout << "  全類別總查詢次數 ConfigStore::totalReads() = "
+         << ConfigStore::totalReads() << endl;
+    cout << "  → readCount 是每物件各自的；totalReads 是 static，全類別共享。" << endl;
+    cout << "  → 兩者都在 const 函式中被修改：前者靠 mutable，" << endl;
+    cout << "     後者因為 static 成員根本不屬於這個物件，不受 this 的 const 限制。" << endl;
+}
+
+// ============================================================================
 //  主程式
 // ============================================================================
 int main() {
@@ -987,6 +1358,7 @@ int main() {
     demo_lesson24();
     demo_lesson25();
     demo_lesson26();
+    demo_leetcode_and_practice();
 
     // ========================================================================
     //  速查表（Speed Lookup）
@@ -1053,3 +1425,222 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++17 -Wall -Wextra summary20-26.cpp -o summary20-26
+//   註：本檔刻意保留 Buffer26 的 -Wreorder 警告作為教學示範（見概念補充 A），
+//       該警告不影響正確性 —— Buffer26 用的是參數 size 而非未初始化的成員 size_。
+
+// === 預期輸出 ===
+// ╔══════════════════════════════════════════════════╗
+// ║  第 20～26 課：封裝專題 合併精華總結             ║
+// ╚══════════════════════════════════════════════════╝
+//
+// ╔══════════════════════════════════════════╗
+// ║  第 20 課：封裝（Encapsulation）         ║
+// ╚══════════════════════════════════════════╝
+//   勇者 Lv.1 HP:100/100 ATK:25
+//   勇者 -30 HP:70/100
+//   無效傷害
+//   ★ 勇者 升級 Lv.2
+//   勇者 Lv.2 HP:120/120 ATK:30
+//   勇者 -9999 HP:0/120
+//   勇者 倒下了！
+//
+// ╔══════════════════════════════════════════╗
+// ║  第 21 課：getter 與 setter 設計模式     ║
+// ╚══════════════════════════════════════════╝
+//
+// --- 危險 getter ---
+//   正常餘額：1500
+//   竄改後：999999
+//   教訓：返回非 const 引用破壞封裝！
+//
+// --- 行為取代 setter ---
+//   哥布林 -20 HP:30
+//   哥布林 暴怒！ATK=30
+//
+// --- 鏈式調用 ---
+//   [警告] 確定刪除嗎？ (400x200)
+//
+// ╔══════════════════════════════════════════╗
+// ║  第 22 課：const 成員函數                ║
+// ╚══════════════════════════════════════════╝
+//
+// --- const 對象限制 ---
+//   聖水 回復:100 數量:5
+//   使用 藥水 剩餘:2
+//   藥水 回復:50 數量:2
+//
+// --- const 重載 ---
+//   [非 const 版本]  內容：Modified
+//   [const 版本]
+//
+// --- 淺層 const 陷阱 ---
+//   修改前：42
+//   修改後：999 (const 是淺層的！)
+//
+// ╔══════════════════════════════════════════╗
+// ║  第 23 課：mutable 關鍵字               ║
+// ╚══════════════════════════════════════════╝
+//
+// --- 快取 + 訪問計數器 ---
+//   面積=  [計算面積...]
+// 78.5398
+//   面積=  [使用快取]
+// 78.5398
+//   面積=  [使用快取]
+// 78.5398
+//   被訪問 3 次
+//
+// --- 濫用 mutable（反面教材）---
+//   HP=70 (const 完全失去保護！)
+//
+// ╔══════════════════════════════════════════╗
+// ║  第 24 課：類別內的靜態成員變數           ║
+// ╚══════════════════════════════════════════╝
+//
+// --- 對象計數器 + 自動 ID ---
+//   [入伍] 阿強 ID:1001 總人數:1
+//   [入伍] 阿明 ID:1002 總人數:2
+//   目前總人數：2
+//   [退役] 阿明 總人數:1
+//   [退役] 阿強 總人數:0
+//   最終人數：0
+//
+// --- sizeof 不含靜態成員 ---
+//   SizeDemo24 大小：8 bytes（只算兩個 int）
+//
+// ╔══════════════════════════════════════════╗
+// ║  第 25 課：類別內的靜態成員函數           ║
+// ╚══════════════════════════════════════════╝
+//
+// --- 工廠函數 ---
+//   小藥水 回復:30 價格:50
+//   大藥水 回復:150 價格:300
+//
+// --- 工具函數類 ---
+//   clamp(150, 0, 100) = 100
+//   distance(0,0,3,4)  = 5
+//
+// --- 單例模式（Meyers' Singleton）---
+//   [GameManager 初始化]
+//   分數：350
+//   同一實例：是
+//
+// ╔══════════════════════════════════════════╗
+// ║  第 26 課：this 指標                     ║
+// ╚══════════════════════════════════════════╝
+//
+// --- 鏈式調用（return *this）---
+//   SELECT * FROM players WHERE level > 10 AND hp > 0 LIMIT 20
+//
+// --- 自我賦值檢查 ---
+//   [0,1,2,3,4]
+//   [賦值] 自我賦值，跳過
+//   [0,1,2,3,4]
+//
+// --- RPG 隊伍系統 ---
+//   更適合當隊長：亞瑟
+//   ★ 亞瑟 成為隊長！
+//   梅林 跟隨 亞瑟
+//   伊蓮 跟隨 亞瑟
+//   亞瑟：不能跟隨自己
+//   亞瑟 HP:350/350 ATK:50 (隊長)
+//   梅林 HP:150/150 ATK:70 (跟隨:亞瑟)
+//   伊蓮 HP:200/200 ATK:20 (跟隨:亞瑟)
+//   伊蓮 治療 亞瑟 +60 HP:290/350
+//   伊蓮 自我治療 +0 HP:200/200
+//
+// ╔══════════════════════════════════════════╗
+// ║  LeetCode 155. Min Stack                 ║
+// ╚══════════════════════════════════════════╝
+//   push(-2), push(0), push(-3)
+//   getMin() = -3   （預期 -3）
+//   pop()
+//   top()    = 0   （預期 0）
+//   getMin() = -2   （預期 -2）
+//   → 不變量「minStack_.top() 等於目前最小值」全程成立，
+//      因為外界只能透過 push/pop 改變狀態。
+//   const MinStack& 也能呼叫 top()/getMin()/size()：0 / -2 / 2
+//
+// ╔══════════════════════════════════════════╗
+// ║  日常實務：設定檔快取（mutable + static）║
+// ╚══════════════════════════════════════════╝
+//   第一次查詢：
+//     [解析] 計算 timeout（僅第一次）
+//     timeout = 30 秒
+//   第二次查詢（應走快取）：
+//     [快取] 直接回傳快取值
+//     timeout = 30 秒
+//   更新設定後，快取必須失效：
+//     [更新] timeout 設為 "60s"，快取已失效
+//     [解析] 計算 timeout（僅第一次）
+//     timeout = 60 秒（重新解析）
+//   const 物件也能查詢（因為 getTimeout 是 const）：
+//     [解析] 計算 timeout（僅第一次）
+//     timeout = 15 秒
+//   本物件查詢次數 cfg.readCount() = 3
+//   全類別總查詢次數 ConfigStore::totalReads() = 4
+//   → readCount 是每物件各自的；totalReads 是 static，全類別共享。
+//   → 兩者都在 const 函式中被修改：前者靠 mutable，
+//      後者因為 static 成員根本不屬於這個物件，不受 this 的 const 限制。
+//
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  第 20～26 課 速查表                                        ║
+// ╠══════════════════════════════════════════════════════════════╣
+// ║                                                            ║
+// ║  【第 20 課：封裝】                                         ║
+// ║    三層防護：訪問控制 → 數據驗證 → 不變量維護              ║
+// ║    四大好處：數據保護 / 介面穩定 / 降低耦合 / 簡化使用     ║
+// ║    四個層次：語法層 → 邏輯層 → 介面層 → 模組層            ║
+// ║    核心目的：維護不變量，防止對象進入非法狀態              ║
+// ║                                                            ║
+// ║  【第 21 課：getter / setter】                              ║
+// ║    基本型別 getter → 返回值    大型物件 → const 引用       ║
+// ║    危險 getter → 返回非 const 引用 = 破壞封裝！            ║
+// ║    核心原則：用行為取代 setter（takeDamage > setHp）        ║
+// ║    鏈式調用：setter 返回 *this → 連續調用                  ║
+// ║    命名風格：getX/setX（Java）或 x()/x(val)（C++重載）    ║
+// ║                                                            ║
+// ║  【第 22 課：const 成員函數】                               ║
+// ║    語法：void func() const → 承諾不修改成員               ║
+// ║    const 對象只能調用 const 函數                           ║
+// ║    this 類型：普通 T* const / const 函數 const T* const    ║
+// ║    const 重載：同名 const/非const 版本共存                 ║
+// ║    調用鏈：const 函數只能調用 const 函數                   ║
+// ║    淺層 const：不保護指標指向的內容                        ║
+// ║                                                            ║
+// ║  【第 23 課：mutable】                                      ║
+// ║    語法：mutable int count_; → const 函數中也可修改       ║
+// ║    適用：快取 / 計數器 / 延遲初始化 / 互斥鎖              ║
+// ║    判斷：去掉 mutable 變數外部觀察是否一樣？是 → 適合     ║
+// ║    濫用：核心數據用 mutable → const 完全失效               ║
+// ║    mutable 合法安全 > const_cast 未定義行為                ║
+// ║                                                            ║
+// ║  【第 24 課：靜態成員變數】                                  ║
+// ║    屬於類別，所有對象共享同一份                            ║
+// ║    傳統：類內聲明 + 類外定義   C++17：inline static       ║
+// ║    constexpr static → 編譯期常量，最高效                  ║
+// ║    推薦 Class::member 訪問   不計入 sizeof                 ║
+// ║    生命週期：程式啟動 → 程式結束（超過任何對象）           ║
+// ║                                                            ║
+// ║  【第 25 課：靜態成員函數】                                  ║
+// ║    沒有 this 指標，只能訪問靜態成員                        ║
+// ║    不能加 const（沒有 this → const 無意義）                ║
+// ║    可接收對象參數間接訪問 private                          ║
+// ║    工廠函數：私有建構 + 靜態創建方法                       ║
+// ║    工具類：全靜態 + delete 建構函數                        ║
+// ║    單例：static T& getInstance() { static T i; return i; }║
+// ║    vs 全域函數：靜態函數有歸屬可訪問 private              ║
+// ║                                                            ║
+// ║  【第 26 課：this 指標】                                    ║
+// ║    本質：隱含指標，指向調用函數的對象（== &obj）           ║
+// ║    類型：普通 T* const / const → const T* const / 靜態無  ║
+// ║    同名消歧：this->name = name;                           ║
+// ║    鏈式調用：return *this;                                 ║
+// ║    傳遞自身：func(this) 或 func(*this)                    ║
+// ║    自我檢查：if (this == &other)                          ║
+// ║    拷貝自身：T copy = *this;                              ║
+// ║    建構中洩漏 this 有風險（對象尚未完全初始化）            ║
+// ║                                                            ║
+// ╚══════════════════════════════════════════════════════════════╝

@@ -1,4 +1,128 @@
-﻿/*
+﻿// =============================================================================
+//  課程 1.1：什麼是並行與並發（Concurrency vs Parallelism）
+// =============================================================================
+//
+// 【主題資訊 Information】
+//   標頭檔：<thread>（std::thread / this_thread / hardware_concurrency）、
+//           <chrono>（steady_clock 計時）、<iostream>、<string>
+//   標準版本：C++11（std::thread 與 <chrono> 皆為 C++11 引入）
+//
+//     std::thread t(func, args...);                    // 建立並【立即啟動】
+//     void t.join();                                   // 等待結束
+//     std::thread::id std::this_thread::get_id();      // 目前執行緒的 id
+//     unsigned std::thread::hardware_concurrency();    // 核心數【提示】，可能為 0
+//
+//   複雜度：建立一條執行緒在 Linux 上約 20–80 微秒（clone(2) + 堆疊配置）；
+//           本檔完整教材（含圖表與四種組合的完整討論）見下方 markdown 區塊。
+//
+// 【詳細解釋 Explanation】
+//   下方的 markdown 講義已完整說明概念與生活比喻。這裡補上三個
+//   「講義講了定義、但實際寫程式才會踩到」的關鍵點。
+//
+// 【1. 一句話分清楚：並發是「結構」，並行是「執行」】
+//   Rob Pike 的經典說法最精準：
+//       "Concurrency is about dealing with lots of things at once.
+//        Parallelism is about doing lots of things at once."
+//   * 並發（concurrency）是【程式的結構】——你把程式寫成多個可獨立推進的任務。
+//     這是【你寫程式碼時】的決定，與硬體無關。
+//   * 並行（parallelism）是【執行時的現象】——多個任務在同一時刻真的同時跑。
+//     這是【執行期由硬體與 OS 決定】的結果，你的程式碼管不到。
+//   關鍵推論：同一份並發程式碼，在單核心上就是並發不並行（時間分片），
+//   在多核心上就變成並發且並行。【你寫的是並發，你得到的可能是並行】。
+//   所以「並行一定並發，並發不一定並行」。
+//
+// 【2. 本檔的實驗其實證明了什麼】
+//   方式一（循序）約 900ms，方式二（並發）約 300ms，加速約 3 倍。
+//   ⚠️ 但要小心解讀：這 3 倍【不是因為 CPU 平行運算】。
+//   performTask 的主體是 sleep_for(100ms)，那是【阻塞等待】，不吃 CPU。
+//   三條執行緒同時「睡覺」，所以總時間 ≈ 單一任務的時間。
+//   這其實是【I/O 密集型】任務的加速模型 —— 即使在【單核心】機器上，
+//   本檔一樣會得到接近 3 倍的加速，因為瓶頸是等待而不是運算。
+//   真正的 CPU 平行加速（需要多核心）見課程 1.2 第 1 部分的質數計算。
+//   把這兩者混為一談是初學者最常見的誤解。
+//
+// 【3. 為什麼輸出會交錯，而且每次都不一樣】
+//   三條執行緒同時對 std::cout 輸出。C++11 起標準保證
+//   （[iostream.objects]）對標準串流的並行使用【不會造成 data race】，
+//   但它【不保證原子性】—— 一次 << 鏈中的多個片段之間，
+//   其他執行緒完全可以插進來。所以你會看到：
+//       [任務A] 執行第 1 次迭代（執行緒 ID: [任務B] 執行第 1 次...
+//   這【不是 bug，也不是未定義行為】，而是缺少輸出鎖的必然結果。
+//   要保證整行不被打斷，必須自己加 mutex，或先組成單一字串再一次輸出。
+//   本檔下方的實務範例會示範正確做法。
+//
+// 【概念補充 Concept Deep Dive】
+//   * std::thread::id 的性質：它是一個不透明型別，只保證可比較（==、<）
+//     與可輸出。印出來的【數值是實作定義的】——libstdc++ 印的是
+//     pthread_t 的值，MSVC 印的是 Windows thread id，兩者格式完全不同。
+//     不可把它當成穩定的識別碼寫進日誌格式或拿來做雜湊假設。
+//     ⚠️ 更要注意：執行緒結束後，它的 id 可以被【重複使用】給新執行緒。
+//
+//   * 執行緒【一建立就開始跑】：std::thread 沒有「先建立、之後再 start()」
+//     的兩段式 API（Java 的 Thread 有）。建構子返回時，新執行緒可能
+//     已經跑完了。所以本檔中 threadA 在 threadB 還沒建立時就已在執行 ——
+//     這是輸出交錯的來源之一。
+//
+//   * 為什麼用 steady_clock 而非 system_clock：system_clock 是牆上時鐘，
+//     可能被 NTP 校時往回跳，量時間間隔可能得到負數。
+//     steady_clock 保證單調遞增，是量測經過時間的唯一正確選擇。
+//
+//   * hardware_concurrency() 只是【提示】：標準允許回傳 0（資訊不可得）。
+//     ⚠️ 且在容器（Docker/K8s）中它回報【宿主機】的核心數，
+//     不反映 cgroup 的 CPU 配額 —— 只分到 2 核的容器照樣回報 64。
+//
+//   * 邏輯核心 ≠ 實體核心：本機回報 16 是【邏輯】核心數。
+//     若啟用 SMT/Hyper-Threading，實體核心可能只有 8。
+//     兩個邏輯核心共用執行單元，純運算任務的加速遠低於 2 倍。
+//
+// 【注意事項 Pay Attention】
+//   1. 本檔的加速來自「同時等待」而非「同時運算」——這是 I/O 密集模型，
+//      單核心也有效。別把它當成 CPU 平行的證據。
+//   2. 多執行緒輸出到 std::cout 會【交錯】。無 data race，但無原子性。
+//      每次執行的交錯順序都不同。
+//   3. 執行緒 ID 的數值是【實作定義】的，且結束後可能被重複使用。
+//   4. hardware_concurrency() 可能回傳 0，且在容器中不反映 cgroup 限制。
+//   5. std::thread 建構後【立即】開始執行，沒有兩段式 start()。
+//   6. 所有毫秒數、交錯順序、執行緒 ID【每次執行都不同】。
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// 【面試題】並行 vs 並發
+// ───────────────────────────────────────────────────────────────────────────
+// 🔥 Q1. 並發（concurrency）與並行（parallelism）的差別是什麼？
+//     答：並發是【程式的結構】—— 把程式組織成多個可獨立推進的任務，
+//         是寫程式碼時的設計決定，與硬體無關。並行是【執行時的現象】——
+//         多個任務在同一時刻真的同時執行，需要多核心硬體支援。
+//         同一份並發程式碼，在單核心上是並發不並行（時間分片），
+//         在多核心上才變成並發且並行。所以並行一定並發，並發不一定並行。
+//     追問：那在單核心機器上寫多執行緒還有意義嗎？
+//         → 非常有意義。單核心無法提升 CPU 運算吞吐量，但（a）能讓 UI
+//           保持響應；（b）I/O 密集任務在等待時會讓出 CPU，
+//           照樣能得到接近執行緒數的加速 —— 本檔的實驗正是這種情況。
+//
+// 🔥 Q2. 本檔中並發版本比循序版本快約 3 倍，這是多核心平行運算的功勞嗎？
+//     答：不是。performTask 的主體是 sleep_for(100ms)，那是阻塞等待、
+//         不消耗 CPU。三條執行緒同時「睡覺」，總時間才接近單一任務的時間。
+//         這是【I/O 密集型】的加速模型，即使在單核心機器上也會得到
+//         幾乎相同的 3 倍加速。真正的 CPU 平行加速要看課程 1.2 的質數計算，
+//         那才需要多核心，而且加速比會受 Amdahl 定律與負載不均限制。
+//     追問：怎麼判斷一個任務是 CPU 密集還是 I/O 密集？
+//         → 看它在等待還是在算。跑滿一顆核心的是 CPU 密集（加速上限 = 核心數）；
+//           大部分時間在等網路/磁碟/鎖的是 I/O 密集（可以開遠多於核心數的執行緒）。
+//
+// ⚠️ 陷阱. 多條執行緒同時 std::cout << 輸出，會不會造成 undefined behavior？
+//     答：不會。C++11 起標準明文保證（[iostream.objects]）對標準串流物件的
+//         並行使用【不會造成 data race】。但它【不保證原子性】——
+//         一次 << 鏈中的多個片段之間，其他執行緒可以插進來，
+//         所以輸出會交錯甚至同一行被撕裂。這是「格式錯亂」，不是 UB。
+//     為什麼會錯：把「交錯」誤判成「data race / UB」，或反過來以為
+//         「標準保證了安全」就等於「輸出不會亂」。兩者是不同層次的保證：
+//         * 執行緒安全（無 data race）→ 標準給你了；
+//         * 輸出原子性（整行不被打斷）→ 標準【沒有】給你，要自己加鎖。
+//         正確解法是用 mutex 保護整個輸出敘述，或先 ostringstream 組好
+//         再一次 <<。（注意：後者仍不保證絕對原子，但把窗口縮到最小。）
+// ═══════════════════════════════════════════════════════════════════════════
+
+/*
 # 第一階段：並行程式設計基礎概念
 
 ## 課程 1.1：什麼是並行與並發
@@ -188,6 +312,22 @@ int main() {
     std::cout << "並發執行: " << concDuration << " 毫秒" << std::endl;
     std::cout << "加速比: " << static_cast<double>(seqDuration) / concDuration 
               << " 倍" << std::endl;
+    std::cout << "（注意：這個加速來自「同時等待」而非「同時運算」——"
+                 "performTask 的主體是 sleep，屬於 I/O 密集模型，"
+                 "單核心機器也會有幾乎相同的加速）" << std::endl;
+    std::cout << "========================================" << std::endl;
+
+    std::cout << "\n=== LeetCode 1114. Print in Order ===" << std::endl;
+    demoPrintInOrder();
+
+    std::cout << "\n=== 日常實務：並發拉取設定 + 不撕裂的日誌 ===" << std::endl;
+    demoConcurrentConfigFetch();
+
+    // startTime 在程式開頭記錄，這裡用來回報整支程式的總耗時
+    auto totalMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now() - startTime).count();
+    std::cout << "\n========================================" << std::endl;
+    std::cout << "全部示範結束，總耗時: " << totalMs << " 毫秒" << std::endl;
     std::cout << "========================================" << std::endl;
 
     return 0;
@@ -620,9 +760,15 @@ void thread_function() {
 // 課程：1.1 - 什麼是並行與並發
 // 說明：示範並發執行的基本概念
 
-#include <iostream>
-#include <thread>
 #include <chrono>
+#include <condition_variable>
+#include <functional>
+#include <iostream>
+#include <mutex>
+#include <sstream>
+#include <string>
+#include <thread>
+#include <vector>
 
 // 模擬一個需要時間的任務
 void performTask(const std::string& taskName, int iterations) {
@@ -636,6 +782,145 @@ void performTask(const std::string& taskName, int iterations) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     std::cout << "[" << taskName << "] 完成！" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+// 【LeetCode 實戰範例】LeetCode 1114. Print in Order
+//   題目：三條執行緒分別呼叫 first()、second()、third()，呼叫順序【任意】，
+//         但必須保證輸出永遠是 "firstsecondthird"。
+//   為什麼用到本主題：這題是「並發 ≠ 並行」最好的教學案例。
+//         三條執行緒是【並發】的（結構上獨立、可任意交錯），
+//         題目卻要求一個【確定的順序】。這正好戳破初學者最常見的錯覺：
+//         「執行緒是照我建立的順序跑的」。實際上建立順序完全不保證執行順序，
+//         你必須用同步原語【主動建立】順序關係。
+//         本檔上方的實驗也會看到：threadA/B/C 依序建立，輸出卻是亂的。
+//   解法：用 condition_variable + 一個 step 計數器。
+//         每條執行緒等到「輪到自己」才動作，做完把 step 推進並喚醒其他人。
+//   ⚠️ 為什麼 wait 一定要帶述詞（predicate）：
+//         condition_variable 允許【虛假喚醒】（spurious wakeup）——
+//         沒有人 notify 也可能醒來。述詞版的 wait 會在醒來後重新檢查條件，
+//         不成立就繼續睡。寫成無述詞的 wait(lock) 就是 bug。
+// -----------------------------------------------------------------------------
+class Foo {
+public:
+    Foo() = default;
+
+    void first(const std::function<void()>& printFirst) {
+        std::unique_lock<std::mutex> lock(mtx_);
+        printFirst();          // first() 永遠第一個執行，不需等待
+        step_ = 2;
+        cv_.notify_all();
+    }
+
+    void second(const std::function<void()>& printSecond) {
+        std::unique_lock<std::mutex> lock(mtx_);
+        cv_.wait(lock, [this] { return step_ == 2; });   // 述詞版，擋掉虛假喚醒
+        printSecond();
+        step_ = 3;
+        cv_.notify_all();
+    }
+
+    void third(const std::function<void()>& printThird) {
+        std::unique_lock<std::mutex> lock(mtx_);
+        cv_.wait(lock, [this] { return step_ == 3; });
+        printThird();
+    }
+
+private:
+    std::mutex mtx_;
+    std::condition_variable cv_;
+    int step_ = 1;
+};
+
+// 刻意用「與期望相反」的順序建立執行緒，證明結果與建立順序無關
+void demoPrintInOrder() {
+    Foo foo;
+    std::string out;
+    std::mutex outMtx;
+
+    auto emit = [&](const char* s) {
+        std::lock_guard<std::mutex> lock(outMtx);
+        out += s;
+    };
+
+    // 注意建立順序是 third → second → first（故意顛倒）
+    std::thread t3([&] { foo.third([&] { emit("third"); }); });
+    std::thread t2([&] { foo.second([&] { emit("second"); }); });
+    std::thread t1([&] { foo.first([&] { emit("first"); }); });
+
+    t3.join();
+    t2.join();
+    t1.join();
+
+    std::cout << "  執行緒建立順序: third → second → first（故意顛倒）" << std::endl;
+    std::cout << "  實際輸出結果  : " << out << std::endl;
+    std::cout << "  ← 建立順序完全不影響結果，順序是靠 condition_variable 建立的"
+              << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+// 【日常實務範例】並發拉取多個設定來源，並保證日誌不被撕裂
+//   情境：微服務啟動時要同時向 3 個來源拉取設定（設定中心、feature flag 服務、
+//         憑證服務）。這些請求彼此獨立、都是網路 I/O，很適合並發執行 ——
+//         總耗時從「三者相加」變成「最慢的那一個」。
+//   為何同時示範日誌鎖：多條執行緒同時寫 log 是實務上一定會遇到的事。
+//         std::cout 保證無 data race，但【不保證整行原子性】，
+//         不加鎖的話日誌會像本檔上方實驗那樣被撕裂 ——
+//         在正式環境中，撕裂的日誌等同於不可用的日誌。
+//   正確做法（本範例採用）：先用 ostringstream 在執行緒本地把整行組好，
+//         再在 mutex 保護下一次輸出。既縮短持鎖時間，又保證整行完整。
+// -----------------------------------------------------------------------------
+class SafeLogger {
+public:
+    void log(const std::string& tag, const std::string& msg) {
+        std::ostringstream oss;                       // 先在執行緒本地組好整行
+        oss << "    [" << tag << "] " << msg << '\n';
+        std::string line = oss.str();
+
+        std::lock_guard<std::mutex> lock(mtx_);       // 只在真正輸出時持鎖
+        std::cout << line << std::flush;
+    }
+
+private:
+    std::mutex mtx_;
+};
+
+void demoConcurrentConfigFetch() {
+    SafeLogger logger;
+    struct Source { const char* name; int latencyMs; };
+    const std::vector<Source> sources = {
+        {"config-center", 120},
+        {"feature-flags",  80},
+        {"cert-service",  150},
+    };
+
+    // ---- 循序版 ----
+    auto t0 = std::chrono::steady_clock::now();
+    for (const auto& s : sources) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(s.latencyMs));
+    }
+    auto seqMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+                     std::chrono::steady_clock::now() - t0).count();
+
+    // ---- 並發版 ----
+    t0 = std::chrono::steady_clock::now();
+    std::vector<std::thread> fetchers;
+    for (const auto& s : sources) {
+        fetchers.emplace_back([&logger, s]() {
+            logger.log(s.name, "開始拉取設定...");
+            std::this_thread::sleep_for(std::chrono::milliseconds(s.latencyMs));
+            logger.log(s.name, "完成（耗時 " + std::to_string(s.latencyMs) + " ms）");
+        });
+    }
+    for (auto& t : fetchers) t.join();
+    auto conMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+                     std::chrono::steady_clock::now() - t0).count();
+
+    std::cout << "  循序拉取: " << seqMs << " ms（120+80+150 相加）" << std::endl;
+    std::cout << "  並發拉取: " << conMs << " ms（≈ 最慢的 cert-service 150ms）"
+              << std::endl;
+    std::cout << "  ← 每一行日誌都完整不撕裂，因為用 mutex 保護了整行輸出"
+              << std::endl;
 }
 
 int main() {
@@ -690,7 +975,108 @@ int main() {
     std::cout << "並發執行: " << concDuration << " 毫秒" << std::endl;
     std::cout << "加速比: " << static_cast<double>(seqDuration) / concDuration 
               << " 倍" << std::endl;
+    std::cout << "（注意：這個加速來自「同時等待」而非「同時運算」——"
+                 "performTask 的主體是 sleep，屬於 I/O 密集模型，"
+                 "單核心機器也會有幾乎相同的加速）" << std::endl;
+    std::cout << "========================================" << std::endl;
+
+    std::cout << "\n=== LeetCode 1114. Print in Order ===" << std::endl;
+    demoPrintInOrder();
+
+    std::cout << "\n=== 日常實務：並發拉取設定 + 不撕裂的日誌 ===" << std::endl;
+    demoConcurrentConfigFetch();
+
+    // startTime 在程式開頭記錄，這裡用來回報整支程式的總耗時
+    auto totalMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now() - startTime).count();
+    std::cout << "\n========================================" << std::endl;
+    std::cout << "全部示範結束，總耗時: " << totalMs << " 毫秒" << std::endl;
     std::cout << "========================================" << std::endl;
 
     return 0;
 }
+
+// 編譯: g++ -std=c++17 -Wall -Wextra -pthread "課程 1.1：什麼是並行與並發.cpp" -o concurrency11
+//   本檔只用到 C++11 起就有的功能，以 -std=c++17 -pedantic-errors 驗證通過（0 警告）。
+
+// 註:
+//   ⚠️ 非決定性內容，【每次執行都不同】：
+//   * 所有執行緒 ID（實作定義的數值，且執行緒結束後可能被重複使用）；
+//   * 【方式二】中三個任務的輸出【交錯順序】——甚至可能出現同一行被撕裂
+//   （例如 "[任務A] 執行第 1 次迭代（執行緒 ID: [任務B] 執行第 1..."），
+//   這不是 bug，而是 std::cout 無原子性保證的必然結果；
+//   * 所有毫秒數（總耗時、各段耗時）。
+//   穩定不變的是【結構】：循序約 900ms、並發約 300ms、加速約 3 倍；
+//   LeetCode 1114 的輸出【永遠】是 firstsecondthird（那正是同步的意義）。
+//   ⚠️ 毫秒數會有 1–3 ms 的抖動（實測 900/901、300/301、1701/1703）：
+//      sleep_for 只保證「【至少】睡這麼久」，實際受排程延遲影響，絕不會更短。
+//      看到 901 而不是 900 是正常的，不是計算錯誤。
+//   以下為本機（16 邏輯核心）某一次的實際執行結果。
+
+// === 預期輸出 ===
+// ========================================
+//     並發執行示範程式
+// ========================================
+// 主執行緒 ID: 124939285014464
+// 硬體支援的執行緒數量: 16
+// ----------------------------------------
+//
+// 【方式一】循序執行：
+// [任務A] 執行第 1 次迭代（執行緒 ID: 124939285014464）
+// [任務A] 執行第 2 次迭代（執行緒 ID: 124939285014464）
+// [任務A] 執行第 3 次迭代（執行緒 ID: 124939285014464）
+// [任務A] 完成！
+// [任務B] 執行第 1 次迭代（執行緒 ID: 124939285014464）
+// [任務B] 執行第 2 次迭代（執行緒 ID: 124939285014464）
+// [任務B] 執行第 3 次迭代（執行緒 ID: 124939285014464）
+// [任務B] 完成！
+// [任務C] 執行第 1 次迭代（執行緒 ID: 124939285014464）
+// [任務C] 執行第 2 次迭代（執行緒 ID: 124939285014464）
+// [任務C] 執行第 3 次迭代（執行緒 ID: 124939285014464）
+// [任務C] 完成！
+// 循序執行總時間: 901 毫秒
+//
+// ----------------------------------------
+//
+// 【方式二】並發執行：
+// [任務A] 執行第 1 次迭代（執行緒 ID: 124939277432512）
+// [任務B] 執行第 1 次迭代（執行緒 ID: 124939269039808）
+// [任務C] 執行第 1 次迭代（執行緒 ID: 124939260647104）
+// [任務B] 執行第 2 次迭代（執行緒 ID: 124939269039808）
+// [任務A] 執行第 2 次迭代（執行緒 ID: 124939277432512）
+// [任務C] 執行第 2 次迭代（執行緒 ID: 124939260647104）
+// [任務B] 執行第 3 次迭代（執行緒 ID: 124939269039808）
+// [任務A] 執行第 3 次迭代（執行緒 ID: 124939277432512）
+// [任務C] 執行第 3 次迭代（執行緒 ID: 124939260647104）
+// [任務B] 完成！
+// [任務A] 完成！
+// [任務C] 完成！
+// 並發執行總時間: 301 毫秒
+//
+// ========================================
+// 效能比較：
+// 循序執行: 901 毫秒
+// 並發執行: 301 毫秒
+// 加速比: 2.99336 倍
+// （注意：這個加速來自「同時等待」而非「同時運算」——performTask 的主體是 sleep，屬於 I/O 密集模型，單核心機器也會有幾乎相同的加速）
+// ========================================
+//
+// === LeetCode 1114. Print in Order ===
+//   執行緒建立順序: third → second → first（故意顛倒）
+//   實際輸出結果  : firstsecondthird
+//   ← 建立順序完全不影響結果，順序是靠 condition_variable 建立的
+//
+// === 日常實務：並發拉取設定 + 不撕裂的日誌 ===
+//     [config-center] 開始拉取設定...
+//     [feature-flags] 開始拉取設定...
+//     [cert-service] 開始拉取設定...
+//     [feature-flags] 完成（耗時 80 ms）
+//     [config-center] 完成（耗時 120 ms）
+//     [cert-service] 完成（耗時 150 ms）
+//   循序拉取: 350 ms（120+80+150 相加）
+//   並發拉取: 150 ms（≈ 最慢的 cert-service 150ms）
+//   ← 每一行日誌都完整不撕裂，因為用 mutex 保護了整行輸出
+//
+// ========================================
+// 全部示範結束，總耗時: 1704 毫秒
+// ========================================
