@@ -96,6 +96,18 @@
 //         決定「這個重載該不該進入候選集合」，static_assert 決定「進來之後合不
 //         合法」。需要多個重載依型別分流時必須用 SFINAE（C++20 用 concepts）；
 //         只有一條路、想給出好讀的錯誤訊息時，才是 static_assert 的主場。
+//
+// ⚠️ 陷阱. alignas(64) 的型別，用 new 配置出來一定是 64-byte 對齊嗎？
+//     答：不一定。alignas 是 C++11 的關鍵字，但「operator new 必須尊重 extended
+//         alignment」要到 C++17 才加入——C++17 為 new/delete 新增了吃
+//         std::align_val_t 的多載，編譯器遇到 over-aligned 型別才會改呼叫它。
+//         本機實測 struct alignas(64) S { int a; }：
+//           -std=c++14 → 200 次配置 200 次未對齊，__cpp_aligned_new 未定義
+//           -std=c++17 → 200 次配置 0 次未對齊，__cpp_aligned_new = 201606
+//     為什麼會錯：以為寫了 alignas 就萬事俱備。C++17 之前 new 只保證滿足
+//         fundamental alignment，over-aligned 型別的配置結果是碰運氣，而且**不會有
+//         任何診斷訊息**。C++17 前要自己用 posix_memalign / aligned_alloc；C++17 起
+//         則注意「aligned new 配出來的物件必須由對應的 aligned delete 釋放」。
 // ═══════════════════════════════════════════════════════════════════════════
 
 #include <cstdint>

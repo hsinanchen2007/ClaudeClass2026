@@ -84,6 +84,17 @@
 //     明確的位移與遮罩自己組裝。
 //     為什麼會錯：bit-field 的語法看起來就像是在「精確描述位元佈局」，但標準其實沒有
 //     規定那個佈局。
+//
+// ⚠️ 陷阱. std::vector<bool> v; auto x = v[0]; 之後改 v[0]，x 會跟著變嗎？
+//     答：會。vector<bool> 是空間最佳化特化，每個元素只佔 1 bit，operator[] 無法回傳
+//     bool&（沒有「bit 的參考」這種東西），只能回傳一個 proxy 物件（libstdc++ 是
+//     std::_Bit_reference，型別名稱屬實作細節）。於是 auto 推導出的是 proxy 而不是
+//     bool，x 仍指向原本那個 bit。本機實測：decltype(v[0]) 不是 bool，v[0]=false 之後
+//     x 變成 0。想要真正的複製要寫 bool x = v[0]; 或 auto x = bool(v[0]);。
+//     為什麼會錯：假設所有容器的 operator[] 都回傳 T&。&v[0] 同樣編不過（taking
+//     address of rvalue）——它不滿足 contiguous 容器的要求、也沒有 data()，因此餵不進
+//     需要 bool* 的 C API。固定長度改用 std::bitset；動態長度又要正常容器語意，用
+//     std::vector<char> 或 std::deque<bool>。
 // ═══════════════════════════════════════════════════════════════════════════
 
 #include <iostream>

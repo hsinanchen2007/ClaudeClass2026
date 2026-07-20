@@ -68,6 +68,21 @@
 //         delete，這種初始化仍然合法，工廠函式因此可以回傳不可移動的型別。
 //     為什麼會錯：多數人把它擴大解讀成「C++17 起省略複製都被保證」，但 NRVO
 //         （回傳具名區域變數）仍然只是可選的最佳化，標準並未保證。
+//
+// Q. C++17 為什麼要再加一組 to_chars / from_chars？stringstream 不夠嗎？
+//     答：<charconv> 的賣點是「最快、且不受 locale 影響」：
+//         ① 不看 locale——stringstream 與 strtod 會受目前 locale 影響（例如德文
+//            locale 下小數點是逗號），在解析 JSON／設定檔時是災難；from_chars
+//            永遠用 C locale 規則。
+//         ② 不配置記憶體、不拋例外——寫進呼叫者給的 buffer，錯誤透過回傳的
+//            to_chars_result{ptr, ec} 表達；緩衝區不足時 ec 是
+//            std::errc::value_too_large（本機實測確認），不會拋例外。
+//         ③ from_chars 回傳的 ptr 指向「解析停止的位置」，本機實測 "42abc" 解析出
+//            42 並停在 "abc"，可用來做增量解析。
+//     追問：浮點數版本有什麼要注意的？（介面是 C++17 的，但各家標準庫實作進度落後
+//         很多——libstdc++ 要到 GCC 11 才完整支援浮點 from_chars/to_chars，寫可攜
+//         程式碼前要先確認工具鏈版本。to_chars 的浮點輸出預設是「能 round-trip 回
+//         原值的最短表示」，也可指定 chars_format::fixed/scientific/hex 與精度）
 // ═══════════════════════════════════════════════════════════════════════════
 
 #include <iostream>

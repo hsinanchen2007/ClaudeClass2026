@@ -116,6 +116,21 @@
 //         例外時」要查表 unwind（很慢）與「binary 變大」。
 //     追問：所以什麼時候不該用例外？（高頻錯誤路徑——例外一旦變常態，查表成本
 //         遠超回傳錯誤碼；以及 binary size 受限的嵌入式環境）
+//
+// Q. `void f() throw();` 和 `void f() noexcept;` 差在哪？throw() 現在還能用嗎？
+//     答：throw(...) 是 C++98 的「動態例外規格」，可以列出允許拋出的型別；但實務上
+//         幾乎不可最佳化（編譯器得插入執行期檢查），違規時呼叫 std::unexpected 的
+//         行為也難以使用，因此被 C++11 的 noexcept 取代。完整時間線（別只答
+//         「C++11 取代」，那會被追問）：
+//           C++11：動態例外規格 deprecated，引入 noexcept
+//           C++17：移除 throw(T,...)；throw() 保留並改為等價於 noexcept(true)
+//                  （違規行為也從 unexpected() 改成 terminate()）
+//           C++20：連 throw() 也移除
+//         本機實測：throw(int) 在 -std=c++14 可編，-std=c++17 直接報
+//         「ISO C++17 does not allow dynamic exception specifications」。
+//     追問：那 throw() 在 -std=c++20 下編得過嗎？（標準已移除，但本機 GCC 15 即使加
+//         -pedantic-errors 仍接受它——這是編譯器的寬容，不是標準允許。也提醒
+//         「編譯得過」不等於「符合標準」，驗證版本分界時要小心）
 // ═══════════════════════════════════════════════════════════════════════════
 
 #include <iostream>

@@ -57,6 +57,17 @@
 //     再從對方搬」實作會先把自己的資源刪掉、再從已刪除的自己搬，那才是真 UB。
 //     為什麼會錯：以為「標準庫沒事 ⇒ 我自己寫也沒事」。正解是檢查 this != &other，或
 //     採用先造副本再 swap 的寫法（copy-and-swap 天然安全，因為副本是獨立的）。
+//
+// ⚠️ 陷阱. const auto& v = std::clamp(f(), lo, hi); 這行有什麼問題？
+//     答：std::clamp 回傳的是 const T&，不是 by value。當第一個引數是暫存值（例如函式
+//     回傳值）而它剛好落在 [lo,hi] 區間內時，clamp 回傳的參考就指向那個暫存值；暫存值
+//     在完整表達式結束後銷毀，之後再用就是懸垂參考。本機實測
+//     const int& r = std::clamp(f(), 0, 100); 在 -fsanitize=address 下直接報
+//     stack-use-after-scope。寫成 auto v = ...（by value）才安全。
+//     為什麼會錯：以為它像一般數值函式是回傳值。同一族的 std::min／std::max 也回傳
+//     const T&，const int& m = std::min(a, b+1); 一樣會懸垂。另外 lo > hi 是 UB
+//     （標準的 precondition 是 !(hi < lo)），libstdc++ 在斷言開啟時會直接中止，
+//     release 建置下則不會有任何診斷。
 // ═══════════════════════════════════════════════════════════════════════════
 
 #include <bitset>

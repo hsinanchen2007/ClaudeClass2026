@@ -191,6 +191,19 @@
 //         它是 const char[2],C++ 語言層級沒有為原生字串提供串接運算子。
 //     解法："a"s + "b" (C++14)、std::string("a") + "b",或先宣告一個
 //         std::string 變數再相加。
+//
+// ⚠️ 陷阱. auto p = u8"hi"; 在 C++17 和 C++20 下,p 的型別一樣嗎?
+//     答：不一樣,這是 C++20 的 breaking change。
+//         C++17:u8"hi" 的型別是 const char[3],p 推導為 const char*;
+//         C++20:新增了獨立型別 char8_t,u8"hi" 變成 const char8_t[3],
+//               p 推導為 const char8_t*。
+//         本機以 static_assert + -pedantic-errors 實測,兩邊互斥,確認無誤。
+//     為什麼會錯：以為 u8 前綴只是「標記這是 UTF-8」、不影響型別。char8_t 是全新的
+//         獨立型別,不是 unsigned char 的 typedef,所以 std::string s = u8"hi"; 在
+//         C++17 編得過、C++20 直接編譯失敗。字元型別家族為 char / wchar_t /
+//         char16_t / char8_t(C++20) / char32_t,對應 string / wstring / u16string /
+//         u8string / u32string;注意 wchar_t 的寬度是 implementation-defined
+//         (Linux 4 bytes、Windows 2 bytes),所以 wstring 不可攜。
 // ═══════════════════════════════════════════════════════════════════════════
 
 #include <iostream>

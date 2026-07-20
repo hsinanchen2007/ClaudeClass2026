@@ -100,6 +100,17 @@
 //     most vexing parse。要預設建構請寫 `MyClass e;` 或 `MyClass e{};`。
 //     為什麼會錯：以為括號跟 `MyClass e(1, 2)` 一樣是在呼叫建構子；C++ 文法規定
 //     「只要能解析成宣告，就當作宣告」。
+//
+// ⚠️ 陷阱. `using Base::Base;`（C++11 繼承建構子）會初始化 derived 自己的成員嗎？
+//     答：不會。繼承來的建構子只初始化 base 子物件，derived 自己新增的成員完全不碰，
+//     處於未初始化狀態，讀取即 UB，而且編譯器通常不會警告。本機實測
+//     struct D : Base { using Base::Base; int extra; }; D d(7); → d.b == 7，
+//     但 d.extra 是不定值（可能剛好讀到 0，這正是它危險的地方）。給 derived 成員加上
+//     NSDMI（int extra = 42;）即可修正。
+//     為什麼會錯：把它跟 `using Base::f;` 混為一談——後者是把被 derived 同名成員隱藏
+//     掉的 base 多載拉回 overload set（解 name hiding），與初始化無關。另注意 copy／
+//     move constructor 不在繼承範圍內，derived 仍依一般規則自行生成；base 建構子若是
+//     private／protected，存取權會一併繼承過來，不會被放寬。
 // ═══════════════════════════════════════════════════════════════════════════
 
 #include <iostream>

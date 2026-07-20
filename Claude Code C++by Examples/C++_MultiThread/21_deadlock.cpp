@@ -187,6 +187,22 @@
 //         inversion，且它在「還沒真的死鎖」時就能警告順序不一致。
 //     追問：為什麼 lock order inversion 比死鎖本身更值得修？（它是死鎖的必要前置條件，
 //           而死鎖是否真的發生取決於時序，可能在生產環境才第一次撞上）
+//
+// Q. 什麼是 priority inversion？和 deadlock、starvation 有什麼不同？
+//     答：高優先權執行緒 H 等待一把被低優先權執行緒 L 持有的鎖，而中優先權執行緒 M
+//         又搶佔了 L 的 CPU——結果 H 被 M 間接擋住，等於高優先權被低優先權「反轉」。
+//         與其他兩者的區別：deadlock 是環狀等待，所有參與者永遠不前進；starvation 是
+//         某執行緒一直搶不到資源，但系統整體有前進；priority inversion 的 H 最終會
+//         拿到鎖（不是永久阻塞），但延遲被放大到違反即時性需求——是「延遲」問題，
+//         不是「活性」問題。最有名的案例是 1997 年 Mars Pathfinder 登陸火星後不斷
+//         重開機。
+//     追問：怎麼解決？C++ 標準庫有支援嗎？（解法是 ① priority inheritance：L 持鎖
+//         期間暫時繼承 H 的優先權；② priority ceiling：鎖本身帶一個天花板優先權，
+//         取得即提升——兩者都是 OS／執行緒庫層級的機制。std::mutex 完全沒有暴露
+//         優先權協定的介面；在 POSIX 要用 pthread_mutexattr_setprotocol
+//         (PTHREAD_PRIO_INHERIT) 自行建立 mutex，並搭配 SCHED_FIFO/SCHED_RR 即時
+//         排程策略才有意義。一般 Linux CFS 排程下同樣可能發生，只是較少被觀察到——
+//         說成「只有即時系統才有」並不準確）
 // ═══════════════════════════════════════════════════════════════════════════
 
 #include <iostream>

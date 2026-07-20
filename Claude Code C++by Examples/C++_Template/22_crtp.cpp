@@ -97,6 +97,22 @@
 //         vector<Base<D1>*> 塞不進 D2。這正是 CRTP 換取效能時放棄掉的東西。
 //     為什麼會錯：把 CRTP 的 Base 想成 virtual 的抽象基底；它其實是「每個衍生型別
 //         各一份的模板實例」。需要異質容器就得回頭用 virtual 或 type erasure。
+//
+// 🔥 Q. 為什麼 CRTP 的比較運算子常寫成 friend，而不是成員函式？
+//     答：這是 hidden friend idiom（歷史上稱 Barton–Nackman trick）。在 class
+//         template 內用 friend 定義的函式有三個特性：
+//         ① 它不是成員函式，所以左運算元可以參與隱式轉換（成員函式版本的左運算元
+//            不會轉換，a < b 與 b < a 的行為會不對稱）；
+//         ② 它只能透過 ADL 找到，不會進入一般的 name lookup，因此不污染外層
+//            overload set——當一個 base template 被幾百個型別繼承時，這能大幅減少
+//            重載決議的候選數量，加快編譯；
+//         ③ 每個 instantiation 產生一個獨立的非模板函式，避開模板重載的偏序比對
+//            （這正是 1990 年代 Barton–Nackman 當初的動機——當年編譯器缺乏偏序支援）。
+//     追問：class template 的 friend 有哪幾種寫法？（① 非模板 friend，即 hidden
+//         friend，每個 instantiation 各一個；② friend class Y<T>; 只跟同一個
+//         instantiation 做朋友；③ template<class U> friend class Y; 跟所有
+//         instantiation 做朋友——三者授權範圍差很多。另注意 hidden friend 只找得到
+//         ADL：x < y 可以，但 operator<(x, y) 這種限定呼叫、或取它的位址都找不到）
 // ═══════════════════════════════════════════════════════════════════════════
 
 #include <atomic>

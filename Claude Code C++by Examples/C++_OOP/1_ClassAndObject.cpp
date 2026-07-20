@@ -92,6 +92,19 @@
 //     答：不會。成員函式的機器碼只有一份、所有物件共用；差別只在編譯器隱式傳入的
 //     this 指標不同。所以物件的 sizeof 不會因為成員函式變多而變大（非 virtual 時）。
 //     為什麼會錯：把「物件把資料與行為綁在一起」的比喻，誤解成每個物件內部真的包著函式。
+//
+// 🔥 Q. trivially copyable、standard-layout、trivial 三者分別管什麼？
+//     答：常被混為一談，但三者各管一件事，且可以任意組合：trivially copyable 決定
+//     「能不能用 memcpy／std::bit_cast」（要求 copy/move ctor、copy/move assign、
+//     dtor 都是 trivial）；standard-layout 決定「能不能跟 C struct 互通、offsetof 是否
+//     合法」（要求非靜態成員存取權一致、只有一個 class 有非靜態成員、無 virtual）；
+//     trivial 則是 trivially copyable 再加上「有 trivial 的預設建構子」。本機實測四種
+//     組合都存在，例如 struct { int x; private: int y; }; 可 memcpy 但不是
+//     standard-layout；struct C { C(){} int x; }; 是 standard-layout 但不是 trivial。
+//     追問：memcpy 的合法性由哪一個決定？（trivially copyable——不是 POD、也不是
+//     standard-layout，這是最常見的誤解。POD = trivial + standard-layout，C++20 已把
+//     std::is_pod 標記為 deprecated。對非 standard-layout 型別用 offsetof 是
+//     conditionally-supported，本機 GCC 會給 -Winvalid-offsetof 警告但仍編譯過）
 // ═══════════════════════════════════════════════════════════════════════════
 
 #include <iostream>   // std::cout, std::endl 標準輸出
