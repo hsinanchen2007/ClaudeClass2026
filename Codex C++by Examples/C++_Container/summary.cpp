@@ -58,6 +58,68 @@
 // 多數操作承諾 strong 或 basic guarantee，但依元素 move/copy 特性與指定操作而異，
 // 不可籠統宣稱所有容器操作「失敗完全不變」。RAII 容器本身會在 scope 結束釋放。
 
+/*
+==============================================================================
+【面試深挖：Standard Containers】
+
+C1｜`vector` 與 `list` 插入複雜度誰比較快？
+答：不能只背 Big-O。list 已知位置時插入 O(1)，但找位置 O(n)、每節點配置且 locality 差；
+vector 中間搬移 O(n)，卻常因連續記憶體與 prefetch 更快。要用 access pattern 與 benchmark 判斷。
+
+C2｜`map` 與 `unordered_map` 怎麼選？
+答：map 提供排序、range query、穩定的 O(log n)；unordered_map 平均 O(1)，最壞 O(n)，
+需要 hash/equality 契約且 rehash 會 invalidate iterators。只說「hash 一定更快」不合格。
+
+C3｜`reserve` 與 `resize` 差在哪？
+答：reserve 只提高 capacity，不改 size、也不建立元素；resize 改 size並建立或銷毀元素。
+reserve 可能 reallocate 而使所有 iterator/reference/pointer 失效。
+
+C4｜vector 的 iterator invalidation 規則？
+答：若插入造成 capacity 改變，全部失效；未 reallocate 時，插入點及其後通常失效。
+erase 使 erase 點及其後失效；end 也要視為 iterator。保存 index 有時比保存 iterator 安全。
+
+C5｜unordered container 何時 rehash？
+答：插入使 load factor 超過 max_load_factor 或明確 reserve/rehash。rehash 使 iterator 失效，
+但對元素的 references/pointers 通常仍有效；erase 只使被刪元素失效。
+
+C6｜`emplace_back` 一定比 `push_back` 快嗎？
+答：不一定。已有 T 時 push_back(move(value)) 很直接；emplace 的優勢是用 constructor args
+原位建構。它也可能觸發 reallocation，且過度 perfect forwarding 會選到意外 constructor。
+
+C7｜為何 `deque` 常是 queue/stack 的預設底層？
+答：兩端插刪近似常數且不需搬移整塊，仍提供 random access；代價是不保證全體 contiguous，
+iterator invalidation 規則較複雜。需要 C API buffer 時不能把 deque 當 vector。
+
+C8｜`array`、raw array、`span` 的 ownership 差別？
+答：array 是 fixed-size owning value；raw array 容易 decay；span 是 non-owning view，
+只保存 pointer/size，來源必須比 span 活得久。span 不延長 lifetime。
+
+C9｜`vector<bool>` 為何是經典陷阱？
+答：它以 bit packing 特化，operator[] 回 proxy 而非 bool&，`auto x=v[0]` 可能仍指向原 bit，
+也不能取得 bool* contiguous buffer。固定 bit 數可用 bitset，正常元素語意可用 vector<byte/char>。
+
+C10｜container adaptor 為何沒有 iterator？
+答：stack/queue/priority_queue 刻意只暴露受限介面，維持 LIFO/FIFO/heap invariant。
+若需要遍歷或任意 erase，代表抽象需求不是 adaptor，應選底層 container 或其他結構。
+
+C11｜allocator / `pmr` 面試該回答什麼？
+答：allocator 分離 storage allocation 與 object construction；pmr 讓 memory resource 在 runtime
+選擇，適合 arena、減少碎片與批次釋放。它不會自動讓演算法更快，resource lifetime 必須更長。
+
+C12｜node handle 的價值？
+答：C++17 extract 可把 associative node 取出、改 key 或移到相容 container，通常不重配元素。
+但 allocator 相容性、unique-key collision 與 iterator invalidation 仍需處理。
+
+C13｜heterogeneous lookup 解決什麼？
+答：transparent comparator/hash 可用 string_view 查 map<string,...> 而不建立臨時 string。
+必須確保不同 key view 的 equality/hash 完全一致，不能只為少一次配置破壞契約。
+
+C14｜container 的 thread safety 可以簡化成「不同元素可同時寫」嗎？
+答：多數 container 的不同元素可由不同執行緒修改，但 vector<bool> 例外；任何可能 invalid
+iterators 或改結構的操作都不能與既有 iterator 操作無同步併發。規則要按具體操作判斷。
+==============================================================================
+*/
+
 #include <algorithm>
 #include <array>
 #include <cassert>

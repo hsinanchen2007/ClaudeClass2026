@@ -141,3 +141,18 @@ int main()
 // 練習：加入 dry-run，先列出 recursive_iterator 會刪的項目，不實際 remove。
 // 複雜度：create_directory 單點操作近似 O(1) namespace I/O；remove_all 是 O(nodes) 且不可逆。
 // 生命週期：TempDir 應以 RAII 綁 scope；解構 cleanup 不應 throw，失敗需另留可診斷訊息。
+
+/*
+【本課面試問答】
+Q1：`remove` 與 `remove_all` 的回傳值與風險有何不同？
+A：remove 刪單一 file/empty directory 並回 bool；remove_all 遞迴刪樹並回刪除項目數，失敗可丟
+filesystem_error（或由 error_code overload 回報）。後者 blast radius 大，必須驗空路徑/root/marker。
+
+Q2：先 `canonical` 確認路徑在 base 下，再 `remove_all` 就絕對安全嗎？
+A：不是；檢查與刪除間路徑可被替換，形成 TOCTOU/symlink race。面對不可信並行者，應用 OS 的
+directory-handle-relative API、禁止跟隨 symlink、權限隔離；標準 filesystem API 無法提供完整 sandbox。
+
+Q3：RAII temporary-directory destructor 應如何處理清理失敗？
+A：destructor 不應讓例外逃出，尤其 stack unwinding 時會 terminate。可用 error_code best-effort cleanup，
+同時提供顯式 `close/remove` 回報錯誤，或保留路徑與 log 讓使用者後續處理。
+*/

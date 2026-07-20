@@ -87,6 +87,61 @@
  * 3. 寫 overload member function，使用 static_cast + invoke 選定 const 版本。
  */
 
+/*
+==============================================================================
+【面試深挖：C++17】
+
+M17-1｜structured binding 有哪三種路徑？
+答：array、tuple-like（tuple_size/tuple_element/get）、以及符合規則的 public data members。
+不是所有 structured binding 都「底層依賴 tuple_size」。
+
+M17-2｜`auto [a,b]=obj` 與 `auto& [a,b]=obj`？
+答：前者先建立 hidden object 的 copy，再綁其 subobjects；後者綁原 object。
+`decltype(a)` 又有 structured-binding 特殊規則，不能只看表面是否像 reference。
+
+M17-3｜`if constexpr` 與普通 if？
+答：在 template instantiation 中未選 branch 是 discarded statement，可避免該 branch
+對此 specialization 的無效程式被 instantiation；非 template context 仍需基本語法/語意有效。
+
+M17-4｜CTAD 解決什麼，不能做什麼？
+答：由 constructor arguments/deduction guides 推 class template arguments，例如 pair p(1,2)。
+它不是 function return type inference，且錯誤 deduction guide 可導致 surprising type。
+
+M17-5｜`optional<T>` 與 pointer/哨兵值如何選？
+答：optional 表「可能沒有一個 T value」且 inline 儲存，不表 polymorphism/ownership；
+reference optional 到 C++26 前不是一般 `optional<T&>`。若需要失敗原因，用 expected 類型。
+
+M17-6｜`variant` 與 union？
+答：variant 是 tagged union，知道 active alternative、管理 lifetime 並可 visit；仍可能
+`valueless_by_exception`。duplicate alternative types 合法，但 get<T> 要求 T 唯一。
+
+M17-7｜`any`、`variant`、virtual interface 怎麼選？
+答：variant 型別集合封閉且 compile-time exhaustive；any 完全 open 但 runtime cast/type erasure；
+virtual 適合 open set 且共享行為 contract。不要只比較 syntax。
+
+M17-8｜C++17 guaranteed copy elision 保證什麼？
+答：某些 prvalue 直接初始化 destination，不先建立 temporary，因此即使 copy/move deleted 也可。
+NRVO 對具名 local 仍是允許優化，不是同一類 mandatory guarantee。
+
+M17-9｜inline variable 解決什麼？
+答：允許 header 中同一 inline variable definition 出現在多個 translation units 並指向同一 entity，
+類似 inline function 的 ODR 模型；不是「編譯器一定把變數 inline 到指令」。
+
+M17-10｜fold expression 四種形式的陷阱？
+答：unary left/right 與 binary left/right；空 parameter pack 只有少數 operator 有 identity，
+binary fold 可由 init 定義空包結果。減法/stream 等非結合 operation 的左右方向很重要。
+
+M17-11｜`string_view` 為何是 C++17 面試高頻？
+答：它展現 vocabulary type、zero-copy 與 lifetime trade-off。正確答案必須同時說
+non-owning、可含 NUL、不保證 null-terminated，以及 temporary/reallocation dangling。
+
+M17-12｜C++17 如何處理 over-aligned type 的動態配置？
+答：若型別需要超過一般 new 保證的 alignment，new-expression 可選帶 `std::align_val_t` 的
+allocation function，delete 必須走相配的 aligned deallocation overload。自訂 allocator/operator new
+若漏掉 alignment，建構 SIMD/cache-line aligned object 可能形成 UB；「通常很整齊」不是標準證明。
+==============================================================================
+*/
+
 #include <array>
 #include <cassert>
 #include <cstddef>

@@ -70,6 +70,56 @@
 //   Q: cerr 與 clog？ A: cerr 預設 unitbuf 常立即 flush；clog 適合 buffered diagnostic。
 // ============================================================================
 
+/*
+==============================================================================
+【面試深挖：IOStream】
+
+IO1｜為何 `while (!in.eof())` 是錯誤讀檔模式？
+答：eofbit 只有「讀取嘗試失敗」後才設定，loop 會多處理一次舊值。應把 extraction 本身
+放條件：`while (in >> value)` 或 `while (getline(in,line))`。
+
+IO2｜eofbit、failbit、badbit 差在哪？
+答：eofbit 表示到輸入尾；failbit 表示格式解析/操作失敗；badbit 表示底層 I/O 嚴重錯誤。
+`operator bool` 主要看 fail/bad；到尾時一次 extraction 可同時設 eofbit 與 failbit。
+
+IO3｜為何 `operator>>` 後第一個 getline 常讀到空字串？
+答：formatted extraction 通常留下 delimiter newline；getline 立即把它消耗成空行。
+可先 ignore 到 newline，但要依 protocol 決定，不可每次盲目丟一整行。
+
+IO4｜`std::endl` 與 '\n' 的差別？
+答：endl 寫 newline 並 flush；'\n' 只寫字元。每行 endl 會強制同步造成性能損失，
+只有真的需要立即對外可見時才 flush。
+
+IO5｜開 `ios::binary` 是否就能可攜序列化 struct？
+答：不能。binary 主要關閉平台文字轉換；struct 仍有 padding、endianness、型別寬度、
+ABI、版本與 pointer 問題。可攜格式要逐欄定義 wire representation。
+
+IO6｜RAII 關檔是否代表所有錯誤都能被看到？
+答：destructor 會 close，但 close/flush error 無法安全由 destructor 丟出給呼叫端。
+重要寫入要明確 flush/close 並檢查 stream state，再做 atomic rename 等發布。
+
+IO7｜`sync_with_stdio(false)` 做什麼？
+答：允許 C++ streams 不再與 C stdio 同步，可能更快；此後混用 printf/cout 的相對次序
+不可依賴，且應在任何 I/O 前設定。它不是「讓 iostream thread-safe」的開關。
+
+IO8｜何時用 stringstream，何時不用？
+答：需要多型 formatted I/O、混合欄位時方便；大量數值 parse/format 可用 charconv，
+簡單拼接可用 string/format。重複使用 stringstream 時要同時重設 buffer 與 state flags。
+
+IO9｜stream exceptions mask 的陷阱？
+答：預設以 state flags 回報；設定 exceptions(failbit|badbit) 後相關 setstate 會丟
+ios_base::failure。API 要統一錯誤模型，避免一半檢查 bool、一半期待例外。
+
+IO10｜多執行緒寫 cout 如何避免每行交錯？
+答：每個個別 stream operation 有標準庫同步規則不代表多個 `<<` 是一筆原子訊息。
+C++20 `osyncstream` 可先緩衝一整段再原子提交，或由 logger mutex/queue 序列化。
+
+IO11｜locale 為何會影響 formatted I/O？
+答：數字小數點、千分位、分類與轉換可依 locale；資料交換格式通常應固定 classic/C locale
+或用 locale-independent charconv，避免同一文字在不同機器解析不同。
+==============================================================================
+*/
+
 #include <array>
 #include <cassert>
 #include <charconv>

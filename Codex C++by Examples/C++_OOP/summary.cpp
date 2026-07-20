@@ -82,6 +82,83 @@
 //   Q: Singleton 的問題？ A: 隱藏 dependency、全域 mutable state、初始化/測試/併發困難。
 // ============================================================================
 
+/*
+==============================================================================
+【面試深挖：Object Model 與 OOP】
+
+O1｜`struct` 與 `class` 的語言差別？
+答：預設 member access 與預設 inheritance access（struct public、class private）；其餘能力相同。
+工程慣例可用 struct 表 value/aggregate、class 表 invariant，但那不是語言限制。
+
+O2｜封裝不是「把欄位設 private」而已，還需要什麼？
+答：public API 必須在 construction 後及每次 operation 後維持 invariant；若 getter 回 mutable
+reference 讓外部任意破壞狀態，語法 private 仍沒有真正封裝。
+
+O3｜member initializer list 的順序由什麼決定？
+答：virtual bases、direct bases、members 依 class 內宣告順序，最後才 constructor body；
+不是 initializer list 書寫順序。依錯誤順序互相引用會讀未初始化 state。
+
+O4｜virtual dispatch 是標準保證，vptr/vtable 也是嗎？
+答：dynamic dispatch 語意是標準；vptr/vtable 是主流 ABI 實作，不是標準要求。面試可解釋
+間接呼叫與 object layout，但不能宣稱每個 compiler 必有某一張表或固定 offset。
+
+O5｜object slicing 是什麼？
+答：Derived 按 value 複製到 Base，只建 Base subobject，derived state/behavior 被切掉。
+多型 collection 用 pointer/reference ownership，或若型別集合封閉可用 variant。
+
+O6｜經 non-virtual base destructor delete Derived 會怎樣？
+答：是 undefined behavior，不只是「Derived destructor 沒跑所以洩漏」。可能洩漏、heap
+corruption 或 crash；若 base 支援 polymorphic deletion，destructor 必須 public virtual。
+
+O7｜pure virtual destructor 可以沒有定義嗎？
+答：可以宣告 pure 使 class abstract，但仍必須提供 definition，因 derived destruction
+一定會呼叫 base destructor。pure 不代表「永遠不會執行」。
+
+O8｜constructor/destructor 內呼叫 virtual 會派發到 Derived 嗎？
+答：不會超出目前正在建構/解構的 class；derived 部分尚未存在或已結束 lifetime。
+把初始化流程寄託於 override 是常見 bug，可用 non-virtual init/factory 重構。
+
+O9｜diamond inheritance 的 duplicated base 如何處理？
+答：virtual inheritance 讓最終 derived 只含一個 virtual base，由 most-derived constructor
+負責初始化；代價是 layout/access 複雜。若不是 is-a shared base，composition 通常更清楚。
+
+O10｜public inheritance 何時不適合？
+答：只有 Derived 能遵守 Base contract/Liskov substitution 才是 is-a。只想重用 implementation、
+或 derived 會收窄前置條件/改變 invariant 時，應 composition/delegation。
+
+O11｜Rule of Zero / Five 如何回答？
+答：優先讓 RAII members 管資源而不自訂 special members；若類別直接擁有 raw resource，
+需一致考慮 destructor、copy/move ctor、copy/move assignment。不是「看到 destructor 就機械寫五個」。
+
+O12｜copy assignment 如何提供 strong guarantee？
+答：先在 temporary 完成可能失敗的 copy，再用 noexcept swap/commit；失敗時 original 不變。
+copy-and-swap 簡潔但不一定最有效，且 move assignment/self-assignment policy 仍要清楚。
+
+O13｜move constructor 為何常標 `noexcept`？
+答：vector reallocation 為維持 strong guarantee，在可 copy 且 move 可能拋時可能選 copy；
+但 move-only type 即使 move 會拋仍只能 move。不可說「沒 noexcept 一定 copy」。
+
+O14｜trivial、trivially copyable、standard-layout 分別管什麼？
+答：trivially copyable 關係到 object representation 可否用 memcpy/bit_cast；standard-layout
+關係到 C interop/offsetof 等 layout 性質；trivial 再涉及 trivial default construction。
+它們不是同義詞，舊 POD 是較粗的交集概念。
+
+O15｜operator overload 的最低契約？
+答：保持直覺語意；== 應為 equivalence relation，ordering 應 strict weak ordering；
+assignment/stream insertion 常回 reference 以 chaining。不能改 precedence/arity。
+
+O16｜Factory 與 Singleton 的面試取捨？
+答：Factory 隔離 construction 並可回 unique_ptr<Base> 表明 ownership；Singleton 引入隱藏
+global dependency、測試/初始化/併發問題。需要單一 instance 不等於必須 Singleton pattern，
+dependency injection 或 application-owned object 常更好。
+
+O17｜`using Base::Base` 繼承建構函式後，Derived 自己的 members 如何初始化？
+答：它讓 Base constructors 成為 Derived 初始化的候選，但不會把 derived members 變成額外參數；
+Base 建構完成後，Derived members 仍依 default member initializer/default initialization 處理。
+它也不等於繼承 copy/move constructors；若 Derived 有額外 invariant，應寫明確 constructor 驗證。
+==============================================================================
+*/
+
 #include <cassert>
 #include <concepts>
 #include <cstddef>

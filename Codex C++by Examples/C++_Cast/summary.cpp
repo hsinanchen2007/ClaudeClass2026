@@ -44,6 +44,56 @@
 //   A: cast 只是掩蓋 API 型別錯誤、ownership 錯誤或 warning 時，先修設計。
 // ============================================================================
 
+/*
+==============================================================================
+【面試深挖：C++ Casts】
+
+CA1｜四種 named cast 的職責？
+答：static_cast 做已知編譯期轉換；dynamic_cast 做 polymorphic runtime checked conversion；
+const_cast 改 cv qualification；reinterpret_cast 做低階表示/指標類轉換。名字讓意圖可 review。
+
+CA2｜dynamic_cast 需要什麼？失敗怎麼表示？
+答：涉及 runtime down/cross cast 時 source class 必須 polymorphic。轉 pointer 失敗回 nullptr；
+轉 reference 失敗丟 std::bad_cast。轉 `void*` 可取得 most-derived object address。
+
+CA3｜static_cast downcast 為何危險？
+答：編譯器只檢查 hierarchy 關係，不驗 dynamic type；若 object 實際不是目標 derived，
+後續使用造成 UB。只有由外部 invariant 已證明型別時才可用，否則 virtual/dynamic_cast/variant。
+
+CA4｜const_cast 後寫入一定合法嗎？
+答：只有原 object 實際非 const，只是經 const view 看到時才可寫；若 object 本來宣告 const，
+移除 const 後修改是 UB。const_cast 不會把唯讀 storage 變可寫。
+
+CA5｜reinterpret_cast 是否等同 bit reinterpretation？
+答：不是。它可轉 pointer/integer 等，但不自動建立目標型別 object，也不繞過 strict aliasing、
+alignment、lifetime。等大小 trivially copyable value representation 用 bit_cast/memcpy。
+
+CA6｜C-style cast 為何不推薦？
+答：它會依規則嘗試 const/static/reinterpret 等組合，reviewer 看不出危險程度，甚至可同時
+去 const 與重解釋。named cast 限縮能力，也利於搜尋與靜態分析。
+
+CA7｜`std::bit_cast` 的前置條件與用途？
+答：來源/目標大小相同且 trivially copyable；按 object representation 產生目標 value，
+常用 float bits、protocol fields。padding/indeterminate bits 與目標值合法性仍需注意。
+
+CA8｜numeric static_cast 如何處理 narrowing？
+答：它明確允許許多 narrowing；超範圍 signed/float-to-int 有精確但容易誤用的規則，
+不能當 runtime range check。先驗範圍，或用 checked conversion utility。
+
+CA9｜dynamic_cast 的成本可以簡化成 O(1) 嗎？
+答：標準不給固定複雜度；成本依 ABI、hierarchy、多重繼承與 cast 方向。先確保設計正確，
+hot path 再 profile；不要用 type tag + static_cast 自製不安全 RTTI。
+
+CA10｜pointer 轉 integer 再轉回一定安全嗎？
+答：若 integer type 足夠容納且依規則 round-trip，可回原 pointer；不是所有 integer 都夠，
+也不代表可序列化跨 process/machine 或對任意 arithmetic 後仍有效。uintptr_t 本身也是 optional。
+
+CA11｜`dynamic_pointer_cast` 與 raw `dynamic_cast` 的差別？
+答：它對 shared_ptr 的 stored pointer 做 checked cast，成功後共享同 control block；
+失敗回空 shared_ptr，不建立第二 ownership。先 get/dynamic_cast 再新 shared_ptr(raw) 會破壞 ownership。
+==============================================================================
+*/
+
 #include <bit>
 #include <cassert>
 #include <cmath>

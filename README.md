@@ -9,7 +9,7 @@ Claude 與 Codex 各自獨立授課的學習筆記與範例程式碼合集。
 | `Claude C++ STL多線程課程/` | **5 階段／30 課．已完成**，thread / 生命週期 / 共享資料 / mutex |
 | `Claude C++11 到 C++26 課程/` | **15 章．已完成**，型別推導與初始化、右值參考與移動語意 |
 | `Claude Code C++by Examples/` | **20 個主題／405 支範例**，容器、多執行緒、智慧指標、模板、工具… |
-| `Codex C++by Examples/` | **20 個主題／405 支獨立教材**，與 Claude `.cpp` 路徑 1:1，含講義、LeetCode、實務與面試速查 |
+| `Codex C++by Examples/` | **20 個主題／405 支獨立教材**，與 Claude `.cpp` 路徑 1:1；29 份 summary 含 331 題深挖問答，另補 72 題單課問答 |
 | `Claude Python課程/` | **31 課．已完成**，基礎語法、流程控制與四大資料結構 |
 | `Claude AI CUDA課程/` | 185 課 / 13 Parts，GPU 硬體到 AI 推論引擎系統（**進行中，見下方進度**） |
 | `Codex AI CUDA課程/` | 185 課 / 13 Parts，Codex 獨立版本的 GPU/CUDA/AI 課程（**進行中，見下方進度**） |
@@ -285,6 +285,8 @@ Claude 與 Codex 各自獨立授課的學習筆記與範例程式碼合集。
 範例程式 405 支（`.cpp`），相對路徑與 Claude 版本 1:1，內容不互相複製
 
 編譯與教材稽核方式見 [`Codex C++by Examples/BUILD_GUIDE.md`](Codex%20C++by%20Examples/BUILD_GUIDE.md)。
+面試練習方式、29 份速查入口與三層回答法見
+[`Codex C++by Examples/INTERVIEW_GUIDE.md`](Codex%20C++by%20Examples/INTERVIEW_GUIDE.md)。
 
 <details>
 <summary>展開全部 20 個主題</summary>

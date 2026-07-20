@@ -195,6 +195,72 @@
  * [ ] 模板定義/explicit instantiation 的 translation-unit 邊界一致。
  */
 
+/*
+==============================================================================
+【面試深挖：Templates 與 Generic Programming】
+
+T1｜template 是 compile-time polymorphism 嗎？
+答：通常是 static polymorphism，一份 source pattern 產生 specializations；但 template 也可
+產生 runtime polymorphic class。核心是參數化 declaration/definition，不是單一句「零成本多型」。
+
+T2｜function template 與 class template deduction 差別？
+答：function arguments 可直接推 template parameters；class template 到 C++17 才有 CTAD，
+且由 constructors/deduction guides 推導。return type-only parameter 通常無法由 call 推得。
+
+T3｜dependent name 為何要 `typename` / `template`？
+答：template definition 第一階段無法知道 `T::x` 是 type 還是 value、`obj.f<Y>` 的 <
+是 template args 還是比較；disambiguator 告訴 parser，並與 two-phase lookup 相關。
+
+T4｜full specialization 與 partial specialization？
+答：class template 可 full/partial；function template 只有 full specialization，通常用 overload
+取代，因 specialization 與 overload resolution 互動容易誤解。alias template 也不能直接特化。
+
+T5｜SFINAE 的精確範圍？
+答：substitution failure 只在 immediate context 使 candidate 被移除；function body 或額外
+instantiation 的錯誤仍是 hard error。C++20 concepts 通常提供更直接 constraint 與診斷。
+
+T6｜forwarding reference 如何辨識？
+答：cv-unqualified template parameter T 在 deduction context 的 `T&&`，或相應 auto&&；
+不是所有 rvalue reference 都是 forwarding，例如 `vector<T>&&` 與 class-template member 的固定 T。
+
+T7｜reference collapsing 規則？
+答：只要任一邊是 lvalue reference，結果 T&；只有 && 與 && 才是 T&&。配合 template deduction
+讓 T&& 接 lvalue/rvalue，再由 `std::forward<T>` 恢復原 value category。
+
+T8｜`std::forward` 與 `std::move`？
+答：move 無條件轉 xvalue；forward 依 deduced T 有條件保留 caller category。
+forward 必須帶 T，因它需要原 deduction 資訊；誤用會把 lvalue 意外搬走。
+
+T9｜perfect forwarding 哪些情況不「perfect」？
+答：braced initializer、0/NULL、overload set、bit-field、static const integral ODR-use 等可能
+無法正常 deduction/forward。wrapper API 需要額外 overload 或明確 type。
+
+T10｜variadic template 與 fold expression 的工程用途？
+答：參數包可建立 tuple、logging、factory；C++17 fold 簡化 recursive expansion。
+要定義 evaluation order、empty pack identity 與 operation associativity，不能只會 `(... + args)`。
+
+T11｜template 為何通常定義在 header？
+答：implicit instantiation 的 translation unit 需要看到 definition。可用 explicit instantiation
+definition/declaration（extern template）集中常用 types，降低 build time/code duplication。
+
+T12｜template code bloat 如何處理？
+答：把 type-independent work 移到 non-template function、限制 instantiations、顯式 instantiation、
+使用 type erasure/runtime polymorphism於穩定 ABI 邊界，並用 binary/profile 數據而非猜測。
+
+T13｜CRTP 與 virtual 的取捨？
+答：CRTP static dispatch、型別在 compile time 已知，可 mixin/compile-time interface；
+virtual 支援 runtime heterogeneous objects 與穩定介面。CRTP 不能自然取代 open runtime plugin。
+
+T14｜hidden friend 為何常出現在 class template？
+答：在 class 內定義 non-member friend，由 ADL 找到，避免污染一般 lookup 並讓兩側 conversion
+對稱；每個 specialization 產生對應 operation。它與 friend template 授權範圍要區分。
+
+T15｜Concepts 比 SFINAE 好在哪？
+答：直接描述 semantic/syntactic constraint、參與 overload ordering、錯誤更接近 call site。
+但 concept 只檢查可表達的 requirement，不會自動證明複雜度、無副作用或完整語意契約。
+==============================================================================
+*/
+
 #include <array>
 #include <cassert>
 #include <concepts>

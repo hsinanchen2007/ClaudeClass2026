@@ -22,6 +22,40 @@
  * 額外空間通常由輸出容器承擔；back_inserter 可能觸發 reallocation。
  */
 
+/*
+==============================================================================
+【面試深挖：Set Algorithms】
+
+A1｜set_union 等演算法可直接吃 unordered_set 嗎？
+答：它們要求兩個 input ranges 依同一 comparator 排序；容器名稱有 set 不代表 iteration
+一定符合。ordered set 可以，unordered_set 必須先排序副本或改用 hash-based 作法。
+
+A2｜重複元素的 multiplicity 如何計算？
+答：union 取兩邊最大次數；intersection 取最小；difference 取 max(countA-countB,0)；
+symmetric_difference 取絕對差。這些是 multiset 語意，不是單純 boolean presence。
+
+A3｜為何常搭配 `back_inserter`？
+答：output iterator 會逐項寫結果，空 vector 的 begin 沒有可寫元素；back_inserter 轉成
+push_back。若已知上限可 reserve，兼顧安全與配置成本。
+
+A4｜`merge` 與 `inplace_merge` 的差別？
+答：merge 合併兩個獨立 sorted ranges 到另一個 output；inplace_merge 假設同一 range
+的 [first,middle) 與 [middle,last) 各自已排序，再原地合成。
+
+A5｜`includes` 在問什麼？
+答：判斷第二個 sorted multiset 是否為第一個的子 multiset，重複次數也算。例如 A 只有
+一個 2，就不包含有兩個 2 的 B。
+
+A6｜set algorithm 如何判斷「相等」？
+答：用 comparator equivalence：!comp(a,b) && !comp(b,a)，不一定呼叫 operator==。
+若 comparator 只比 id，其他欄不同的 record 仍可能視為同 key。
+
+A7｜複雜度為何通常是 O(n+m)？
+答：兩個 iterator 單調向前，類似 merge step；這正是付出「兩邊先排序」後得到的好處。
+若只有一次操作，排序成本可能主導；大量操作則 ordered representation 可攤提。
+==============================================================================
+*/
+
 #include <algorithm>
 #include <cassert>
 #include <cstddef>

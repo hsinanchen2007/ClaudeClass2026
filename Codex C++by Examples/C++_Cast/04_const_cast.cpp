@@ -90,3 +90,18 @@ int main()
 // 練習：把 legacy_measure 簽章改 `const char*`，即可刪除 const_cast。
 // 複雜度：const_cast 本身是 O(1) qualification 調整；它不複製資料，也不做 runtime 驗證。
 // 生命週期：cast 後的 pointer 仍綁同一物件；物件已解構就懸空，原物件真為 const 時寫入是 UB。
+
+/*
+【本課面試問答】
+Q1：`const_cast` 後何時可以寫？
+A：只有底層 object 原本不是 const，只是目前經 const-qualified view 存取時，去 const 後修改才合法；
+若 object 本身宣告為 const，寫入是 UB，即使記憶體實際看似可寫。
+
+Q2：`const_cast` 能否改變數值或在 unrelated types 間轉換？
+A：不能；它只調整 cv qualification（以及相關 pointer/reference 形式），不做 runtime check、allocation
+或 representation 轉換。其他意圖要用 static/dynamic/reinterpret cast 或重新設計 API。
+
+Q3：為呼叫錯誤的 legacy `char*` API 去 const 是否合理？
+A：若 API 契約保證不修改，可在很窄 adapter 中使用並記錄原因；若可能修改，應建立 mutable copy。
+長期最佳修法是把 API 簽章改成 `const char*`，而不是把 UB 風險散到每個 caller。
+*/

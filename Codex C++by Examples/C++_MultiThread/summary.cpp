@@ -120,6 +120,134 @@
 // 【複雜度判讀】除了 Big-O work，平行演算法還要看 critical-path span、同步次數、
 // task 建立成本與記憶體流量；O(n) 平行版本不保證勝過 cache-friendly 的 O(n) 單執行緒。
 
+/*
+==============================================================================
+【面試深挖：Concurrency 與 C++ Memory Model】
+
+MT1｜race condition 與 data race 一樣嗎？
+答：race condition 是結果依賴時序的廣義邏輯問題；data race 是 C++ 精確術語：不同 threads
+對同 memory location 有 conflicting evaluations、至少一個 write，且沒有 happens-before/atomic。
+data race 導致 undefined behavior；race condition 也可能只用 atomics 卻仍邏輯錯。
+
+MT2｜`volatile` 能否取代 atomic？
+答：不能。volatile 主要表達 observable access（常見 MMIO）並限制部分最佳化，不提供原子性、
+互斥或 inter-thread ordering。多執行緒同步用 atomic/mutex。
+
+MT3｜thread object destructor 時仍 joinable 會怎樣？
+答：`std::thread` destructor 呼叫 terminate；必須 join/detach 或用 RAII wrapper。
+C++20 jthread destructor 會 request_stop 並 join，改善 exception path，但 task 必須合作取消。
+
+MT4｜為何 detach 通常危險？
+答：失去 completion、exception 與 lifetime coordination；captured reference/object 可能先銷毀，
+process shutdown 也無法保證工作完成。長期 service 應有明確 owner、stop protocol 與 join。
+
+MT5｜`lock_guard`、`unique_lock`、`scoped_lock` 怎麼選？
+答：單 mutex 固定 scope 用 lock_guard；需要 unlock/relock、defer、condition_variable 用 unique_lock；
+同時鎖多 mutex 用 scoped_lock/std::lock 的 deadlock-avoidance algorithm。
+
+MT6｜deadlock 的四個必要條件與實務避免？
+答：mutual exclusion、hold-and-wait、no preemption、circular wait。破壞環路可用全域 lock order、
+scoped_lock 一次取得、縮小 critical section、避免持鎖呼叫未知 callback/I/O。
+
+MT7｜condition_variable 為何一定搭 predicate loop？
+答：防 spurious wakeup，也防 notify 與 wait 間的狀態競爭；condition 是受 mutex 保護的 shared state，
+notification 只是提示「重查」。使用 `cv.wait(lock,pred)`。
+
+MT8｜notification 會被保存嗎？
+答：condition_variable 本身沒有計數記憶；notify 發生時若沒 waiter，通知可消失。
+正確性必須由 predicate state 保存事件。需要計數 permits 可用 semaphore。
+
+MT9｜修改 predicate state 時一定要持同一 mutex嗎？
+答：一般 pattern 是持鎖修改再 notify，確保 waiter 的檢查與睡眠原子銜接；即使 state 是 atomic，
+錯誤組合仍可能 missed wakeup。依 condition-variable protocol 而不是只看單一變數原子性。
+
+MT10｜`shared_mutex` 一定比 mutex 快？
+答：讀多不代表必然；reader bookkeeping、cache contention、公平性與 writer starvation 可能更差。
+只有讀 critical section 足夠大且真正並行時才可能受益，需 benchmark。
+
+MT11｜atomic operation 一定 lock-free 嗎？
+答：不保證；用 `is_lock_free` / `is_always_lock_free` 查。即使 lock-free，整個多步演算法
+也未必 lock-free，更不代表 wait-free 或較快。
+
+MT12｜六種 memory order 如何用一句模型回答？
+答：relaxed 只保原子性/modification order；release 發布先前 writes；acquire 接收相應 release；
+acq_rel 用於 read-modify-write；seq_cst 再提供單一全域順序；consume 長期實作困難且已演進，
+實務通常不用它自行微調。
+
+MT13｜happens-before 與「牆鐘先發生」差在哪？
+答：happens-before 是標準中的可見性/排序關係，由 sequenced-before、synchronizes-with 等建立；
+thread A 在時間上先寫，不代表 thread B 合法看到。沒有 HB 的 non-atomic conflict 是 data race。
+
+MT14｜release/acquire producer-consumer 的核心？
+答：producer 先寫普通 data，再 release-store ready；consumer acquire-load 讀到該 release value 後，
+producer 先前 writes 對 consumer 可見。flag atomic 不是只保護 flag，而是發布其他資料。
+
+MT15｜`compare_exchange_weak` 與 strong？
+答：weak 可 spurious failure，適合 loop 且某些架構更直接；strong 不應 spuriously fail，
+適合失敗就走別路的單次判斷。兩者都要理解 expected 在 failure 時被更新。
+
+MT16｜ABA 問題是什麼？
+答：CAS 看到值 A，以為未變，但其間 A→B→A，相關 object/lifetime 已變。可用 tagged version、
+hazard pointers、epoch reclamation 或不重用 address；僅把 pointer 改 atomic 不解決 reclamation。
+
+MT17｜lock-free、wait-free、obstruction-free？
+答：lock-free 保證系統整體持續有操作完成；wait-free 保證每個操作有限步完成；
+obstruction-free 只保證單獨執行可完成。lock-free 不代表公平，單一 thread 仍可能 starvation。
+
+MT18｜false sharing 為何沒有 data race仍會慢？
+答：threads 寫不同 atomic/objects，但它們落同 cache line，coherence 讓 line 反覆 ping-pong。
+可分片、padding/alignment（參考 hardware_destructive_interference_size）並用 profiler 驗證。
+
+MT19｜thread pool 比每工作建立 thread 好在哪？
+答：攤提 creation/context-switch 成本、限制 concurrency、提供 queue/backpressure；
+但要處理 shutdown、task exception、nested submission、work stealing 與 blocking tasks。
+
+MT20｜`std::async` 一定另開 thread 嗎？
+答：未指定 policy 時可 async 或 deferred；要確定並行需 `launch::async`。
+temporary future destructor 在某些 async 情況會等待，容易把看似平行程式序列化。
+
+MT21｜promise/future 與 packaged_task 的角色？
+答：promise 手動設定 value/exception；future 單次取得結果；packaged_task 把 callable 包成
+可排程工作並連結 future。future::get 通常只能一次，shared_future 可多讀。
+
+MT22｜function-local static 初始化 thread-safe 嗎？
+答：C++11 起初始化本身只執行一次且同步；不代表建成後 mutable object 的操作 thread-safe。
+`call_once` 適合需要外部 once_flag 或非 local-static 形式。
+
+MT23｜C++20 atomic wait/notify 與 condition_variable 差別？
+答：直接等待 atomic value 改變，避免獨立 mutex/CV 組合並可由實作使用 futex 類機制；
+仍要用 loop/值檢查理解 ABA-like value return，且只適合狀態可由 atomic 表達的協定。
+
+MT24｜latch、barrier、semaphore 如何區分？
+答：latch 單次倒數；barrier 可重複 phases 並有 completion step；semaphore 管 permits。
+它們解決的不是 mutual exclusion 本身，不應把 semaphore 當保護任意 invariant 的 mutex。
+
+MT25｜停止 thread 為何不能強制 kill？
+答：任意終止可能讓 lock/resource/invariant 停在半途。jthread/stop_token 是 cooperative request；
+blocking I/O 還需要可中斷 API、timeout 或關閉 descriptor 的明確策略。
+
+MT26｜ThreadSanitizer 能證明沒有 race 嗎？
+答：只能檢查本次執行走到的路徑，對 unsupported atomics/assembly、custom synchronization 也有限制。
+它是高價值動態工具，不是 correctness proof；還需 code review、stress 與清楚 HB reasoning。
+
+MT27｜`hardware_concurrency()` 是 thread 上限嗎？
+答：不是，只是 implementation hint，可能回 0；最佳 thread count 取決於 CPU quota、SMT、NUMA、
+task blocking/compute ratio 與其他負載。pool 應可配置並觀察 queue/latency。
+
+MT28｜priority inversion、starvation、livelock 如何區分？
+答：inversion 是高優先工作被持鎖低優先工作間接阻塞；starvation 是某工作長期拿不到資源；
+livelock 是 threads 都在動但互相讓步而無進展。三者都不一定是 deadlock。
+
+MT29｜SPSC ring buffer 為何仍需 memory order？
+答：單 producer/consumer 只消除同一 index 的多 writer，不會自動發布 slot contents。
+producer 寫 slot 後 release 更新 head；consumer acquire 看到 head 後才讀 slot，反向 tail 同理。
+
+MT30｜lock-free container 最難的常不是 CAS，而是什麼？
+答：memory reclamation。另一 thread 仍可能持 pointer，不能 pop 後立即 delete；
+hazard pointer、epoch/QSBR、reference counting 各有吞吐、停頓與回收延遲取捨。
+==============================================================================
+*/
+
 #include <atomic>
 #include <cassert>
 #include <condition_variable>

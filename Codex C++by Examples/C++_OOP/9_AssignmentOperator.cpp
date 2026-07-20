@@ -155,3 +155,18 @@ int main()
 // 練習：加入 move constructor/move assignment，觀察 copy-and-swap 參數如何利用 move。
 // 複雜度：deep assignment O(N)，copy-and-swap 另建 temporary；self-assignment 仍安全但可能多做工。
 // 生命週期：swap 後 temporary 擁有舊資源並在函式結尾釋放，目標只接手完整新狀態。
+
+/*
+【本課面試問答】
+Q1：copy-and-swap 為何可提供 strong exception guarantee？
+A：by-value 參數先完整複製；複製失敗時目標尚未改變。成功後 `swap` 應為 noexcept，舊資源交給
+temporary 在函式結尾清理，所以結果是「完整成功」或「原狀不變」。代價是可能多一次配置/複製。
+
+Q2：`if (this == &rhs)` 是否一定需要？
+A：手寫先 delete 再 copy 的 assignment 需要防 self-assignment，否則會讀已釋放資料；良好的
+copy-and-swap 天生安全，不必特判。是否特判應由正確性與實測成本決定，不能靠習慣加入。
+
+Q3：move assignment 要處理 self-move 嗎？
+A：泛型演算法可能讓物件被 self-move；類別至少應維持可解構、可指定的不變式。最簡單是資源操作
+天然安全或先檢查地址，但不應宣稱 self-move 後值保持不變，除非類別契約明訂。
+*/

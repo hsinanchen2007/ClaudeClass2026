@@ -103,3 +103,18 @@ int main()
 // 練習：讓 Lease 支援 renew(now,lifetime)，並拒絕非正 duration。
 // 複雜度：Lease 到期比較 O(1)；exclusive-time stack 演算法 O(N) 且 stack 空間 O(depth)。
 // 生命週期：Lease 按值保存 deadline；不可保存指向 caller local time_point 的 reference。
+
+/*
+【本課面試問答】
+Q1：不同 clock 的 `time_point` 可以直接相減嗎？
+A：不行。time_point 的 clock 是型別的一部分，system_clock 與 steady_clock 沒有通用、固定 offset；
+一個適合牆鐘/日誌，一個適合 deadline。需要兩種語意就像本課一樣各自記錄。
+
+Q2：API 接 deadline 還是 timeout duration 較好？
+A：多層重試通常把 duration 在入口轉成 steady deadline，後續每層比較同一 deadline，避免每層重新
+給完整 timeout 而超時。測試時注入 `now`/clock，可精確驗 boundary 而不 sleep。
+
+Q3：`time_point + duration` 一定不 overflow 嗎？
+A：不保證；底層 `rep` 仍是有限寬度。外部輸入的巨大 timeout 要先 range-check/saturate，不能因 chrono
+是強型別就忽略整數 overflow。系統 API 的最大可表示 deadline 也可能更小。
+*/

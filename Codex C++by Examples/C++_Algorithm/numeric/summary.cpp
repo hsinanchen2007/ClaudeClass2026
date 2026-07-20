@@ -29,6 +29,48 @@
  * 的 view。輸出與輸入重疊是否安全要逐 API 查契約，勿由「剛好能跑」推論。
  */
 
+/*
+==============================================================================
+【面試深挖：Numeric Algorithms】
+
+A1｜`accumulate` 的初值型別為何重要？
+答：累積器型別由 init 決定。`accumulate(v.begin(),v.end(),0)` 即使 v 是 double/long long，
+也可能逐步轉成 int；用 `0.0`、`0LL` 或明確 domain type。
+
+A2｜`accumulate` 與 `reduce` 的核心差別？
+答：accumulate 是有順序的 left fold；reduce 為容許向量化/平行化可重新分組，operation
+須適合重排，通常要 associative/commutative。浮點加法不具真正結合律，結果可能不同。
+
+A3｜`inner_product` 與 `transform_reduce` 怎麼選？
+答：inner_product 有明確順序；transform_reduce 將 transform 與 reduction 融合並可接受
+execution policy。需要 reproducible floating-point 結果時，不要盲選可重排版本。
+
+A4｜inclusive/exclusive scan 差在哪？
+答：inclusive 第 i 項含 input[i]；exclusive 第 i 項只含它之前元素，需 init。
+prefix sum、offset allocation 常用 exclusive；running total 常用 inclusive。
+
+A5｜`partial_sum` 與 scan 家族關係？
+答：partial_sum 是有順序 prefix operation；C++17 scan 家族擴充 inclusive/exclusive、
+transform 與 execution policy。面試應先說語意，再說版本。
+
+A6｜`adjacent_difference` 為何是 partial_sum 的一種反操作？
+答：預設輸出 first，之後輸出 current-previous；對差分再 partial_sum 可重建原序列
+（在無 overflow 且同算術 domain 下）。時間序列 delta encoding 是實務用途。
+
+A7｜`gcd`、`lcm` 有何邊界？
+答：gcd 對符號取絕對語意；若結果無法由 common_type 表示則行為無保證。lcm 中間乘法
+也可能 overflow；寫 `a / gcd(a,b) * b` 只能降低風險，不代表結果一定可表示。
+
+A8｜平行 numeric algorithm 的 lambda 可以寫 log 或改 global 嗎？
+答：若 operation 有未同步 side effect，可能 data race；即使加鎖，也可能因執行順序不定
+造成非決定輸出與嚴重 contention。reduction operation 應盡量是純函式。
+
+A9｜整數 prefix sum 如何避免 overflow？
+答：先提升 accumulator/output type，並在 domain boundary 檢查。把結果最後才 cast 成
+long long 太晚；overflow 已在 int operation 發生。
+==============================================================================
+*/
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>

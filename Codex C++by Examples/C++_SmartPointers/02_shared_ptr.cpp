@@ -111,3 +111,20 @@ int main()
 // 練習：讓 graph 加 2->1 cycle，觀察 strong cycle；下一課改 weak_ptr。
 // 複雜度：copy/reset 通常是 O(1) control-block 計數操作；最後釋放另含 pointee destructor。
 // 生命週期：strong count 歸零才解構 pointee，weak count 歸零後 control block 才可回收。
+
+/*
+【本課面試問答】
+Q1：`shared_ptr` 本身 thread-safe 嗎？
+A：不同 `shared_ptr` 物件若共享同一 control block，可在不同 threads 複製/銷毀，引用計數同步是安全的；
+但同一個 `shared_ptr` object 的非 const 操作，以及 pointee 的資料，都不因此自動安全。前者可用
+`atomic<shared_ptr<T>>`，後者仍需物件自己的同步策略。
+
+Q2：`make_shared` 為何通常較快？何時反而不用？
+A：典型實作把 control block 與 `T` 合併成一次配置，改善配置成本與 locality。若 weak owners 長期
+存在，合併配置會讓包含 `T` 儲存空間的整塊記憶體延後回收；需要自訂 deleter/allocator 或特殊
+生命週期時，分開配置可能更合適。
+
+Q3：為何不能對同一個 raw pointer 分別建兩個 `shared_ptr`？
+A：兩者會有獨立 control blocks，最後各自 delete 同一物件，形成 double delete/UB。要增加 owner
+必須複製既有 `shared_ptr`；需要指向子物件但共享 ownership 時用 aliasing constructor。
+*/

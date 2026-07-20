@@ -24,6 +24,48 @@
  * 關係也傳遞。`<=`、會變動的 capture、未處理 NaN 都可能破壞契約。
  */
 
+/*
+==============================================================================
+【面試深挖：Sorting】
+
+A1｜`std::sort` 保證是 quicksort/introsort 嗎？
+答：標準保證語意與 O(n log n) comparisons，不規定實作演算法。常見 introsort 是
+implementation strategy；面試應把「標準保證」與「libstdc++/libc++ 實作」分開。
+
+A2｜`sort` 與 `stable_sort` 如何選？
+答：stable_sort 保留 equivalent elements 的原順序，適合先按次要 key、再按主要 key。
+它可能用額外記憶體；記憶體不足時實作可採較慢 fallback。若不需穩定性，sort 通常更省。
+
+A3｜comparator 的 strict weak ordering 包含什麼？
+答：comp(x,x)=false、關係具 transitivity，且 equivalence 也具 transitivity。用 <=、
+含 NaN 未定 policy、讀取會變動狀態，都可能破壞契約；後果不是只排得不好，而是不受保證。
+
+A4｜為何 `list` 不能用 `std::sort`？
+答：std::sort 要 RandomAccessIterator；list 只提供 bidirectional iterator。
+應用 list::sort，它透過 relink nodes 排序，不需搬移 element。
+
+A5｜`partial_sort`、`nth_element`、完整 sort 怎麼選？
+答：要前 k 個且已排序用 partial_sort，約 O(n log k)；只要第 k 個及兩側 partition 用
+nth_element，平均線性；要完整次序才 sort。不要為 top-k 無條件排序 n 個元素。
+
+A6｜`nth_element` 後左右各自有序嗎？
+答：沒有。nth 位置是完整排序後該在的值，左邊都不大於它、右邊都不小於它，但群內任意。
+若輸出前 k 名還要有序，再 sort 左段。
+
+A7｜多欄排序應寫多次 sort 還是一個 comparator？
+答：可用 lexicographical tuple key 一次表達；或 stable_sort 先次要、後主要。
+比較器必須處理 tie，且避免重複昂貴 key extraction，可先 decorate-sort-undecorate。
+
+A8｜parallel execution policy 有何例外陷阱？
+答：標準 execution-policy overload 中，使用者 function 若丟例外，常會呼叫 terminate
+（對標準 policy 的規則需查該 overload）；不可假設像一般 sort 一樣可 catch。
+
+A9｜排序 pointer 時預設比較地址還是 pointed value？
+答：比較 pointer value；若想按物件內容，comparator 必須解引用並處理 null/lifetime。
+容器內 pointer ownership 不清時，排序只是暴露更大的生命週期問題。
+==============================================================================
+*/
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>

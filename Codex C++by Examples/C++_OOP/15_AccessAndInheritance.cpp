@@ -127,3 +127,18 @@ int main()
 // 練習：把 RecentCounter 改成 composition，比較 public header 的可讀性。
 // 複雜度：public/protected/private inheritance 是 compile-time 可見性規則，沒有 runtime 成本。
 // 生命週期：base subobject 嵌在 derived object 內，不能比 complete derived object 單獨活得更久。
+
+/*
+【本課面試問答】
+Q1：public/protected/private inheritance 分別表達什麼？
+A：public inheritance 對外保留 is-a/substitutability；protected/private inheritance 會降低 inherited
+members 的可見性，通常是 implementation reuse。若不需要 derived-to-base 關係，composition 更清楚。
+
+Q2：`protected` data member 為何常被視為脆弱設計？
+A：所有 derived classes 都依賴表示法，使 base 難以維持 invariant 或改內部布局。通常把資料 private，
+提供受控 protected function；如此可驗證 precondition 並保留重構空間。
+
+Q3：composition 一定優於 inheritance 嗎？
+A：不是口號。當 Derived 真能在所有 Base 契約位置替代 Base，public inheritance 合理；只有「使用某
+功能」或 ownership 關係則選 composition。面試要用 Liskov/invariant 說明，而非只回答「少用繼承」。
+*/

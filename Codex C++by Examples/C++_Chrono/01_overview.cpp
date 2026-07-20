@@ -95,3 +95,18 @@ int main()
 // 練習：讓 set_timeout 接 template duration，內部統一轉 milliseconds 並檢查 overflow。
 // 複雜度與生命週期：duration/time_point arithmetic 是 O(1) 值運算；ClientOptions 按值保存
 // timeout，所以呼叫端的 temporary duration 結束後設定仍有效。
+
+/*
+【本課面試問答】
+Q1：`duration<Rep,Period>` 的兩個模板參數代表什麼？
+A：Rep 是 tick 計數型別，Period 是每 tick 相對於秒的 compile-time ratio；例如 milliseconds 是
+`duration<...,milli>`。運算會用 common duration，避免把裸 int 的單位交給人腦猜。
+
+Q2：為何 seconds 轉 milliseconds 可隱式，反向常要 `duration_cast`？
+A：轉成更細單位通常不遺失 tick；轉成較粗單位會截斷，因此要求顯式表達。需要特定方向的 rounding
+時用 floor/ceil/round，而不是誤以為 cast 會四捨五入。
+
+Q3：`count()` 回傳值能否離開單位直接儲存？
+A：能編譯但容易丟失語意。跨 API 優先傳 duration；只有序列化/顯示邊界才取 count，並把單位寫進
+欄位名稱與協定，例如 `timeout_ms`，同時檢查目標整數範圍。
+*/

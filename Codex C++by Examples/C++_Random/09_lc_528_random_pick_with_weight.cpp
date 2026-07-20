@@ -94,3 +94,18 @@ int main()
 // 生命週期：prefix_ 與 engine_ 由 Solution 物件擁有；pickIndex 會推進 engine state，
 // 因此同一 seed 只有在呼叫順序也相同時才可重播。不要回傳 prefix_ 內部 iterator。
 // 練習：支援動態更新 weight 時，研究 Fenwick tree 將 update/pick 都降到 O(log N)。
+
+/*
+【本課面試問答】
+Q1：prefix sum 加二分搜尋如何實作 weighted random？
+A：令 prefix[i] 為 0..i 權重總和，均勻抽 ticket 於 `[1,total]`，再用 `lower_bound` 找第一個
+prefix >= ticket；某 index 覆蓋的 ticket 數恰等於其權重，因此機率為 weight/total。
+
+Q2：此解法最容易漏掉哪些輸入檢查？
+A：權重必須符合契約（通常非負且至少一個正值），prefix total 要用足夠寬的整數並檢查 overflow，
+空輸入要拒絕。若允許浮點權重，還要定義 NaN、負值與 rounding 行為。
+
+Q3：若權重頻繁更新，為何不能每次重建 prefix？
+A：靜態權重建表 O(N)、抽樣 O(log N)；每次更新重建是 O(N)。Fenwick/segment tree 可把單點更新
+與按累積權重尋找都做到 O(log N)，代價是更複雜的不變式與同步。
+*/

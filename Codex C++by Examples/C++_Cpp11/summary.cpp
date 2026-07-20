@@ -66,6 +66,58 @@
  * 4. 找出 `const auto value : rows` 為何仍會複製，改成正確宣告。
  */
 
+/*
+==============================================================================
+【面試深挖：C++11】
+
+M11-1｜C++11 最重要的改變如何分組回答？
+答：語言：move/value categories、auto/decltype、lambda、variadic templates、constexpr、
+uniform init；library：smart pointers、thread/atomic、chrono/random、unordered containers。
+不要只背名單，要說 ownership、generic programming、concurrency 三個設計轉折。
+
+M11-2｜左值、xvalue、prvalue 如何快速說清楚？
+答：先分 identity：glvalue 有 identity，prvalue 通常用於初始化；再分可移動：
+xvalue 是有 identity 且資源可被重用的 expiring value。具名 T&& expression 本身仍是 lvalue。
+
+M11-3｜`std::move` 真的移動了什麼？
+答：它只是把 expression cast 成 xvalue，讓 overload resolution 有機會選 move operation；
+真正資源轉移由目標型別 constructor/assignment 完成，const object 常仍只能 copy。
+
+M11-4｜`auto` 會保留 const/reference 嗎？
+答：plain auto 類似 template by-value deduction，通常去掉 top-level cv/reference；
+`auto&`、`const auto&`、`auto&&` 規則不同。braced-init-list 是與一般 template deduction
+著名不同點，必須單獨回答。
+
+M11-5｜`decltype(x)` 與 `decltype((x))` 為何不同？
+答：unparenthesized id-expression 有特殊規則，直接給 declared type；一般 expression 依 value
+category 產 T&/T&&/T。具名變數 x 是 lvalue，因此 decltype((x)) 常為 T&。
+
+M11-6｜`nullptr` 比 0/NULL 好在哪？
+答：型別是 std::nullptr_t，可轉任意 pointer/member pointer，但不會被當 int overload；
+解決 `f(int)` 與 `f(char*)` 的歧義/誤選。它仍不是「所有空 handle」的通用值。
+
+M11-7｜brace initialization 的優點與陷阱？
+答：防多數 narrowing、語法統一；但 initializer_list constructor 在 overload resolution
+具有強偏好，`vector<int>{10,20}` 與 `vector<int>(10,20)` 意義不同。
+
+M11-8｜move constructor 為何不等於 memcpy？
+答：它要接管 resource 並讓 source 維持可析構 invariant；self-referential members、
+allocator、mutex 或外部 registration 可能使 defaulted move 不符合語意。
+
+M11-9｜range-for 有何 lifetime/拷貝陷阱？
+答：loop variable 寫 `auto x` 會 copy，修改不回原容器；用 auto&/const auto&。
+對 temporary range 的 lifetime 規則跨標準演進，子表達式 temporary 仍需小心，不要回 dangling view。
+
+M11-10｜`=default` / `=delete` 與 private undeclared function 比較？
+答：delete 在 overload resolution 時給明確診斷，能禁止特定 conversion/copy；default 要求
+compiler 產生標準 special member，且定義位置會影響 triviality/ABI。
+
+M11-11｜C++11 `constexpr` 的定位？
+答：讓函式/物件可在條件允許時 constant-evaluate，不代表每次都編譯期執行。
+C++11 constexpr function body 限制嚴，後續標準逐步放寬。
+==============================================================================
+*/
+
 #include <algorithm>
 #include <cassert>
 #include <iostream>

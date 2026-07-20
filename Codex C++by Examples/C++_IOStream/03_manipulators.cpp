@@ -94,3 +94,18 @@ int main()
 // 練習：比較 defaultfloat/fixed/scientific 下 setprecision(3) 的輸出。
 // 複雜度：設定 flag 近似 O(1)，格式化每個 value 的成本依位數/locale；大量輸出應整體量測。
 // 生命週期：多數 manipulator state 會留在 stream 直到改回；RAII saver 應與被借用 stream 同 scope。
+
+/*
+【本課面試問答】
+Q1：哪些 formatter 狀態會持續，`setw` 為何特別？
+A：base、floatfield、precision、fill、locale 等通常留在 stream，會影響後續輸出；`setw` 的 width
+通常在下一次 formatted insertion 後重設。library helper 若借用 caller stream，應保存並恢復它改過的狀態。
+
+Q2：`std::endl` 與 `'\n'` 差在哪？
+A：endl 寫換行後強制 flush；`'\n'` 只寫字元。每行 endl 可能讓大量輸出因頻繁 system call/同步而
+變慢。只有互動提示、協定邊界或確實需要立即可見時才主動 flush。
+
+Q3：`setw` 能否正確對齊中文或 emoji？
+A：不能保證。iostream width 以字元序列/locale 規則處理，不等於終端顯示欄寬；UTF-8 一個 glyph
+可能多 bytes，combining/wide characters 又不同。正式表格要用 Unicode display-width aware library。
+*/

@@ -53,6 +53,52 @@
 //      保證有限，C++20 system_clock 已規範 Unix Time，但資料格式仍應寫明單位與範圍。
 // ============================================================================
 
+/*
+==============================================================================
+【面試深挖：Chrono】
+
+CH1｜計算 elapsed time 為何用 `steady_clock`？
+答：steady_clock 保證 monotonic，不因 NTP/手動校時倒退；system_clock 對應 civil/Unix time，
+可能跳變。deadline、timeout、benchmark 用 steady；顯示日期用 system。
+
+CH2｜`high_resolution_clock` 一定最好嗎？
+答：不保證獨立 clock，也不保證 steady；實作可 alias system_clock 或 steady_clock。
+應依 `is_steady` 與實際 resolution 選，不要因名稱就用。
+
+CH3｜duration conversion 何時需 `duration_cast`？
+答：無資料損失的 widening conversion 可隱式；可能截斷的 conversion 需明確 cast。
+duration_cast 對 integral duration 通常 toward zero；C++17 另有 floor/ceil/round。
+
+CH4｜`sleep_for(10ms)` 是否保證恰好睡 10ms？
+答：只保證不早於相應 deadline（受 clock/規格影響），scheduler 可讓它晚很多。
+週期工作應以固定 steady deadline 用 sleep_until，避免每輪工作時間累積 drift。
+
+CH5｜微基準只量一次有何問題？
+答：clock overhead、cache warmup、CPU frequency、OS scheduling、編譯器消除與輸入分布都會扭曲。
+要 warmup、多次統計、消費結果、防 dead-code elimination，並報環境與 variance。
+
+CH6｜Unix timestamp 是 chrono 的普遍 epoch 嗎？
+答：system_clock 常映射 Unix epoch，但標準的可攜介面歷史上未要求所有 clock 共享 epoch。
+C++20 對 system_clock/time_t 關係更明確；steady_clock epoch 無日曆意義，不能轉日期。
+
+CH7｜time_point 與 duration 的關係？
+答：time_point<Clock,Duration> 表示自該 Clock epoch 起的 duration；兩 time_point 相減得 duration，
+time_point 加 duration 得 time_point。不同 clock 不能隨意相減。
+
+CH8｜duration 會 overflow 嗎？
+答：會，Rep 仍是普通算術型別。把長時段 cast 到窄整數 nanoseconds 可能 overflow；
+先選合理 period/Rep、檢查範圍，避免「精度愈高一定愈好」。
+
+CH9｜local time 與 UTC 的難點？
+答：時區規則、DST gap/overlap 與 tzdb 更新。不要用固定 UTC offset 代替 timezone。
+C++20 chrono timezone API 可表達 zoned_time，但部署仍需可用且更新的 tzdb。
+
+CH10｜timeout 應保存 duration 還是 absolute deadline？
+答：跨多步操作用 steady absolute deadline，後續每步算 remaining；若每步都重新套完整
+duration，總等待可超過原 SLA。跨機器傳輸則不可傳 steady time_point。
+==============================================================================
+*/
+
 #include <algorithm>
 #include <cassert>
 #include <chrono>

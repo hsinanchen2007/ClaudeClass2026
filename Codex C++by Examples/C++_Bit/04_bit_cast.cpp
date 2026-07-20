@@ -82,3 +82,18 @@ int main()
 // 練習：寫 decode_float_be，先重組 uint32_t 再 bit_cast<float>。
 // 複雜度與生命週期：bit_cast 複製 sizeof(T) 個 representation bits，回傳全新的 value；
 // 它不建立指向來源的 alias，因此來源離開生命週期後，結果仍是獨立物件。
+
+/*
+【本課面試問答】
+Q1：`bit_cast<To>(from)` 的核心限制與用途？
+A：To/From 必須同大小，且符合 trivially-copyable 等標準限制；它按 object representation 產生新的 To
+值，適合檢視 float bits 等合法 type punning。它不是數值轉換：float 1.0 不會變成整數 1。
+
+Q2：為何比 `*reinterpret_cast<To*>(&from)` 安全？
+A：後者可能違反 strict aliasing、alignment 與 object lifetime；bit_cast 以標準定義的 value copy
+語意處理，不建立錯誤 alias。傳統可攜替代是同大小 trivially-copyable objects 間 `memcpy`。
+
+Q3：bit_cast 後的整數值可直接當網路 byte order 嗎？
+A：不可。object representation 仍依 native endianness；網路協定必須明確 shift/byteswap 成規定順序。
+C++20 `endian` 可檢查平台，但協定 encoding 不應只把 host bytes 原封不動送出。
+*/

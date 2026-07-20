@@ -179,3 +179,18 @@ int main()
 
 // 練習：為 MyLinkedList 加 reverse()，只用 std::move 改接 ownership links。
 // 複雜度：head insert O(1)、遍歷 O(N)、整串解構 O(N)；move unique_ptr 本身 O(1)。
+
+/*
+【本課面試問答】
+Q1：`unique_ptr<Derived>` 可轉成 `unique_ptr<Base>` 的必要安全條件是什麼？
+A：型別轉換本身可成立，但若最後經 Base pointer 刪除 Derived，Base destructor 必須 virtual，或 deleter
+必須保留正確具體刪除方式。否則刪除行為未定義；「smart pointer」不會自動修補錯誤多型介面。
+
+Q2：linked list 用 `unique_ptr<Node> next` 表達了什麼？
+A：每個 node 唯一擁有下一個 node，head 唯一擁有整條鏈；reverse 其實是逐段轉移 ownership。
+prev/observer 若不擁有節點可用 raw pointer，但其生命期不得超過 owner。
+
+Q3：為何 `release()` 很危險？
+A：它只交出 raw pointer，不呼叫 deleter；若接收端沒有立即納入另一個 owner，資源就洩漏。大多數
+ownership 轉移應直接 move `unique_ptr`，只有必須把責任交給明確接管的 C API 時才用 release。
+*/

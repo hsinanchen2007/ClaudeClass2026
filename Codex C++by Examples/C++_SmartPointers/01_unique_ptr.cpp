@@ -100,3 +100,19 @@ int main()
 // 練習：為 linked list 加 insert_after；列出哪些 pointers 是 owner、哪些只是 borrow。
 // 複雜度：move/release/get 通常 O(1)；reset/destructor 還要加上 pointee deleter 的成本。
 // 生命週期：最後且唯一的 owner 解構或 reset 時釋放；由 get() 取得的 borrow 不得活得更久。
+
+/*
+【本課面試問答】
+Q1：`unique_ptr` 為何不可複製，卻可放進 `vector`？
+A：複製會同時產生兩個「唯一擁有者」，語意矛盾，所以 copy operations 被刪除；move 只把
+ownership 轉交並讓來源不再擁有。容器在插入與重新配置時可使用 move，因此仍能保存它。
+
+Q2：`make_unique<T>()` 與 `unique_ptr<T>(new T)` 有何取捨？
+A：一般優先 `make_unique`：型別只寫一次，也不讓裸 `new` 暫時暴露在 ownership 交接程式碼中。
+「另一個函式參數先丟例外會洩漏」是 C++17 前常見理由；C++17 起 argument evaluation 規則已消除
+該特定窗口，但 factory 的可讀性仍較好。需要自訂 deleter、私有建構流程或特殊配置時才直接建構。
+
+Q3：函式參數何時收 `unique_ptr<T>`，何時收 `T&`/`T*`？
+A：收 by-value `unique_ptr` 明確表示函式要接管 ownership；只借用且不得為空用 `T&`，可為空用
+`T*`。不要為了「看起來安全」把單純借用寫成 `const unique_ptr<T>&`，那會把 ownership 型別洩漏進 API。
+*/

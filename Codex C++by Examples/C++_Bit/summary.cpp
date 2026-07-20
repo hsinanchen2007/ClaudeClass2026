@@ -63,6 +63,52 @@
 //   A: 固定且少量的布林狀態；需要動態數量、型別安全名稱或很多欄位時考慮 bitset/enum class/結構。
 // ============================================================================
 
+/*
+==============================================================================
+【面試深挖：Bit Operations】
+
+B1｜位移最重要的 UB 邊界？
+答：shift count 為負或 >= promoted left operand 位寬是 UB；signed negative 左移與結果不可表示
+也有問題。位元演算法優先轉 unsigned 並檢查 count，不要依賴編譯器或 CPU 自動 mask。
+
+B2｜負 signed integer 右移可攜嗎？
+答：C++20 起定義為向負無限方向取整的 arithmetic right shift；較早標準為 implementation-defined。
+跨版本教材應明寫版本，不可把 x86 行為當所有標準。
+
+B3｜`x & (x-1)` 判 power of two 的陷阱？
+答：必須先確認 x != 0，且最好使用 unsigned；它清掉最低 set bit。C++20 可直接用
+`std::has_single_bit`，型別要求也更清楚。
+
+B4｜`popcount`、`countl_zero`、`countr_zero` 的邊界？
+答：C++20 <bit> 對 unsigned integer 提供可攜操作；countl/countr_zero(0) 有定義為位寬，
+但手寫 compiler builtin 對 0 可能未定義，不能混為一談。
+
+B5｜`bit_cast` 與 `reinterpret_cast`/union punning 的差別？
+答：bit_cast 對等大小、trivially copyable types 複製 object representation，避免 aliasing
+與 inactive union member 問題；它不是數值轉換，NaN/trap/padding 仍需理解目標型別規則。
+
+B6｜如何可攜判斷 endian？
+答：C++20 用 `std::endian::native`；或把 object representation 讀成 unsigned char/byte。
+在 C++ 中寫 union 一個 member、讀另一個不是通用標準 type-punning 解法。
+
+B7｜XOR single-number 技巧有哪些前提？
+答：只有「其餘每個值恰出現偶數次、目標出現奇數次」才成立。它不驗證輸入契約，
+也不能直接找兩個任意頻率的 unique values；先說 invariant 再寫一行 XOR。
+
+B8｜bitmask enum 如何做得型別安全？
+答：用 enum class 防止與任意 int 混算，明確提供 operator|/&/contains，底層用 unsigned type。
+不要把 `~flag` 未遮罩後的所有高位直接當有效 flags。
+
+B9｜`bitset`、dynamic bit vector、enum flags 怎麼選？
+答：compile-time 固定 N 且需位元操作用 bitset；runtime N 用專用 dynamic bitset/word vector；
+少量具名稱權限用 enum flags。vector<bool> 有 proxy semantics，API 必須有意接受。
+
+B10｜`bit_ceil` 的 overflow 邊界？
+答：結果若無法由型別表示，呼叫不具有效結果；容量 rounding 要先驗上限。
+不要先做 `1 << bit_width(x)`，那同時有 signed 與 shift-count 風險。
+==============================================================================
+*/
+
 #include <bit>
 #include <cassert>
 #include <cstdint>

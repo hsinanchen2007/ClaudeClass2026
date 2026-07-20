@@ -161,3 +161,18 @@ int main()
 // 練習：新增 virtual `accept(Visitor&)`，比較 Visitor 與重複 dynamic_cast 的取捨。
 // 複雜度：dynamic_cast 的搜尋成本由 ABI/hierarchy 實作決定，標準不保證 O(1)。
 // 生命週期：成功回傳的 pointer/reference 只是同一 complete object 的別名，完全不擁有它。
+
+/*
+【本課面試問答】
+Q1：`dynamic_cast` downcast 的前提與失敗結果？
+A：來源通常必須指向 polymorphic class（至少一個 virtual member）。pointer cast 失敗回 nullptr；reference
+cast 失敗丟 `std::bad_cast`。成功只產生 alias，不延長 object lifetime。
+
+Q2：能否一律用 `static_cast<Derived*>` 取代以省 RTTI 成本？
+A：只有程式已由其他不變式證明 dynamic type 正確時才可；判斷錯誤後使用結果是 UB。dynamic_cast 的
+成本與 ABI/hierarchy 有關，應先 profile；不能用未證明的 downcast 換取臆測效能。
+
+Q3：大量 `dynamic_cast` chain 暗示什麼？
+A：可能表示 base interface 缺少行為、需要 Visitor、variant 或 capability interface。本課 optional
+capability 的單點檢查可合理；若每個 operation 都 switch concrete type，應重審多型邊界。
+*/

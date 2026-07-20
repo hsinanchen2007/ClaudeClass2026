@@ -106,3 +106,18 @@ int main()
 // 練習：比較 sizeof(unique_ptr<int>) 與帶 function-pointer/stateful deleter 的大小。
 // 複雜度：pointer 操作通常 O(1)，真正釋放成本由 fclose/free/外部 API deleter 決定。
 // 生命週期：smart pointer 從成功取得 handle 起擁有資源，move 轉移 owner，deleter 必須活在其內。
+
+/*
+【本課面試問答】
+Q1：custom deleter 為何是 `unique_ptr` 型別的一部分，卻不是 `shared_ptr` 型別的一部分？
+A：`unique_ptr<T,D>` 直接把 deleter 存在物件內，因此 `D` 影響型別、move 性質與 `sizeof`；
+`shared_ptr<T>` 把 type-erased deleter 放在 control block，所以不同 deleter 的 shared_ptr 型別相同。
+
+Q2：空 deleter 一定讓 `unique_ptr` 變大嗎？
+A：不一定。實作通常利用 empty-base/`[[no_unique_address]]` 類最佳化，使無狀態 deleter 不增加大小，
+但標準不保證 `sizeof(unique_ptr<T,D>) == sizeof(T*)`。function pointer 或有狀態 deleter 通常會增加大小。
+
+Q3：deleter 應滿足哪些工程條件？
+A：必須與取得資源的 API 成對（`malloc/free`、`fopen/fclose` 等），其捕捉狀態要活在 smart pointer
+內，且通常不得讓清理例外逃出 destructor。錯配 `new[]/delete` 或 `malloc/delete` 是未定義行為。
+*/

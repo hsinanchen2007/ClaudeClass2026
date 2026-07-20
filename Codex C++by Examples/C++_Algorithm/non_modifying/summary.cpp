@@ -49,6 +49,48 @@
  * - 將 O(N^2) 教學版直接帶進大資料正式環境。
  */
 
+/*
+==============================================================================
+【面試深挖：Non-modifying Algorithms】
+
+A1｜為何 `map.find` 通常比 `std::find(map.begin(), ...)` 正確？
+答：member find 利用 tree/hash 結構並以 key 查找；generic find 線性比較整個 value_type。
+同理有 member lower_bound 的 ordered container 應優先用 member 版本。
+
+A2｜`all_of` 在空 range 為何回 true？
+答：這是 vacuous truth：不存在反例。`any_of` 空 range 為 false，`none_of` 為 true。
+實務驗證「所有 request 都成功」前，要先決定空批次是否在業務上也算成功。
+
+A3｜比較兩個 range 時只呼叫 `equal(first1,last1,first2)` 有何風險？
+答：較舊 overload 假設第二 range 足夠長；C++14 起有雙 end overload。安全程式先確認長度，
+或使用接受兩個完整 range 的 overload/ranges::equal。
+
+A4｜`mismatch` 回傳什麼？
+答：回第一對不同元素的 iterators；若共同前綴全同，至少一個 iterator 到 end。
+它適合產生 diff 的第一個 offset，但若要列出全部差異需繼續掃描。
+
+A5｜`find_end` 和 `search` 的名稱為何容易誤解？
+答：search 找第一個子序列；find_end 找最後一個子序列，不是「找 end iterator」。
+兩者都在 sequence 中匹配 pattern，與字串 API 的 rfind 觀念相似。
+
+A6｜predicate 可以修改元素嗎？
+答：non-modifying 指演算法不透過 iterator 寫入；predicate 也必須符合相應要求，
+不應修改參數或破壞 range。捕獲外部計數器雖常可編譯，parallel policy 下可能 data race。
+
+A7｜`for_each` 是否保證順序？
+答：一般 overload 對 range 依序套用；execution policy overload 可平行/非順序執行。
+若 correctness 依賴 side-effect 次序，便不應選允許重排的 policy。
+
+A8｜`adjacent_find` 常用在哪？
+答：找相鄰重複、局部下降或第一個違反相鄰 invariant 的位置。它不能取代全域 duplicate
+檢查；未排序資料中相同元素可能不相鄰。
+
+A9｜`count` 與 `distance(equal_range(...))` 怎麼選？
+答：未索引 sequence 用 count 線性掃；已排序 random-access range 可二分出重複區間；
+associative container 直接用 member count/equal_range，依容器結構取得較佳複雜度。
+==============================================================================
+*/
+
 #include <algorithm>
 #include <cassert>
 #include <cstddef>

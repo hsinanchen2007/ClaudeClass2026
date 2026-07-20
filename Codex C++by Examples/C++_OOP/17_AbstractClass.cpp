@@ -125,3 +125,18 @@ int main()
 // 練習：新增 FileStorage stub；呼叫 first_bad_version 時改用另一 fake oracle 測邊界 1。
 // 複雜度：interface/abstract class 不改演算法；first_bad_version 仍 O(log N) calls。
 // 生命週期：以 unique_ptr<Base> 擁有 implementation 時需 virtual destructor，borrowed interface 則由 caller 保活。
+
+/*
+【本課面試問答】
+Q1：含 pure virtual function 的類別一定不能有實作嗎？
+A：不是。pure virtual function 仍可在類別外提供定義，derived 可明確呼叫；pure virtual destructor
+甚至必須有定義，因為銷毀 derived 時仍會執行 base destructor。抽象只代表不能直接建立該類別。
+
+Q2：interface 的 destructor 為何通常是 `virtual`？
+A：若允許 caller 透過 `Base*`/`unique_ptr<Base>` 刪除 concrete object，非 virtual destructor 會造成 UB。
+若明確禁止 polymorphic deletion，也可把 destructor 設 protected non-virtual，但 API 必須一致表達。
+
+Q3：abstract class 與 type erasure/templates 怎麼選？
+A：virtual interface 適合 runtime 可替換、穩定 ABI 邊界；templates 提供 compile-time polymorphism，
+可 inline 但會擴大編譯依賴；type erasure（如 function）可保留 value-like API。先依替換時機與 ownership 選擇。
+*/

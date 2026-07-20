@@ -61,6 +61,52 @@
  * - replace 改到排序 key 後忘了 sorted invariant 已失效。
  */
 
+/*
+==============================================================================
+【面試深挖：Modifying Algorithms】
+
+A1｜erase-remove idiom 為何分兩步？
+答：`remove` 只能重新排列 range，把保留元素移到前面並回傳 new logical end；generic
+algorithm 不知道 container 如何縮小。容器的 erase 才真正銷毀尾段。C++20 可用 `std::erase`。
+
+A2｜`unique` 能移除所有重複值嗎？
+答：只能消除相鄰等價元素，且同樣不縮容器。要全域去重，常先 sort 再 unique/erase；
+若不可改順序，可用 hash set 記錄 seen，時間與空間取捨不同。
+
+A3｜`copy` 遇到重疊 range 怎麼辦？
+答：目的起點落在來源內且向右覆蓋時應用 copy_backward；向左可用 copy。契約不符時不是
+「可能慢」，而是結果不受保證。trivially copyable raw storage 可由 memmove 處理重疊。
+
+A4｜`transform` 可以 in-place 嗎？
+答：unary transform 的 output 可等於 input begin，典型 in-place 合法；但 operation 不可
+使目前或其他 iterator invalid，且任意偏移重疊不自動安全。binary 版本也須檢查兩個 input range。
+
+A5｜`std::move` algorithm 與 `std::move(x)` 是同一件事嗎？
+答：前者把 range 元素逐一 move-assign 到目的；後者只是 cast 成 xvalue。兩者都不保證
+來源變成空，只保證 moved-from object 可析構與重新賦值，具體狀態依型別契約。
+
+A6｜`swap_ranges` 可處理重疊區間嗎？
+答：不可依賴；兩個 range 重疊違反前置條件。需要在同一 range 內重排時應用 rotate、
+reverse 或明確暫存，而不是拿 swap_ranges 猜測交換次序。
+
+A7｜`rotate` 的回傳 iterator 有何用？
+答：回傳原 first 元素旋轉後的位置，可把兩段重新定位。它能實作 stable insertion、
+移動區塊與陣列 rotation；不是只有 LeetCode「旋轉陣列」。
+
+A8｜`shuffle` 與舊 `random_shuffle` 的差別？
+答：shuffle 明確接受 UniformRandomBitGenerator，能控制 seed 與測試重現；
+random_shuffle 使用不透明亂數來源，C++14 deprecated、C++17 removed。
+
+A9｜`fill`、`generate`、`iota` 如何選？
+答：相同值用 fill；每次呼叫 generator 產值用 generate；連續遞增序列用 iota。
+generator 若捕獲 mutable state，在 parallel algorithm 下還要考慮 data race。
+
+A10｜stable 與不 stable 的修改為何是工程問題？
+答：例如 partition/shuffle 前後是否要保留同 key 原順序會影響可重現性與 UI/API 契約。
+不要只看 Big-O；先寫出順序是否屬於 observable behavior。
+==============================================================================
+*/
+
 #include <algorithm>
 #include <cassert>
 #include <cstddef>

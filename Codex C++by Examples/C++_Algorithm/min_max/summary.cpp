@@ -19,6 +19,39 @@
  * 的外部狀態。NaN 會使一般全序直覺失效。複合型別要明確定義 tie-breaking。
  */
 
+/*
+==============================================================================
+【面試深挖：min / max / clamp】
+
+A1｜`std::min`、`max`、`clamp` 為何可能製造 dangling reference？
+答：兩參數版本通常回 `const T&`。若回到的是 temporary，而結果又綁 reference，
+temporary 在完整表達式後銷毀。要保存結果時用 value，例如 `auto value = ...`。
+
+A2｜`clamp(value, low, high)` 的必要條件？
+答：low 不可大於 high，且 comparator 必須形成 strict weak ordering。clamp 也回 reference；
+浮點 NaN 會使一般 less 比較皆 false，結果未必符合人類對「夾住」的直覺，需先定義 NaN policy。
+
+A3｜`minmax_element` 遇到多個相同最小/最大值回哪一個？
+答：回第一個最小值與最後一個最大值。面試若需要 stable tie-breaking，不能假設兩者都取第一個。
+
+A4｜同時找 min/max 為何可少於兩次完整掃描？
+答：pairwise 比較先在每對中分大小，再各與目前 min/max 比，約 3n/2 次比較；
+分別呼叫 min_element/max_element 約 2n。Big-O 相同，但比較昂貴時常數有差。
+
+A5｜initializer_list overload 有何不同？
+答：`std::min({a,b,c})` 回 value，不是對某個參數的 reference；但它要求元素可複製，
+且建立 initializer_list。兩參數 overload 的 lifetime 陷阱不能直接套到這個 overload。
+
+A6｜混用 signed/unsigned 為何常讓 min/max 編譯失敗或結果錯？
+答：function template 通常要推得同一 T；強轉成 unsigned 可能把負數變成巨大正值。
+先統一有意義的 domain/type，再比較，不要用 cast 只為消除錯誤。
+
+A7｜自訂 comparator 可以用 `<=` 嗎？
+答：不行。演算法要求 strict weak ordering；comp(x,x) 必須 false。`<=` 破壞 irreflexive，
+導致 tie 與演算法推理失效。比較 member 時也要說明 tie policy。
+==============================================================================
+*/
+
 #include <algorithm>
 #include <cassert>
 #include <cstddef>

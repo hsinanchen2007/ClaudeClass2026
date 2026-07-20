@@ -83,6 +83,61 @@
 // typed stream、streambuf、move、LeetCode 27 與安全 erase 工作案例。
 // ============================================================================
 
+/*
+==============================================================================
+【面試深挖：Iterators】
+
+I1｜五種 legacy iterator category 的能力階梯？
+答：input/output 是單向單遍用途；forward 可多遍；bidirectional 可 --；random access 可 O(1)
+jump/difference；C++20 contiguous 再保證實體連續，可轉成 address。演算法要求的是最低能力契約。
+
+I2｜input iterator 的「single-pass」有何實際意義？
+答：複製出的 iterators 可能共享讀取狀態；推進一份可能影響另一份。istream_iterator 是典型。
+因此不能先 distance 再重走，或假設保存副本即可回頭。
+
+I3｜半開區間 [first,last) 為何成為標準？
+答：空區間自然 first==last，長度是 last-first（random access），相鄰區間可無縫拼接，
+end 不需指向有效元素。不可 dereference end。
+
+I4｜iterator、reference、pointer 何時失效？
+答：取決於 container 與 operation，三者不一定同步。unordered rehash 會使 iterator 失效但
+元素 reference/pointer 可留存；vector reallocation 通常三者全失效。必須查具體契約。
+
+I5｜`reverse_iterator::base()` 為何指向「下一個」位置？
+答：reverse iterator r dereference 的元素是 *(r.base()-1)。這讓 [rbegin,rend) 與正向
+[begin,end) 邊界一致。從 reverse search erase 元素常需 `std::next(r).base()`。
+
+I6｜`std::distance` 一定 O(1) 嗎？
+答：只有 random-access iterator 可常數相減；forward/bidirectional 需逐步走 O(n)。
+`advance` 同理。演算法寫得泛型，不代表各 category 有相同成本。
+
+I7｜`back_inserter`、`inserter`、`front_inserter` 如何選？
+答：它們是 output iterator adaptor，把 assignment 轉成 container member operation。
+vector 常用 back；set 用 inserter；front_inserter 會反轉逐項輸入的相對次序，要明確接受。
+
+I8｜`move_iterator` 做了什麼？
+答：dereference 時把 underlying reference 轉成 rvalue reference，使 algorithm 搬移元素。
+它不自己搬，也不延長 lifetime；來源 moved-from 狀態仍由元素型別決定。
+
+I9｜自訂 iterator 最容易錯在哪？
+答：category/concept 宣告超過實際能力、post-increment 回錯型別、reference 實際是 proxy、
+不同 range iterator 被比較，以及 lifetime/invalidation 未定義。C++20 iterator concepts
+比只繼承 std::iterator 更能描述能力；std::iterator 已 deprecated/removed。
+
+I10｜iterator 與 sentinel 為何在 ranges 分離？
+答：結束條件不必與 iterator 同型，例如 counted input 或零結尾字串；可少存狀態並表達
+無法建立「尾 iterator」的 range。演算法需接受 sentinel_for 契約。
+
+I11｜為何 iterator invalidation 是高頻實作題？
+答：典型 bug 是 range-for vector 時 push_back、erase 後仍 ++ 舊 iterator，或 unordered
+插入 rehash 後沿用 iterator。正確模式要依 erase 回傳的新 iterator 或先收集修改。
+
+I12｜contiguous iterator 是否等同 raw pointer？
+答：能力上保證元素按位址連續，可由 to_address 取得 pointer；型別不必真的是 pointer。
+vector/string/array iterator 通常 contiguous，deque 不是，vector<bool> proxy 也不是。
+==============================================================================
+*/
+
 #include <algorithm>
 #include <cassert>
 #include <concepts>

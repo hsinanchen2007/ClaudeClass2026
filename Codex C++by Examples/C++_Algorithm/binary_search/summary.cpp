@@ -33,6 +33,49 @@
  * - 把 upper_bound 誤記成 >=；它是嚴格 >。
  */
 
+/*
+==============================================================================
+【面試深挖：Binary Search】
+
+A1｜`lower_bound` 的真正前置條件是什麼？
+答：搜尋區間必須依「element < value」這個判斷完成 partition；通常排序後自然滿足，
+但標準要求的是 partitioned，不是字面上的 sorted。若前置條件不成立，結果沒有保證。
+追問：自訂 comparator 時，呼叫方向是 comp(element, value)，不可隨意反過來。
+
+A2｜`lower_bound`、`upper_bound`、`equal_range` 如何區分？
+答：lower 是第一個「不小於」，upper 是第一個「大於」，兩者形成半開區間
+[first_equal, after_last_equal)。equal_range 一次表達整個重複區間；不存在時兩端相等，
+那個位置同時也是維持排序的插入點。
+
+A3｜為何在 `list` 上呼叫 `std::lower_bound` 不一定快？
+答：比較次數仍為 O(log n)，但 ForwardIterator 無法 O(1) 跳到中點，iterator 前進總量
+可能是 O(n)。tree container 應優先用 member `lower_bound`，它沿樹走 O(log n)。
+常見誤答：「二分搜尋在任何容器都是 O(log n)」忽略了 iterator movement。
+
+A4｜中點為何不該寫 `(low + high) / 2`？
+答：low+high 可能 overflow。index 常寫 low + (high-low)/2；一般整數或 pointer 可用
+C++20 `std::midpoint`。但若 loop invariant 或 signed/unsigned 已錯，換公式也救不了。
+
+A5｜如何避免 `while (low <= high)` 的邊界錯誤？
+答：先選明確 invariant。推薦半開區間 [low, high)，每輪排除至少一個位置，結束時
+low==high；找第一個 true 時，維持 [0,low) false、[high,n) true。先寫 invariant，
+再決定更新式，而不是背模板。
+
+A6｜「對答案二分」何時成立？
+答：答案空間上必須有單調 predicate，例如容量愈大愈可行。每次檢查可行性成本為 T，
+總成本約 O(T log range)。若 predicate 會 true/false 反覆交錯，二分沒有正確性。
+
+A7｜`binary_search` 為何不適合取得位置？
+答：它只回 bool；需要 iterator、插入點或重複範圍時用 lower_bound/equal_range。
+若資料未排序、只查一次，先排序 O(n log n) 可能不如線性 find；要按查詢批次與更新率選。
+
+A8｜comparator 最常見的面試陷阱是什麼？
+答：排序與搜尋必須使用相容的 strict weak ordering。用 `<=`、依會變動的外部狀態，
+或 sort 用一套規則、lower_bound 用另一套，會破壞 partition 前提。等價是
+!comp(a,b) && !comp(b,a)，不一定等同 operator==。
+==============================================================================
+*/
+
 #include <algorithm>
 #include <cassert>
 #include <cstddef>

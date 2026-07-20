@@ -93,3 +93,18 @@ int main()
 // 練習：改用 Google Benchmark，加入 DoNotOptimize/ClobberMemory 並比較結果。
 // 複雜度：量測成本是 O(repetitions × work)，clock calls 也屬 overhead，短工作需批次化。
 // 生命週期：被測資料必須涵蓋整段量測；回傳指向已結束 fixture/local buffer 的 view 會失真或 UB。
+
+/*
+【本課面試問答】
+Q1：benchmark 為何應使用 `steady_clock`？
+A：elapsed time 需要 monotonic clock；system_clock 可能因 NTP/人工校時跳動。high_resolution_clock
+只代表實作選的高解析 clock，可能就是 system_clock，不能只看名字假設 monotonic。
+
+Q2：極短函式量到 0 ns 或不可思議高速，可能發生什麼？
+A：編譯器可能刪除未被觀察的結果，或 clock overhead 大於工作。應用 optimized build、消費結果、
+批次重複並扣除/估計 harness 成本；成熟時使用 Google Benchmark 的 DoNotOptimize 等工具。
+
+Q3：只報最好的一次時間有何問題？
+A：單次受 warm-up、cache、frequency scaling、scheduler、page fault 影響；minimum 又偏向理想路徑。
+應固定環境、量多批，報 median/percentiles/variance 與輸入規模，並確認結果正確後才談速度。
+*/

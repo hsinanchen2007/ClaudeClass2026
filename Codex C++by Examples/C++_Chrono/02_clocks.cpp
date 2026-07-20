@@ -84,3 +84,18 @@ int main()
 // 練習：印出三個 clock 的 period 與 is_steady，觀察本機 high_resolution_clock alias。
 // 複雜度：now() 與 time_point subtraction 通常 O(1)，但實際 syscall/vDSO 成本依平台。
 // 生命週期：time_point 是值 snapshot；system_clock 之後被校時不會回頭修改已取得的值。
+
+/*
+【本課面試問答】
+Q1：三種標準 clock 如何選？
+A：system_clock 對應民用/日曆時間，可轉 time_t 但會調整；steady_clock 保證不倒退，適合 elapsed/deadline；
+high_resolution_clock 是實作提供的最高解析別名，不保證 steady，也不保證比前兩者更好。
+
+Q2：系統時間向後跳會怎樣影響 rate limiter？
+A：若用 system_clock 計間隔，request 可能被錯誤延後或提前；用 steady_clock 保存 monotonic deadline。
+需要 audit log 時另外記 system_clock stamp，不要把展示時間與控制流程混成一個值。
+
+Q3：`now()` 是不是免費的 O(1) 操作？
+A：語意上為常數次操作，但實際可能走 vDSO、system call 或平台 clock source；解析度也不等於精確度。
+熱路徑應 profile，不要每個元素都讀 clock 後再宣稱演算法成本只有 O(N)。
+*/

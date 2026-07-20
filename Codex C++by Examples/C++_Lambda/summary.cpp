@@ -105,6 +105,56 @@
  * 4. 寫 C callback + void* context 版 accumulator，列出 context lifetime contract。
  */
 
+/*
+==============================================================================
+【面試深挖：Lambda】
+
+L1｜lambda 的本質是什麼？
+答：compiler 產生唯一 unnamed closure class，captures 成為 data members，body 成為
+operator()；無 capture lambda 可轉相容 function pointer。layout/名稱仍屬實作細節。
+
+L2｜`[=]` 與 `[&]` 最大風險不是語法，而是什麼？
+答：lifetime 與 ownership。reference capture 的 closure 若逃出 scope 就 dangling；
+value capture 是建立 closure 當下的 snapshot，不會自動追蹤外部後續變更。
+
+L3｜為何 value-captured variable 預設不能修改？
+答：closure::operator() 預設 const；`mutable` 移除該 const，允許改 closure 自己的 member，
+不是修改原外部變數。reference capture 則可透過 reference 改外部。
+
+L4｜捕獲 `this` 與 `*this`？
+答：this capture 保存 pointer，object 先銷毀就 dangling；C++17 `[*this]` 捕獲 object copy，
+有 snapshot/成本且型別需可 copy。預設 [=] 對 this 的歷史語意也易誤讀，最好明寫。
+
+L5｜如何捕獲 move-only object？
+答：C++14 init-capture `[p=std::move(p)] mutable {...}`。closure 因 member move-only 而不可 copy，
+因此不能放進要求 CopyConstructible target 的舊 `std::function`；C++23 可考慮 move_only_function。
+
+L6｜generic lambda 與 function template 的關係？
+答：generic lambda 的 call operator 是 template，但 closure 還可保存 state 並作 value 傳遞。
+C++20 explicit template parameter list 可直接寫 constraints/type relationships。
+
+L7｜直接傳 lambda template parameter 與包進 `std::function` 的差別？
+答：template 保留 concrete closure type，利於 inline 且無必然 allocation；std::function type-erases
+並有 indirect call/可能配置，但提供固定 copyable runtime interface。按 API 邊界選。
+
+L8｜lambda capture 的初始化時機？
+答：建立 closure object 時；不是呼叫 lambda 時。value capture 看到舊值，reference capture
+呼叫時看目前 object，但前提是仍存活且無 data race。
+
+L9｜在 sort comparator 中捕獲 mutable state 為何危險？
+答：sort 可複製 comparator、呼叫次數/順序未規定；若比較結果隨 state 變動，破壞 strict weak
+ordering。comparator 應對同一 pair 穩定，昂貴 key 可先預計算。
+
+L10｜`std::bind` 為何現代程式多偏好 lambda？
+答：lambda 型別/捕獲/placeholder 關係更直觀，支援 move capture 與 overload disambiguation；
+bind 有 eager/lazy binding、nested bind 與 value category 陷阱。bind 仍可用，但需理由。
+
+L11｜async callback 捕獲 local reference 怎麼修？
+答：若 task 可能晚於 scope，搬移所需 value/ownership 進 closure；需要共同 lifetime 可捕獲
+shared_ptr，但若 callback 被 object 保存可能形成 cycle，改 weak_ptr + lock。
+==============================================================================
+*/
+
 #include <algorithm>
 #include <cassert>
 #include <functional>

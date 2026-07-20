@@ -162,6 +162,60 @@
  * [ ] initializer_list 是否立即複製到 owned storage？
  */
 
+/*
+==============================================================================
+【面試深挖：Utility Types 與 Vocabulary Types】
+
+U1｜`pair` 與 `tuple` 何時不如自訂 struct？
+答：短暫 local 組合可用；跨 API/領域資料若 first/get<2> 無語意，應自訂命名型別並維持 invariant。
+型別名稱與欄位名是可維護性，不是「多寫幾行」浪費。
+
+U2｜`optional<T>` 是否等同 nullable pointer？
+答：optional inline 擁有一個可能不存在的 T value；pointer 涉及 identity/borrow/ownership。
+大型 T 的 optional 會放大 object 大小，且 optional<bool> 有三狀態，API 要說清楚。
+
+U3｜`value_or(expensive())` 是否 lazy？
+答：不是，function arguments 在呼叫前求值，即使 optional 有值，fallback 也先建。
+昂貴 fallback 用 explicit if、`or_else`（較新標準）或 helper lambda。
+
+U4｜variant 的 visitor 如何做到 exhaustive？
+答：`std::visit` 會對 active alternative 呼叫 visitor；overloaded lambdas 可一型一 handler。
+若放 generic catch-all，新增 alternative 可能靜默走 fallback，失去 compile-time 提醒。
+
+U5｜`any_cast` 失敗如何處理？
+答：value/reference overload 丟 bad_any_cast；pointer overload 回 nullptr。any 適合少數 plugin/
+metadata boundary，不應把所有 domain data 裝 any 後到處 runtime cast。
+
+U6｜`std::move`、`forward`、`exchange` 各做什麼？
+答：move 是 unconditional xvalue cast；forward 保留 deduced category；exchange 把 object 換成
+new value 並回舊值，常寫 move constructor/reset state。三者不是 resource manager。
+
+U7｜generic `swap` 如何支援 user type？
+答：在 generic code 中 `using std::swap; swap(a,b);`，讓 ADL 找 user overload並有 std fallback。
+型別可提供 noexcept friend swap；不要未經允許替 user-defined type 特化 std::swap。
+
+U8｜`as_const` 的用途？
+答：取得 const view 以選 const overload、防止意外修改，不做 copy。對 rvalue 的 overload 被 delete，
+避免建立立即 dangling 的 const reference helper。
+
+U9｜hash/equality 契約？
+答：若 KeyEqual(a,b) true，Hash(a)==Hash(b) 必須成立；反向不要求，collision 合法。
+hash 不等於 cryptographic hash，也不承諾跨執行/實作穩定。
+
+U10｜`initializer_list` 的 lifetime 陷阱？
+答：backing array 通常只活到完整表達式/依初始化規則延長；class 若保存 begin/end pointer，
+constructor 結束後可能 dangling。initializer_list elements 是 const，move-only type 也常受限。
+
+U11｜`bitset<N>` 的 N 為何必須 compile time？
+答：N 是 template argument，storage 固定在 object；支援 bitwise/count/test 與 string conversion。
+runtime bit count 需 dynamic representation，不能 resize bitset。
+
+U12｜`std::clamp` 結果可以保存成 const reference 嗎？
+答：若選中的參數是 temporary，回傳 const T& 會 dangling；保存 value 較安全。
+low>high 違反前置條件，且 NaN/order policy 必須由 caller 定義。
+==============================================================================
+*/
+
 #include <algorithm>
 #include <any>
 #include <bitset>

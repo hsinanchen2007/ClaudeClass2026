@@ -84,3 +84,18 @@ int main()
 // 練習：數學推導為何直接 `(rand7()-1)%10+1` 不可能產生 8/9/10。
 // 複雜度：rejection sampling 每輪 O(1)，期望輪數有限但最壞理論上無上界。
 // 生命週期：PRNG state 應由 object/fixture 長期擁有；global rand state 使測試互相干擾。
+
+/*
+【本課面試問答】
+Q1：`rand()%N` 為何可能有 modulo bias？
+A：若 `RAND_MAX+1` 不是 N 的倍數，某些餘數會對應較多輸入，因此機率不同。可用標準 distribution，
+或只接受落在最大完整倍數區間內的值再取餘數（rejection sampling）。
+
+Q2：固定 seed 是 bug 還是功能？
+A：測試與模擬需要固定 seed 才能重播；production 若需要每次不同，可由外部 entropy 建 seed，並把
+seed 記進 log 以便重現。不要在每次 draw 前用目前秒數重播種，短時間內會得到重複序列。
+
+Q3：`mt19937` 可否產生密碼、token 或 session ID？
+A：不可。它是可預測的非密碼學 PRNG，觀察足夠輸出可推回狀態。安全 token 應使用作業系統 CSPRNG
+或經審核的密碼函式庫；`random_device` 的品質也必須依平台文件確認。
+*/

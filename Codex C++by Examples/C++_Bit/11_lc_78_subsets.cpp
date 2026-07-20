@@ -98,3 +98,18 @@ int main()
 // 生命週期：result 以值擁有每個 subset；`std::move(subset)` 後只把 moved-from 物件解構，
 // 不保存原 nums 的 reference，因此 caller 修改或銷毀輸入都不會讓輸出懸空。
 // 練習：只枚舉某個 mask 的 non-empty submasks：`sub=(sub-1)&mask`。
+
+/*
+【本課面試問答】
+Q1：bitmask 枚舉 subsets 的時間與空間複雜度？
+A：共有 2^N 個 masks，每個 mask 若掃 N bits，時間 O(N*2^N)；只輸出所有元素本身也有相同量級。
+結果儲存通常 O(N*2^N)。這是指數問題，不能因 bit operations 很快就忽略輸出規模。
+
+Q2：`1 << n` 有哪些陷阱？
+A：左側 literal 1 是 signed int；n 過大可能 overflow/UB，甚至在轉成 size_t 前已出錯。應用
+`size_t{1} << n` 並先驗 `n < numeric_limits<size_t>::digits`，仍要限制實際可配置的 2^N。
+
+Q3：輸入有重複值時，mask 法會自動去重嗎？
+A：不會；它區分 positions，因此相同值可形成重複 subsets。若題目要求 unique subsets，可先排序，
+在 backtracking 同一層跳過重複值，或生成後去重，但後者浪費時間/空間。
+*/

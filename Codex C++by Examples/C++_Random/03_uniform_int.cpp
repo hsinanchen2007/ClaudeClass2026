@@ -89,3 +89,18 @@ int main()
 // 練習：統計 60,000 次骰子，檢查每面約 10,000，但不要把窄區間當永久單元測試。
 // 複雜度：單次 distribution sample 通常期望 O(1)；reservoir scan 是 O(N)、空間 O(1)。
 // 生命週期：distribution 可臨時建立，但 engine state 必須跨 draws 保留，才形成連續序列。
+
+/*
+【本課面試問答】
+Q1：`uniform_int_distribution(a,b)` 的端點是否包含？
+A：整數分布是閉區間 `[a,b]`。要抽 vector index 應使用 `[0,size-1]`，並先拒絕空容器；把上界寫成
+`size()` 會偶爾越界，這類低機率 bug 很難由少量測試抓到。
+
+Q2：為何 engine 通常以 non-const reference 傳入？
+A：每次生成都會更新 engine state；按值傳入會複製狀態，可能讓每次呼叫得到同一段序列。以 reference
+傳入也讓 ownership 清楚：fixture/service 擁有 state，演算法只推進它。
+
+Q3：相同 engine type 與 seed 是否保證所有平台產生完全相同最終樣本？
+A：標準 engine（如 `mt19937`）的序列有規格，但 distribution 將 engine bits 映射到目標分布的演算法
+可因標準庫實作不同。跨平台 bit-for-bit 重播必須固定整個演算法/版本，而不只 seed。
+*/

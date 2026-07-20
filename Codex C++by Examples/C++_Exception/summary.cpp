@@ -67,6 +67,78 @@
 //   Q: 何謂 strong guarantee？ A: 失敗看起來像操作從未發生，不等於「不會失敗」。
 // ============================================================================
 
+/*
+==============================================================================
+【面試深挖：Exceptions 與 Error Handling】
+
+E1｜C++ 沒有 finally，如何保證清理？
+答：RAII。把資源放進 destructor 不拋的 object，正常 return 與 stack unwinding 都會清理。
+scope guard 可處理不是單一資源的 rollback/commit action。
+
+E2｜為何 catch 通常寫 `const std::exception&`？
+答：避免 copy/slicing，保留 dynamic what()/type；按 value catch base 會切掉 derived。
+若要修改 exception 才去掉 const，而且例外型別通常設計成 immutable diagnostic。
+
+E3｜`throw;` 與 `throw e;` 的差別？
+答：throw; rethrow 目前例外並保留 dynamic type；throw e 建立新例外，若 e 是 base reference
+可能 slicing，stack trace/context 也不同。只能在 active handler 中使用裸 throw。
+
+E4｜constructor 拋例外時 destructor 會怎樣？
+答：最終 object 未完成，因此其 destructor 不呼叫；已完成的 bases/members 依反序自動析構。
+constructor body 中手動取得的 raw resource 若未包 RAII 會洩漏。
+
+E5｜destructor 可以拋嗎？
+答：語言可宣告 noexcept(false)，但工程上幾乎不應讓例外逃出。若 stack unwinding 期間
+destructor 又丟出未處理例外會 terminate；預設 exception specification 也常使違反直接 terminate。
+
+E6｜basic、strong、nothrow guarantee？
+答：basic：失敗後 invariant 成立且不洩漏；strong：操作像 transaction，失敗無可觀察改變；
+nothrow：承諾不拋。不是每個 API 都該強保證，要依成本與可 commit 架構選。
+
+E7｜`noexcept` 的價值與風險？
+答：成為介面契約並允許最佳化/容器選 move；若例外逃出會 terminate。只有真正能保證時標，
+或在 boundary 內 catch/轉換。noexcept(expression) 可依 member operation 條件化。
+
+E8｜例外是否「零成本」？
+答：常見 table-based ABI 讓未拋的正常路徑接近零額外指令，但 binary metadata、code size、
+throw/unwind 成本仍高；某些 target 可能用其他模型。zero-cost 不是「throw 免費」。
+
+E9｜跨 thread 如何傳遞例外？
+答：例外不會自動跨 thread；thread function 未捕獲會 terminate。用 promise/future 或
+`exception_ptr=current_exception()` 保存，再由接收 thread `rethrow_exception`。
+
+E10｜`nested_exception` 解決什麼？
+答：高層轉成 domain error 時保留低層 cause chain，而不是只拼 what 字串。
+`throw_with_nested` 與 recursive rethrow 可輸出完整 context。
+
+E11｜function-try-block 的主要用途？
+答：constructor 可捕捉 initializer list/base/member construction 的例外以記錄/轉換；
+但 handler 結束通常仍須拋，因 object 沒建好。不能在 handler 安全使用未建成 members。
+
+E12｜exceptions 與 error code 怎麼選？
+答：exception 適合無法就地處理、低頻失敗並配 RAII；expected/error code 適合預期性、
+高頻、跨 ABI 或禁例外環境。不要在同一 API 隨機混用兩種 contract。
+
+E13｜例外可穿越 C ABI、plugin 或不同 runtime 嗎？
+答：不應假設。跨語言/C boundary 必須 catch all 並轉成穩定 error representation；
+不同 compiler/runtime/flags 的 exception ABI 也可能不相容。
+
+E14｜只捕 `...` 然後忽略有何問題？
+答：吞掉 failure 會讓程式以破壞的 state 繼續。catch-all 應位於明確 boundary，
+記錄 context、清理後轉換或終止；不可當作「提高穩定性」的萬用膠帶。
+
+E15｜舊式 `throw(T1,T2)`／`throw()` exception specification 發生了什麼？
+答：dynamic exception specification 在 C++11 deprecated、C++17 移除；它曾以 runtime 檢查與
+`unexpected` 處理違規。`throw()` 自 C++17 被視為 non-throwing；現代程式用可由型別系統查詢的
+`noexcept`/`noexcept(expr)`，不能把舊教材規則不分版本直接套用。
+
+E16｜「zero-cost exception」與 SjLj/table-based unwinding 差在哪？
+答：這是 ABI/實作策略，不是 C++ 標準保證。常見 table-based 模型讓正常路徑幾乎不執行額外
+檢查，但增加 metadata/code size，throw 時查表與 unwind 很昂貴；SjLj 類模型維護跳轉狀態，正常
+路徑也可能有成本。精確說法是「某些 ABI 不丟時成本很低」，而非 exception 真正零成本。
+==============================================================================
+*/
+
 #include <cassert>
 #include <cstddef>
 #include <iostream>

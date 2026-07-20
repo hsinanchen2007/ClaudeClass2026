@@ -172,6 +172,60 @@
  * - test_regex_contracts：整串/局部匹配、capture ownership 與 replace。
  */
 
+/*
+==============================================================================
+【面試深挖：std::string 與字串處理】
+
+S1｜`std::string` 與 `std::string_view` 的核心差別？
+答：string owns storage；string_view 只是 pointer+length 的 non-owning view。view 複製便宜，
+但來源被銷毀、reallocate 或修改使位址失效後就 dangling。API 用 view 表示「借用、不保存」。
+
+S2｜`string_view sv = std::string("abc")` 為何危險？
+答：temporary string 在該完整表達式結束即銷毀，sv 不延長 lifetime。更隱蔽的情況是回傳
+local string 的 view、把 view 存進長壽物件，或原 string append 後 reallocate。
+
+S3｜SSO 是標準保證嗎？
+答：不是。Small String Optimization 的容量、layout、是否使用都屬實作；只能說短字串
+通常省去額外 allocation。字元在 object 內，不代表一定在 stack，object 也可能位於 heap。
+
+S4｜`size()` 是字元數嗎？
+答：是 CharT code units 數；對 UTF-8 string 是 bytes，不是 Unicode code points 或 grapheme
+clusters。substring index 也按 bytes，任意切割可能把多位元組字元切壞。
+
+S5｜`c_str()` / `data()` pointer 可保存多久？
+答：會造成 reallocation 或規格指定 invalidation 的非 const operation 後不可沿用。
+C++17 起 non-const string::data 回可寫 buffer，但不可越過 size，也不可破壞終止符契約。
+
+S6｜`reserve` 與 `resize` 對 string 的差別？
+答：reserve 改 capacity、不增加有效字元；resize 改 size 並建立/移除字元。先 reserve 後直接
+寫 buffer[size] 仍越界。C++23 resize_and_overwrite 才提供受契約控制的直接填充模式。
+
+S7｜`find` 回傳 `npos` 有什麼 unsigned 陷阱？
+答：npos 是 size_type 的最大值。應比較 `pos != string::npos`，不要轉 int，也不要先做
+`pos+1`；npos+1 會 unsigned wrap 成 0，可能把「沒找到」偽裝成開頭。
+
+S8｜數字轉字串/解析為何常推薦 `to_chars/from_chars`？
+答：它們不依 locale、通常不配置、用 error code 與 pointer 表示解析進度，適合 hot path。
+`stoi` 建立 string/丟例外且受 base/locale 規則影響；stringstream 彈性大但較重。
+
+S9｜`std::string` 能含 NUL 嗎？
+答：能，size 明確保存長度；但傳給只看 C string 的 API 會在第一個 NUL 截斷。
+建構 `std::string("a\0b")` 只取到 a，需明確 length 或 `"a\0b"s`。
+
+S10｜`u8"..." ` 在 C++17 與 C++20 型別相同嗎？
+答：不同。C++17 是 const char array；C++20 引入獨立 char8_t，成為 const char8_t array，
+對應 u8string。舊 API 接 const char* 的程式升級 C++20 可能需要明確 encoding boundary。
+
+S11｜regex 是否適合所有字串驗證？
+答：regex 表達力高但 compile/match 成本、回溯風險與 dialect 差異都要考慮；固定格式 parser、
+from_chars 或手寫 state machine 常更可控。不要在迴圈內反覆建構同一 regex。
+
+S12｜moved-from string 一定是 empty 嗎？
+答：標準只保證 valid but unspecified，除非特定 overload 有更強 postcondition。可以 clear、
+assign、destroy，但不能把 empty 當可攜契約；SSO 與 allocator 也會影響實作。
+==============================================================================
+*/
+
 #include <algorithm>
 #include <array>
 #include <cassert>

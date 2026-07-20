@@ -20,6 +20,40 @@
  * 沒失效，但所指位置的值改變。自訂 comparator/predicate capture 必須活到呼叫結束。
  */
 
+/*
+==============================================================================
+【面試深挖：Permutation 與 Lexicographical Order】
+
+A1｜`next_permutation` 回 false 代表什麼？
+答：目前序列已是最大 lexicographical permutation；函式會把它重排成最小順序並回 false。
+因此 do/while 列舉時應先排序，否則只會列出從目前排列到最大排列的後綴。
+
+A2｜有重複元素時會產生重複排列嗎？
+答：若起始已排序且 comparator 一致，next_permutation 依值的 lexicographical order
+只走不同排列；總數是 n! / 乘上各重複次數階乘。
+
+A3｜next_permutation 的核心步驟？
+答：從右找第一個上升 pivot，找右側最小但大於 pivot 的元素交換，再反轉 suffix。
+若找不到 pivot，整段 reverse 回最小排列。時間 O(n)，額外空間 O(1)。
+
+A4｜為何 permutation 題最先要談 factorial explosion？
+答：即使每次生成 O(n)，排列數 n! 很快不可行。面試遇到 n=20，通常應找 DP、剪枝、
+combinatorics 或只求第 k 個排列，而不是真的列舉。
+
+A5｜`is_permutation` 會排序輸入嗎？
+答：不會修改 range；標準演算法依相等關係計數/比對，最壞可能二次。若型別可 hash，
+頻率表常可 average O(n) 但需額外空間與正確 hash/equality 契約。
+
+A6｜lexicographical compare 怎麼理解？
+答：找第一個不同位置，由該元素決定；若共同前綴全相同，較短者較小。這正是字典序，
+不是比較長度、元素總和或記憶體 bytes。
+
+A7｜自訂 comparator 為何必須和起始排序相同？
+答：permutation 的「下一個」完全由 ordering 定義。先用 ascending 排、再用 descending
+comparator 呼叫，前置狀態與序列方向不一致，列舉結果不具預期意義。
+==============================================================================
+*/
+
 #include <algorithm>
 #include <array>
 #include <cassert>

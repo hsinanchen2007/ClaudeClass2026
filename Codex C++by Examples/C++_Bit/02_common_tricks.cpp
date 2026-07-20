@@ -87,3 +87,18 @@ int main()
 
 // 練習：用 while(lowbits) 枚舉 mask 中每個 set bit 的 index。
 // 複雜度與生命週期：單一 trick 為 O(1)，枚舉 set bits 為 O(K)；全程處理值副本、不保存借用。
+
+/*
+【本課面試問答】
+Q1：`n & (n-1)` 的兩個常見用途與前提？
+A：它清除最低 set bit，可 O(popcount) 枚舉；對 `n>0`，結果為 0 表示 power of two。若忘記排除
+n==0，power-of-two 判斷會誤回 true。位元技巧優先使用 unsigned type。
+
+Q2：signed integer 的 shift 為何危險？
+A：負值右移與 signed representation 涉及版本/實作語意，左移若不可表示可能 UB；shift count 負數或
+大於等於型別位數也不合法。位元遮罩使用固定寬 unsigned，並在 shift 前驗範圍。
+
+Q3：`align_up(value,a)=(value+a-1)&~(a-1)` 何時正確？
+A：a 必須為非零 power of two，而且 `value+a-1` 不得 overflow。一般 alignment 或外部輸入不能直接
+套公式；production API 要驗 preconditions，或使用 checked arithmetic/標準配置工具。
+*/

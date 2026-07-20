@@ -101,3 +101,19 @@ int main()
 // 練習：加入 4-byte magic、1-byte version 與 payload length 上限。
 // 複雜度：encode/decode O(payload bytes)；固定寬 header 是 O(1)，但仍要防惡意 length 配置。
 // 生命週期：buffer 按值擁有 bytes；不要把 reinterpret pointer 保存到 vector reallocation 之後。
+
+/*
+【本課面試問答】
+Q1：以 `ios::binary` 開檔，就能直接 `write(reinterpret_cast<char*>(&obj), sizeof obj)` 嗎？
+A：不能據此得到可攜序列化。binary mode 主要關閉文字換行等轉換；object representation 仍可能含
+padding、endianness、不同型別寬度、pointer/vptr，讀回非 trivially-copyable 型別更不合法。協定應逐欄
+定義寬度、byte order、版本與長度上限。
+
+Q2：`read(buf,n)` 後怎麼處理最後不足 n bytes 的區塊？
+A：`read` 會設 fail/eof，但 `gcount()` 仍告訴本次實際讀到多少。串流複製可處理這些 bytes；固定長度
+record 則必須把不足視為 truncated error，不能用補零後的 buffer 冒充完整資料。
+
+Q3：binary parser 最重要的安全檢查是什麼？
+A：先驗 magic/version，再對外部 length 做上限與算術 overflow 檢查，確認剩餘 bytes 足夠後才配置。
+錯誤要攜帶 offset/context；不要信任檔案內的 size 直接配置數 GB 記憶體。
+*/

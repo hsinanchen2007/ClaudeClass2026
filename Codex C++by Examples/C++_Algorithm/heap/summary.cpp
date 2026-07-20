@@ -22,6 +22,44 @@
  * - 需要任意元素刪除/更新：標準 heap 無 handle，可能需 indexed heap 或 set。
  */
 
+/*
+==============================================================================
+【面試深挖：Heap 與 Priority Queue】
+
+A1｜為何 heap 可用連續陣列而不需要 child pointer？
+答：binary heap 是 complete binary tree，level-order 中間沒有洞。0-based index 的
+left=2i+1、right=2i+2、parent=(i-1)/2；因此省指標且 locality 好。
+
+A2｜為何 `make_heap` 是 O(n)，不是 n 次插入的 O(n log n)？
+答：bottom-up heapify 從最後一個內部節點向上 sift-down。高度高的節點很少；
+各高度工作量加權後是線性。若逐項 push_heap，才是 O(n log n)。
+
+A3｜`pop_heap` 做了什麼，為何容器大小沒變？
+答：它交換 root 與最後元素，再修復 [first,last-1) 的 heap；被取出的最大值留在尾端。
+呼叫者仍需 `pop_back` 才真正刪除。只呼叫 pop_heap 會讓人誤以為元素已消失。
+
+A4｜`priority_queue<T, ..., Compare>` 的 Compare 為何看起來「反向」？
+答：top 是依 Compare 排序後最後的元素；預設 less 形成 max-heap，greater 形成 min-heap。
+不要把 comparator 解讀成「誰優先」，而要解讀成 strict weak ordering。
+
+A5｜heap 與 ordered set 怎麼選？
+答：只反覆取極值且 push/pop 時用 heap，常數與 locality 通常更好；需要任意 key 查找、
+erase、lower_bound 或有序遍歷時用 tree。priority_queue 不提供任意元素 iterator/erase。
+
+A6｜Dijkstra 為何常把同一節點多次放進 priority_queue？
+答：標準 priority_queue 沒有 decrease-key。常見作法是推入新版距離，pop 時若不是目前
+最短值就丟棄，稱 lazy deletion。正確性靠距離檢查，不靠 queue 內沒有舊項。
+
+A7｜heap 是 stable 嗎？相同 priority 如何固定先後？
+答：標準 heap 不保證穩定。把 monotonically increasing sequence number 加進 key，
+comparator 先比 priority、再比 sequence，才可明確實作 FIFO tie-break。
+
+A8｜heap algorithms 要求哪種 iterator？
+答：需要 LegacyRandomAccessIterator，因為要用 index distance 跳父子。這也是 list
+不能直接套 make_heap 的原因；「可以線性走到孩子」不代表滿足演算法契約。
+==============================================================================
+*/
+
 #include <algorithm>
 #include <cassert>
 #include <cstddef>

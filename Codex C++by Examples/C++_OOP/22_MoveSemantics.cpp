@@ -105,3 +105,18 @@ int main()
 // 練習：在 Message 的 copy/move constructors 加 counter，觀察 vector reserve 的差異。
 // 複雜度：vector/string move 通常 O(1) 接手 buffer，但 allocator 不相容等情況可能線性。
 // 生命週期：moved-from object 仍存活且可解構/指定，只保證 valid，不保證原值或一定 empty。
+
+/*
+【本課面試問答】
+Q1：`std::move` 會搬資料嗎？
+A：不會；它本質是把 expression cast 成可供 move overload 選擇的 xvalue。真正做 copy、交換 pointer
+或線性搬移的是被選到的 constructor/assignment；若型別沒有 move operation，仍可能 copy。
+
+Q2：為何 move constructor 常標 `noexcept`？
+A：`vector` reallocation 需要在失敗時保住原元素。若 move 可能丟例外而 copy 可用，實作常選 copy
+以維持 strong guarantee；`noexcept` 可讓它安全選 move。但這不是「任何情況都一定 move」的保證。
+
+Q3：moved-from object 可做什麼？
+A：除非型別另有更強契約，標準庫物件通常只保證 valid but unspecified：可解構、重新指定，也可呼叫
+不依賴特定值的操作。不要假設一定 empty/zero；若程式需要該狀態，就自行明訂並測試類別契約。
+*/

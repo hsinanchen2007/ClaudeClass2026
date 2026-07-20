@@ -59,6 +59,52 @@
 //   Q: mt19937 可否產生密碼？ A: 不可；state 可由足夠輸出推回，且無前向安全性。
 // ============================================================================
 
+/*
+==============================================================================
+【面試深挖：Random】
+
+R1｜C++ `<random>` 為何把 engine 與 distribution 分開？
+答：engine 產生均勻 pseudo-random bits；distribution 把 bits 映射成目標機率分布。
+同一 engine 可搭多種 distribution，也能固定 engine state 做 deterministic test。
+
+R2｜為何 `rand() % n` 有 modulo bias？
+答：若 RAND_MAX+1 不是 n 的倍數，部分餘數有更多來源值。uniform_int_distribution 使用
+適當 rejection/mapping 產生指定閉區間，且避免 rand 的 global state/低品質限制。
+
+R3｜固定 seed 能否保證跨平台完全相同結果？
+答：標準 engine（如 mt19937）的狀態轉移有規格，同 engine/seed 應給相同 engine sequence；
+但 distribution 的映射演算法可因實作不同而不同。要跨實作重現需保存結果或自定映射。
+
+R4｜`random_device` 一定是真亂數嗎？
+答：不保證；實作可用 deterministic engine，`entropy()` 也只是能力資訊。
+它常用來 seed PRNG，不應因名稱就當密碼學 CSPRNG；安全 token 應用 OS/成熟 crypto API。
+
+R5｜`mt19937` 適合密碼嗎？
+答：不適合。狀態可由足夠輸出推回，設計目標是統計模擬與速度，不是不可預測性。
+遊戲、Monte Carlo 可用；金鑰、session token、nonce 要 CSPRNG。
+
+R6｜如何 seed 大狀態 engine？
+答：單一 32-bit seed 只覆蓋巨大 state space 的小部分；可由 random_device 多個值組成
+seed_seq，或由應用提供完整可記錄 seed。可重現實驗必須把 seed 寫進結果。
+
+R7｜多執行緒共享一個 engine 安全嗎？
+答：一般 engine 有 mutable state，無同步共享會 data race。可每 thread 一個 engine，
+但 seed/stream 分割要避免意外相同；需要全域可重現時要設計 deterministic work partition。
+
+R8｜`normal_distribution` 為何保存 state？
+答：實作可能一次產兩個樣本並快取一個，因此 distribution object 本身也有狀態；
+只序列化 engine 不一定重現下一個輸出，必要時連 distribution state 一起保存/reset。
+
+R9｜weighted random pick 如何做？
+答：靜態權重可建 prefix sums，用 uniform 值 + upper_bound，查詢 O(log n)；標準
+discrete_distribution 直接表達離散權重。動態高頻更新可考慮 Fenwick/segment tree。
+
+R10｜shuffle 要求什麼？
+答：接受 UniformRandomBitGenerator，執行 Fisher-Yates 類均勻排列；不要用 sort by random key，
+那會有 collision/bias 且 O(n log n)。測試應注入 seedable engine。
+==============================================================================
+*/
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>

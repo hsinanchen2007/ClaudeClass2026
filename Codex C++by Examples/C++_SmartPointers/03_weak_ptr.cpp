@@ -132,3 +132,19 @@ int main()
 // 練習：移除 self_ workaround，使用下一課的 enable_shared_from_this。
 // 複雜度：lock/expired/reset 通常 O(1)，但 lock 涉及同步的 control-block 狀態轉換。
 // 生命週期：weak_ptr 本身可比 pointee 活更久；只有 lock 成功得到的 shared_ptr 才延長存活。
+
+/*
+【本課面試問答】
+Q1：為何不要先 `expired()` 再使用，而應直接 `lock()`？
+A：兩次呼叫間最後一個 strong owner 可能消失；`expired()==false` 只是瞬間觀察。`lock()` 以單一
+同步動作嘗試取得 strong owner，成功後該物件至少活到所得 `shared_ptr` 離開 scope。
+
+Q2：物件銷毀後，為何 `weak_ptr` 還能存在？
+A：strong count 歸零時 managed object 被銷毀，但 control block 必須保留 weak count 與 expired
+狀態；等最後一個 weak owner 也消失才回收 control block。`weak_ptr` 不延長 pointee 生命。
+
+Q3：`weak_ptr` 只用來打破 cycle 嗎？
+A：不是。它也適合 cache、observer、parent back-reference 等「能用就用、消失也合法」的非擁有
+關係。若業務規則要求 dependency 必須存在，應保存 strong owner 或重新設計 ownership，而非每次
+`lock()` 失敗後默默略過。
+*/

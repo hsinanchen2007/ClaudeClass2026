@@ -66,6 +66,60 @@
 //   Q: 如何安全列出目錄？ A: 明訂 symlink/permission policy、收 error、需要穩定輸出就 sort。
 // ============================================================================
 
+/*
+==============================================================================
+【面試深挖：std::filesystem】
+
+FS1｜`path / child` 與字串 `+=` 的差別？
+答：operator/ 依 path 語意插入 separator/處理 absolute component；concat/+= 只是拼接
+native path 字元。組目錄層級應用 /，組副檔名片段才可能 concat。
+
+FS2｜先 `exists(path)` 再 open 是否安全？
+答：有 TOCTOU race，兩步間檔案可被替換/刪除，安全邊界甚至可能遭 symlink attack。
+真正操作並處理結果；涉及安全時用 OS-level descriptor-relative API 與適當 flags。
+
+FS3｜exception overload 與 `error_code` overload 怎麼選？
+答：例外適合失敗即中止目前高階操作；error_code 適合掃目錄時逐項降級、destructor/noexcept
+路徑。不能忽略 ec；每次呼叫後依該 API 契約檢查，避免沿用舊錯誤。
+
+FS4｜`status` 與 `symlink_status` 差在哪？
+答：status 跟隨 symlink 看 target；symlink_status 看 link 本身。做刪除、權限或 sandbox
+判斷時選錯會對錯誤物件操作，且檢查後仍有 race。
+
+FS5｜`canonical` 與 `weakly_canonical`？
+答：canonical 通常要求整條路徑存在並消除 dot/symlink；weakly_canonical 可處理不存在的
+尾段。lexically_normal 只做文字正規化，不查 filesystem，也不能當安全 canonicalization。
+
+FS6｜directory_iterator 順序有保證嗎？
+答：沒有。測試或輸出需要 deterministic order 時先收集 path 再明確排序。
+iteration 期間目錄發生變更，是否觀察到新舊項目也不可依賴。
+
+FS7｜recursive_directory_iterator 遇到權限或 symlink cycle？
+答：可用 directory_options::skip_permission_denied；預設不跟 directory symlink，
+若啟用 follow 必須防 cycle。錯誤策略要決定「中止」或「報告後繼續」。
+
+FS8｜`rename` 是否總是原子且可跨檔案系統？
+答：跨 filesystem 常失敗；同 filesystem 的 atomicity 與 replace semantics 仍受平台影響。
+可靠發布通常在同目錄寫 temp、fsync 必要資料、再 rename，並處理 Windows/POSIX 差異。
+
+FS9｜`remove_all` 的最大風險？
+答：遞迴刪除且回刪除數；路徑算錯會放大損害。要驗證 root/marker、拒絕空或根路徑、
+處理 symlink policy，並先 dry-run 顯示 resolved target。
+
+FS10｜`space_info.free` 與 `available` 為何不同？
+答：free 是檔案系統全部空間，available 是一般呼叫者可用空間，可能扣除保留 blocks/quota。
+應用判斷「我能否寫入」應看 available，並容許查詢失敗回特殊值。
+
+FS11｜C++20 對 UTF-8 path 有何 breaking change？
+答：char8_t 導致 u8string 回傳型別與舊 const char API 不再直接相容，u8path 也進入不同
+版本狀態。path native encoding 受平台影響；跨平台程式要把 encoding conversion 當明確邊界。
+
+FS12｜`file_size` 後配置同等 buffer 安全嗎？
+答：檔案可在兩步間改變，且特殊檔案可能不支援 size。讀取 loop 必須以實際 read result
+為準並設上限，不能把 metadata snapshot 當 immutable contract。
+==============================================================================
+*/
+
 #include <algorithm>
 #include <atomic>
 #include <cassert>

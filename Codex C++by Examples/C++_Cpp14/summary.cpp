@@ -86,6 +86,48 @@
  * 3. 故意把 practical_scale 回傳 `(value)` 的 reference，解釋為何不能這樣做。
  */
 
+/*
+==============================================================================
+【面試深挖：C++14】
+
+M14-1｜generic lambda 本質？
+答：參數寫 auto，closure 的 operator() 成為 function template；每種 argument type 各自
+instantiation。它不是 type erasure，也不等同把所有型別裝進同一 runtime function。
+
+M14-2｜init-capture 解決什麼？
+答：可在 closure 內建立新 member，例如 `[p=std::move(ptr)]` 捕獲 move-only ownership，
+或 `[count=0]` 建 state。捕獲名稱的 initializer 在外部 scope 評估。
+
+M14-3｜`decltype(auto)` 為何危險也有用？
+答：它完整套用 decltype，能保留 reference/value category，適合 forwarding wrapper；
+但 `return (local);` 會推得 reference 並 dangling。plain auto return 通常去 reference。
+
+M14-4｜auto return type deduction 的限制？
+答：所有非 discarded return statements 必須推得相容同一型別；definition 通常要可見才能
+呼叫端得知 return type。recursive call 在 deduction 前也可能無法使用。
+
+M14-5｜C++14 constexpr 放寬了什麼？
+答：允許較一般 function body，包括 local variables、loops、branches 與修改局部 state，
+使 compile-time algorithm 更像普通 C++；仍須在 constant evaluation 路徑遵守限制。
+
+M14-6｜`make_unique` 為何到 C++14 才加入？
+答：補齊 make_shared 對應的 exception-safe、少寫 raw new 的 factory；對 array 也有適當
+overload。它不支援 custom deleter 參數，需直接建 unique_ptr。
+
+M14-7｜variable template 的用途？
+答：讓一族值依 template arguments 定義，例如 `pi_v<T>` 或 type trait 的 `_v` helper；
+每個 specialization 仍受 linkage/ODR 規則，不是 preprocessor constant。
+
+M14-8｜heterogeneous lookup 為何算 C++14 實務亮點？
+答：ordered associative containers 使用 transparent comparator（如 less<>）後，可用
+string_view/char pointer 查 string key，不先建 temporary string；比較規則必須跨型別一致。
+
+M14-9｜digit separator 與 binary literal 有 runtime 成本嗎？
+答：沒有，只是 token syntax；separator 不可任意放在小數點、prefix 等位置。
+面試價值在版本辨識與可讀性，不應誇大成效能特性。
+==============================================================================
+*/
+
 #include <cassert>
 #include <cstdint>
 #include <iostream>

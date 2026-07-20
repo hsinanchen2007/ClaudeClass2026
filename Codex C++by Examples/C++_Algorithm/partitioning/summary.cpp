@@ -22,6 +22,44 @@
  * 兩個目的地不可不安全重疊，back_inserter 所屬容器也必須活到操作完成。
  */
 
+/*
+==============================================================================
+【面試深挖：Partitioning】
+
+A1｜`partition` 與 `stable_partition` 的差別？
+答：兩者都把 predicate=true 放前面；stable 另保留各組內原順序，通常需要額外記憶體
+或更多操作。若順序是 API observable behavior，就不能只因較快換成不穩定版本。
+
+A2｜`partition_point` 的前置條件？
+答：range 必須已依同一 predicate partitioned，否則結果無保證。它用二分找 true/false
+邊界；先呼叫 is_partitioned 可驗證，但那會額外 O(n)，不一定適合 hot path。
+
+A3｜partition 與 sort 的差別？
+答：partition 只保證兩群，不保證群內順序或完整排序，通常 O(n)；sort 建立全序
+O(n log n)。只需要把有效/無效、低/高風險分組時，完整排序是過度工作。
+
+A4｜三色旗問題如何與標準演算法連結？
+答：可先 partition < pivot，再在右段 partition == pivot；或一次 Dutch National Flag。
+前者組合簡潔，後者單 pass 但 invariant 較難寫，面試要能說明 [low,mid,high) 各區語意。
+
+A5｜quicksort 的 partition 為何影響 worst case？
+答：pivot 極端不平衡會形成 O(n²)；random/median 策略降低常見風險，但不一定消除理論
+worst case。std::sort 有複雜度保證，具體是否 introsort 是實作策略。
+
+A6｜`partition_copy` 的輸出有什麼責任？
+答：呼叫者提供兩個可寫 output ranges，容量必須足夠且不可造成不允許的重疊。
+back_inserter 可自動增長 container，但會有 allocation；預留容量可避免反覆擴張。
+
+A7｜predicate 可依賴會改變的外部狀態嗎？
+答：技術上某些 sequential call 可執行，但會破壞「同一元素分類一致」的推理；
+parallel policy 更可能 data race。分類規則應是對輸入的穩定純判斷。
+
+A8｜如何驗證 partition 結果而不假設群內順序？
+答：檢查 boundary 前皆 true、後皆 false，或用 is_partitioned；不要拿預期完整序列比較，
+因為 non-stable partition 允許多種合法排列。
+==============================================================================
+*/
+
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
