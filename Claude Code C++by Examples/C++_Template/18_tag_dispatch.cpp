@@ -323,3 +323,17 @@ int main() {
 //  【下一篇】
 //    19_if_constexpr.cpp ── 編譯期 if，現代 metaprogramming 的清涼劑。
 // ============================================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 18_tag_dispatch.cpp -o 18_tag_dispatch
+
+// === 預期輸出 ===
+// [int_tag]   value = 42
+// [float_tag] value = 3.14
+// vector advance 3: 4
+// list advance 2: 30
+// removed_dup len = 3, first 3 elems: 1 2 3
+// N=8 → linear scan
+// N=100 → hash table
+// move_zeroes: 1 3 12 0 0
+// [by value] sizeof=4
+// [by ref]   sizeof=32

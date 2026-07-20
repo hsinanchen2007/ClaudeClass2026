@@ -216,3 +216,20 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 05_generic_lambda.cpp -o 05_generic_lambda
+
+// === 預期輸出 ===
+// [Demo1] add(1, 2)         = 3
+// [Demo1] add(1.5, 2.5)     = 4
+// [Demo1] add(string, char*)= hello, world
+// [Demo2] 42 3.14 strs
+// [Demo3] sameTypeAdd(2,3) = 5
+// [LC1108] defang = 192[.]168[.]0[.]1
+// [map] alice=90
+// [map] bob=85
+// [LC1512] int  goodPairs = 4
+// [LC1512] str  goodPairs = 3
+// [maxOf] int    = 7
+// [maxOf] double = 2.2
+// [maxOf] string = cherry

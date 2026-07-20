@@ -293,3 +293,32 @@ int main() {
  *   this 指標 — 物件「指向自己」的方法，
  *   並用 Leetcode 1768. Merge Strings Alternately 練習。
  *=============================================================================*/
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 5_Destructor.cpp -o 5_Destructor
+
+// === 預期輸出 ===
+// ===== 範例 1+3：解構順序 =====
+// --- 進入 demoOrder() ---
+// [Loud] A 出生
+// [Loud] B 出生
+// [Loud] C 出生
+// --- 即將離開 demoOrder() ---
+// [Loud] C 死亡
+// [Loud] B 死亡
+// [Loud] A 死亡
+// ===== 範例 2：LogWriter 自動關檔 =====
+// [LogWriter] 開啟 demo_log.txt
+// [LogWriter] 自動關閉 demo_log.txt
+// 離開區塊，檔案已自動關閉，請看到上面 [LogWriter] 自動關閉 訊息。
+// ===== 範例 4：用 new/delete 控制生命週期 =====
+// [Loud] Heap-Object 出生
+// (p 還沒 delete，所以還沒解構)
+// [Loud] Heap-Object 死亡
+// ===== 範例 5：ParkingLot (LC1603) 解構時印報表 =====
+// [ParkingLot] 開幕，車位 b=1 m=1 s=2
+// [ParkingLot] 打烊，總共停入 3 輛車，剩餘: b=0 m=0 s=1
+// ===== 範例 6：DBConnection 自動斷線 =====
+// [DB] 已連線到 db.example.com:5432
+// [DB] 執行: SELECT * FROM users WHERE id=1
+// [DB] 自動斷線: db.example.com:5432
+// ===== main 即將結束 =====

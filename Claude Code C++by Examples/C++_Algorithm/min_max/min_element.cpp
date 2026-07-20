@@ -254,7 +254,9 @@ void practical_cheapest_route() {
               << " (" << it->price << ")\n";
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra min_element.cpp -o min_element
+
+// === 預期輸出 ===
 // min = 1 at index 1
 // min by |.| = -1
 // lowest score: B(65)

@@ -207,3 +207,18 @@ int main() {
     demo_practical_safe_size();
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 03_exists_and_status.cpp -o 03_exists_and_status
+
+// === 預期輸出 ===
+// [Demo1] exists           = true
+// [Demo1] is_regular_file  = true
+// [Demo1] is_directory     = false
+// [Demo1] file_size        = 34
+// [Demo2] file_size failed: No such file or directory (got 18446744073709551615)
+// [Demo3] type = regular
+// [Demo3] perms = rw-rw-r--
+// [Practical] safe_file_size
+//   "tmp_safe_size.bin" size = 10 bytes
+//   "not_existing.bin" size = -1 (失敗)
+//   "/tmp" size = -1 (失敗)

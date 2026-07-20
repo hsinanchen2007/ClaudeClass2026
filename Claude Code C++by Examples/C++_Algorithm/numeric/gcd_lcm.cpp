@@ -308,7 +308,9 @@ void practical_meeting_repeat_period() {
     std::cout << "joint period: " << period << " minutes\n";
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra gcd_lcm.cpp -o gcd_lcm
+
+// === 預期輸出 ===
 // gcd(12, 18) = 6
 // gcd(17, 31) = 1
 // lcm(4, 6)   = 12

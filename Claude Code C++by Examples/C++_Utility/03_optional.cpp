@@ -330,3 +330,28 @@ int main() {
     g++ -std=c++17 -Wall -Wextra 03_optional.cpp -o 03_optional && ./03_optional
 ================================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 03_optional.cpp -o 03_optional
+
+// === 預期輸出 (節錄) ===
+// [demo_basic]
+//   a.has_value()=false
+//   b.has_value()=true
+//   a.value_or(-1)=-1
+//   b.value_or(-1)=42
+//   b is set, *b=42
+// [demo_reset]
+//   before reset: Alice
+//   after  reset: (empty)
+// [demo_optional_helpers]
+//   make_optional<string>=*a="hello"
+//   make_optional<vector>: size=3, b->[0]=7
+//   caught bad_optional_access: bad optional access
+//   after emplace: *s="*****"
+//   member swap: *x=2, *y=1
+//   std::swap : *x=1, *y=2
+//   nullopt < 0? true, n == nullopt? true, v == 0? true
+// [demo_leetcode_binary_search]
+//   found 9 at index 4
+//   2 not found
+// …（後略，完整輸出共 30 行）

@@ -252,7 +252,9 @@ void practical_export_sorted_report() {
     std::cout << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra sort_heap.cpp -o sort_heap
+
+// === 預期輸出 ===
 // heapsort asc: 1 1 2 3 4 5 6 9
 // heapsort desc: 9 6 5 4 3 2 1 1
 // LC912 sorted: 1 2 3 4 5 6 7 8 9

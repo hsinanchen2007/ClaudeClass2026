@@ -201,3 +201,30 @@ int main() {
     return 0;
 }
 
+// 編譯: g++ -std=c++20 -Wall -Wextra summary.cpp -o summary
+
+// === 預期輸出 ===
+//
+// [demo_static_cast]
+//   double->int: 3.14 -> 3
+//   upcast ok: pb=0x7ffdfa6ea230
+//   void* roundtrip: *px=42
+//
+// [demo_const_cast]
+//   modified a via const_cast: a=99
+//   NOTE: 若你寫 *qc = 1; 會是 UB（因為 c 真的是 const）
+//
+// [demo_dynamic_cast]
+//   woof!
+//   a2 is not Dog (nullptr)
+//   ref.kind=Dog
+//
+// [demo_reinterpret_cast]
+//   addr=0x7ffdfa6ea254, *px=123
+//   NOTE: reinterpret_cast 不是『想轉就轉』，錯用很容易 UB。
+//
+// [demo_bit_cast_note]
+//   C++20: std::bit_cast<T>(u) 會做位元複製，型別必須 trivially copyable。
+//
+// [done]
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

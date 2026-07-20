@@ -122,3 +122,18 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 05_digit_separator.cpp -o 05_digit_separator
+
+// === 預期輸出 ===
+// [Demo] pop     = 8100000000
+// [Demo] million = 1000000
+// [Demo] mask    = 0xffff0000
+// [Demo] binary  = 42480
+// [Demo] reg     = 50010
+// [Demo2] TIMEOUT_MS    = 30000
+// [Demo2] MAX_FILE_SIZE = 100000000 bytes
+// [Demo2] USERS_LIMIT   = 1000000
+// [Demo2] PI            = 3.14159
+// [Demo2] LIGHT_SPEED   = 2.99792e+08 m/s
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

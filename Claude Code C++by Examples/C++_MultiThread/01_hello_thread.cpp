@@ -366,3 +366,29 @@ int main()
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 01_hello_thread.cpp -o 01_hello_thread
+
+// === 預期輸出 (節錄) ===
+// [main] program starting
+// [main] step 0
+//   [worker 1] step 0
+// [main] step 1
+//   [worker 1] step 1
+//   [worker 1] step 2
+// [main] step 2
+//   [worker 1] step 3
+// [main] step 3
+// [main] step 4
+//   [worker 1] step 4
+// [main] worker has finished
+//
+// [main] heartbeat: sleep_for vs sleep_until
+//   [for  ] tick 0 at +8 ms
+//   [for  ] tick 1 at +45 ms
+//   [for  ] tick 2 at +82 ms
+//   [until] tick 0 at +8 ms
+//   [until] tick 1 at +37 ms
+//   [until] tick 2 at +67 ms
+// …（後略，完整輸出共 27 行）
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

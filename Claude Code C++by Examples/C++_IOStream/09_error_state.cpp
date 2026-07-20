@@ -237,3 +237,22 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 09_error_state.cpp -o 09_error_state
+
+// === 預期輸出 ===
+// [Demo1] start
+//   [init] good=1 eof=0 fail=0 bad=0
+//   [after read 42] good=1 eof=0 fail=0 bad=0
+//   [after read hello (fail)] good=0 eof=0 fail=1 bad=0
+//   [after clear+read string] good=0 eof=1 fail=0 bad=0
+//   [after read past end] good=0 eof=1 fail=1 bad=0
+// [Demo2] first = 100
+// [Demo2] skipped: foo
+// [Demo2] last = 200
+// [Demo3] caught: basic_ios::clear: iostream error
+//   retry: invalid input, please try again
+//   retry: invalid input, please try again
+//   retry: invalid input, please try again
+// [validate] finally got = 42
+// [diagnose] read finished cleanly, sum=60

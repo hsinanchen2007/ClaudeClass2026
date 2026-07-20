@@ -324,3 +324,20 @@ int main() {
 //  【下一篇】
 //    25_template_compilation_model.cpp ── 為什麼 template 要放 header？
 // ============================================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 24_type_erasure.cpp -o 24_type_erasure
+
+// === 預期輸出 ===
+// f1(5) = 25
+// f2(5) = 6
+// f3(5) = 15
+// shuffled: 5 1 3 4 2
+// reset:    1 2 3 4 5
+// [A] hello
+// [B] hello
+// [A] world
+// [B] world
+// maximum_wealth(sum)   = 10 (expect 10)
+// sqcache(5)  = 25 calls=1
+// sqcache(5)  = 25 calls=1 (hit)
+// sqcache(10) = 100 calls=2

@@ -202,3 +202,14 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 09_constexpr.cpp -o 09_constexpr
+
+// === 預期輸出 ===
+// [Demo1] square(7)=49 factorial(10)=3628800
+// [Demo2] v.normSq() = 25
+// [Demo2] arr size = 16
+// [LC509] fib(10) at compile time = 55
+// [LC70] climbStairs(5)  = 8
+// [LC70] climbStairs(10) = 89
+// [Demo4] 1 GB = 1073741824 bytes (compile-time)

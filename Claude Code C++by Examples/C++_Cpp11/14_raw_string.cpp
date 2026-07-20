@@ -158,3 +158,25 @@ def f(x):
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 14_raw_string.cpp -o 14_raw_string
+
+// === 預期輸出 ===
+// [Demo1] old: (\d+)\s*:\s*(\d+)
+// [Demo1] raw: (\d+)\s*:\s*(\d+)
+// [Demo1] path: C:\Users\hsinan\code\file.txt
+// [Demo2] SQL:
+// SELECT id, name
+//   FROM users
+//  WHERE active = 1
+//    AND age > 18;
+// [Demo3] python:
+// def f(x):
+//     return (x + 1) * 2     # 這行有 ) 不會跟 R"( 衝突
+// [Demo4] config_json:{
+//   "name": "demo",
+//   "host": "localhost",
+//   "port": 8080,
+//   "paths": ["/api", "/health"]
+// }
+// [Demo5] html: <a href="https://example.com" target="_blank">click me</a>

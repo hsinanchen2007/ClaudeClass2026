@@ -334,3 +334,17 @@ int main()
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 02_data_race.cpp -o 02_data_race
+
+// === 預期輸出 ===
+// Expected counter = 2000000
+// Actual   counter = 1914557
+// Lost increments  = 85443
+//
+// [demo] histogram race
+//   expected [200] = 200000, actual = 200000
+//   (一樣有 lost update; 多個 bucket 不會解掉 race)
+//
+// [demo] local-accumulate then merge
+//   expected = 2000000, actual = 2000000 (完全正確)

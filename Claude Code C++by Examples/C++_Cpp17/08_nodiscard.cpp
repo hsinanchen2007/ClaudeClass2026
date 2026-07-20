@@ -170,3 +170,11 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 08_nodiscard.cpp -o 08_nodiscard
+
+// === 預期輸出 ===
+// [Demo1] age = 42
+// [Demo2] code=0 msg=ok
+// [Demo3] open success
+// [Demo4] built: https://example.com timeout=5000

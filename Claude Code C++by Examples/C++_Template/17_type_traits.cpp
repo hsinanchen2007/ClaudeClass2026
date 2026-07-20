@@ -345,3 +345,31 @@ int main() {
 //  【下一篇】
 //    18_tag_dispatch.cpp ── tag dispatch：用空型別當「策略選擇器」。
 // ============================================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 17_type_traits.cpp -o 17_type_traits
+
+// === 預期輸出 ===
+// is_integral_v<int>     = true
+// is_integral_v<float>   = false
+// is_arithmetic_v<bool>  = true
+// is_pointer_v<int*>     = true
+// is_same_v<int, long>   = false
+// safe_cast<short>(123)        = 123
+// safe_cast<short>(70000)      = [safe_cast] out of range, fallback to 0
+// 0
+// safe_cast<double>(42)        = 42
+// is_printable_v<int>           = true
+// is_printable_v<std::string>   = true
+// 42
+// hi
+// reverse_integer(123)            = 321
+// reverse_integer(-123)           = -321
+// reverse_integer(1534236469)     = 0 (overflow → 0)
+// is_integral_v<V>=true is_pointer_v<D>=false sizeof(D)=4
+// is_integral_v<V>=false is_pointer_v<D>=false sizeof(D)=8
+// is_integral_v<V>=false is_pointer_v<D>=true sizeof(D)=8
+// CopyOnlyVec size = 2
+// hamming_weight(11u)         = 3
+// hamming_weight(0xFFFFFFFFu) = 32
+// safe_less(-1, 5u)  = true (expect true)
+// safe_less(5u, -1)  = false (expect false)

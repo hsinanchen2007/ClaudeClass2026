@@ -261,7 +261,9 @@ void practical_immutable_snapshot_top() {
     std::cout << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra partial_sort_copy.cpp -o partial_sort_copy
+
+// === 預期輸出 ===
 // top4 ascending: 1 2 3 4
 // src unchanged: 7 2 9 1 5 8 3 6 4
 // top3 descending: 9 8 7

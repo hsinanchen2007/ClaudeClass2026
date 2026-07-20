@@ -183,3 +183,30 @@ int main() {
     return 0;
 }
 
+// 編譯: g++ -std=c++20 -Wall -Wextra summary.cpp -o summary
+
+// === 預期輸出 ===
+//
+// [demo_basics]
+//   ok: 10 -> 10
+//   out_of_range: value must be positive
+//   invalid_argument: stoi
+//
+// [demo_catch_by_ref]
+//   caught std::exception: something failed
+//
+// [demo_raii]
+//   acquire A
+//   acquire B
+//   release B
+//   release A
+//   caught: boom
+//
+// [demo_noexcept]
+//   MoveMaybeThrow move noexcept? 0
+//   MoveNoThrow    move noexcept? 1
+//
+// [demo_safety_levels_note]
+//   no-throw / strong / basic 的差異，重點在『失敗後狀態是否可預期』
+//
+// [done]

@@ -195,3 +195,20 @@ int main() {
     demo_practical_list_matching();
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 05_directory_iterator.cpp -o 05_directory_iterator
+
+// === 預期輸出 ===
+// [Demo1] entries in "tmp_fs_dir":
+//   "gamma.log"  (4 bytes)
+//   "beta.txt"  (3 bytes)
+//   "alpha.txt"  (2 bytes)
+//   "subB" [DIR]
+//   "subA" [DIR]
+// [Demo2] dirs: "subB" "subA"
+// [Demo2] files: "gamma.log" "beta.txt" "alpha.txt"
+// [Demo3] sorted: "alpha.txt" "beta.txt" "gamma.log" "subA" "subB"
+// [Practical] list_files_matching .cpp
+//   "a.cpp"
+//   "m.cpp"
+//   "z.cpp"

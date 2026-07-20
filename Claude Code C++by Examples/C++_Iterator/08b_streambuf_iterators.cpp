@@ -386,7 +386,9 @@ void practical_file_byte_count() {
     std::cout << "Stream byte count = " << n << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra 08b_streambuf_iterators.cpp -o 08b_streambuf_iterators
+
+// === 預期輸出 ===
 // content size = 26 (期望 26,含換行與空白)
 // content = [hello world
 // this is line 2]
@@ -396,4 +398,6 @@ void practical_file_byte_count() {
 // 's' 在 "mississippi" 出現 4 次 (期望 4)
 // LC387 first unique idx = 2 (期望 2,字元 'v')
 // LC771 jewels in stones = 3 (期望 3)
-// checksum (XOR sum) = 0x... (依輸入而定)
+// checksum (XOR sum) = 0x4f
+// LC1119 = ltcdscmmntyfrcdrs (期望 ltcdscmmntyfrcdrs)
+// Stream byte count = 71

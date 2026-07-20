@@ -221,3 +221,13 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 15_trailing_return.cpp -o 15_trailing_return
+
+// === 預期輸出 ===
+// [Demo1] add(1, 2.5) = 3.5
+// [Demo1] add("hi", "!") = hi!
+// [Demo2] min=1 max=9
+// [Demo3] half(5) = 2.5
+// [LC1480] prefix: 1 3 6 10
+// [Demo4] circle r=2 area = 12.5664

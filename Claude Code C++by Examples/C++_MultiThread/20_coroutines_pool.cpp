@@ -498,3 +498,29 @@ int main()
 //    模型,標準化 schedule_on 與更多 awaiter 模式。在那之前,
 //    folly::coro 與 libunifex 是最值得學的兩個函式庫。
 // =============================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 20_coroutines_pool.cpp -o 20_coroutines_pool
+
+// === 預期輸出 (節錄) ===
+// [main] launching 6 coroutines on tid=700544
+//   [task 0] start on tid=700544
+//   [task 1] start on tid=700544
+//   [task 2] start on tid=700544
+//   [task 3] start on tid=700544
+//   [task 4] start on tid=700544
+//   [task 5] start on tid=700544
+// [main] all coroutines spawned, waiting for done
+//   [task 0] resumed on tid=  [task   [task 12] resumed on tid=] resumed on tid=034752  (now on a pool worker)
+// 820160427456  (now on a pool worker)
+//   (now on a pool worker)
+//   [task 3] resumed on tid=212864  (now on a pool worker)
+//   [task   [task   [task 21] done
+// ] done
+// 0] done
+//   [task 4] resumed on tid=  [task 5] resumed on tid=034752  (now on a pool worker)
+// 820160  (now on a pool worker)
+//   [task 3] done
+//   [task 5  [task ] done
+// 4] done
+// …（後略，完整輸出共 29 行）
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

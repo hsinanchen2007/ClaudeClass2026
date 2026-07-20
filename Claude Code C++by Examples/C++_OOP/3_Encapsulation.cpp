@@ -340,3 +340,25 @@ int main() {
  *   建構子 (Constructor) — 物件出生時自動執行的特殊函式，
  *   並用 Leetcode 1656. Design an Ordered Stream 練習。
  *=============================================================================*/
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 3_Encapsulation.cpp -o 3_Encapsulation
+
+// === 預期輸出 ===
+// ----- 範例 1：封裝過的 BankAccount -----
+// [錯誤] 存款金額必須為正
+// [錯誤] 餘額不足
+// Alice 目前餘額: 700
+// ----- 範例 2：Leetcode 1603 ParkingSystem -----
+// 1
+// 1
+// 0
+// 0
+// 剩餘車位 - big: 0, medium: 0, small: 0
+// ----- 範例 3：Leetcode 705 Design HashSet -----
+// 1
+// 0
+// 0
+// ----- 範例 4：SimpleConfig 設定 -----
+// [錯誤] port 必須介於 1~65535
+// [錯誤] host 不能為空
+// config: api.example.com:443, retry=3

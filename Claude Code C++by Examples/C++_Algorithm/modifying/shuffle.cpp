@@ -289,13 +289,16 @@ void practical_randomize_quiz_questions() {
     std::cout << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
-// shuffled (seed=42): ...    (mt19937(42) 對 1..10 的洗牌,實際序列依實作)
-// shuffled again:     ...
-// true random shuffle: ...   (每次執行皆不同)
-// LC384 shuffle (size=5): ...
+// 編譯: g++ -std=c++20 -Wall -Wextra shuffle.cpp -o shuffle
+
+// === 預期輸出 ===
+// shuffled (seed=42): 2 7 8 1 6 10 9 3 4 5
+// shuffled again:     5 9 6 1 4 10 8 2 7 3
+// true random shuffle: 2 4 5 3 1
+// LC384 shuffle (size=5): 5 3 1 4 2
 // LC384 reset:   1 2 3 4 5
-// Deck size=52, top 5: ...
+// Deck size=52, top 5: 10S 5S 3C AS 9D
 // LC1470 reshuffled: 2 3 5 4 1 7
 // LC1470 random verify size=6
-// student 12345 sees: ... (依 seed 固定序列)
+// student 12345 sees: Q1 Q2 Q5 Q4 Q3
+// ⚠️ 部分項目的順序/數值屬 unspecified 或每次執行不同，實際結果可能與上面不同。

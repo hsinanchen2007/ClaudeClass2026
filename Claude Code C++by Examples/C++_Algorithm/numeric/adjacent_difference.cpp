@@ -280,7 +280,9 @@ void practical_pace_running() {
     std::cout << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra adjacent_difference.cpp -o adjacent_difference
+
+// === 預期輸出 ===
 // adjacent_difference: 2 2 2 2 3
 // ratios: 1 2 3 4
 // round-trip: 3 1 4 1 5

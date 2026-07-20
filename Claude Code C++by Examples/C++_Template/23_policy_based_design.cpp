@@ -331,3 +331,18 @@ int main() {
 //  【下一篇】
 //    24_type_erasure.cpp ── 用 template 接任意型別、用虛擬介面收斂 runtime。
 // ============================================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 23_policy_based_design.cpp -o 23_policy_based_design
+
+// === 預期輸出 ===
+// Cache(single,vector) size = 3
+// Cache(multi,list) size = 2
+// mp[1] = one
+// mp[17] = seventeen
+// after remove(1), get(1)? false
+// mp2[42] = answer
+// majority(VotePolicy)  = 2
+// majority(CountPolicy) = 2
+// Fixed: retry delays: 100ms 100ms 100ms 100ms
+// Exp:   retry delays: 100ms 200ms 400ms 800ms
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

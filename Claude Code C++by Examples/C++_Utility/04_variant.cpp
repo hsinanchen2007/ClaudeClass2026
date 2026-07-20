@@ -353,3 +353,28 @@ int main() {
     g++ -std=c++17 -Wall -Wextra 04_variant.cpp -o 04_variant && ./04_variant
 ================================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 04_variant.cpp -o 04_variant
+
+// === 預期輸出 (節錄) ===
+// [demo_basic]
+//   index=0, value=42
+//   index=1, value=hello
+//   it is double = 3.14
+// [demo_visit]
+//   int=1
+//   str=two
+//   dbl=3.5
+// [demo_variant_helpers]
+//   holds<int>=1, holds<string>=0
+//   get<0>(v)=42
+//   get_if<0>=42
+//   after emplace<string>: "!!!!!"
+//   variant_size=3
+//   valueless=0
+//   npos=18446744073709551615
+//   monostate first: index=0
+//   p1<p2 (int<string by index)? 1
+//   caught bad_variant_access: std::get: wrong index for variant
+// [demo_leetcode_jewels]
+// …（後略，完整輸出共 29 行）

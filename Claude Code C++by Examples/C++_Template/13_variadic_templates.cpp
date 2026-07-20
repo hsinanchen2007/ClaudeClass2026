@@ -282,3 +282,18 @@ int main() {
 //    14_fold_expressions.cpp ── C++17 fold expression，把上面遞迴展開
 //    寫成一行的神器。
 // ============================================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 13_variadic_templates.cpp -o 13_variadic_templates
+
+// === 預期輸出 ===
+//
+// 1
+// 1, 2.5, hello
+// count_args(1, 'a', 3.14) = 3
+// [INFO] user login:, alice, 42
+// [ERROR] code:, -1, msg:, disk full
+// 1929 result: 1 2 1 1 2 1
+// concat 3 vectors: 1 2 3 4 5 6
+// Point(3, 4.5)
+// dedup_sorted len = 4, first 4: 1 2 3 4
+// min_var(5,3,7,1,9,4) = 1

@@ -397,7 +397,9 @@ void practical_undo_redo_browse() {
     // 預期: leetcode -> github -> google -> github -> leetcode
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra 04_bidirectional_iterator.cpp -o 04_bidirectional_iterator
+
+// === 預期輸出 ===
 // 正向: 10 20 30 40 50
 // 反向: 50 40 30 20 10
 // rbegin/rend: 50 40 30 20 10
@@ -409,3 +411,9 @@ void practical_undo_redo_browse() {
 // 最久沒用的 2 筆 (從尾往前):
 //   - doc-E.pdf
 //   - doc-D.pdf
+// LC344 reversed: olleh (期望 olleh)
+// 當前: leetcode.com
+// Back: github.com
+// Back: google.com
+// Forward: github.com
+// Forward: leetcode.com

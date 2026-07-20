@@ -307,3 +307,28 @@ int main() {
  *   把自訂類別放進 STL 容器 (vector / map / set) 該注意什麼？
  *   並用 Leetcode 1845. Seat Reservation Manager 練習。
  *=============================================================================*/
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 24_ClassTemplate.cpp -o 24_ClassTemplate
+
+// === 預期輸出 ===
+// ===== Stack<int> =====
+// top = 3, size = 3
+// pop → 3
+// top after pop = 2
+// ===== Stack<std::string> =====
+// top = banana
+// ===== Pair<K,V> =====
+// (Alice, 30)
+// (7, 3.14)
+// ===== 函式模板 myMax =====
+// 5
+// 2.5
+// ac
+// ===== Leetcode 232 模板化 Queue<T> =====
+// Queue<int> pop = 1
+// Queue<int> pop = 2
+// Queue<string> pop = first
+// ===== Result<T> 用法示範 =====
+// 成功，值 = 42
+// 失敗，原因 = 解析錯誤
+// 字串結果 = Alice

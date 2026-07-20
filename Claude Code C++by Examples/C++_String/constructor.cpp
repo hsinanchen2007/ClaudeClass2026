@@ -414,9 +414,27 @@ int main() {
 //   ./constructor
 // =============================================================================
 
+// 編譯: g++ -std=c++20 -Wall -Wextra constructor.cpp -o constructor
+
 // === 預期輸出 (節錄) ===
+// === std::string 建構子示範 ===
+// (1) default        : "", size=0
+// (2) fill           : "AAAAA"
+// (3) substring      : "World!" / "World"
+// (4) buffer+count   : size=4
+// (5) C-string       : "Hello"
+// (6) iterator range : "C++ STL"
+// (7) copy           : "Hello"
+// (8) move           : "Hello"
+// (9) initializer    : "List"
+// out_of_range caught: basic_string::basic_string: __pos (which is 100) > this->size() (which is 13)
+//
+// === LeetCode 344 ===
+// olleh
+//
+// === LeetCode 1108 ===
+// 1[.]1[.]1[.]1
+//
 // === LeetCode 1431 ===
 // TTTFT
-// TFFFF
-// === 日常實務: 二進位 buffer 建立 string ===
-// size=5 (含內嵌 \0)
+// …（後略，完整輸出共 27 行）

@@ -522,3 +522,15 @@ int main()
 //    調校下也能輕易跑出每秒數千萬事件 ── 比 lesson 17 sharded
 //    queue 快好幾倍,正是因為「不 pop、不 alloc、不鎖」。
 // =============================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 27_disruptor.cpp -o 27_disruptor
+
+// === 預期輸出 ===
+// [Disruptor] 5000000 events broadcast in 487 ms
+// [Disruptor] throughput ~ 10.2669 M events/s
+// [Disruptor] sumA = 12499997500000 (expected 12499997500000) OK
+// [Disruptor] xorB = 0 (expected 0) OK
+//
+// [demo] 2-stage pipeline (parser → executor)
+//   executor processed 1000 events (預期 1000)
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

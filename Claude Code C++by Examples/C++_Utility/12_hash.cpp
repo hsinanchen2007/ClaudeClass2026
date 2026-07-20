@@ -292,3 +292,30 @@ int main() {
     g++ -std=c++17 -Wall -Wextra 12_hash.cpp -o 12_hash && ./12_hash
 ================================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 12_hash.cpp -o 12_hash
+
+// === 預期輸出 ===
+// [demo_basic]
+//   hash(42)        = 42
+//   hash("hello")   = 2762169579135187400
+//   hash("hello")   = 2762169579135187400  (same input -> same hash)
+// [demo_hash_for_more_builtins]
+//   hash(true)      = 1
+//   hash('A')       = 65
+//   hash(123LL)     = 123
+//   hash(3.14)      = 5464867211497793177
+//   hash(int*)      = 140737271011796
+//   hash(string_view)=2762169579135187400
+// [demo_hash_specialization]
+//   visited.size = 2
+//   hash(Point{3,4}) = 11400714819323198682
+// [demo_leetcode_two_sum]
+//   index pair = (0, 1)
+// [demo_practical_endpoint_set]
+//   connected.size = 2
+//     192.168.0.5:22
+//     127.0.0.1:8080
+// [demo_practical_cache_key]
+//   cache size = 3
+//   hit: home_zh

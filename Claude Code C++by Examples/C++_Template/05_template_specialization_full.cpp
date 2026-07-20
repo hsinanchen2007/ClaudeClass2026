@@ -313,3 +313,22 @@ int main() {
 //  【下一篇】
 //    06_template_specialization_partial.cpp ── 偏特化。
 // ============================================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 05_template_specialization_full.cpp -o 05_template_specialization_full
+
+// === 預期輸出 ===
+// TypeName<int>          = int
+// TypeName<double>       = double
+// TypeName<std::string>  = std::string
+// TypeName<float>        = unknown
+// Serializer<int>:  42
+// Serializer<bool>: true
+// Serializer<string>: "hi"
+// Serializer<double>: 3.140000
+// first_unique("leetcode")     = 0
+// first_unique("loveleetcode") = 2
+// first_unique({1,2,3,2,1,4}) = 2
+// single_number({4,1,2,1,2})   = 4
+// Default<int>    = 0
+// Default<string> = (unset)
+// Default<bool>   = false

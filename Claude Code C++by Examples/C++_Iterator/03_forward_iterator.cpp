@@ -280,3 +280,17 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 03_forward_iterator.cpp -o 03_forward_iterator
+
+// === 預期輸出 ===
+// forward_list: 1 2 2 3 4 4 4 5
+// size = 8
+// first adjacent dup = 2 (期望 2)
+// reversed: 5 4 4 4 3 2 2 1
+// has cycle? true
+// reversed: 5 4 3 2 1
+// LC14 LCP ["flower","flow","flight"] = "fl" (期望 "fl")
+// LC14 LCP ["dog","racecar","car"]    = "" (期望 "")
+// LC83 dedup sorted: 1 2 3 4
+// 毛刺偵測:20 -> 35

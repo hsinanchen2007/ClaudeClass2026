@@ -202,3 +202,16 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 05_brace_init.cpp -o 05_brace_init
+
+// === 預期輸出 ===
+//   Widget()
+// [Demo1] x=42 d=3.14 p=(1,2) v.size=4
+// [Demo2] safe1=3 safe2=3
+// [Demo3] a (brace) = 3 5  size=2
+// [Demo3] b (paren) = 5 5 5  size=3
+// [LC217] {1,2,3,1} => true
+// [LC217] {1,2,3,4} => false
+// [Demo5] r1=(0,0,800,600)
+// [Demo5] r2=(0,0,0,0)  // 全 0

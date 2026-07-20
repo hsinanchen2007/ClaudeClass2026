@@ -90,6 +90,10 @@
 //     vector 為了維持強例外保證（搬到一半拋例外時舊資料仍完整）會改用複製，效能大幅
 //     下降。標準以 std::move_if_noexcept 實作這個決策。忘了標 noexcept 不會有任何警告，
 //     只會默默變慢。
+//     ⚠️ 但別把話講死：「沒 noexcept 就一定 copy」只對【可 copy 的型別】成立。
+//        move-only 型別（copy ctor = delete）根本沒有 copy 可退，即使 move ctor 沒標
+//        noexcept 仍然會 move——只是這時 vector 給不出強保證。
+//        本機實測：可 copy + move 未標 noexcept → COPY；move-only + move 未標 → MOVE。
 //     追問：怎麼驗證？（static_assert(std::is_nothrow_move_constructible_v<T>);）
 //
 // ⚠️ 陷阱 1. 對一個 const 物件呼叫 std::move 會發生什麼？
@@ -298,3 +302,30 @@ int main() {
     g++ -std=c++17 -Wall -Wextra 07_move.cpp -o 07_move && ./07_move
 ================================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 07_move.cpp -o 07_move
+
+// === 預期輸出 ===
+// [demo_basic]
+//   b.size=5, b[0]=1
+//   a.size after move = 0 (valid but unspecified)
+// [demo_push_back]
+//   v[0]=this is a long string that costs to copy
+//   v[1]=this is a long string that costs to copy
+//   s after move = []  (unspecified)
+// [demo_move_if_noexcept_and_const]
+//   [NoexceptMove move]
+//   [ThrowingMove copy]
+//   [NoexceptMove copy]
+// [demo_group_by_length]
+//   group(size=4): fish
+//   group(size=5): apple
+//   group(size=3): cat dog bee
+// [demo_practical_repo]
+//   cache size = 50
+// [demo_practical_work_queue]
+//   before drain, size=3
+//   after drain, size=0, batch=3
+//     -> send email
+//     -> update db
+//     -> flush cache

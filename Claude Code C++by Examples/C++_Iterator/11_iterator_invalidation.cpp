@@ -315,3 +315,20 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 11_iterator_invalidation.cpp -o 11_iterator_invalidation
+
+// === 預期輸出 ===
+// before realloc: cap=2 *p_old=10
+// after  realloc: cap=4 p_old==p_new ? false (通常 false)
+// vector after erase even: 1 3 5
+// list 的 it_30 仍指向: 30 (期望 30)
+// list after erase 30: 5 10 20 40 50
+// map after erase even-value:
+//   apple → 1
+//   cherry → 3
+// removeElement: newLen=2  前 2 項 = 2 2 (期望 2 2)
+// erase-remove idiom: 0 1 3 0 4
+// move zeroes: 1 3 12 0 0
+// LC80 result: 1 1 2 2 3 (期望 1 1 2 2 3)
+// Sessions after cleanup: sid_B(200) sid_D(300) (期望保留 sid_B、sid_D)

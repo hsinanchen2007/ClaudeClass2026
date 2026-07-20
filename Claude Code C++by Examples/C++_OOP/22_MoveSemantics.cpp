@@ -267,3 +267,29 @@ int main() {
  *   23_RuleOfThreeFiveZero.cpp
  *   Rule of 3 / 5 / 0 — 何時要自己寫複製/移動/解構？何時可以全部不寫？
  *=============================================================================*/
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 22_MoveSemantics.cpp -o 22_MoveSemantics
+
+// === 預期輸出 (節錄) ===
+// ===== (1) 複製建構 (lvalue → 走 copy) =====
+//   [ctor]   配置大小 1000000 位址 0x7d35edc2f010
+//   [copy]   深拷貝 size=1000000 來自 0x7d35edc2f010 新位址 0x7d35ed85e010
+// ===== (2) 移動建構：用 std::move 把 lvalue 強轉成 rvalue =====
+//   [move]   搬走指標 size=1000000 位址 0x7d35edc2f010
+// (此後 a.size() = 0，已被掏空)
+// ===== (3) 從工廠函式回傳的物件本身就是 rvalue =====
+//   [ctor]   配置大小 500 位址 0x5f0ff72e0030
+// ===== (4) vector 內部會自己選 move 還是 copy =====
+//   [ctor]   配置大小 10 位址 0x5f0ff72e0840
+//   [move]   搬走指標 size=10 位址 0x5f0ff72e0840
+// ===== (5) Leetcode 1480 - 用 std::move 把結果 vector 搬出去 =====
+// saved.size = 4  (預期 4)
+// result.size = 0  (預期 0：被搬空了)
+// saved 內容: 1 3 6 10
+// ===== (6) Leetcode 1929 - move 結果陣列 =====
+// 建好的大小 = 8 (預期 8)
+// 搬走後 built.size = 0, movedAway.size = 8
+// ===== (7) 日常實用：std::string 也支援 move =====
+// 原 longText 容量 = 50
+// …（後略，完整輸出共 28 行）
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

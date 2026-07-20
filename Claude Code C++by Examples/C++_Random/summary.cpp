@@ -137,3 +137,26 @@ int main() {
     return 0;
 }
 
+// 編譯: g++ -std=c++20 -Wall -Wextra summary.cpp -o summary
+
+// === 預期輸出 ===
+//
+// [demo_seed_and_engine]
+//   mt19937(12345) first=3992670690
+//   mt19937(rd()) first=2778428117
+//
+// [demo_uniform_int_and_real]
+//   dice: 3 5 6 2 5 5 4 4 1 3
+//   uniform[0,1): 0.0999749 0.459249 0.333709 0.142867 0.650888
+//
+// [demo_normal_distribution]
+//   N(0,1) samples: -0.720144 -1.08467 -0.0371002 0.399463 -1.09344
+//
+// [demo_shuffle]
+//   shuffled: 10 1 3 6 8 5 7 4 2 9
+//
+// [demo_why_not_rand_note]
+//   rand() 常見問題：範圍小、品質差、共用全域序列(鎖競爭)、取模偏差。
+//   要範圍 [a,b] 均勻：請用 uniform_int_distribution。
+//
+// [done]

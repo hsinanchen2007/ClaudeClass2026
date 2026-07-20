@@ -200,3 +200,13 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 11_type_alias.cpp -o 11_type_alias
+
+// === 預期輸出 ===
+// [Demo1] big=9000000000 names.size=3
+// [Demo2] ages.size=2 nums.size=5
+// [Demo3] op(3, 4) = 7
+// [Demo3] op(3, 4) = 12
+// [LC1] indices: 0 1
+// [Demo4] clicked at (100,200)

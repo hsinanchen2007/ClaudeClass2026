@@ -183,3 +183,14 @@ static void demo_popcount_array_stat() {
     std::cout << "[popcount_array] total set bits = "
               << popcountArray(buf) << " (= 16)\n";
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 05_lc_191_hamming_weight.cpp -o 05_lc_191_hamming_weight
+
+// === 預期輸出 ===
+// n=11 | hamming1=3 | hamming2=3 | popcount=3
+// n=128 | hamming1=1 | hamming2=1 | popcount=1
+// n=0 | hamming1=0 | hamming2=0 | popcount=0
+// n=4294967295 | hamming1=32 | hamming2=32 | popcount=32
+// [LC461] hamming(1,4) = 2 (= 2)
+// [LC461] hamming(0xFFFF,0) = 16 (= 16)
+// [popcount_array] total set bits = 16 (= 16)

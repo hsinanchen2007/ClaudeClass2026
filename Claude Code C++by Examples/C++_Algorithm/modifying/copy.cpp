@@ -306,7 +306,9 @@ void practical_clone_config_object() {
               << " user[1]=" << user_copy[1].value << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra copy.cpp -o copy
+
+// === 預期輸出 ===
 // copy:        1 2 3 4 5
 // back_insert: 1 2 3 4 5
 // copy_if(even): 2 4

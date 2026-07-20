@@ -439,3 +439,17 @@ int main()
 //    submit() 改成 push(...);worker_loop 把 cv_.wait()
 //    改成 try_pop + 短 sleep / cv_.wait_for。
 // =============================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 17_mpmc_sharded.cpp -o 17_mpmc_sharded
+
+// === 預期輸出 ===
+// Workload: 4 producers, 4 consumers, total 2000000 items
+//
+// [single queue (1 mutex) ] 738 ms  (2710K ops/s)
+// [sharded queue (8 shards)] 324 ms  (6172K ops/s)
+//
+// speedup from sharding = 2.27778x
+//
+// [demo] event dispatcher (4 producers, 4 handlers)
+//   handled = 200000 (預期 200000)
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

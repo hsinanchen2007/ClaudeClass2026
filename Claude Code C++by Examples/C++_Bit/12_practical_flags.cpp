@@ -242,3 +242,15 @@ static void demo_count_active_flags() {
     for (auto& f : table) if (has(m, f.flag)) std::cout << f.name << ' ';
     std::cout << '\n';
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 12_practical_flags.cpp -o 12_practical_flags
+
+// === 預期輸出 ===
+// [Demo1] has Read?   1
+// [Demo1] has Write?  0
+// [Demo1] has Binary? 1
+// [Demo2] flags raw = 14
+// [Demo2] after clear Append, has Append? 0
+// [LC461] flag diff(Read+Binary, Write+Binary) = 2 (= 2)
+// [count_flags] active count = 3 (= 3)
+// [count_flags] active flags: Read Append Binary

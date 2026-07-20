@@ -329,3 +329,22 @@ int main() {
  *   24_ClassTemplate.cpp
  *   類別模板 (Class Template) — 怎麼寫一個「裝任何型別」的容器？
  *=============================================================================*/
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 23_RuleOfThreeFiveZero.cpp -o 23_RuleOfThreeFiveZero
+
+// === 預期輸出 ===
+// ===== Rule of Five 自管資源 =====
+// b = hello
+// c = hello
+// b = hello
+// ===== Rule of Zero 全部交給編譯器 =====
+// Alice (30) scores: 90 85 95
+// Alice (30) scores: 90 85 95
+// ===== 禁止複製、允許移動 =====
+// ===== Leetcode 1480 - Rule of Zero 累加器 =====
+// out: 1 3 6 10
+// acc2.total = 10, acc3.total = 10
+// ===== Leetcode 1396 Underground System - Rule of Zero =====
+// u2.checkIns 大小 = 1, u3.checkIns 大小 = 1, u1 (已搬走) = 0
+// ===== 日常實用：NonCopyable 基類 =====
+// s2.sessionId = abc-123

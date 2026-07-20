@@ -180,3 +180,14 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 13_user_defined_literals.cpp -o 13_user_defined_literals
+
+// === 預期輸出 ===
+// [Demo1] 5km + 200m + 1mile = 6809.34 m
+// [Demo2] 2h + 30m + 15s = 9015 seconds
+// [Demo3] tags: important, draft
+// [Demo4] bufSize = 4096 bytes
+// [Demo4] pagePool = 49152 bytes
+// [Demo4] sensor threshold = 600 m
+// [Demo5] tags: login logout click

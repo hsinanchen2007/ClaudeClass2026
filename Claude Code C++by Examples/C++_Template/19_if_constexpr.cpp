@@ -308,3 +308,28 @@ int main() {
 //  【下一篇】
 //    20_concepts_intro.cpp ── C++20 Concepts，metaprogramming 的未來。
 // ============================================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 19_if_constexpr.cpp -o 19_if_constexpr
+
+// === 預期輸出 ===
+// [number] 7
+// *ptr=7
+// [other] hello
+// tuple = (1, 3.14, hi, A)
+// to_str(42)        = 42
+// to_str(3.14)      = 3.140000
+// to_str(string)    = hi
+// to_str("raw")    = [unprintable]
+// is_palindrome(121)              = true
+// is_palindrome(-121)             = false
+// is_palindrome(10)               = false
+// is_palindrome(string "abcba") = true
+// is_palindrome(string "abc")   = false
+// temp = 36.6000
+// flag = true
+// count = 100
+// name = alice
+// fizz_buzz<string>(15): 1 2 Fizz 4 Buzz Fizz 7 8 Fizz Buzz 11 Fizz 13 14 FizzBuzz
+// byte_size(int)          = 4
+// byte_size("hello")      = 5
+// byte_size(vector<int>×5)= 20

@@ -242,7 +242,9 @@ void practical_age_range_summary() {
     std::cout << "age range: " << mn << " ~ " << mx << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra minmax.cpp -o minmax
+
+// === 預期輸出 ===
 // minmax(7,3) = (3, 7)
 // minmax{4,1,7,0,3} = (0, 7)
 // minmax by |.|: (2, -7)

@@ -507,3 +507,29 @@ int main() {
 //    對所有這些 mutex 變體都成立 —— RAII 才是主要使用方式,
 //    手動 lock()/unlock() 通常表示出錯機會大。
 // =====================================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 28_mutex_variants.cpp -o 28_mutex_variants
+
+// === 預期輸出 (節錄) ===
+// === Demo A: recursive_mutex ===
+// 1
+//   2
+//     4
+//     5
+//   3
+//     6
+// 1
+//   2
+//     4
+//     5
+//   3
+//     6
+//
+// === Demo B: timed_mutex + try_lock_for ===
+//   [slow_worker] 取得鎖,模擬 3 秒慢動作...
+//   [reader   [reader 21] 等了 500ms 沒拿到,跳過 (fallback)
+// ] 等了 500ms 沒拿到,跳過 (fallback)
+//   [reader 3] 等了 500ms 沒拿到,跳過 (fallback)
+//   [slow_worker] 完成,釋放鎖
+// …（後略，完整輸出共 35 行）
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

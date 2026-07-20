@@ -181,3 +181,23 @@ int main() {
     demo_practical_disk_sampling();
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 04_uniform_real.cpp -o 04_uniform_real
+
+// === 預期輸出 ===
+// [Demo1] N=100000 mean = 0.4991
+// [Demo2] 5 samples: 12.9088 19.4849 15.8843 16.9668 19.5808
+// [Demo3] Monte Carlo π estimate = 3.1436 (true ≈ 3.1416)
+// [Practical] random_jitter (base=1000ms, ±10%):
+//   attempt 1 sleep 1053.3 ms
+//   attempt 2 sleep 1092.2 ms
+//   attempt 3 sleep 1092.6 ms
+//   attempt 4 sleep 1041.4 ms
+//   attempt 5 sleep 903.9 ms
+// [Practical] disk sampling (5 points):
+//   (0.445, 0.664)
+//   (0.468, 0.402)
+//   (0.155, 0.028)
+//   (0.703, -0.238)
+//   (-0.452, 0.281)
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

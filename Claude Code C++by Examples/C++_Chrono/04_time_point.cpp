@@ -212,3 +212,15 @@ static void demo_uptime_seconds() {
     std::this_thread::sleep_for(10ms);
     std::cout << "[uptime] " << uptime().count() << " s\n";
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 04_time_point.cpp -o 04_time_point
+
+// === 預期輸出 ===
+// [Demo1] then - now = 5 min
+// [Demo2] t1 < t2 ? true
+// [Demo3] unix timestamp = 1784540461 seconds
+// [Demo4] until deadline: 29 seconds
+// [ttl] hit a? true value=42
+// [ttl] (after 120ms) hit a? false
+// [uptime] 0 s
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

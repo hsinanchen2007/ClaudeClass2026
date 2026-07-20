@@ -247,7 +247,9 @@ void practical_preview_first_lines() {
     std::cout << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra for_each_n.cpp -o for_each_n
+
+// === 預期輸出 ===
 // first 3: 10 20 30
 // after add 100 to first 3: 110 120 130 40 50
 // [A]110 [A]120 [B]130 [B]40 [B]50

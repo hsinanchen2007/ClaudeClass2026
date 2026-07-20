@@ -242,3 +242,15 @@ static void demo_unsigned_subtraction_wrap() {
     // 「對位寫法」：直接用 ssize / 加法避免相減
     std::cout << "[unsigned_wrap] v[" << i << "] = " << v[i] << '\n';
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 08_pitfalls.cpp -o 08_pitfalls
+
+// === 預期輸出 ===
+// [陷阱1] (int)3.99 = 3 (截斷)
+// [陷阱2] 用 static_cast 後比較正確
+// [byValue] kind=Animal
+// [byRef]   kind=Dog
+// [zoo] Dog with 5 bones
+// [zoo] plain Animal
+// [unsigned_wrap] signed 相減正確判斷為負
+// [unsigned_wrap] v[1] = 20

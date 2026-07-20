@@ -214,3 +214,14 @@ int main() {
     demo_lc380_randomized_set();
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 03_uniform_int.cpp -o 03_uniform_int
+
+// === 預期輸出 ===
+// [Demo1] dice counts (期望 ~10000): 9890 10037 9991 10075 10096 9911
+// [Demo2] pick 5 from 0..19: 2 7 14 11 6
+// [Demo3] [1,100]: 71 34
+// [Demo3] [-50,50]: 33 -43
+// [LC380] RandomizedSet:
+//   insert 3 元素後 getRandom 30000 次：1=9937 2=9988 3=10075 (期望各 ~10000)
+//   remove(2) 後 size=2，下次 getRandom = 3

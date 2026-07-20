@@ -195,3 +195,23 @@ int main() {
     return 0;
 }
 
+// 編譯: g++ -std=c++20 -Wall -Wextra summary.cpp -o summary
+
+// === 預期輸出 ===
+//
+// [demo_encapsulation]
+//   counter=2
+//
+// [demo_raii]
+//   open demo.txt
+//   do something...
+//   close demo.txt
+//
+// [demo_polymorphism]
+//   rect area=12
+//   circle area=12.5664
+//
+// [demo_rule_of_five]
+//   b.size=3, c.size=3
+//
+// [done]

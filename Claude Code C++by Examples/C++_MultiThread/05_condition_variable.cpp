@@ -623,3 +623,28 @@ int main()
 // 6. 這個生產者/消費者模式是你以後會寫到或用到的 *每一個*
 //    執行緒池、任務佇列、工作系統的骨架。把它內化吧。
 // =============================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 05_condition_variable.cpp -o 05_condition_variable
+
+// === 預期輸出 (節錄) ===
+// [producer] pushed 1
+//   [consumer] got 1
+// [producer] pushed 2
+//   [consumer] got 2
+// [producer] pushed 3
+//   [consumer] got 3
+// [producer] pushed 4
+//   [consumer] got 4
+// [producer] pushed 5
+// [producer] done, signalling shutdown
+//   [consumer] got 5
+//   [consumer] queue empty and done -> exit
+//
+// --- condition_variable_any + shared_lock ---
+// [writer] published v1
+//   [reader 2] saw v1 payload="v1"
+//   [reader 1] saw v1 payload="v1"
+//   [reader 0] saw v1 payload="v1"
+// [writer] published v2
+// [writer] published v3
+// …（後略，完整輸出共 40 行）

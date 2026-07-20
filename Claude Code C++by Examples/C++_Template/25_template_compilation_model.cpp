@@ -285,3 +285,17 @@ int main() {
 //  【下一篇】
 //    26_template_with_lambda.cpp ── generic / template lambda。
 // ============================================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 25_template_compilation_model.cpp -o 25_template_compilation_model
+
+// === 預期輸出 ===
+// add_t(3, 4)        = 7
+// HotMath<int>::sq(5)= 25
+// OK arithmetic: 42
+// OK arithmetic: 3.14
+// sum_all({1,2,3})   = 6
+// kMaxRetries        = 5
+// number_of_steps(14)= 6 (expect 6)
+// number_of_steps(8) = 4 (expect 4)
+// BigSerializer<int>(42)    = 42
+// BigSerializer<double>(3.14)= 3.140000

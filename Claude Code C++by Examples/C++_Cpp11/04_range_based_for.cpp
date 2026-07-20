@@ -195,3 +195,15 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 04_range_based_for.cpp -o 04_range_based_for
+
+// === 預期輸出 ===
+// [Demo1] doubled: 2 4 6 8 10
+// [Demo1]   name=alice
+// [Demo1]   name=bob
+// [Demo1]   name=charlie
+// [Demo2] CountUp{5}: 0 1 2 3 4
+// [LC1480] prefix = 1 3 6 10
+// [LC1672] richest = 15
+// [Demo4] upper: HELLO WORLD C++

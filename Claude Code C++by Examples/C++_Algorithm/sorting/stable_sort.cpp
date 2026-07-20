@@ -329,7 +329,9 @@ void practical_stable_sort_orders() {
     std::cout << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra stable_sort.cpp -o stable_sort
+
+// === 預期輸出 ===
 // stable sort by priority: {b,1} {d,1} {a,2} {c,2} {f,2} {e,3}
 // multi-key sort: {berry,1} {cherry,1} {apple,2} {banana,2} {date,2}
 // LC922-stable: 4 2 6 8 5 7 3 1

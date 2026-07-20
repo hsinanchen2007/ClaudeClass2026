@@ -283,3 +283,23 @@ int main() {
     g++ -std=c++17 -Wall -Wextra 06_swap.cpp -o 06_swap && ./06_swap
 ================================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 06_swap.cpp -o 06_swap
+
+// === 預期輸出 ===
+// [demo_basic]
+//   a=2, b=1
+//   s1=world, s2=hello
+// [demo_swap_family]
+//   array swap: A={7,8,9}
+//   iter_swap : v.front=50, v.back=10
+//   swap_ranges: v[0..2]=100,200,300
+//                w[0..2]=50,20,30
+// [demo_leetcode_reverse]
+//   reversed = olleh
+// [demo_leetcode_move_zeroes]
+//   after: 1 3 12 0 0
+// [demo_practical_copy_and_swap]
+//   before: x.size=3, y.size=7
+//   after : x.size=7, y.size=7
+//   swap  : p.size=9, q.size=2

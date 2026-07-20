@@ -266,12 +266,15 @@ void practical_lottery_draw() {
     std::cout << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
-// sampled 4: ...   (mt19937(123) 對 1..10 的抽樣,實際數字隨實作)
+// 編譯: g++ -std=c++20 -Wall -Wextra sample.cpp -o sample
+
+// === 預期輸出 ===
+// sampled 4: 5 7 9 10
 // sample n=0 size = 0
 // sample n=100 size = 10
-// 5 random letters: ...
-// A/B test group A (size=5): ...
-// Sketch (8 chars, size=8): ...
-// LC398 picked index= ...  (隨機;落在 2/3/4 之一)
-// winners (n=3): ...        (mt19937(2026) 的固定結果)
+// 5 random letters: botvz
+// A/B test group A (size=5): 6 7 16 17 19
+// Sketch (8 chars, size=8): t moer o
+// LC398 picked index=2
+// winners (n=3): Alice Eve Henry
+// ⚠️ 部分項目的順序/數值屬 unspecified 或每次執行不同，實際結果可能與上面不同。

@@ -291,3 +291,27 @@ int main() {
     g++ -std=c++17 -Wall -Wextra 09_exchange.cpp -o 09_exchange && ./09_exchange
 ================================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 09_exchange.cpp -o 09_exchange
+
+// === 預期輸出 ===
+// [demo_basic]
+//   x=200, old=100
+//   s=world, before=hello
+// [demo_move_ctor]
+//   b.size=5, a.empty()=true
+// [demo_leetcode_reverse_list]
+//   before: 1 -> 2 -> 3 -> 4
+//   after : 4 -> 3 -> 2 -> 1
+// [demo_practical_logger]
+//   flushed 3 messages
+//     - start
+//     - processing
+//     - done
+//   flushed 0 messages
+// [demo_practical_counter]
+//   next() = 0
+//   next() = 1
+//   next() = 2
+//   next() = 3
+//   next() = 4

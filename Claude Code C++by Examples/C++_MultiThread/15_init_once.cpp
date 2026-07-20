@@ -534,3 +534,28 @@ int main()
 //    跟 std::call_once 在第二次以後的速度幾乎一樣;寫錯的
 //    版本會炸。你完全沒理由再去碰它。
 // =============================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 15_init_once.cpp -o 15_init_once
+
+// === 預期輸出 (節錄) ===
+// PART 1: std::call_once (Heavy ctor 應該只跑一次)
+//   [Heavy ctor] running on thread 134318261270208
+//     [user 1] heavy.value = 12345
+//     [user 0] heavy.value = 12345
+//     [user 2] heavy.value = 12345
+//     [user 4] heavy.value = 12345
+//     [user     [user 5] heavy.value =     [user 612345] heavy.value = 12345
+//
+// 7] heavy.value = 12345
+//     [user 3] heavy.value = 12345
+//
+// PART 2: Meyer's singleton (Config ctor 應該只跑一次)
+//   [Config ctor] singleton built on thread 134318202521280
+//   sum = 64640  (期望 8 * 8080 = 64640)
+//
+// PART 3: thread_local (每條執行緒有自己的 counter)
+//     [thread 0] per_thread_counter = 5
+//     [thread 2] per_thread_counter = 5
+//     [thread 1] per_thread_counter = 5
+//     [thread 3] per_thread_counter = 5
+// …（後略，完整輸出共 34 行）

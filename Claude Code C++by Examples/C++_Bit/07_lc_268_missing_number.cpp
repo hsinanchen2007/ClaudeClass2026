@@ -178,3 +178,14 @@ static void demo_checksum_xor() {
     std::cout << "[checksum] verify all XOR = "
               << static_cast<int>(computeXorChecksum(data)) << " (= 0 表示無錯)\n";
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 07_lc_268_missing_number.cpp -o 07_lc_268_missing_number
+
+// === 預期輸出 ===
+// sum=2 | xor=2
+// sum=2 | xor=2
+// sum=8 | xor=8
+// sum=1 | xor=1
+// [LC461] hamming(1,4) = 2 (= 2)
+// [checksum] data XOR = 0x8
+// [checksum] verify all XOR = 0 (= 0 表示無錯)

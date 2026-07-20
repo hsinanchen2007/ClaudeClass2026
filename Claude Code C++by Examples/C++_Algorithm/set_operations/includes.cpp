@@ -280,7 +280,9 @@ void practical_feature_dependency_check() {
     std::cout << "all deps installed: " << std::boolalpha << ok << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra includes.cpp -o includes
+
+// === 預期輸出 ===
 // {1..6} contains {2,4,6}? true
 // {1..6} contains {2,7}? false
 // {1,2,2,3} contains {2,2,2}? false

@@ -292,3 +292,21 @@ int main() {
 //  【下一篇】
 //    27_constexpr_templates.cpp ── 編譯期計算。
 // ============================================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 26_template_with_lambda.cpp -o 26_template_with_lambda
+
+// === 預期輸出 ===
+// sorted ints: 1 1 3 4 5
+// sorted strs: apple banana cherry
+// cube(4) = 64
+// 1 1 3 4 5
+// apple banana cherry
+// reorder "aaaabbbbcccc" = abccbaabccba
+// reorder "rat"          = art
+// sum_squares({1,2,3,4}) = 30
+// 0: Alice
+// 1: Bob
+// 2: Carol
+// even: 2 4 6
+// smaller_than_current: 4 0 1 1 3
+// retry_n ok=true attempts=3

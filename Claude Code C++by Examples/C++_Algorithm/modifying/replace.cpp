@@ -279,7 +279,9 @@ void practical_normalize_missing_data() {
     std::cout << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra replace.cpp -o replace
+
+// === 預期輸出 ===
 // replace 2->99: 1 99 3 99 5 99
 // replace_if(<0)->0: 1 0 3 0 5
 // src unchanged: 1 2 3 2 4

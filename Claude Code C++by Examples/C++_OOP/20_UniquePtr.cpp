@@ -331,3 +331,28 @@ int main() {
  *   21_SharedPtr.cpp
  *   std::shared_ptr — 多個指標共享一個資源，引用計數歸零才釋放。
  *=============================================================================*/
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 20_UniquePtr.cpp -o 20_UniquePtr
+
+// === 預期輸出 (節錄) ===
+// ===== 範例 1：unique_ptr 基本 =====
+//   Resource(DB-Connection) 建構
+//   使用 DB-Connection
+//   ~Resource(DB-Connection) 解構
+// ----- 移動 (move) 而非複製 -----
+//   Resource(A) 建構
+//   a 已經沒有東西了
+//   使用 A
+//   ~Resource(A) 解構
+// ----- reset / release -----
+//   Resource(X) 建構
+//   ~Resource(X) 解構
+//   reset 後 p 是空的: yes
+//   Resource(Y) 建構
+//   release 之後 unique_ptr 為空: yes
+//   ~Resource(Y) 解構
+// ===== 範例 2：Leetcode 705 HashSet =====
+// contains(1) = 1
+// contains(3) = 0
+// remove(2) 後 contains(2) = 0
+// …（後略，完整輸出共 29 行）

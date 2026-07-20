@@ -246,3 +246,31 @@ int main() {
     return 0;
 }
 
+// 編譯: g++ -std=c++20 -Wall -Wextra summary.cpp -o summary
+
+// === 預期輸出 ===
+//
+// [demo_structured_bindings]
+//   id=1, name=one
+//   tuple: 1,2,3
+//
+// [demo_if_initializer]
+//   found 2 at index=1
+//
+// [demo_optional]
+//   42 -> 42
+//   xx -> (no value)
+//
+// [demo_variant]
+//   int: 1
+//   double: 2.5
+//   string: hi
+//
+// [demo_any]
+//   int=123
+//   string=hello
+//
+// [demo_string_view]
+//   count_a=5
+//
+// [done]

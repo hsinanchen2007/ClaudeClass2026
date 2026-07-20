@@ -315,7 +315,9 @@ void practical_product_search_by_category() {
     std::cout << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra equal_range.cpp -o equal_range
+
+// === 預期輸出 ===
 // 3 found at indices [2, 5), count=3
 // elements: 3 3 3
 // 6 found? false

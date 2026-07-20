@@ -578,3 +578,16 @@ int main()
 //    Boost.Asio、Folly,或你平台的 job system。自己寫一個
 //    (像這個示範) 是為了 *理解*,不是為了上線。
 // =============================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 08_thread_pool.cpp -o 08_thread_pool
+
+// === 預期輸出 ===
+// [main] pool with 4 workers
+// [main] sum of squares 1..12 = 650   wall = 600 ms  (sequential would be ~2400 ms)
+// [main] caught from pool task: worker exploded
+// [main] lambda result = 15
+// [main] exiting, pool will join all workers
+//
+// [demo] parallel map-reduce via pool
+//   sum 1..1000 = 500500 (預期 500500), wall = 0 ms
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

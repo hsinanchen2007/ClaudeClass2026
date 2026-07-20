@@ -497,3 +497,28 @@ int main() {
   Non-member:      operator==, !=, std::swap, std::erase_if (C++20)
 ============================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra unordered_map.cpp -o unordered_map
+
+// === 預期輸出 (節錄) ===
+// m2                  : { (cherry:3) (banana:2) (apple:1) } (size=3, buckets=13)
+//
+// m["apple"] = 10
+// m["unknown"] = 0
+// after operator[]    : { (unknown:0) (banana:20) (apple:10) } (size=3, buckets=13)
+// at exception: unordered_map::at
+//
+// [walk] (cherry,3) (banana,2) (apple,1)
+// max_size = 329406144173384850
+// get_allocator() OK
+//
+// insert ok=1, again ok=0
+// after insert_or_a   : { (a:100) } (size=1, buckets=13)
+// try_emplace hello = !!!!!
+// emplace             : { (2:XXX) (1:one) } (size=2, buckets=13)
+// after emplace_hint  : { (4:four) (2:XXX) (1:one) } (size=3, buckets=13)
+// after erase         : { (b:2) } (size=1, buckets=13)
+// after merge         : { (c:30) (b:2) (a:1) } (size=3, buckets=13)
+// mb (留下衝突)       : { (b:20) } (size=1, buckets=13)
+// after swap          : { (9:9) } (size=1, buckets=13)
+// …（後略，完整輸出共 64 行）

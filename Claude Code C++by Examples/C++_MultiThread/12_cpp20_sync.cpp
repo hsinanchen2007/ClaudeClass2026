@@ -552,3 +552,28 @@ int main()
 //    用的是同一套 kernel 機制,所以效能上跟手刻的 mutex+CV
 //    在同一個量級,不會更慢,寫起來只會更短。
 // =============================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 12_cpp20_sync.cpp -o 12_cpp20_sync
+
+// === 預期輸出 (節錄) ===
+// PART 1: std::latch (一次性集合點)
+//   [main] waiting for all 4 workers to init...
+//   [worker 0] init done
+//   [worker 1] init done
+//   [worker 2] init done
+//   [worker 3] init done
+//   [main] all ready, proceeding
+//
+// PART 2: std::barrier (可重複會合點)
+//     [worker 0] phase work for round 1 done
+//     [worker 1] phase work for round 1 done
+//     [worker 2] phase work for round 1 done
+//   [barrier] >>> round 1 complete, releasing all
+//     [worker 0] phase work for round 2 done
+//     [worker 1] phase work for round 2 done
+//     [worker 2] phase work for round 2 done
+//   [barrier] >>> round 2 complete, releasing all
+//     [worker 0] phase work for round 3 done
+//     [worker 1] phase work for round 3 done
+//     [worker 2] phase work for round 3 done
+// …（後略，完整輸出共 53 行）

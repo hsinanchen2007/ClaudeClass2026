@@ -181,3 +181,26 @@ static void demo_role_permission_subset() {
         std::cout << "}\n";
     }
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 11_lc_78_subsets.cpp -o 11_lc_78_subsets
+
+// === 預期輸出 ===
+// subsets count = 8 (= 2^3 = 8)
+// [ ]
+// [ 1 ]
+// [ 2 ]
+// [ 1 2 ]
+// [ 3 ]
+// [ 1 3 ]
+// [ 2 3 ]
+// [ 1 2 3 ]
+// [LC89] gray(3) = 0 1 3 2 6 7 5 4  (相鄰只差一 bit)
+// [permission] 所有 8 種權限組合:
+//   mask=0 -> { }
+//   mask=1 -> { READ }
+//   mask=2 -> { WRITE }
+//   mask=3 -> { READ WRITE }
+//   mask=4 -> { ADMIN }
+//   mask=5 -> { READ ADMIN }
+//   mask=6 -> { WRITE ADMIN }
+//   mask=7 -> { READ WRITE ADMIN }

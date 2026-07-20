@@ -470,3 +470,28 @@ int main() {
   ★ 沒有:at, push_back, insert, erase, resize, swap (因為 view 不擁有資料)
 ============================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra span.cpp -o span
+
+// === 預期輸出 (節錄) ===
+// sp6.empty() = true
+// sp1 (from C arr)    : [ 1 2 3 4 5 ] (size=5)
+// sp2 (from array)    : [ 10 20 30 40 ] (size=4)
+// sp3 (from vector)   : [ 100 200 300 ] (size=3)
+// sp5 (ptr, ptr)      : [ 100 200 ] (size=2)
+//
+// sp1[2] = 3
+// front  = 1
+// back   = 5
+// data() points to 1
+//
+// [正向] 1 2 3 4 5
+// [反向] 5 4 3 2 1
+//
+// size       = 5
+// size_bytes = 20
+// empty      = false
+// first(3)            : [ 1 2 3 ] (size=3)
+// first<3>()          : [ 1 2 3 ] (size=3)
+// last(2)             : [ 4 5 ] (size=2)
+// …（後略，完整輸出共 47 行）

@@ -588,3 +588,28 @@ int main() {
   erase_if(偶數)      : [ 1 3 5 ] (size=3, capacity=6)
 ============================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra vector.cpp -o vector
+
+// === 預期輸出 (節錄) ===
+// v1 (default)        : [ ] (size=0, capacity=0)
+// v2 (size=5)         : [ 0 0 0 0 0 ] (size=5, capacity=5)
+// v3 (5 個 42)        : [ 42 42 42 42 42 ] (size=5, capacity=5)
+// v4 (initializer)    : [ 1 2 3 4 5 ] (size=5, capacity=5)
+// v5 (range copy)     : [ 2 3 4 5 ] (size=4, capacity=4)
+// v6 (after move from): [ ] (size=0, capacity=0)
+// v7 (move 來的)      : [ 1 2 3 4 5 ] (size=5, capacity=5)
+// assign(3, 99)       : [ 99 99 99 ] (size=3, capacity=3)
+// assign({...})       : [ 7 8 9 10 ] (size=4, capacity=4)
+//
+// [元素存取]
+// e[1]      = 20
+// e.at(2)   = 30
+// e.front() = 10
+// e.back()  = 40
+// at(100) 例外: vector::_M_range_check: __n (which is 100) >= this->size() (which is 4)
+// raw[0] via data() = 10
+//
+// [正向走訪]   1 2 3 4 5
+// [反向走訪]   5 4 3 2 1
+// …（後略，完整輸出共 61 行）

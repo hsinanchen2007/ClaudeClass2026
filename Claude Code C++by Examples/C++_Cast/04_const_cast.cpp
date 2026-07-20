@@ -223,3 +223,12 @@ static void demo_legacy_api_strtok() {
     while (p) { ++cnt; p = std::strtok(nullptr, ","); }
     std::cout << "[strtok] split count = " << cnt << " (= 3)\n";
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 04_const_cast.cpp -o 04_const_cast
+
+// === 預期輸出 ===
+// [Demo1] x = 99 (改寫成功)
+// [Demo2] (此處 UB 範例僅以註解保留，請看程式碼)
+// [Demo3] legacy length = 11
+// [getter_pair] rc.at(2) = 999 (走 const 版，內容 999)
+// [strtok] split count = 3 (= 3)

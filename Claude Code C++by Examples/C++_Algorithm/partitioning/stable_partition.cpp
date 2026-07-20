@@ -287,7 +287,9 @@ void practical_pin_starred_emails() {
     std::cout << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra stable_partition.cpp -o stable_partition
+
+// === 預期輸出 ===
 // stable partition (even first): 2 4 6 8 1 3 5 7 9 (boundary @ 4)
 // tasks (pending first, FIFO inside): {1,todo} {3,todo} {5,todo} {2,done} {4,done} {6,done}
 // LC2161: 9 5 3 10 10 12 14

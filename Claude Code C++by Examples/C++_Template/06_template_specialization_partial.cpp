@@ -304,3 +304,26 @@ int main() {
 //  【下一篇】
 //    07_default_template_arguments.cpp ── 預設模板引數。
 // ============================================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 06_template_specialization_partial.cpp -o 06_template_specialization_partial
+
+// === 預期輸出 ===
+// is_pointer<int>           = false
+// is_pointer<int*>          = true
+// is_pointer<const int*>    = true
+// is_pointer<int* const>    = true
+// TypeName<int>                       = int
+// TypeName<std::vector<int>>          = std::vector<int>
+// TypeName<std::vector<std::vector<double>>> = std::vector<std::vector<double>>
+// TypeName<int*>                      = int*
+// Merged: 1 1 2 3 4 4
+// 7
+// *(7)
+// [1, 2, 3]
+// [[1, 2], [3, 4, 5]]
+// unique_occurrences({1,2,2,1,1,3}) = true
+// unique_occurrences({1,2})         = false
+// (alice, 30)
+// DefaultValue<int>            = 0
+// DefaultValue<int*>           = 0 (nullptr)
+// DefaultValue<vector<int>>... = size 0

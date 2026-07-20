@@ -300,7 +300,9 @@ void practical_apply_discount() {
     std::cout << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra for_each.cpp -o for_each
+
+// === 預期輸出 ===
 // elements: 1 2 3 4 5
 // squared: 1 4 9 16 25
 // sum of squares = 55

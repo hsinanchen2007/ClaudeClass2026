@@ -324,3 +324,20 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 12_custom_iterator.cpp -o 12_custom_iterator
+
+// === 預期輸出 ===
+// stride=2 走訪: 10 30 50 70
+// stride=2 sum = 160 (10+30+50+70 = 160)
+// 第一個 >25 = 30 (期望 30)
+// begin[2] = 50 (= v[4] = 50)
+// 我們宣告的 category 是 random_access_iterator_tag? true
+// missing number = 4 (期望 10 - 6 = 4)
+// historical iter sum = 105 (期望 105)
+// historical iter category = forward? true
+// LC1672 richest = 15 (期望 15)
+//   col 0 sum = 11
+//   col 1 sum = 11
+//   col 2 sum = 18
+// Audio 左聲道平均 = 17 (期望 (10+20+15+25)/4 = 17)

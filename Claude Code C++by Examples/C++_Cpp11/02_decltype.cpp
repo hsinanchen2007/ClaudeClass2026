@@ -194,3 +194,12 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 02_decltype.cpp -o 02_decltype
+
+// === 預期輸出 ===
+// [Demo1] static_assert all passed
+// [Demo2] decltype(y) is int, decltype((y)) is int&
+// [Demo3] add(1, 2.5) = 3.5 (return type deduced as double)
+// [LC1672] max wealth = 19
+// [Demo4] total prices = 12 (Elem deduced as double)

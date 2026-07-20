@@ -200,3 +200,14 @@ static void demo_common_prefix_mask() {
     std::cout << "[common_prefix] /" << commonPrefixLength(a, b)
               << " (192.168.1.5 vs .7)\n";
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 10_lc_201_range_bitwise_and.cpp -o 10_lc_201_range_bitwise_and
+
+// === 預期輸出 ===
+// [5,7] shift=4, kernighan=4
+// [0,1] shift=0, kernighan=0
+// [1,2147483647] shift=0, kernighan=0
+// [12,15] shift=12, kernighan=12
+// [7,7] shift=7, kernighan=7
+// [LC190] reverse(43261596) = 964176192 (= 964176192)
+// [common_prefix] /30 (192.168.1.5 vs .7)

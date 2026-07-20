@@ -289,3 +289,18 @@ int main() {
  *   更深入認識成員變數與成員函式（如何在 class 外定義函式、行內函式 inline 等），
  *   並用 Leetcode 1929. Concatenation of Array 來練習。
  *=============================================================================*/
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 1_ClassAndObject.cpp -o 1_ClassAndObject
+
+// === 預期輸出 ===
+// 學生: Alice 分數: 90
+// 學生: Bob 分數: 75
+// alice.score 還是 90
+// ----- Running Sum 範例 (Leetcode 1480) -----
+// 原陣列: 1 2 3 4
+// 累計和: 1 3 6 10
+// ----- Leetcode 1672 Richest Customer Wealth -----
+// 最富有財富: 13
+// ----- 感測器讀數 (日常實用) -----
+// [S-01] 溫度 25.3°C, 濕度 60%
+// [S-02] 溫度 42.5°C, 濕度 88% (警戒!)

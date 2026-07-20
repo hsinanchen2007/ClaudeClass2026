@@ -360,3 +360,25 @@ int main() {
 //  【下一篇】
 //    23_policy_based_design.cpp ── 把行為拆成 policy。
 // ============================================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 22_crtp.cpp -o 22_crtp
+
+// === 預期輸出 ===
+// a < b  = true
+// a == c = true
+// b >= c = true
+// Cat count = 3 (expect 3)
+// Dog count = 1 (expect 1)
+// Cat count = 0 (expect 0)
+// cloned title = Spec
+// decode([0,1,1])    = 3 (expect 3)
+// decode([1,0,1,1])  = 13 (expect 11)
+// Node count alive   = 7 (expect 7)
+// (n1 < m1)? true
+// Alice(30)
+// 1[.]1[.]1[.]1
+// 255[.]100[.]50[.]0
+// (ip1 < ip2) = true
+// GET /api/v1/users
+//   Accept: application/json
+//   X-Trace: abc123

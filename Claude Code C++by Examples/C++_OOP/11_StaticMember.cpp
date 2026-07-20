@@ -281,3 +281,25 @@ int main() {
  *   friend 朋友函式 / 朋友類別 — 怎麼讓「外人」看到你的 private 成員？
  *   為什麼 operator<< 重載常常需要 friend？
  *=============================================================================*/
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 11_StaticMember.cpp -o 11_StaticMember
+
+// === 預期輸出 ===
+// ----- 範例 1：Widget 計數 -----
+// 目前 Widget 個數 = 0
+// 建了三個後 = 3
+// 再複製一個 = 4
+// 離開區塊後 = 0
+// ----- 範例 2：Leetcode 1396 -----
+// Paradise → Cambridge 平均: 14
+// Leyton → Waterloo 平均: 11
+// ----- 範例 3：Leetcode 359 Logger Rate Limiter -----
+// 1
+// 1
+// 0
+// 0
+// 1
+// ----- 範例 4：日常實用 - IdGenerator -----
+// id1 = 1000
+// id2 = 1001
+// id3 = 1002

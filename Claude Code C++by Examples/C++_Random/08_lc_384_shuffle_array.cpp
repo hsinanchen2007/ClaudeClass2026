@@ -217,3 +217,23 @@ int main() {
     demo_lc519_random_flip();
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 08_lc_384_shuffle_array.cpp -o 08_lc_384_shuffle_array
+
+// === 預期輸出 ===
+// [manual] 2 4 5 1 3
+// [std]    2 4 1 3 5
+// [reset]  1 2 3 4 5
+// [uniformity] each permutation count (期望 ~10000):
+//   123 -> 10050
+//   132 -> 9911
+//   213 -> 10222
+//   231 -> 10018
+//   312 -> 9952
+//   321 -> 9847
+// [LC519] random flip matrix 3x3 翻 5 次：
+//   flipped (1,1)
+//   flipped (0,1)
+//   flipped (1,0)
+//   flipped (0,0)
+//   flipped (0,2)

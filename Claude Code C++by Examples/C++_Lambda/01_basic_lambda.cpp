@@ -248,3 +248,14 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 01_basic_lambda.cpp -o 01_basic_lambda
+
+// === 預期輸出 ===
+// [Demo1] add(3, 4) = 7
+// [Demo2] sum(1..10) = 55
+// [Demo3] sorted desc: 9 7 5 2 1
+// [LC1768] merge("abc","pqr") = apbqcr
+// [LC1768] merge("ab","pqrs") = apbqrs
+// [LC1672] maximum wealth = 6
+// [retry] succeeded at attempt #3

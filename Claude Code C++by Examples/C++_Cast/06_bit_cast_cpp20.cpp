@@ -185,3 +185,15 @@ static void demo_double_to_bytes() {
     std::cout << "[double->bytes] round-trip = " << back << '\n';
 }
 #endif
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 06_bit_cast_cpp20.cpp -o 06_bit_cast_cpp20
+
+// === 預期輸出 ===
+// [Demo1] float 1.0 → 0x3f800000 (= 0x3f800000)
+// [Demo2] uint64 0x400921FB54442D18 → double 3.14159
+// [Demo3] constexpr bit_cast: 1.5f → 0x3fc00000
+// [hash_float] hash(+0.0) == hash(-0.0) ? yes
+// [hash_float] hash(3.14) = 1078523331
+// [double->bytes] pi raw: 11 2d 44 54 fb 21 9 40
+// [double->bytes] round-trip = 3.14159
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

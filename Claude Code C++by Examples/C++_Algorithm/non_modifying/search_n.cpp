@@ -253,7 +253,9 @@ void practical_idle_period_detect() {
         std::cout << "no idle period of " << n << "s\n";
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra search_n.cpp -o search_n
+
+// === 預期輸出 ===
 // 3 consecutive 2s at index 2
 // 4 consecutive 5s at index 7
 // 5 consecutive 1s: not found

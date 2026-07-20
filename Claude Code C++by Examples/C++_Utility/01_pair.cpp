@@ -362,3 +362,31 @@ int main() {
       key=[APP_NAME], value=[MyService]
 ================================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 01_pair.cpp -o 01_pair
+
+// === 預期輸出 ===
+// [demo_basic]
+//   p1 = (1, apple)
+//   p2 = (2, banana)
+//   p3 = (3, cherry)
+// [demo_structured_binding]
+//   code=42, msg=the answer
+// [demo_pair_helpers]
+//   get<0>(p)=1, get<1>(p)=apple
+//   get<int>(p)=1, get<std::string>(p)=apple
+//   tuple_size = 2
+//   a==a: 1, a!=b: 1, a<b:  1, a<c:  1
+//   member swap: x=(2,y)
+//   std::swap : x=(1,x)
+//   piecewise: first="AAA", second.size=4, second[0]=7
+// [demo_leetcode_two_sum]
+//   nums[0] + nums[1] = 2 + 7 = 9
+// [demo_leetcode_merge_intervals]
+//   [1,6]
+//   [8,10]
+//   [15,18]
+// [demo_practical_config]
+//   key=[DB_HOST], value=[127.0.0.1]
+//   key=[DB_PORT], value=[5432]
+//   key=[APP_NAME], value=[MyService]

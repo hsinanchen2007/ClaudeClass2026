@@ -298,3 +298,24 @@ int main() {
 //  【下一篇】
 //    08_typename_vs_class.cpp ── typename 關鍵字與 dependent name。
 // ============================================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 07_default_template_arguments.cpp -o 07_default_template_arguments
+
+// === 預期輸出 ===
+// MyStack default top = 3
+// MyStack<int, deque> top = 20
+// asc: 1 1 2 3 4 5 6 9
+// desc: 9 6 5 4 3 2 1 1
+// Queue peek = 1 (expect 1)
+// Queue pop  = 1 (expect 1)
+// Queue pop  = 2 (expect 2)
+// Queue pop  = 3 (expect 3)
+// Queue pop  = 4 (expect 4)
+// Queue empty = true
+// zero()             = 0
+// zero<double>()     = 0
+// ping(1)    = 1 (expect 1)
+// ping(100)  = 2 (expect 2)
+// ping(3001) = 3 (expect 3)
+// ping(3002) = 3 (expect 3)
+// kv (sorted ascending): 1:one 2:two 3:three

@@ -217,3 +217,31 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 03_manipulators.cpp -o 03_manipulators
+
+// === 預期輸出 ===
+// [Demo1] bool default      = 1
+// [Demo1] bool boolalpha    = true
+// [Demo1] dec 255           = 255
+// [Demo1] hex 255           = ff
+// [Demo1] oct 255           = 377
+// [Demo1] hex+showbase      = 0xff
+// [Demo2] default           = 3.14159
+// [Demo2] setprecision(3)   = 3.14
+// [Demo2] fixed prec(3)     = 3.142
+// [Demo2] scientific prec(3)= 3.142e+00
+// [Demo3] setw(8)|      42|
+// [Demo3] left   |42      |
+// [Demo3] fill 0 |00000042|
+// [Demo4]
+// Name        Age     Score
+// -------------------------
+// Alice        30     92.50
+// Bob           9    100.00
+// Charlie      12      7.25
+// [hexdump]
+// 0000: 48 65 6c 6c 6f 20 57 6f 72 6c 64 21 0a 00 ff 7e
+// [FmtGuard] before: 255
+// [FmtGuard] inside: 0xff
+// [FmtGuard] after:  255

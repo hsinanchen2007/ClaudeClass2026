@@ -225,3 +225,19 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 07_stringstream.cpp -o 07_stringstream
+
+// === 預期輸出 ===
+// [Demo1] user=alice, id=00042, score=91.50
+// [Demo2] name=alice age=30 score=91.5
+// [Demo3] [alice] [30] [Taipei] [Engineer]
+// [Demo4] 1, 2, 3, 4, 5
+// [Demo5] iteration-1
+// [Demo5] iteration-2
+// [Demo5] iteration-3
+// [report] n=6 sum=108 avg=18.00 min=4 max=42
+// [parse-pairs]
+//   [user] = [alice]
+//   [sid] = [ABC123]
+//   [ttl] = [3600]

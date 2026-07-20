@@ -446,3 +446,18 @@ int main()
 //    要跑成千上萬個小工作,改用執行緒池或平行演算法
 //    (std::execution::par,後面有專門的一課)。
 // =============================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 06_async_future.cpp -o 06_async_future
+
+// === 預期輸出 ===
+// [sequential] sum = 7003000   wall = 604 ms
+// [parallel  ] sum = 7003000   wall = 202 ms  (~3x faster: three 200ms tasks overlapped)
+// [exception ] caught from worker: something went wrong on the worker
+// [reduction ] total = 10000000   wall = 30 ms
+//
+// [demo] RPC timeout with future::wait_for
+//   TIMEOUT! falling back to cached value
+//
+// [demo] packaged_task + thread
+//   result = 42 (預期 42)
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

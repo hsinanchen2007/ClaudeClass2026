@@ -172,3 +172,13 @@ static void demo_xor_stream_cipher() {
     for (auto b : data) std::cout << static_cast<char>(b);
     std::cout << '\n';
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 06_lc_136_single_number.cpp -o 06_lc_136_single_number
+
+// === 預期輸出 ===
+// single = 1
+// single = 4
+// single = 1
+// single = 7
+// [LC89] gray(3) = 0 1 3 2 6 7 5 4  (相鄰差一 bit)
+// [xor_cipher] encrypted bytes: 50 63 54 54 53 -> decrypted: hello

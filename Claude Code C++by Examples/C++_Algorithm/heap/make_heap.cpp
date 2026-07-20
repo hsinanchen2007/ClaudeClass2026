@@ -319,12 +319,15 @@ void practical_top_alerts_dashboard() {
     std::cout << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
-// max-heap (root=9): 9 6 4 1 5 3 2 1   (具體排列依實作)
-// min-heap (root=1): 1 1 2 3 5 9 4 6   (具體排列依實作)
+// 編譯: g++ -std=c++20 -Wall -Wextra make_heap.cpp -o make_heap
+
+// === 預期輸出 ===
+// max-heap (root=9): 9 6 4 1 5 3 2 1
+// min-heap (root=1): 1 1 2 3 5 9 4 6
 // max-prio job at top: E(5)
 // LC215: 5
 // LC1046: 1
 // practical: highest-prio job = alert(5)
 // LC703 add(3)=4 add(5)=5 add(10)=5 add(9)=8 add(4)=8
 // top alerts (by severity): DB down(9) Disk full(7) OOM warning(5)
+// ⚠️ 部分項目的順序/數值屬 unspecified 或每次執行不同，實際結果可能與上面不同。

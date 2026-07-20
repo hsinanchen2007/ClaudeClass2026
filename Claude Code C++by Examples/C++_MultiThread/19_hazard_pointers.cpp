@@ -544,3 +544,17 @@ int main()
 //      多個 hazard per operation、跨 NUMA 的 retire list 平衡、
 //      動態 max threads。folly::HazPtr 是個好的閱讀範本。
 // =============================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 19_hazard_pointers.cpp -o 19_hazard_pointers
+
+// === 預期輸出 ===
+// [HP stack] 800000 push+pop in 228 ms
+// [HP stack] sum = 319999600000  expected = 319999600000  OK
+//
+// [demo] HP stack as undo-stack (2 threads, 5 cmds)
+//   pop order: 500 400 300 200 100 50 40 30 20 10
+//
+// [note] HP slot usage observation
+//   上面 stress test 共用了 ~8 條 producer+consumer thread, 各佔 1 個 hazard slot
+//   → 生產系統 thread 數會動態變化, folly::HazPtr 採動態 grow 才安全
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

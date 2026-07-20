@@ -459,3 +459,28 @@ int main() {
                    std::swap, std::erase_if (C++20)
 ============================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra set.cpp -o set
+
+// === 預期輸出 (節錄) ===
+// s2 (自動排序去重)   : { 1 2 3 4 5 6 9 } (size=7)
+// s5 (move 來)        : { 1 2 3 4 5 6 9 } (size=7)
+// s6 (greater)        : { 3 2 1 } (size=3)
+//
+// [正向] 1 2 3 4 5 6 9
+// [反向] 9 6 5 4 3 2 1
+//
+// [Capacity] size=7, empty=false
+// max_size = 461168601842738790
+// get_allocator() OK
+//
+// insert 10 → ok=true, *it=10
+// insert 10 again → ok=false
+// after insert(list)  : { 1 2 3 4 10 } (size=5)
+// insert with hint    : { 1 2 3 4 5 10 } (size=6)
+// set<string> emplace : { AAAAA hello } (size=2)
+// after erase         : { 2 4 5 } (size=3)
+// after extract(2)    : { 1 3 } (size=2)
+// re-insert as 20     : { 1 3 20 } (size=3)
+// a after merge       : { 1 2 3 4 5 } (size=5)
+// …（後略，完整輸出共 41 行）

@@ -285,3 +285,29 @@ int main() {
  *   const 成員函式 — 「我保證不改物件」的承諾，
  *   以及 const 物件、const 參數一起搭配的觀念。
  *=============================================================================*/
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 9_AssignmentOperator.cpp -o 9_AssignmentOperator
+
+// === 預期輸出 ===
+// ----- 賦值 vs 複製建構 -----
+// c = apple
+// [op=] 從 "apple" 賦值給 "banana"
+// b = apple
+// ----- 自我賦值 -----
+// [op=] 從 "apple" 賦值給 "apple"
+//   └ 自我賦值，直接 return
+// a = apple
+// ----- 連鎖賦值 a = b = c -----
+// [op=] 從 "zzz" 賦值給 "yyy"
+// [op=] 從 "zzz" 賦值給 "xxx"
+// x = zzz
+// y = zzz
+// z = zzz
+// ----- 範例 4：Leetcode 1480 - 賦值整顆累加器 -----
+// r1.total = 350 (應為 350)
+// r2.total = 300 (應為 300，未受 r1 影響)
+// ----- 範例 5：Leetcode 225 用兩個 queue 做 stack -----
+// st2.pop = 3 (預期 3)
+// st.top  = 3 (仍為 3，未受影響)
+// ----- 範例 6：日常實用 - Config 配置物件覆蓋 -----
+// cfg: dark/80/en-US

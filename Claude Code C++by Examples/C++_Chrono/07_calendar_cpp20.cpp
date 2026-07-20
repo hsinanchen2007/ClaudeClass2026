@@ -196,3 +196,14 @@ static void demo_first_monday_of_month() {
               << static_cast<unsigned>(ymd.day()) << '\n';
 }
 #endif
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 07_calendar_cpp20.cpp -o 07_calendar_cpp20
+
+// === 預期輸出 ===
+// [Demo1] birthday        = 2026-5-5
+// [Demo1] +1 month        = 2026-6-5 (ok=1)
+// [Demo1] +30 days        = 2026-6-4
+// [Demo2] birthday is weekday index 2
+// [Demo3] last day of May 2026 = 2026-5-31
+// [days_between] 2026/1/1 -> 2026/5/18 = 137 days
+// [first_monday] 2026 May = 2026-5-4

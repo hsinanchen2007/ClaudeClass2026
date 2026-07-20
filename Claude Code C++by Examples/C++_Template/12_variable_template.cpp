@@ -252,3 +252,27 @@ int main() {
 //  【下一篇】
 //    13_variadic_templates.cpp ── 進階篇開始：可變參數模板。
 // ============================================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 12_variable_template.cpp -o 12_variable_template
+
+// === 預期輸出 ===
+// pi<float>       = 3.1415927410125732422
+// pi<double>      = 3.141592653589793116
+// pi<long double> = 3.1415926535897932385
+// tau<double>     = 6.283185307179586232
+// golden<double>  = 1.6180339887498949025
+// bit<0> = 1, bit<3> = 8, bit<10> = 1024
+// is_integral_v<int>          = true
+// is_integral_v<double>       = false
+// is_same_v<int,int>          = true
+// is_same_v<int,long>         = false
+// bytes_of<char>   = 1
+// bytes_of<int>    = 4
+// bytes_of<double> = 8
+// sum_int = 15
+// pow_t(2.0, 10)  = 1024
+// pow_t(2.0, -2)  = 0.25
+// pow_t(3LL, 5)   = 243
+// nearly_equal<double>(0.1+0.2, 0.3) = true
+// epsilon_v<float>  = 9.9999997473787516356e-06
+// epsilon_v<double> = 1.0000000000000000623e-09

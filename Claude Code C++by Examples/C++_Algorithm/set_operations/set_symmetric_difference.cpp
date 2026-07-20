@@ -261,7 +261,9 @@ void practical_file_sync_changes() {
     std::cout << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra set_symmetric_difference.cpp -o set_symmetric_difference
+
+// === 預期輸出 ===
 // symmetric difference: 1 2 3 6 7
 // with duplicates: 1 2 3 4 (|3-2|=1 個 2)
 // identical -> size = 0

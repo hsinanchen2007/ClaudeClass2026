@@ -181,3 +181,20 @@ int main() {
     demo_practical_path_helpers();
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 01_path.cpp -o 01_path
+
+// === 預期輸出 ===
+// [Demo1] p1   = "/usr/local/bin"
+// [Demo1] p2   = "data/items.csv"
+// [Demo1] cwd  = "<執行目錄>"
+// [Demo1] tmp  = "/tmp"
+// [Demo2] "<執行目錄>/build/out/log.txt"
+// [Demo2] after /= "<執行目錄>/build/out/log.txt/subdir/another.txt"
+// [Demo3] cout: "/foo bar/baz.txt"
+// [Demo3] str : /foo bar/baz.txt
+// [Practical] path_helpers
+//   join_config_path = etc/myapp/settings.json
+//   abs => <執行目錄>/a.txt
+//   abs => <執行目錄>/sub/b.txt
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

@@ -237,3 +237,17 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 10_practical_log.cpp -o 10_practical_log
+
+// === 預期輸出 ===
+// [2026-07-20 02:40:46] [INFO ] starting up, x=42
+// [2026-07-20 02:40:46] [WARN ] queue depth=8 (>5)
+// [2026-07-20 02:40:46] [ERROR] could not parse value=3.14
+// [2026-07-20 02:40:46] [INFO ] hex(255)=ff precision: 0.33
+// [main] log saved to tmp_app.log
+// [rotate] no rotate, size=55
+// [thread 1] iteration 1 value=101
+// [thread 1] iteration 2 value=102
+// [thread 2] iteration 1 value=201
+// [thread 2] iteration 2 value=202

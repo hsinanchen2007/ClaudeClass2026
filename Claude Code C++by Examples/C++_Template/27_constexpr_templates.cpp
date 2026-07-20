@@ -264,3 +264,20 @@ int main() {
 //  【下一篇】
 //    28_capstone_mini_stl.cpp ── 綜合應用：自製迷你容器。
 // ============================================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 27_constexpr_templates.cpp -o 27_constexpr_templates
+
+// === 預期輸出 ===
+// factorial(10)        = 3628800
+// climb_stairs(5)      = 8
+// fib(15)              = 610
+// sin_table[30] (~0.5) = 0.500002
+// sin_table[90] (~1.0) = 1.00452
+// [start]
+// [pause]
+// [unknown: eject]
+// is_power_of_three(27)  = true
+// is_power_of_three(45)  = false
+// is_power_of_three(243) = true
+// xor_checksum("hello") = 98
+// consteval compile_time_only() = 42

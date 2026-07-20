@@ -382,7 +382,9 @@ void practical_move_unique_ptrs() {
     std::cout << "(期望 101 102 103)\n";
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra 09_move_iterator.cpp -o 09_move_iterator
+
+// === 預期輸出 ===
 // dst (搬完):
 //   [hello, this is a long string A]
 //   [hello, this is a long string B]
@@ -398,3 +400,5 @@ void practical_move_unique_ptrs() {
 // central log size = 4 (期望 4)
 // central[0] = [w1] 2026-05-04 10:00:01 INFO  startup
 // central[3] = [w2] 2026-05-04 10:00:04 ERROR timeout
+// LC2418 sort by height desc: Mary Emma John (期望 Mary Emma John)
+// central tasks: 101 102 103 (期望 101 102 103)

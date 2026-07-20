@@ -197,3 +197,17 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 13_invoke.cpp -o 13_invoke
+
+// === 預期輸出 ===
+// [Demo1] add(3, 4) = 7
+// [Demo2] foo.twice(5) = 100
+// [Demo2] fooPtr->twice(7) = 140
+// [Demo3] foo.x = 10
+// [Demo4] run add: 30
+// [Demo4] run member: 60
+// [Demo4] run lambda: 81
+// [Demo5] by name: alice bob charlie
+// [Demo5] by salary: bob alice charlie
+// [Demo6] retry attempt #3 success

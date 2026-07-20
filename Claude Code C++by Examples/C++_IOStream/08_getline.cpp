@@ -230,3 +230,22 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 08_getline.cpp -o 08_getline
+
+// === 預期輸出 ===
+// [Demo1] line 1 = [hello world]
+// [Demo1] line 2 = [this is line 2]
+// [Demo2-bug]  n=42 s=[]
+// [Demo2-fix]  n=42 s=[the answer]
+// [Demo3] [alice] [bob] [charlie]
+// [Demo4] cleaned = [hello]
+// [Demo4] cleaned = [world]
+// [skip-blank-comment]
+//   raw#2 eff#1 = first line
+//   raw#5 eff#2 = second line
+//   raw#6 eff#3 = third line
+// [per-line-split]
+//   level=INFO msg=[server started]
+//   level=WARN msg=[disk almost full]
+//   level=ERROR msg=[connection lost  abruptly]

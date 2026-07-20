@@ -221,3 +221,15 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 01_auto.cpp -o 01_auto
+
+// === 預期輸出 ===
+// [Demo1] i=42 d=3.14 s=hello size=3
+// [Demo2] x=5 (a copied: 99)
+// [Demo3] sizeof(arr)=12 sizeof(p)=8 sizeof(r)=12
+// [LC1929] ans = 1 2 1 1 2 1
+// [LC1672] max wealth = 21
+// [Config] host => localhost
+// [Config] port => 8080
+// [Config] user => admin

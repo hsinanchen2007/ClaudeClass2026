@@ -163,3 +163,14 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 04_binary_literals.cpp -o 04_binary_literals
+
+// === 預期輸出 ===
+// [Demo1] all == 10? 1
+// [Demo2] perm = 00000101  has READ? 1  has WRITE? 0  has EXEC? 1
+// [Demo3] cmd = 11101010  mode=3  addr=42
+// [LC191] popcount(0b00000000000000000000000000001011) = 3
+// [LC191] popcount(0b11111111111111111111111111111101) = 31
+// [Demo4] user  = rw-
+// [Demo4] admin = rwx

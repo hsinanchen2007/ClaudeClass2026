@@ -288,7 +288,9 @@ void practical_enumerate_seat_assignments() {
     std::cout << "total assignments: " << count << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra next_permutation.cpp -o next_permutation
+
+// === 預期輸出 (節錄) ===
 // all permutations of {1,2,3}:
 //   1 2 3
 //   1 3 2
@@ -309,15 +311,4 @@ void practical_enumerate_seat_assignments() {
 //   1 2 3
 //   1 3 2
 //   2 1 3
-//   2 3 1
-//   3 1 2
-//   3 2 1
-// Practical (ID combos of "ABC"):
-//   ABC
-//   ACB
-//   BAC
-//   BCA
-//   CAB
-//   CBA
-// LC60 n=4 k=9: 2314
-// total assignments: 6
+// …（後略，完整輸出共 32 行）

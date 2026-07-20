@@ -299,7 +299,9 @@ void practical_first_overflow_in_log() {
     std::cout << "first > deadline at idx: " << pos << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra partition_point.cpp -o partition_point
+
+// === 預期輸出 ===
 // boundary at index 4, first odd = 1
 // first elem >= 6 is 7 (at index 3)
 // all-even pp == end: true

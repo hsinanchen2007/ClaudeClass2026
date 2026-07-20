@@ -269,7 +269,9 @@ void practical_seat_numbers() {
     std::cout << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra iota.cpp -o iota
+
+// === 預期輸出 ===
 // iota 0..9: 0 1 2 3 4 5 6 7 8 9
 // from 100: 100 101 102 103 104
 // letters: ABCDEFG

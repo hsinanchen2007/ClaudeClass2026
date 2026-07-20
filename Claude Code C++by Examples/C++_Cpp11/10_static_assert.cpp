@@ -200,3 +200,12 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 10_static_assert.cpp -o 10_static_assert
+
+// === 預期輸出 ===
+// [Demo1] sizeof(int)=4 sizeof(Header)=8
+// [Demo2] factorial 1..6: 1 2 6 24 120 720
+// [Demo3] sumOnly(1,2)=3 sumOnly(1.5,2.5)=4
+// [Demo4] sizeof(PacketHeader) = 8
+// [Demo5] LogLevel ABI invariants verified

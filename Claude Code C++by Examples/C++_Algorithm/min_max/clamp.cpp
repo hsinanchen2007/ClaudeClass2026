@@ -274,13 +274,15 @@ void practical_volume_slider_clamp() {
     adjust(-200);std::cout << "vol=" << vol << '\n';  // 0
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra clamp.cpp -o clamp
+
+// === 預期輸出 ===
 // clamp(5, 0, 10) = 5
 // clamp(-3, 0, 10) = 0
 // clamp(99, 0, 10) = 10
 // clamp(0.7, 0.0, 1.0) = 0.7
 // clamp("m", "a", "f") = f
-// clamp(-20, -5, 5, by_abs) = -5
+// clamp(-20, -5, 5, by_abs) = 5
 // manual clamp = 10
 // LC2419: max=3, longest run = 2
 // font sizes: 8 8 16 24 72 72 72

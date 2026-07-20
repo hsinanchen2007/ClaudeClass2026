@@ -166,3 +166,28 @@ int main() {
     return 0;
 }
 
+// 編譯: g++ -std=c++20 -Wall -Wextra summary.cpp -o summary
+
+// === 預期輸出 (節錄) ===
+//
+// [demo_path_basics]
+//   current_path = <執行目錄>
+//   joined path  = <執行目錄>/tmp_fs_demo/hello.txt
+//   parent_path  = <執行目錄>/tmp_fs_demo
+//   filename     = hello.txt
+//   stem         = hello
+//   extension    = .txt
+//
+// [demo_create_write_read_remove]
+//   created dir: <執行目錄>/tmp_fs_demo
+//   wrote file: <執行目錄>/tmp_fs_demo/hello.txt
+//   exists? 1, size=17
+//   read line: hello filesystem
+//   removed tmp_fs_demo
+//
+// [demo_iterators]
+//   list current_path entries (first 10):
+//     - out.txt [file]
+//     - prog [file]
+// …（後略，完整輸出共 26 行）
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

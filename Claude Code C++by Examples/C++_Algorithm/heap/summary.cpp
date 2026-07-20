@@ -243,3 +243,20 @@ int main() {
 }
 
 // 編譯: g++ -std=c++17 -Wall -Wextra summary.cpp -o summary && ./summary
+
+// === 預期輸出 ===
+//
+// [demo_heap_ops]
+//   after make_heap: 8 3 5 2 1 4
+//   heap top(front)=8
+//   is_heap? 1
+//   after push_heap(10): 10 3 8 2 1 4 5
+//   after pop_heap + pop_back: 8 3 5 2 1 4
+//   popped=10
+//   after sort_heap (sorted): 1 2 3 4 5 8
+//   is_heap? (應為 0 或 1,看是否還滿足) 0
+//
+// [demo_min_heap]
+//   min-heap top = 1
+//
+// [done]

@@ -276,12 +276,15 @@ void practical_fibonacci_sequence() {
     std::cout << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra generate.cpp -o generate
+
+// === 預期輸出 ===
 // generate 1..5: 1 2 3 4 5
 // squares: 1 4 9 16 25 36
 // generate_n: 10 20 30 40
-// random:   ... (mt19937(42) 固定序列,實際數字依實作可能略不同)
-// Test data (n=8): ... (mt19937(2026) 固定序列)
+// random:   3 7 9 1 7
+// Test data (n=8): 22 77 42 97 98 97 9 71
 // Order IDs: ORD-00001 ORD-00002 ORD-00003 ORD-00004 ORD-00005
 // LC1929: 1 3 2 1 1 3 2 1
 // fib(10): 0 1 1 2 3 5 8 13 21 34
+// ⚠️ 部分項目的順序/數值屬 unspecified 或每次執行不同，實際結果可能與上面不同。

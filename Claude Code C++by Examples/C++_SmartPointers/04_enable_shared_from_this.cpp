@@ -399,3 +399,29 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 04_enable_shared_from_this.cpp -o 04_enable_shared_from_this
+
+// === 預期輸出 ===
+// --- 範例 1: 基本用法 ---
+// w  use_count = 2
+// w2 use_count = 2
+// same object?  1
+// --- 範例 2: 錯誤示範 (僅展示原理, 不執行 double free) ---
+// b.use_count() = 1
+// (若呼叫 wrong_self_ptr 並讓兩端離開 scope, 程式會崩潰)
+// 正確做法: 繼承 enable_shared_from_this 並用 shared_from_this()。
+// --- 範例 3: 非同步 callback ---
+// schedule 完, job.use_count = 2
+// 原 owner 釋放後, 開始執行 queue:
+//   執行 AsyncJob[download]
+// --- 範例 4: weak_from_this 的觀察者 ---
+//   Listener[A] 收到 event 1
+//   Listener[B] 收到 event 1
+//   Listener[A] 收到 event 2
+// --- 範例 5: 鏈式 Builder ---
+// SQL = SELECT * FROM users WHERE id = 1
+// --- 範例 6 (實用): Worker 訂閱事件中心 ---
+//   Worker[1] handle code=100
+//   Worker[2] handle code=100
+//   Worker[1] handle code=200

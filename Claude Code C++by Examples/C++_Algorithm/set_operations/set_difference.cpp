@@ -270,7 +270,9 @@ void practical_friend_unfollow_list() {
     std::cout << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra set_difference.cpp -o set_difference
+
+// === 預期輸出 ===
 // A \ B: 1 3 5
 // B \ A: 6
 // {1,2,2,2,3} \ {2,2} = 1 2 3 (max(3-2,0)=1 個 2 留下)

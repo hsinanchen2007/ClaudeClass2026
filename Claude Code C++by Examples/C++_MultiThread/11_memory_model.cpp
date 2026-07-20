@@ -654,3 +654,17 @@ int main()
 //    熟悉,而且不可能在順序上寫錯。「無鎖」不是目標;
 //    「快又正確」才是。
 // =============================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 11_memory_model.cpp -o 11_memory_model
+
+// === 預期輸出 ===
+// [counter ] seq_cst = 489 ms   relaxed = 290 ms   speedup = 1.68721x
+// [subscriber] payload.a = 7, payload.b = 42, text = "hello from another thread"
+// [spinlock] sum = 400000   expected = 400000
+//
+// [demo] publish/subscribe via release/acquire
+//   got config: port=8080 name=main-service
+//
+// [demo] relaxed event counter (純統計)
+//   events = 400000 (預期 400000)
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

@@ -164,3 +164,11 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 05_inline_variables.cpp -o 05_inline_variables
+
+// === 預期輸出 ===
+// [Demo1] Counter::total = 3
+// [Demo2] version=1.0.0 maxRetries=3
+// [Demo3] demo-app max_users=10000 timeout=30000
+// [Stats] req=3 err=1

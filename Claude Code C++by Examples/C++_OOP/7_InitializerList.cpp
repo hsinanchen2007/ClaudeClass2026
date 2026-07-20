@@ -310,3 +310,23 @@ int main() {
  *   複製建構子 (Copy Constructor) — 物件被複製時發生什麼事？
  *   為什麼有時候會踩到「淺拷貝 vs 深拷貝」的坑。
  *=============================================================================*/
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 7_InitializerList.cpp -o 7_InitializerList
+
+// === 預期輸出 ===
+// ----- 範例 1：Point 用初始化列表 -----
+// Point(3, 4) 建構完成
+// ----- 範例 2：必須用初始化列表的三種成員 -----
+// MustUseList{ id=1, refToX=100, name=demo }
+// MustUseList{ id=1, refToX=999, name=demo }
+// ----- 範例 3：Leetcode 535 TinyURL -----
+// 短網址: http://tiny.url/0
+// 還原:   https://leetcode.com/problems/design-tinyurl/
+// 短網址: http://tiny.url/1
+// 還原:   https://example.com/very/long/path?with=query
+// 驗證通過
+// ----- 範例 4：Leetcode 1396 Underground System -----
+// Leyton→Waterloo 平均: 11
+// ----- 範例 5：Logger 帶 const 成員 -----
+// [auth][L2][#1] 使用者登入
+// [auth][L2][#2] 使用者登出

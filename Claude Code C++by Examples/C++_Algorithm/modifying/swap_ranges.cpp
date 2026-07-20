@@ -231,12 +231,14 @@ void practical_left_right_camera_swap() {
     std::cout << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra swap_ranges.cpp -o swap_ranges
+
+// === 預期輸出 ===
 // a: 10 20 30 40 50
 // b: 1 2 3 4 5
 // v: 8 9 10 4 5
 // w: 6 7 1 2 3
-// p.swap(q): p has 2 items, q has 3 items
+// p.swap(q): p has 2 items, q has 3
 // Swap rows 0 and 2: [9,10,11,12] [5,6,7,8] [1,2,3,4]
 // Segments swapped: 7 8 9 0 0 1 2 3
 // swap halves: 7 8 9 1 2 3

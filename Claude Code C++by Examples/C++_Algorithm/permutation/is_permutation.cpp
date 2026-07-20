@@ -302,7 +302,9 @@ void practical_inventory_match() {
     std::cout << "inventory match: " << std::boolalpha << ok << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra is_permutation.cpp -o is_permutation
+
+// === 預期輸出 ===
 // {1,2,3,4} ~ {4,3,2,1}: true
 // {1,1,2,3} ~ {1,2,2,3}: false
 // size mismatch: false

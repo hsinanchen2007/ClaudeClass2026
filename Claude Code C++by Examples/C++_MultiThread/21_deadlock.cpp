@@ -563,3 +563,30 @@ int main()
 //    這也是 deadlock,但很難看出來。預防原則:critical section
 //    內 *只做純運算與資料結構操作*,不呼叫會阻塞的東西。
 // =============================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 21_deadlock.cpp -o 21_deadlock
+
+// === 預期輸出 ===
+// 8 threads, 50000 random transfers each, between 8 accounts.
+//
+//   [scoped_lock(a, b)        ] 108 ms  total balance = 8000000  (expected 8000000)
+//   [try_lock + retry (member) ] 71 ms  total balance = 8000000  (expected 8000000)
+//   [std::try_lock free fn     ] 64 ms  total balance = 8000000  (expected 8000000)
+//   [address-ordered locking   ] 59 ms  total balance = 8000000  (expected 8000000)
+//
+// --- LC 1226 Dining Philosophers ---
+//   P0 eats #1
+//   P2 eats #1
+//   P0 eats #2
+//   P2 eats #2
+//   P4 eats #1
+//   P1 eats #1
+//   P4 eats #2
+//   P1 eats #2
+//   P3 eats #1
+//   P3 eats #2
+//   total meals = 10 (預期 10, 無 deadlock)
+//
+// [demo] matching engine 兩鎖 (BTC + USD)
+//   btc=996000 usd=121000000 (4 thread × 1000 trade, 無 deadlock)
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

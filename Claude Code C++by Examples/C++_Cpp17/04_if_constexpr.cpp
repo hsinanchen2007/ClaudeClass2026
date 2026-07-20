@@ -184,3 +184,18 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 04_if_constexpr.cpp -o 04_if_constexpr
+
+// === 預期輸出 ===
+// [describe] integer: 42
+// [describe] floating: 3.14
+// [describe] pointer to: 7
+// [describe] something: hi
+// 1, 2.5, hello, X, world
+// [Demo3] toString(42)      = 42
+// [Demo3] toString(3.14)    = 3.140000
+// [Demo3] toString("hi")   = hi
+// [Demo4] safeDiv(10, 0)   = 0
+// [Demo4] safeDiv(10, 3)   = 3
+// [Demo4] safeDiv(10.0, 4.0) = 2.5

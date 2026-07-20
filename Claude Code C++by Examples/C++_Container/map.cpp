@@ -515,3 +515,28 @@ int main() {
       operator==, <=> (C++20), std::swap, std::erase_if (C++20)
 ============================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra map.cpp -o map
+
+// === 預期輸出 (節錄) ===
+// m2                  : { (apple:1) (banana:2) (cherry:3) } (size=3)
+// m6 (greater)        : { (b:2) (a:1) } (size=2)
+//
+// m["apple"] = 10
+// m["unknown"] = 0
+// after operator[]    : { (apple:10) (banana:20) (unknown:0) } (size=3)
+// at("apple") = 10
+// at exception: map::at
+//
+// [正向] (apple,1) (banana,2) (cherry,3)
+// [反向] (cherry,3) (banana,2) (apple,1)
+//
+// [Capacity] size=3, empty=false
+// max_size = 256204778801521550
+// get_allocator() OK
+//
+// insert a:1 → ok=true
+// insert a:999 → ok=false, value=1
+// after operator[]    : { (a:999) } (size=1)
+// insert_or_assign("a",100) inserted? false, value=100
+// …（後略，完整輸出共 53 行）

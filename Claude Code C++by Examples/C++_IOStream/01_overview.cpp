@@ -197,3 +197,17 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 01_overview.cpp -o 01_overview
+
+// === 預期輸出 ===
+// [cout] normal info (buffered, line-buffered to terminal)
+// [cerr] error message (unbuffered)
+// [clog] log message (buffered to stderr)
+// [Demo2] (3, 4)
+// name=alice pos=(1, 2)
+// [Demo3] captured = name=bob pos=(7, 8)
+// [unit-test] expected == actual? true
+// [fan-out] hello
+// [fan-out] world
+// [fan-out] captured size = 32

@@ -332,7 +332,9 @@ void practical_level_threshold_lookup() {
     }
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra lower_bound.cpp -o lower_bound
+
+// === 預期輸出 ===
 // lower_bound(5) at index 3, val=5
 // lower_bound(4) at index 3, val=5  (插入點)
 // lower_bound(100) is end? true

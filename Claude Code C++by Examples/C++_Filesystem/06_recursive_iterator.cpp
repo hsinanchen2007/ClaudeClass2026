@@ -210,3 +210,28 @@ int main() {
     demo_practical_cleanup();
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 06_recursive_iterator.cpp -o 06_recursive_iterator
+
+// === 預期輸出 (節錄) ===
+// [Demo1] full tree:
+// "README.md"
+// ".git"/
+//   "objects"/
+//     "abc"
+// "build"/
+//   "main.o"
+// "src"/
+//   "main.cpp"
+//   "util"/
+//     "util.cpp"
+//   "feature"/
+//     "feat.cpp"
+// [Demo2] tree (skipping .git and build):
+// README.md
+// .git/
+// build/
+// src/
+//   main.cpp
+//   util/
+// …（後略，完整輸出共 28 行）

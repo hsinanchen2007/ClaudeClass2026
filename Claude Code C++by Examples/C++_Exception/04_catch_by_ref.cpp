@@ -198,3 +198,16 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 04_catch_by_ref.cpp -o 04_catch_by_ref
+
+// === 預期輸出 ===
+// [byValue] oops 1 | identity = BaseEx  (預期 BaseEx，因為被切片)
+// [byRef]   oops 2 | identity = DerivedEx  (預期 DerivedEx — virtual 正確派發)
+// [good] log: important  (rethrowing)
+// [good] outer sees DerivedEx: DerivedEx
+// [bad]  log: important  (throw e;)
+// [bad]  outer only sees BaseEx: BaseEx
+// [uniform] caught: task: runtime
+// [uniform] caught: task: oor
+// [uniform] caught: task: app derived

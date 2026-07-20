@@ -311,3 +311,22 @@ int main() {
  *   多型 (Polymorphism) 與虛擬函式 — 父類別指標呼叫子類別行為的奇妙機制，
  *   並用 Leetcode 232. Implement Queue using Stacks 練習。
  *=============================================================================*/
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 15_AccessAndInheritance.cpp -o 15_AccessAndInheritance
+
+// === 預期輸出 ===
+// ===== 範例 1：Employee / Manager =====
+// Manager[Bob, $80000, reports=0]
+// Bob 得到 10% 加薪，新薪水 $88000
+// Manager[Bob, $88000, reports=2]
+// Manager[Bob, $93000, reports=2]
+// ===== 範例 2：public vs private 繼承 =====
+// Engine started
+// Engine started
+// SportsCar launched
+// ===== 範例 3：Leetcode 706 + protected 擴充 =====
+// get(1) = 999 (預期 999)
+// get(3) = -1 (預期 -1)
+// 目前筆數 = 2 (預期 2)
+// ===== 範例 4：BaseLogger → TimestampedLogger =====
+// [auth] [INFO @ t=123] 使用者登入成功

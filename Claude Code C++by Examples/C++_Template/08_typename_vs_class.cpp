@@ -294,3 +294,18 @@ int main() {
 //  【下一篇】
 //    09_non_type_template_parameter.cpp ── NTTP 深入。
 // ============================================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 08_typename_vs_class.cpp -o 08_typename_vs_class
+
+// === 預期輸出 ===
+// 1 2 3 4
+// 10 20 30
+// 1 2 3 4
+// sum vector = 10
+// sum list   = 60
+// two_sum -> [0, 1]
+// find 11 in nums = 2
+// find 99 in nums = -1
+// demo_template_disambig got 0
+// kids_with_candies: T T T F T
+// count_if_t (>= 3): 3

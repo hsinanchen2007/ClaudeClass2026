@@ -185,3 +185,28 @@ int main() {
     return 0;
 }
 
+// 編譯: g++ -std=c++20 -Wall -Wextra summary.cpp -o summary
+
+// === 預期輸出 ===
+//
+// [demo_categories]
+//   vector begin=1, begin+3=4
+//   list advance 3 => 4
+//
+// [demo_reverse_iterator]
+//   reverse: 4 3 2 1
+//   rbegin.base() == end()? 1
+//
+// [demo_insert_iterators]
+//   after copy(back_inserter): 1 2 3
+//   list after inserter(before 20): 10 1 2 3 20 30
+//
+// [demo_invalidation_note]
+//   vector 擴容會讓所有 iterator/reference/pointer 失效。
+//   list 插入不會讓既有 iterator 失效（除非你刪掉那個元素）。
+//   這是容器選型非常重要的考量。
+//
+// [demo_custom_iterator]
+//   accumulate(1..5) sum=15
+//
+// [done]

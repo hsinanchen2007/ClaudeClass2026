@@ -425,3 +425,11 @@ int main()
 //    那種「relaxed 偽裝成 release」的 bug —— 而它在 x86 上
 //    可能要靠 TSan 才看得見。
 // =============================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 14_thread_sanitizer.cpp -o 14_thread_sanitizer
+//
+// ⚠️ 本檔是【刻意保留 data race】的示範，內含 spin loop，正常執行不會自己結束。
+//    請用 ThreadSanitizer 觀察它報出的 race：
+//    g++ -std=c++20 -fsanitize=thread -g 14_thread_sanitizer.cpp -o 14_thread_sanitizer && ./14_thread_sanitizer
+
+// === 預期輸出 ===

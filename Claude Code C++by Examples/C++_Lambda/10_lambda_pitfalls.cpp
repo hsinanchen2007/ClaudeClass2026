@@ -232,3 +232,14 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 10_lambda_pitfalls.cpp -o 10_lambda_pitfalls
+
+// === 預期輸出 ===
+// [Demo1] 1 2 3
+// [Demo2] half(7) = 3.5
+// [LC202] isHappy(19) = true
+// [LC202] isHappy(2)  = false
+// [deferred-tasks] results: 0 1 4
+// [safeDiv] 7/2 = 3.5
+// [safeDiv] 1/0 = 0

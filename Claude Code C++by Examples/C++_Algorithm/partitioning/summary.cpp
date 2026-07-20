@@ -228,3 +228,16 @@ int main() {
 }
 
 // 編譯: g++ -std=c++17 -Wall -Wextra summary.cpp -o summary && ./summary
+
+// === 預期輸出 ===
+//
+// [demo_partition]
+//   after partition(even first): 6 2 4 3 5 1 7
+//   evens count=3
+//   is_partitioned? 1
+//   partition_point index=3
+//
+// [demo_stable_partition]
+//   after stable_partition (兩段內部各自保留原順序): 2 4 6 1 3 5 7
+//
+// [done]

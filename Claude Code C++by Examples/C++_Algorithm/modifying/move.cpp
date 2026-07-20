@@ -275,12 +275,14 @@ void practical_transfer_pending_jobs() {
     std::cout << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra move.cpp -o move
+
+// === 預期輸出 ===
 // dst: alpha beta gamma
 // src after move (有效但未指定): [''] [''] ['']
 // ups2[0]=10, ups2[1]=20
 // ups[0] is null
-// after move_backward: [a] [b] [a] [b] [c] [d]
+// after move_backward: [] [] [a] [b] [c] [d]
 // Moved big strings, dest sizes: 1000 1000 1000 ; src after move sizes: 0 0 0
 // Manager values: 11 22 33 44 ; factory[0] null
 // after shift: [] [] [] [a] [b] [c] [d]

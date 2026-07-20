@@ -286,3 +286,30 @@ int main() {
         && ./13_initializer_list
 ================================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 13_initializer_list.cpp -o 13_initializer_list
+
+// === 預期輸出 ===
+// [demo_basic]
+//   sum({1,2,3,4,5}) = 15
+//   sum({})          = 0
+//   sum({10,20})     = 30
+// [demo_overload]
+//   greet(int,string): n=3, name=Alice
+//   greet(init_list):  size=3
+// [demo_init_list_helpers]
+//   size() = 4
+//   *begin() = 10, *(end()-1) = 40
+//   total via std::begin/end = 100
+//   v.size = 4, v.front=10
+//   after v={7,8,9}: size=3, front=7, back=9
+// [demo_leetcode_concat]
+//   result = 1 2 1 1 2 1
+// [demo_practical_intlist]
+//   [1, 2, 3]
+//   b.size = 0
+// [demo_practical_log]
+//   LOG: user login success
+//   LOG: db query took 12ms
+//   LOG: shutdown
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

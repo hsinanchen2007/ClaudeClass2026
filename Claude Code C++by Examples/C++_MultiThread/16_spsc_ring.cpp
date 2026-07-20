@@ -429,3 +429,13 @@ int main()
 //      所有讀都能看到那些寫。這就是 lesson 11 的
 //      "synchronizes-with" 在實戰裡的應用。
 // =============================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 16_spsc_ring.cpp -o 16_spsc_ring
+
+// === 預期輸出 ===
+// [SPSC] passed 10000000 ints in 734 ms  (~13 M ops/s)
+// [SPSC] sum = 50000005000000  expected = 50000005000000  OK
+//
+// [demo] audio→UI SPSC ring (real-time pattern)
+//   consumed=50  dropped=0  (real-time: 寧可丟也不要 block)
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

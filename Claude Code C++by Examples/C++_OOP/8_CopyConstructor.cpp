@@ -331,3 +331,29 @@ int main() {
  *   賦值運算子 operator= — 對「已存在的物件」做指派時的特殊處理，
  *   重點是「自我賦值防護」與「資源釋放再配置」的順序。
  *=============================================================================*/
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 8_CopyConstructor.cpp -o 8_CopyConstructor
+
+// === 預期輸出 (節錄) ===
+// ----- 範例 1：Person 預設複製建構子 -----
+// Person(Alice, 30)
+// Person(Alice2, 30)
+// ----- 範例 2：MyString 深拷貝 -----
+// [ctor] 建立 "hello" 位址=0x55ad25eed030
+// [copy] 深拷貝 "hello" 位址=0x55ad25eed050
+// s1 = hello
+// s2 = hello!
+// ----- 範例 3：按值傳入會呼叫複製建構子 -----
+// [copy] 深拷貝 "hello" 位址=0x55ad25eed050
+// (takeByValue) 收到: hello
+// [dtor] 釋放 "hello" 位址=0x55ad25eed050
+// (回到 main 後 s1 仍可用) s1 = hello
+// ----- 範例 4：Leetcode 1480 - 累加器物件被複製 -----
+// acc.total = 6 (應為 6)
+// acc2.total = 16 (應為 16，加了 10)
+// acc.history.size = 3，acc2.history.size = 4
+// ----- 範例 5：Leetcode 155 Min Stack (複製要安全)  難度: medium -----
+// getMin = -3 (預期 -3)
+// ms.getMin  = -3 (仍是 -3)
+// …（後略，完整輸出共 26 行）
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

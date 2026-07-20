@@ -313,7 +313,9 @@ void practical_event_loop_schedule() {
               << "(deadline=" << q.front().deadline << ")\n";
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra push_heap.cpp -o push_heap
+
+// === 預期輸出 ===
 // after push 3, heap top = 3
 // after push 1, heap top = 3
 // after push 4, heap top = 4

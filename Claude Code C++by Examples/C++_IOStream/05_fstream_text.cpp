@@ -217,3 +217,21 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 05_fstream_text.cpp -o 05_fstream_text
+
+// === 預期輸出 ===
+// [Demo2] line 1: hello
+// [Demo2] line 2: world
+// [Demo2] line 3: 42 3.14
+// [Demo3] after append:
+//   | hello
+//   | world
+//   | 42 3.14
+//   | appended line
+// [Demo4] file size = 34 bytes
+// [config] parsed:
+//   [host] = [localhost]
+//   [port] = [8080]
+//   [user] = [admin]
+// [wc] lines=4 words=6 chars=34

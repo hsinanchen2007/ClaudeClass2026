@@ -459,3 +459,28 @@ int main() {
   Non-member:      operator==, !=, <=>, std::swap, std::erase, std::erase_if
 ============================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra forward_list.cpp -o forward_list
+
+// === 預期輸出 (節錄) ===
+// f3 (5 個 42)        : [ 42 42 42 42 42 ]
+// f4                  : [ 1 2 3 4 5 ]
+// f7 (move)           : [ 1 2 3 4 5 ]
+// assign(3,99)        : [ 99 99 99 ]
+// assign({...})       : [ 7 8 9 ]
+//
+// [Access] front = 10
+// [正向] 10 20 30
+//
+// [Capacity] empty=false, size (via distance)=3
+// max_size = 1152921504606846975
+// get_allocator() OK
+// cbefore_begin → next = 1
+// after clear         : [ ]
+// insert_after        : [ 1 6 7 4 4 2 5 ]
+// insert_after(before_begin): [ 1 2 3 ]
+// emplace_after       : [ AAAAA ]
+// erase_after         : [ 1 3 4 5 ]
+// erase_after(range)  : [ 1 ]
+// push/emplace_front  : [ 0 1 2 3 ]
+// …（後略，完整輸出共 45 行）

@@ -356,3 +356,32 @@ int main() {
  *   public / protected / private 三種繼承的差別，
  *   並用「員工 / 經理」場景示範什麼時候會踩到坑。
  *=============================================================================*/
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 14_Inheritance.cpp -o 14_Inheritance
+
+// === 預期輸出 ===
+// ===== 範例 1：Animal / Dog / Cat =====
+// [Animal] 旺財 出生
+// [Dog] 旺財 加入
+// 旺財 在吃飯
+// 旺財 在睡覺
+// 旺財 在汪汪叫
+// [Animal] 咪咪 出生
+// 咪咪 在喵喵叫
+// [Animal] 咪咪 死亡
+// [Dog] 旺財 離開
+// [Animal] 旺財 死亡
+// ===== 範例 2：Leetcode 155 Min Stack =====
+// getMin = -3
+// top    = 0
+// getMin = -2
+// ===== 範例 3：Leetcode 1670 FrontMiddleBackQueue =====
+// popFront  = 1
+// popMiddle = 3
+// popMiddle = 4
+// popBack   = 2
+// popFront  = -1
+// ===== 範例 4：User → AdminUser =====
+// root 已登入
+// [Admin root] 已封鎖 evil_user
+// root 已登出

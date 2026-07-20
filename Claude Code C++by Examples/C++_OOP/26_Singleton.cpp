@@ -311,3 +311,26 @@ int main() {
  *   工廠模式 (Factory) — 把「決定建立哪個子類別」的邏輯集中一處，
  *   延伸自第 17 篇的 Shape 範例。
  *=============================================================================*/
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 26_Singleton.cpp -o 26_Singleton
+
+// === 預期輸出 ===
+// ===== 啟動程式 =====
+// (Logger 建立 — 一輩子只會看到這行一次)
+// [INFO] moduleA 啟動
+// [WARN] moduleB 警告
+// [ERROR] main 直接拿 logger 用
+// lg & lg2 同一個? yes
+// 目前已記錄 3 條訊息
+// ===== Leetcode 1603 - Design Parking System (Singleton) =====
+// addCar(big)    = 1  (預期 1)
+// addCar(medium) = 1  (預期 1)
+// addCar(big)    = 0  (預期 0)
+// addCar(small)  = 0  (預期 0)
+// ===== Leetcode 359 - RateLimiter Singleton =====
+// 1
+// 0
+// 1
+// ===== SimpleConfig Singleton =====
+// env = prod, dbPort = 5432
+// (Logger 銷毀)

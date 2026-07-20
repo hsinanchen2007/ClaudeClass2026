@@ -211,3 +211,12 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 09_lambda_in_algorithm.cpp -o 09_lambda_in_algorithm
+
+// === 預期輸出 ===
+// [LC56] merged = [1,6] [8,10] [15,18]
+// [LC215] 2-th largest = 5
+// [LC347] top 2 = 1 2
+// [LC451] sorted = "eert"
+// [partition] adults: 65 18 21 30 | minors: 17 16 15

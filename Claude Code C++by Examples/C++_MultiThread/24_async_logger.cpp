@@ -467,3 +467,19 @@ int main()
 //    的優勢被抵消殆盡。寫 '\n' 就好,讓 drainer 結束時或
 //    queue 排空時 flush 一次。
 // =============================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 24_async_logger.cpp -o 24_async_logger
+
+// === 預期輸出 ===
+// Workload: 8 producer threads, 50000 messages each, ~100 bytes per message.
+//
+// [SYNC  (in-thread I/O)] 285 ms  (1403.51 K msgs/s, throughput from producer side)
+// [ASYNC (drain thread) ] 372 ms  (1075.27 K msgs/s, throughput from producer side)
+//
+// >>> producer-side speedup = 0.766129x
+// (這是 *應用執行緒看到的* 加速;ASYNC 的 drainer 仍在背景
+// 工作。檔案大小:wc -l /tmp/log_sync.txt /tmp/log_async.txt 應該一樣)
+//
+// [demo] metrics aggregator (request latency)
+//   [report] avg = 50 µs over 800 reqs
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

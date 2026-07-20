@@ -236,3 +236,29 @@ C++20 延伸（本檔不強推）
   - calendar/timezone：year_month_day, zoned_time, current_zone...
 ================================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra summary.cpp -o summary
+
+// === 預期輸出 (節錄) ===
+//
+// [demo_duration]
+//   3s -> 3000ms
+//   1500ms -> 1s (trunc)
+//   duration<double>(1.25s) = 1.25 seconds
+//   ms.count()=1500 (unit: ms)
+//
+// [demo_clocks]
+//   system_clock is_steady = 0
+//   steady_clock is_steady = 1
+//
+// [demo_benchmark]
+//   elapsed = 841 us (acc=124999750000)
+//
+// [demo_time_point_ops]
+//   deadline created
+//   t1 < deadline ? 1
+//   dt(us)=0
+//
+// [demo_sleep]
+// …（後略，完整輸出共 34 行）
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

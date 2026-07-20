@@ -212,3 +212,14 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 07_function_pointer.cpp -o 07_function_pointer
+
+// === 預期輸出 ===
+// [Demo1] qsort sorted: 1 1 2 3 4 5 6 9
+// [Demo3-A] sizes via mem_fn: 5 6 6
+// [Demo3-B] sizes via lambda: 5 6 6
+// [jump-table]
+//   add(3,4) = 7
+//   sub(10,7) = 3
+//   mul(6,5) = 30

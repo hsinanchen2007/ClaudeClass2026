@@ -180,3 +180,16 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 03_nullptr.cpp -o 03_nullptr
+
+// === 預期輸出 ===
+// [Demo1] f(0):       f(int)
+// [Demo1] f(nullptr):   f(nullptr_t)
+// [Demo1] f(p):       f(void*)
+// [Demo2] q is null (via !q)
+// [Demo2] q is null (via == nullptr)
+// [Demo3] all null: 1 1 1
+// [LC21] merged: 1 1 2 3 4 4
+// [log] ready ctx.id=99
+// [log] standby (no ctx)

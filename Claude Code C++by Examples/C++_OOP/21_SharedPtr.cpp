@@ -315,3 +315,28 @@ int main() {
  *   移動語意 (Move Semantics) — 為什麼 std::move(a) 不是「真的搬走」？
  *   它讓「拷貝大型物件」變得幾乎免費。
  *=============================================================================*/
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 21_SharedPtr.cpp -o 21_SharedPtr
+
+// === 預期輸出 (節錄) ===
+// ===== 範例 1：shared_ptr 引用計數 =====
+//   Config(MyApp.cfg) 建構
+// 建立後 a.use_count() = 1
+// 三個共享者 use_count = 3
+//   使用 Config: MyApp.cfg
+// 回到外層 use_count = 1
+//   ~Config(MyApp.cfg) 解構
+// ===== 範例 2：weak_ptr 避免循環 =====
+//   Node(1) 建構
+//   Node(2) 建構
+//   Node(3) 建構
+// root.use_count = 1
+// left.use_count = 2
+//   left 的爸爸是 1
+//   ~Node(1) 解構
+//   ~Node(2) 解構
+//   ~Node(3) 解構
+// ===== 結尾：weak_ptr 觀察『資源是否還活著』 =====
+//   Config(Temp) 建構
+//   obs.expired() = 0
+// …（後略，完整輸出共 32 行）

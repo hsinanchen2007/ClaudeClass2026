@@ -262,3 +262,16 @@ int main() {
     // Mutex m2 = m;   // ❌ 編譯錯：copy 被刪掉
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 07_default_delete.cpp -o 07_default_delete
+
+// === 預期輸出 ===
+//   [+] FileHandle(data.bin)
+//   [moved] FileHandle
+//   [-] FileHandle(data.bin)
+//   process(int) v=42
+//   process(int) v=3
+// [Demo3] f1.v=0 f2.v=99
+// [Demo4] UserId.value() = 123
+//   mutex lock
+//   mutex unlock

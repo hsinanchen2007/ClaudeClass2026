@@ -297,3 +297,20 @@ int main() {
 //  【下一篇】
 //    11_alias_template.cpp ── Alias template (using)。
 // ============================================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 10_template_template_parameter.cpp -o 10_template_template_parameter
+
+// === 預期輸出 ===
+// Wrapper<vector>: 1 2 3
+// Wrapper<list>:   10 20
+// GenericStack(deque) top = 3
+// GenericStack(vector) top = 9
+// MyStack top = 3 (expect 3)
+// MyStack pop = 3 (expect 3)
+// MyStack pop = 2 (expect 2)
+// [ 1 2 3 ]
+// [ 4 5 6 ]
+// is_valid_parens("()[]{}") = true
+// is_valid_parens("(]")     = false
+// is_valid_parens("([)]")   = false
+// max_in(vector{3,1,4,1,5,9,2,6}) = 9

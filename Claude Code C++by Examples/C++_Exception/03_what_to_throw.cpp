@@ -215,3 +215,12 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 03_what_to_throw.cpp -o 03_what_to_throw
+
+// === 預期輸出 ===
+// [Demo1] caught int: 42 (no .what(), no class hierarchy — please don't)
+// [Demo2] caught: could not reach db host
+// [Demo3] DbError(connect): could not reach db host
+// [NetError] errno=110 retryable=true what=http: timeout
+// [anti-pattern] caught const char*: boom  (不能用 std::exception 接！)

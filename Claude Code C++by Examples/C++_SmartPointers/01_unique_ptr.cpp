@@ -386,3 +386,23 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 01_unique_ptr.cpp -o 01_unique_ptr
+
+// === 預期輸出 ===
+// --- 範例 1: 基本用法 ---
+// *p = 42
+// p.get() = 0x6482cfe2c030
+// --- 範例 2: 搬移擁有權 ---
+// a is (null)
+// b = hello
+// --- 範例 3: 工廠函式 ---
+// host=localhost, port=8080
+// --- 範例 4: 多型容器 ---
+// Circle
+// Square
+// --- Leetcode 21: Merge Two Sorted Lists ---
+// [1 -> 1 -> 2 -> 3 -> 4 -> 4]
+// --- 實用範例: PIMPL ---
+// user=alice, role=admin
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

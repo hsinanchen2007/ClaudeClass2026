@@ -314,7 +314,9 @@ void practical_currency_convert() {
     std::cout << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra transform.cpp -o transform
+
+// === 預期輸出 ===
 // squared: 1 4 9 16 25
 // sum: 11 22 33
 // upper: HELLO, C++!
@@ -323,4 +325,4 @@ void practical_currency_convert() {
 // LC1929: 1 2 1 1 2 1
 // Sensor avg: 1.25 2.25 3.25 4.25
 // LC709: hello world 123
-// TWD: 3150 7890.75 2519.69 38888.6
+// TWD: 3150 7890.75 2519.68 38888.6

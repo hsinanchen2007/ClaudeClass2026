@@ -217,3 +217,28 @@ int main() {
     demo_practical_rename_and_bucket();
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 02_path_ops.cpp -o 02_path_ops
+
+// === 預期輸出 (節錄) ===
+// [Demo1] full        = "/home/alice/code/main.cpp"
+// [Demo1] parent_path = "/home/alice/code"
+// [Demo1] filename    = "main.cpp"
+// [Demo1] stem        = "main"
+// [Demo1] extension   = ".cpp"
+// [Demo1] is_absolute = true
+// [Demo1] data.tar.gz: stem="data.tar" ext=".gz"
+// [Demo2] replace_ext   = "/home/alice/code/main.o"
+// [Demo2] replace_name  = "/home/alice/code/other.cpp"
+// [Demo3] before  = "a/./b/../c/./d.txt"
+// [Demo3] normal  = "a/c/d.txt"
+// [Demo4] "main.cpp" → C++
+// [Demo4] "util.h" → C++
+// [Demo4] "build.sh" → shell
+// [Demo4] "icon.png" → image
+// [Demo4] "data.tar.gz" → archive
+// [Demo4] "Makefile" → other
+// [Practical] rename + bucketize
+//   "main.cpp" → "main.cc"
+//   "util.cpp" → "util.cc"
+// …（後略，完整輸出共 26 行）

@@ -366,7 +366,9 @@ void practical_vector_norm() {
     std::cout << "L2 norm: " << std::sqrt(sq_sum) << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra transform_reduce.cpp -o transform_reduce
+
+// === 預期輸出 ===
 // sum of squares = 55
 // dot = 32
 // total length = 13

@@ -219,3 +219,18 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 01_structured_bindings.cpp -o 01_structured_bindings
+
+// === 預期輸出 ===
+// [Demo1] n=42 d=3.14 s=answer
+// [Demo1] pair: 1, hello
+// [Demo2] p = (100, 20)
+// [Demo3] alice is 30
+// [Demo3] bob is 25
+// [LC1207] {1,2,2,1,1,3} => true
+// [LC1207] {1,2}        => false
+// [LC1] indices: 0 1
+// [Demo4] host => localhost
+// [Demo4] port => 8080
+// [Demo4] ssl => true

@@ -212,3 +212,17 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 11_string_view.cpp -o 11_string_view
+
+// === 預期輸出 ===
+//   size=8 content=[C string]
+//   size=11 content=[std::string]
+//   size=10 content=[char array]
+//   size=14 content=[string literal]
+// [Demo2] sub = [quick]  (no allocation)
+// [LC125] "A man, a plan, a canal: Panama" => true
+// [LC125] "race a car" => false
+// [LC14] LCP({"flower","flow","flight"}) = "fl"
+// [LC14] LCP({"dog","racecar","car"}) = ""
+// [Demo3] columns: id name age city

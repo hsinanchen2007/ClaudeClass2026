@@ -212,3 +212,19 @@ int main() {
     simulate_gacha(10000);
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 05_other_distributions.cpp -o 05_other_distributions
+
+// === 預期輸出 ===
+// [Demo1] bernoulli(0.3) 10000 次中 true = 3050 (期望 ~3000)
+// [Demo2] normal(100,15): mean=100.08 sd=14.69
+// [Demo3] 5 inter-arrival times: 0.315 0.063 0.749 0.342 0.385
+// [Demo4] discrete 10000 次: A=4907 B=3015 C=2078
+// [Practical] A/B test (N=10000):
+//   A 命中 502 / 10000 = 0.0502
+//   B 命中 750 / 10000 = 0.0750
+// [Practical] gacha draws=10000:
+//   N = 7411
+//   R = 1998
+//   SR = 504
+//   SSR = 87

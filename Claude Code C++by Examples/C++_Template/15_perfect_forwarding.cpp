@@ -374,3 +374,27 @@ int main() {
 //  【下一篇】
 //    16_sfinae.cpp ── SFINAE 是什麼？怎麼用 enable_if 做型別篩選？
 // ============================================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 15_perfect_forwarding.cpp -o 15_perfect_forwarding
+
+// === 預期輸出 ===
+// --- direct call ---
+// got lvalue: "hello"
+// got rvalue: "hello"
+// --- wrapper_bad ---
+// got lvalue: "world"
+// got lvalue: "world"
+// --- wrapper_good ---
+// got lvalue: "world"
+// got rvalue: "world"
+// Pt(3,4.5)
+// 1->alpha 2->beta
+// get(1) = 1 (expect 1)
+// get(2) = -1 (expect -1)
+// get(1) = -1 (expect -1)
+// get(3) = 3 (expect 3)
+// get(4) = 4 (expect 4)
+// contains(alice) = 1
+// contains(bob)   = 1
+// after remove, contains(alice) = 0
+// delayed_invoke() result = 7

@@ -159,3 +159,25 @@ int main() {
     return 0;
 }
 
+// 編譯: g++ -std=c++20 -Wall -Wextra summary.cpp -o summary
+
+// === 預期輸出 ===
+//
+// [demo_function_template]
+//   my_max(3,5)=5
+//   my_max(string)=b
+//
+// [demo_class_template]
+//   Box<int>=42
+//
+// [demo_specialization]
+//   TypeName<int>=int
+//   TypeName<double>=unknown
+//
+// [demo_enable_if]
+//   add_one(7)=8
+//
+// [demo_cpp20_concepts_note]
+//   C++20: concepts 可以用 requires/Concept 取代 enable_if，錯誤訊息更友善。
+//
+// [done]

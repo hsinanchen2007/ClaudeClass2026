@@ -384,7 +384,9 @@ void practical_cumulative_uptime() {
     std::cout << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra partial_sum.cpp -o partial_sum
+
+// === 預期輸出 ===
 // partial_sum: 1 3 6 10 15
 // partial_product: 1 2 6 24 120
 // running max: 3 3 4 4 5 9 9 9

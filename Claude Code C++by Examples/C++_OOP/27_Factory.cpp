@@ -302,3 +302,24 @@ int main() {
  *   綜合應用 — 用學過的所有觀念實作 Leetcode 146. LRU Cache，
  *   把整個 OOP 學習做個收尾。
  *=============================================================================*/
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 27_Factory.cpp -o 27_Factory
+
+// === 預期輸出 ===
+// ===== 寫法 1：工廠函式 + 字串 =====
+//   做了一個 Circle，面積 = 28.2743
+//   做了一個 Rectangle，面積 = 20
+//   做了一個 Triangle，面積 = 6
+//   未知形狀: hexagon
+// ===== 寫法 2：工廠類別 + enum =====
+//   Circle area = 12.5664
+//   Rectangle area = 12
+//   Triangle area = 30
+//   全部面積總和 = 54.5664
+// ===== Leetcode 1603 工廠建立停車場 =====
+// addCar(1) = 1 (預期 1)
+// addCar(1) = 0 (預期 0)
+// addCar(2) = 1 (預期 1)
+// ===== Notification Factory =====
+//   [Email] 您的訂單已成立
+//   [SMS] 您的訂單已成立

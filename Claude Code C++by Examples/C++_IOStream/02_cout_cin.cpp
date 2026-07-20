@@ -194,3 +194,15 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 02_cout_cin.cpp -o 02_cout_cin
+
+// === 預期輸出 ===
+// [Demo1] a=1 b=2 sum=3
+// [Demo2] read: n=42 d=3.14 s=hello
+// [Demo3] sum = 150
+// [Demo4] first = 100
+// [Demo4] parse failed, recovering...
+// [Demo4] recovered = 200
+// [parse-expr] 1+2+3+10 = 16
+// name=alice age=30 height=1.65

@@ -187,3 +187,16 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 02_if_with_init.cpp -o 02_if_with_init
+
+// === 預期輸出 ===
+// [Demo1] found alice, age=30
+// [Demo1] zoe not in map (else block)
+// [Demo2] inserted charlie -> 40
+// [Demo2] charlie was already there with age=40
+// [LC1] indices: 0 1
+// [Demo3] acquired lock, doing work
+// [Demo4] valid port = 8080
+// [Demo4] port 99999 out of range
+// [Demo4] not a number: abc

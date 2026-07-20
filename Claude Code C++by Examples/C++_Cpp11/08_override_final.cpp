@@ -228,3 +228,14 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 08_override_final.cpp -o 08_override_final
+
+// === 預期輸出 ===
+// woof
+// mid-final
+// mid-final
+// hello from Sealed
+// [stdout] hello override/final
+// [info] hello override/final
+// [Demo5] startsWith("hello.cpp", "hello") = true

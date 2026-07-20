@@ -191,3 +191,12 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 03_mutable_lambda.cpp -o 03_mutable_lambda
+
+// === 預期輸出 ===
+// [Demo1] 1 2 3
+// [Demo2] a=4 a=5 b=4
+// [LC1480] running sum = 1 3 6 10
+// [LC1822] arraySign = 1
+// [id-gen] alice=1001 bob=1002 charlie=1003

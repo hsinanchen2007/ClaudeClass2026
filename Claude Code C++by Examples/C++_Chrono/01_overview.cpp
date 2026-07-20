@@ -210,3 +210,14 @@ static void demo_frame_budget_check() {
     else std::cout << "[frame] ok, used=" << duration_cast<microseconds>(used).count()
                    << "us / budget=" << budget.count() << "us\n";
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 01_overview.cpp -o 01_overview
+
+// === 預期輸出 ===
+// [Demo2] elapsed = 50073933 (raw ticks)
+// [Demo3] elapsed = 50 ms, 50073 us
+// [Demo4] 1s + 500ms = 1500 ms
+// [Demo4] 2min + 3s   = 123 s
+// [timeout] remaining ≈ 148 ms (預期約 150)
+// [frame] ok, used=9200us / budget=16666us
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

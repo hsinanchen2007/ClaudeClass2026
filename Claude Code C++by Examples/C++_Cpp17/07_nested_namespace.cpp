@@ -129,3 +129,12 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 07_nested_namespace.cpp -o 07_nested_namespace
+
+// === 預期輸出 ===
+// [Demo] util::version()  = 1.0.0
+// [Demo] detail::magic()  = 42
+// [Demo] old::nest::x::v = 99
+// [Demo4] my-app/1.0 (cpp17)
+// [Demo4] http://example.com:80/api

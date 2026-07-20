@@ -218,3 +218,16 @@ static void demo_polymorphic_visitor() {
     std::cout << "[visitor] sum of Derived::x = " << sumX << " (= 84)\n";
     for (Base* b : objs) delete b;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 01_overview.cpp -o 01_overview
+
+// === 預期輸出 ===
+// [static_cast] double->int = 3
+// [dynamic_cast] derived* = ok
+// [const_cast] removed const, ptr=0x600182816048
+// [reinterpret_cast] first byte = 0x78 (little-endian → 0x78)
+// [bit_cast/memcpy] float 1.0 → 0x3f800000 (= 0x3f800000)
+// [safe_narrow] 12345 ok? 1 -> 12345
+// [safe_narrow] 5e9   ok? 0 (溢位，回傳 false)
+// [visitor] sum of Derived::x = 84 (= 84)
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

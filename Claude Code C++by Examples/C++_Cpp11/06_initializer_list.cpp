@@ -213,3 +213,15 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 06_initializer_list.cpp -o 06_initializer_list
+
+// === 預期輸出 ===
+// [Demo1] MyVec: 10 20 30 40
+// [Demo2] sum_all(int)    = 10
+// [Demo2] sum_all(double) = 7.5
+// [LC1431-ish] maxOf({7,12,5}) = 12
+// [LC217] {1,2,3,1} => true
+// [LC217] {1,2,3,4} => false
+// [Demo4] allowed(GET) = true
+// [Demo4] allowed(DELETE) = false

@@ -415,3 +415,28 @@ int main() {
       → std::greater : 「比較大的沉下去」 → top 是最小值 (min-heap)
 ============================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra priority_queue.cpp -o priority_queue
+
+// === 預期輸出 (節錄) ===
+// p2 (max-heap)        (top→...): [ 9 6 5 4 3 2 1 1 ]
+// p3 (min-heap)        (top→...): [ 1 1 2 3 4 5 6 9 ]
+// p4 (deque-based)     (top→...): [ 9 6 5 4 3 2 1 1 ]
+//
+// top = 5
+// size=5, empty=false
+// after push, top=9
+// emplace              (top→...): [ world hello AAAAA ]
+//
+// pop 取到 3
+// a after swap         (top→...): [ 10 ]
+// after swap-clear, empty=true
+// task: high(p=5)
+// task: mid(p=3)
+// task: low(p=1)
+//
+// [LC215 KthLargest k=2] = 5
+// [LC347 TopKFrequent k=2] = [ 2 1 ]
+// [LC1046 LastStoneWeight] = 1
+// [LC703 Stream] 4 5 5 8 8
+// …（後略，完整輸出共 27 行）

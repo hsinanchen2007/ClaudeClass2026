@@ -227,3 +227,20 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 07_function_try_block.cpp -o 07_function_try_block
+
+// === 預期輸出 ===
+// [Demo1] try Holder(1, -1)
+//   Fragile(1) ok
+//   Holder ctor caught: Fragile: v < 0  (will auto-rethrow)
+// [Demo1] outer caught: Fragile: v < 0
+// [Demo2] Holder(2, 3)
+//   Fragile(2) ok
+//   Fragile(3) ok
+//   Holder body ran
+//   ConfigLoader: failed (v=-5), original: Fragile: v < 0  (auto-rethrow)
+// [ConfigLoader] outer caught: Fragile: v < 0
+// [Cache] 50
+// [Cache]   Cache.safeLookup swallow: negative key
+// -1

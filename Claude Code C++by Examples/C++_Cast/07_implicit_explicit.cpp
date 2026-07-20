@@ -228,3 +228,18 @@ static void demo_optional_like_pattern() {
     int n = static_cast<bool>(a);
     std::cout << "[opt] (bool)a = " << n << '\n';
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 07_implicit_explicit.cpp -o 07_implicit_explicit
+
+// === 預期輸出 ===
+// [refill] (loose)  litres=50
+// [Demo1] LooseTank to int = 20
+// [refill] (strict) litres=30
+// [Demo2] StrictTank to int = 10
+// [Demo3] tank c is non-empty (allowed in if)
+// [Demo3] static_cast<bool>(c) = 1
+// [id_wrapper] looking up user 42
+// [id_wrapper] looking up user 123
+// [opt] a has value = 42
+// [opt] b is empty
+// [opt] (bool)a = 1

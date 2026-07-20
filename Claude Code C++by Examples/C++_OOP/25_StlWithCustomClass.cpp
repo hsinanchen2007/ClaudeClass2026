@@ -295,3 +295,28 @@ int main() {
  *   單例模式 (Singleton) — 全域只有一個物件的設計，
  *   並用「Logger 紀錄器」這個工作上常見的需求來示範。
  *=============================================================================*/
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 25_StlWithCustomClass.cpp -o 25_StlWithCustomClass
+
+// === 預期輸出 (節錄) ===
+// ===== 範例 1：vector + sort =====
+//   Bob(25)
+//   Alice(30)
+//   Charlie(35)
+// --- 改依名字排序 ---
+//   Alice(30)
+//   Bob(25)
+//   Charlie(35)
+// ===== 範例 2：set<Person> =====
+//   Eve(22)
+//   David(40)
+// ===== 範例 3：unordered_set<PersonEq> =====
+//   size = 2
+//   contains Alice30? yes
+// ===== 範例 4：Leetcode 1845 =====
+// 1
+// 2
+// 2
+// 3
+// 4
+// …（後略，完整輸出共 32 行）

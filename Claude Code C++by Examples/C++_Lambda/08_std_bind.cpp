@@ -200,3 +200,20 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 08_std_bind.cpp -o 08_std_bind
+
+// === 預期輸出 ===
+// [Demo1-bind] add5(10)  = 15
+// [Demo1-bind] rev(1, 2) = 3
+// Hi, Bob!
+// byVal=100
+// byRef=999
+// [Demo2-lambda] add5(10)  = 15
+// [Demo2-lambda] rev(1, 2) = 3
+// Hi, Alice!
+// [bind-member] counter.value = 10
+// [lambda-member] counter.value = 15
+//   [INFO] starting up
+//   [WARN] disk almost full
+//   [ERROR] connection lost

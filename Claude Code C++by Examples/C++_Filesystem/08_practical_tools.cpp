@@ -195,3 +195,18 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 08_practical_tools.cpp -o 08_practical_tools
+
+// === 預期輸出 ===
+// [largest] "tmp_fs_dir/img/logo.png" (8192 bytes)
+// [>1000 bytes] 3 個檔案：
+//   "tmp_fs_dir/img/logo.png" (8192)
+//   "tmp_fs_dir/doc/readme.md" (1024)
+//   "tmp_fs_dir/src/main.cpp" (2048)
+// [ext stats]
+//   .cpp  count=2  bytes=2560
+//   .h  count=1  bytes=256
+//   .md  count=2  bytes=1824
+//   .png  count=1  bytes=8192
+//   <no-ext>  count=1  bytes=64

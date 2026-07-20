@@ -429,3 +429,20 @@ int main()
 //    切得 *略大於* CPU 數有時更好 (cache friendly + work
 //    stealing 自然平衡)。實務上 2P、4P 都試過,看哪個快。
 // =============================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra -pthread -ltbb 26_parallel_scan.cpp -o 26_parallel_scan
+
+// === 預期輸出 ===
+// N = 50000000, hardware_concurrency = 16
+//
+// [std::inclusive_scan (seq) ] 795 ms  out.back() = 2475118473
+// [std::inclusive_scan (par)] 433 ms  out.back() = 2475118473
+// [our parallel scan         ] 624 ms  out.back() = 2475118473
+//
+// speedup vs std::inclusive_scan (seq):
+//   parallel STL : 1.83603x
+//   our scan     : 1.27404x
+//
+// [demo] parallel filter via prefix-sum compaction
+//   kept 500000 evens, dest[0..3] = 0,2,4,6 (預期 0,2,4,6)
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

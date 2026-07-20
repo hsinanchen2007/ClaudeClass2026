@@ -168,8 +168,11 @@
 //
 // 🔥 Q3. 為什麼 std::string 的 move 是不是 noexcept 對 vector 很重要?
 //     答:vector 擴容時會用 move_if_noexcept:元素的 move constructor 是
-//         noexcept 才敢用 move 搬遷,否則只能退回 copy,才能維持 strong
+//         noexcept 才敢用 move 搬遷,否則退回 copy,才能維持 strong
 //         exception guarantee(搬到一半失敗時舊 buffer 還完好)。
+//         ⚠️ 精確講法:「退回 copy」只在【該型別可 copy】時成立;move-only 型別
+//         沒有 copy 可退,即使 move 未標 noexcept 仍會 move,此時就沒有強保證。
+//         std::string 的 move ctor 是 noexcept,所以走的是最好的那條路。
 //         std::string 的 move constructor 標準要求為 noexcept,所以
 //         vector<string> 擴容能走 move 而不是逐一複製。
 //     追問:move assignment 也是無條件 noexcept 嗎?→ 不是,它是條件式

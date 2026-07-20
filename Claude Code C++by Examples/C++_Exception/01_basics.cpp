@@ -211,3 +211,17 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 01_basics.cpp -o 01_basics
+
+// === 預期輸出 ===
+// [Demo1] 6/3 = 2
+// [Demo1] 6/0 = [Demo1] caught runtime_error: divide by zero
+// [Demo2] local message
+// [safeDivide] note: divide by zero
+// [Demo3] outer caught: divide by zero
+// [parse] 42 -> 42
+// [parse] x -> [parse] parse failed: x
+// [parse] 99 -> 99
+// [cleanup] warn: release: device busy
+// [cleanup] main flow continues

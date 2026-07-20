@@ -415,3 +415,28 @@ int main() {
   ★ 沒有 iterator 系列、clear、reserve、capacity、find、operator[]
 ============================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra stack.cpp -o stack
+
+// === 預期輸出 (節錄) ===
+// s4                   (top→bottom): [ 4 3 2 1 ]
+//
+// top = 30
+// top modified         (top→bottom): [ 999 20 10 ]
+// size=3, empty=false
+// after pushes         (top→bottom): [ 3 2 1 ]
+// emplace              (top→bottom): [ hello AAAAA ]
+//
+// pop 取到 3
+// a after swap         (top→bottom): [ 9 ]
+// b after swap         (top→bottom): [ 2 1 ]
+// after clear, empty=true
+// c1 < c2 ? true
+// stack on vector      (top→bottom): [ 4 3 2 1 0 ]
+//
+// balanced("({[]})") = true
+// balanced("({[)]})") = false
+//
+// [LC739 Daily Temperatures] = [ 1 1 4 2 1 1 0 0 ]
+// [LC150 RPN] (2+1)*3 = 9
+// …（後略，完整輸出共 32 行）

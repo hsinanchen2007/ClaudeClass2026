@@ -480,3 +480,24 @@ int main()
 //      - 程式還沒到那個瓶頸,簡單的 CoW 寫法就夠用,先求
 //        對再求快。
 // =============================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 18_cow_snapshot.cpp -o 18_cow_snapshot
+
+// === 預期輸出 ===
+// is_lock_free? std::atomic<std::shared_ptr<int>>: 0
+// (0 代表 libstdc++ 用了內部隱藏鎖)
+//
+// PHASE A: pure reads, no writer
+// [shared_mutex] 563 ms   sum_lengths=18960000
+// [CoW snapshot] 615 ms   sum_lengths=18960000
+//   ratio  = 0.915447x  (CoW 比 shared_mutex 快多少;>1 才是 CoW 贏)
+//
+// PHASE B: many reads + a slow writer (every 10ms)
+// [shared_mutex] 645 ms   sum_lengths=19663868
+// [CoW snapshot] 794 ms   sum_lengths=20452454
+//   ratio  = 0.812343x
+//
+// [demo] routing table hot-reload
+//   13636 queries served during reload
+//   最終 /api/v1/users → service_a_v2
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

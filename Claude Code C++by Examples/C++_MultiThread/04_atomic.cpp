@@ -433,3 +433,19 @@ int main()
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 04_atomic.cpp -o 04_atomic
+
+// === 預期輸出 ===
+// Expected counter = 2000000
+// Actual   counter = 2000000
+// Elapsed time     = 32 ms
+//
+// [demo] atomic<bool> 當 shutdown flag
+//   worker stopped after 10 loops
+//
+// [demo] 進度條: 4 worker, 每人 50 筆
+//   進度 95% (191/200)
+//   進度 100% (200/200)
+//   完成: progress = 200
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

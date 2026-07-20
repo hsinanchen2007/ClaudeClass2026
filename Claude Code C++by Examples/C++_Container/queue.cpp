@@ -381,3 +381,32 @@ int main() {
   ★ 沒有 iterator、clear、capacity、reserve
 ============================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra queue.cpp -o queue
+
+// === 預期輸出 ===
+// q3                   (front→back): [ 1 2 3 4 ]
+//
+// front = 10, back = 30
+// modified             (front→back): [ 100 20 300 ]
+// size=3, empty=false
+// after push           (front→back): [ 1 2 3 ]
+// emplace              (front→back): [ AAAAA hi ]
+//
+// pop 取到 1
+// a after swap         (front→back): [ 9 ]
+// after swap-clear, empty=true
+// c1 < c2 ? true
+//
+// BFS: 1 2 3 4 5 6 7
+//
+// [LC200 NumIslands] = 3
+// [LC933 RecentCounter] 1 2 3 3
+// [LC225 Stack via Queue] top=3
+// [LC225 Stack via Queue] top=2
+// [Message Queue] 處理順序:
+//   #1 處理: send_email:alice@example.com
+//   #2 處理: resize_image:photo_001.jpg
+//   #3 處理: backup_database
+//
+// === queue demo 結束 ===

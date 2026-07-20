@@ -191,3 +191,16 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 04_init_capture.cpp -o 04_init_capture
+
+// === 預期輸出 ===
+// [Demo1] Hi, Bob!
+// [Demo2] outer p is now nullptr
+// [Demo2] holder() = hello unique_ptr
+// [Demo3] HELLO
+// [move-into-lambda] outer size after move = 0
+// [move-into-lambda] consume() = 1500
+// [lazy] first  =   (heavy work runs once)
+// 42
+// [lazy] second = 42

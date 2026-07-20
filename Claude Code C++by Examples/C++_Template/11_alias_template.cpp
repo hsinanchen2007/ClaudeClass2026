@@ -284,3 +284,19 @@ int main() {
 //  【下一篇】
 //    12_variable_template.cpp ── Variable template (C++14)。
 // ============================================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 11_alias_template.cpp -o 11_alias_template
+
+// === 預期輸出 ===
+// Vec<int> size = 3
+// Alice age = 30
+// is same int / B = true
+// r1 ok? true value=42 err=""
+// r2 ok? false value=0 err="disk full"
+// [ bat ]
+// [ tan nat ]
+// [ eat tea ate ]
+// cb(3, 5) = 15
+// count_matches(color=silver) = 1 (expect 1)
+// subA: hello
+// subB: hello

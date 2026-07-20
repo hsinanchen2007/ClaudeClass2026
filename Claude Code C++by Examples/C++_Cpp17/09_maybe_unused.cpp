@@ -139,3 +139,12 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 09_maybe_unused.cpp -o 09_maybe_unused
+
+// === 預期輸出 ===
+// [Demo] done
+// [Demo2] OK code=200
+// [Demo2] ERR code=500 msg=internal error
+// [Demo3] count = 5
+// [Demo3] count = 3

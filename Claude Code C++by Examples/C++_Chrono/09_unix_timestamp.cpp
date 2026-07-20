@@ -215,3 +215,17 @@ static void demo_human_diff() {
     std::cout << "[humanize] " << humanizeDiff(seconds{7200})  << '\n';
     std::cout << "[humanize] " << humanizeDiff(seconds{200000})<< '\n';
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 09_unix_timestamp.cpp -o 09_unix_timestamp
+
+// === 預期輸出 ===
+// [Demo1.1] unix sec  = 1784540461
+// [Demo1.2] unix ms   = 1784540461620
+// [Demo2] local       = 2026-07-20 02:41:01
+// [Demo3] utc iso8601 = 2026-07-20T09:41:01Z
+// [Demo4] parsed unix sec = 1778002200
+// [age] timestamp 1784536800 is 3661 seconds ago (約 3661)
+// [humanize] 45 sec ago
+// [humanize] 2 min ago
+// [humanize] 2 hr ago
+// [humanize] 2 days ago

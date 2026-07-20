@@ -289,3 +289,20 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 09_pitfalls.cpp -o 09_pitfalls
+
+// === 預期輸出 ===
+//   [bad] re-throwing as base...
+// [Demo1-A] only base now: typeid=St9exception what=std::exception
+//   [good] re-throwing original...
+// [Demo1-B] preserved SpecialEx: deepest error
+// [Demo2] inner caught unknown — logging then rethrow
+// [Demo2] outer caught non-std exception
+//   LoggerHandle 1 open
+//   LoggerHandle -1 open
+// [dtor-safe] main flow ok
+//   LoggerHandle -1 dtor swallowed: flush failed
+//   LoggerHandle 1 closed cleanly
+// [boundary] std::exception: work failed
+// [boundary] unknown exception (would rethrow)

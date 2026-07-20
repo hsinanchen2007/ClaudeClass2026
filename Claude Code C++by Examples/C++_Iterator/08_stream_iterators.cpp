@@ -233,3 +233,16 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 08_stream_iterators.cpp -o 08_stream_iterators
+
+// === 預期輸出 ===
+// 10 | 20 | 30 | 40 | 50 |
+// 讀進 11 個整數，sum = 44
+// >=5 的個數 = 5
+// 1 4 9 16 25
+// tokens(6): the,quick,brown,fox,jumps,over,
+// FizzBuzz 1..15:
+//   1 2 Fizz 4 Buzz Fizz 7 8 Fizz Buzz 11 Fizz 13 14 FizzBuzz
+// LC1108 defang("1.1.1.1") = 1[.]1[.]1[.]1
+// CSV sum = 150 (期望 150)

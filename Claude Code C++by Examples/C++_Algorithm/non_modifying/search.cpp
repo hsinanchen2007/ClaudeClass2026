@@ -293,7 +293,9 @@ void practical_binary_pattern_match() {
         std::cout << "no magic\n";
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra search.cpp -o search
+
+// === 預期輸出 ===
 // first occurrence at index 1
 // empty pattern: index = 0
 // 'fox' at index 16

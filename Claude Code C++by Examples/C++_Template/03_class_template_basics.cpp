@@ -349,3 +349,17 @@ int main() {
 //    04_template_parameters.cpp ── Template 參數的三種類型
 //    (type / non-type / template template)。
 // ============================================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 03_class_template_basics.cpp -o 03_class_template_basics
+
+// === 預期輸出 ===
+// Box<int>::get()    = 42
+// Box<double>::get() = 3.14
+// Box<string>::get() = hello
+// Pair: Alice -> 30
+// MinStack getMin = 2 (expect 2)
+// MinStack getMin = 2 (expect 2)
+// MinStack getMin = 3 (expect 3)
+// Box2.cast<double>() = 7
+// running_sum: 1 3 6 10
+// Timer elapsed (us) = 203, sum=4999950000

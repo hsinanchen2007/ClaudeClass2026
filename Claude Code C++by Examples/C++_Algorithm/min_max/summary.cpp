@@ -250,3 +250,24 @@ int main() {
 }
 
 // 編譯: g++ -std=c++17 -Wall -Wextra summary.cpp -o summary && ./summary
+
+// === 預期輸出 ===
+//
+// [demo_minmax_values]
+//   min(3,5)=3
+//   max(3,5)=5
+//   minmax(3,5)=(3,5)
+//   min{3,7,2}=2
+//   max{3,7,2}=7
+//
+// [demo_minmax_elements]
+//   min=1, max=9
+//   minmax_element=(1,9)
+//   empty min_element == end? 1
+//
+// [demo_clamp]
+//   clamp(5,  0, 10)=5
+//   clamp(-1, 0, 10)=0
+//   clamp(99, 0, 10)=10
+//
+// [done]

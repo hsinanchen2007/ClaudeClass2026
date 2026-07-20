@@ -394,3 +394,28 @@ int main() {
       operator==, <=> (C++20), std::swap, std::erase_if (C++20)
 ============================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra multiset.cpp -o multiset
+
+// === 預期輸出 (節錄) ===
+// m2 (含重複)         : { 1 1 2 3 3 4 5 5 6 9 } (size=10)
+// m5 (greater)        : { 3 2 2 1 } (size=4)
+//
+// [正向] 1 1 2 3 3 4 5 5 6 9
+//
+// [Capacity] size=10, empty=false
+// max_size = 461168601842738790
+// get_allocator() OK
+//
+// insert 10 → *it=10
+// after insert        : { 1 2 2 3 3 3 10 10 } (size=8)
+// insert hint(end,4)  : { 1 2 2 3 3 3 4 10 10 } (size=9)
+// ms: { AAAAA AAAAA Z }
+//
+// erase(2) → 刪了 3 個
+// after erase(2)      : { 1 3 4 5 } (size=4)
+// after erase(begin)  : { 3 4 5 } (size=3)
+// after erase(range)  : { 3 5 } (size=2)
+// a after merge       : { 1 2 2 3 3 4 } (size=6)
+// b (掏空)            : { } (size=0)
+// …（後略，完整輸出共 41 行）

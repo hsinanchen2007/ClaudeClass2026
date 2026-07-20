@@ -169,3 +169,13 @@ int main() {
     demo_practical_sample();
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 06_shuffle.cpp -o 06_shuffle
+
+// === 預期輸出 ===
+// [Demo1] shuffled: 9 6 8 4 11 5 12 1 13 10 3 2 7
+// [Demo2] a: 5 8 3 4 9 6 2 1 7
+// [Demo2] b: 5 8 3 4 9 6 2 1 7
+// [Demo2] same? true
+// [Demo3] partial shuffle: 0 1 2 4 3 5 6 7 8 9
+// [Practical] 從 0..19 抽 5 個： 1 6 16 0 5

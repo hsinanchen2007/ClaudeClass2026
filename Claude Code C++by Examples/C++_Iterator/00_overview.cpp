@@ -288,3 +288,32 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 00_overview.cpp -o 00_overview
+
+// === 預期輸出 ===
+// [各容器的 iterator 類別]
+//   vector<int> → random_access_iterator
+//   deque<int> → random_access_iterator
+//   list<int> → bidirectional_iterator
+//   set<int> → bidirectional_iterator
+//   forward_list<int> → forward_iterator
+//   int* (raw pointer) → random_access_iterator
+//
+// [iterator_traits<vector<double>::iterator>]
+//   value_type        = d (期望 d = double)
+//   difference_type   = l (通常 l = long = ptrdiff_t)
+//   pointer           = Pd
+//   reference         = d
+//   iterator_category = random_access_iterator_tag
+//
+// [std::distance 對不同類別都通用]
+//   vector       distance = 5
+//   list         distance = 5
+//   forward_list distance = 5
+//
+// [LC1480 RunningSum] = [ 1 3 6 10 ]
+// [Logger -> vector]
+//   [INFO] start
+//   [INFO] load_config
+//   [INFO] ready

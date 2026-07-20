@@ -199,3 +199,15 @@ int main() {
     demo_practical_token();
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 07_seeding.cpp -o 07_seeding
+
+// === 預期輸出 ===
+// [Demo1] same seed=42: 1608637542 3421126067 4083286876 |  1608637542 3421126067 4083286876
+// [Demo2] rd seed: 1309776296 2268737578 4226768991
+// [Demo3] seed_seq seed: 2695071217 4187296877 916232340
+// [Demo4] thread_local 3 samples: 2444278164 1994156514 3908321021
+// [Practical] 產生 3 個 16-char token:
+//   YUFZEsaczud4RvJS
+//   0J2wP25Oa7JrKgFC
+//   XHAXIMYuwfMYABMD

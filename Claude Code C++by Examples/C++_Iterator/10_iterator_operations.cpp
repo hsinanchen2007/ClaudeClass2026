@@ -275,3 +275,30 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 10_iterator_operations.cpp -o 10_iterator_operations
+
+// === 預期輸出 ===
+// advance 3 → 40 (期望 40)
+// next(begin,5) → 60 (期望 60)
+// prev(end,2) → 60 (期望 60)
+// distance = 7
+// list 中位 = 4 (期望 4)
+// arr 總和 = 24
+// middle = 3 (期望 3)
+// middle = 4 (期望 4)
+// unique 後長度 = 5 (期望 5)
+// 前 5 項: 1 2 3 4 5
+// cbegin 走訪: 1
+// cbegin 走訪: 2
+// cbegin 走訪: 3
+// crbegin 走訪 (反向且唯讀): 3
+// crbegin 走訪 (反向且唯讀): 2
+// crbegin 走訪 (反向且唯讀): 1
+// std::size(arr2)  = 4 (4)
+// std::empty(arr2) = false (false)
+// std::data(ro)[0] = 1 (1)
+// after iter_swap: A[0]=9 B[0]=1 (期望 9, 1)
+// after swap_ranges: A=1 8 7 4  B=9 2 3 6
+// LC1213 intersect3 = [ 1 5 ] (期望 1 5)
+// Cursor offset=3,limit=4: [ 40 50 60 70 ]

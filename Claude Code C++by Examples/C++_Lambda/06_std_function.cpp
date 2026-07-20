@@ -225,3 +225,16 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 06_std_function.cpp -o 06_std_function
+
+// === 預期輸出 ===
+// [log]   door opened
+// [alert] !!ALERT!! door opened
+// [Demo2] fact(10) = 3628800
+// [LC700] search(2)  -> found
+// [LC700] search(5)  -> null
+// [dispatcher]
+//   hello, world!
+//   [echo] test 123
+//   unknown command: nope

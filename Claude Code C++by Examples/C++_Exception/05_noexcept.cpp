@@ -264,3 +264,12 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 05_noexcept.cpp -o 05_noexcept
+
+// === 預期輸出 ===
+// [Demo1-A] copy=0 move=7
+// [Demo1-B] copy=7 move=0
+// [Demo2] static_assert all passed at compile time
+// [swap] a=11 b=7  (預期 a=11 b=7)
+// [condNoexcept] x=2 y=1

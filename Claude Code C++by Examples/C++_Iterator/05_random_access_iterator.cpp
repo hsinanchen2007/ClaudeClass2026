@@ -255,3 +255,19 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 05_random_access_iterator.cpp -o 05_random_access_iterator
+
+// === 預期輸出 ===
+// *(it + 3)  = 1 (期望 1)
+// it[5]      = 3 (期望 3)
+// v.end()-v.begin() = 9 (期望 9，這就是 size)
+// 1 2 3 4 5 6 7 8 9
+// lower_bound(6) at index 5, *pos = 6
+// binary_search find 9 → idx 4 (期望 4)
+// kth largest (k=2) = 5 (期望 5)
+// searchInsert(5) = 2 (期望 2)
+// searchInsert(2) = 1 (期望 1)
+// searchInsert(7) = 4 (期望 4)
+// LC33 search(0) = 4 (期望 4)
+// 第 3 頁: [ A7 A8 A9 ]

@@ -350,3 +350,27 @@ container adapters
 ================================================================================
 */
 
+// 編譯: g++ -std=c++20 -Wall -Wextra summary.cpp -o summary
+
+// === 預期輸出 (節錄) ===
+//
+// [demo_vector_common_members]
+//   size=3 capacity=3
+//   after reserve(16): capacity=16
+//   after push_back/emplace_back: 3 1 4 1 5
+//   v[0]=3, at(1)=1, front=3, back=5
+//   data()[0]=3 (連續記憶體)
+//   after insert(pos,99): 3 99 1 4 1 5
+//   after erase(pos): 3 1 4 1 5
+//   clear(): size=0 empty=1
+//   sort(v.begin(),v.end()): 1 1 3 4 5
+//
+// [demo_deque_common_members]
+//   after push_front/push_back: 1 2 3 4
+//   front=1, back=4
+//   after pop_front/pop_back: 2 3
+//
+// [demo_list_common_members]
+//   after push_front/push_back: 0 1 2 4 5
+//   insert before 4: 0 1 2 3 4 5
+// …（後略，完整輸出共 46 行）

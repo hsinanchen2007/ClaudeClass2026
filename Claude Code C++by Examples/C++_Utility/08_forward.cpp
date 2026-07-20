@@ -238,3 +238,24 @@ int main() {
     g++ -std=c++17 -Wall -Wextra 08_forward.cpp -o 08_forward && ./08_forward
 ================================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 08_forward.cpp -o 08_forward
+
+// === 預期輸出 ===
+// [demo_compare]
+//   wrap_no_forward(s)              ->     inner(lvalue): hello
+//   wrap_no_forward(std::move(s))   ->     inner(lvalue): hello
+//   wrap_with_forward(s)            ->     inner(lvalue): hello
+//   wrap_with_forward(std::move(s)) ->     inner(rvalue): hello
+// [demo_invoker]
+//   invoker(add, 3, 4) = 7
+//   invoker(lambda, 5, 6) = 30
+// [demo_practical_make_shared]
+//     User ctor: id=1, name=Alice
+//     User ctor: id=2, name=Bob
+//   u1 use_count=1
+//   u2 use_count=1
+// [demo_practical_my_bag]
+//   bag[0]=hello
+//   bag[1]=world
+//   bag[2]=literal

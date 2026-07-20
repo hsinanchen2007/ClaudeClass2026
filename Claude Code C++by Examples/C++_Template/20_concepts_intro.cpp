@@ -276,3 +276,19 @@ int main() {
 //  【下一篇】
 //    21_concepts_advanced.cpp ── requires expression 進階 + 組合 concept。
 // ============================================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 20_concepts_intro.cpp -o 20_concepts_intro
+
+// === 預期輸出 ===
+// add(3, 4)              = 7
+// add(1.5, 2.0)          = 3.5
+// 42
+// hello
+// hash_of("foo") = 9631199822919835226
+// 1 3 6 10
+// max_concept(7, 3) = 7
+// sum_two(1, 2.5)   = 3.5
+// sum_range vector<int> = 15
+// concat: 1 2 1 1 2 1
+// [INFO] 42
+// [WARN] disk almost full

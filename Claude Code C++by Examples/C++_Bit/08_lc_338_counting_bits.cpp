@@ -183,3 +183,11 @@ static void demo_subset_size_distribution() {
     for (int k = 0; k <= 4; ++k) std::cout << k << "->" << dist[k] << ' ';
     std::cout << '\n';
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 08_lc_338_counting_bits.cpp -o 08_lc_338_counting_bits
+
+// === 預期輸出 ===
+// shift     n=8: 0 1 1 2 1 2 2 3 1
+// kernighan n=8: 0 1 1 2 1 2 2 3 1
+// [LC477] total hamming [4,14,2] = 6 (= 6)
+// [distribution] 0..15 中 popcount 分布: 0->1 1->4 2->6 3->4 4->1

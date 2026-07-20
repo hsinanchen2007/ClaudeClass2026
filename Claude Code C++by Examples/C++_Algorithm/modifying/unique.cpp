@@ -315,7 +315,9 @@ void practical_dedup_url_history() {
     std::cout << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra unique.cpp -o unique
+
+// === 預期輸出 ===
 // adjacent dedup: 1 2 3 1
 // sort+unique:    1 2 3
 // abs-unique: 1 2 3

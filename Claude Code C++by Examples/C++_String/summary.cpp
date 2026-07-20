@@ -295,3 +295,27 @@ C++20 延伸（不在主線強推）
 ================================================================================
 */
 
+// 編譯: g++ -std=c++20 -Wall -Wextra summary.cpp -o summary
+
+// === 預期輸出 (節錄) ===
+//
+// [demo_construct_and_assign]
+//   s1.size=0
+//   s2=hello
+//   s4=AAAAA
+//   s5(copy)=hello
+//   s6(move)=hi
+//   assign("key=value") => key=value
+//   assign(3,'!') => !!!
+//
+// [demo_basic_and_capacity]
+//   s="hello" size=5 cap=15
+//   after reserve(100): cap=100
+//   after shrink_to_fit: cap=15 (may or may not shrink)
+//
+// [demo_access_and_safe_at]
+//   s[1]=b, at(1)=b
+//   front=a, back=c
+//   c_str()="abc"
+//   at(100) out_of_range: basic_string::at: __n (which is 100) >= this->size() (which is 3)
+// …（後略，完整輸出共 51 行）

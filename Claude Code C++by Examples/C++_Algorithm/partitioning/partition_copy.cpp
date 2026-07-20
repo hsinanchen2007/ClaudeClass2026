@@ -293,7 +293,9 @@ void practical_send_emails_split_by_domain() {
     std::cout << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra partition_copy.cpp -o partition_copy
+
+// === 預期輸出 ===
 // evens: 2 4 6 8 10
 // odds:  1 3 5 7 9
 // src unchanged: 1 2 3 4 5 6 7 8 9 10

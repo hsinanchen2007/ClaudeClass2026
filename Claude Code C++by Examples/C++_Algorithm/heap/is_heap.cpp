@@ -279,7 +279,9 @@ void practical_unit_test_heap_invariant() {
               << ", after pop is_heap=" << ok2 << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra is_heap.cpp -o is_heap
+
+// === 預期輸出 ===
 // a is max-heap: true
 // b is max-heap: false
 // b heap-until index = 1 (val=2)

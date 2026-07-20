@@ -315,3 +315,28 @@ int main() {
     g++ -std=c++17 -Wall -Wextra 05_any.cpp -o 05_any && ./05_any
 ================================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 05_any.cpp -o 05_any
+
+// === 預期輸出 (節錄) ===
+// [demo_basic]
+//   a.has_value()=false
+//   int = 123
+//   str = hello
+//   not int
+// [demo_bad_cast]
+//   caught: bad any_cast
+// [demo_any_helpers]
+//   is int? true
+//   is string? false
+//   after reset, has_value=false
+//   after emplace<string>: "#####"
+//   member swap: x is string? true
+//   std::swap : x is int? true
+//   make_any<vector>: size=3, front=7
+//   in_place_type<pair>: (1,one)
+// [demo_leetcode_wealth]
+//   max wealth = 17
+// [demo_practical_property_bag]
+//   host = 127.0.0.1
+// …（後略，完整輸出共 27 行）

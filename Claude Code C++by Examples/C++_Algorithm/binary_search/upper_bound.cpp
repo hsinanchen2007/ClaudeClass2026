@@ -294,7 +294,9 @@ void practical_histogram_bucketing() {
     }
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra upper_bound.cpp -o upper_bound
+
+// === 預期輸出 ===
 // upper_bound(3) at index 4, val=5
 // count(3) via bounds = 3
 // upper_bound(5) val=7
@@ -302,7 +304,7 @@ void practical_histogram_bucketing() {
 // upper_bound(99) is end? true
 // LC34: [3,4]
 // LC34(miss): [-1,-1]
-// LC2300: 2
+// LC2300: 3
 // count in [3,9] = 6
 // LC1283: 5
 // x=30 bucket=0

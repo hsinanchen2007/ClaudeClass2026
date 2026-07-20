@@ -411,7 +411,9 @@ void practical_stack_trace_top_down() {
     // 預期輸出: read_file -> load_config -> parse_args -> main
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra 06_reverse_iterator.cpp -o 06_reverse_iterator
+
+// === 預期輸出 ===
 // rbegin/rend: 5 4 3 2 1
 // *rit              = 5
 // *(rit.base() - 1) = 5 (一樣是 5)
@@ -426,3 +428,9 @@ void practical_stack_trace_top_down() {
 //   - 10:00:14 user logout: alice
 //   - 10:00:09 query: SELECT *
 //   - 10:00:05 user login: alice
+// LC541 "abcdefg" k=2 = bacdfeg (期望 bacdfeg)
+// Stack Trace (top-down):
+//   at read_file
+//   at load_config
+//   at parse_args
+//   at main

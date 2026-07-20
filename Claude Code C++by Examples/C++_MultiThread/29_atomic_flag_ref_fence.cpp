@@ -613,3 +613,31 @@ int main() {
 //    用 std::atomic<T> 與 memory_order 把主要使用情境講過了;這課把
 //    最後三個剩下的 STL 元件補齊。
 // =====================================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 29_atomic_flag_ref_fence.cpp -o 29_atomic_flag_ref_fence
+
+// === 預期輸出 ===
+// === A. std::atomic_flag (spinlock) ===
+//   8 threads × 100000 增量,counter = 800000 (預期 800000),耗時 24 ms
+//   ※ spinlock 在臨界區極短時最快,臨界區一變長就會不停 burn CPU,改用 std::mutex 反而較好。
+//
+// === B. std::atomic_ref<T> (C++20) ===
+//   4 threads × 250000 各自 fetch_add 到 4 個 slot
+//   data = 250000 250000 250000 250000 0 0 0 0
+//   sum  = 1000000 (預期 1000000)
+//
+// === C. std::atomic_thread_fence ===
+//   consumer 看到 sum = 357389824 (預期 357'389'824)
+//   ※ 如果把 release fence 拿掉,在 ARM/POWER 上consumer 可能讀到 0 / 殘值;
+//     在 x86 上常常 *碰巧能跑*,但 spec 上仍然是 race。
+//
+// === Demo D (extra): atomic_flag 一次性 guard ===
+//   [thread 0] 第一個觸發, 執行 shutdown
+//   [thread 1] 已被別人處理, 退出
+//   [thread   [thread 3] 已被別人處理, 退出
+// 2] 已被別人處理, 退出
+//   總共 winner = 1 (預期 1)
+//
+// === Demo E (extra): plain struct + fence publish ===
+//   reader 讀到 pkt.id=7 ts=1717171717 type=42 crc=0xdead
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

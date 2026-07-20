@@ -294,15 +294,17 @@ void practical_quickselect_partition() {
     std::cout << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
-// after partition: 1 7 3 5 4 6 2 8
+// 編譯: g++ -std=c++20 -Wall -Wextra partition.cpp -o partition
+
+// === 預期輸出 ===
+// after partition: 1 7 3 5 2 6 4 8
 //   pivot at index 4
 //   odd part: 1 7 3 5
-//   even part: 4 6 2 8
+//   even part: 2 6 4 8
 // great-than-4 at front: 8 7 6 5 4 3 2 1 (boundary at 4)
-//   ↑ 順序依實作而定,只保證「前段全 > 4,後段全 <= 4」
 // LC905 evens-first OK: true (boundary @ 2)
 // LC75 sorted: 0 0 1 1 2 2
-// Practical errors-first count = 3 | layout: 各組內順序依實作而定
-// LC2149 pos count=3 seq: ... (順序依實作)
-// pivot=4 smaller count=3 arrangement: ... (順序依實作)
+// Practical errors-first count = 3 | layout: {6,E} {2,E} {4,E} {3,I} {5,I} {1,I}
+// LC2149 pos count=3 seq: 3 7 5 -2 -3 -1
+// pivot=4 smaller count=3 arrangement: 3 2 1 8 6 9 4
+// ⚠️ 部分項目的順序/數值屬 unspecified 或每次執行不同，實際結果可能與上面不同。

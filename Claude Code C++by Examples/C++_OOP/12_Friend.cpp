@@ -310,3 +310,21 @@ int main() {
  *   13_OperatorOverloading.cpp
  *   運算子重載 (operator + - == << ...) — 讓自訂類別像內建型別一樣自然使用。
  *=============================================================================*/
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 12_Friend.cpp -o 12_Friend
+
+// === 預期輸出 ===
+// ----- 範例 1：Complex + operator<< -----
+// a = (3 + 4i)
+// b = (1 - 2i)
+// c = (4 + 2i)
+// ----- 範例 2：friend class -----
+// [診斷] rpm = 800, 機油溫度 = 75C
+// [診斷] rpm = 3000, 機油溫度 = 92C
+// ----- 範例 3：Leetcode 1929 - 用 friend operator+ 做向量串接 -----
+// ans = 1 2 3 1 2 3
+// ----- 範例 4：Leetcode 1313 RLE 解壓 + friend operator<< -----
+// RLE[ 1 2 3 4 ]
+// 解壓: 2 4 4 4
+// ----- 範例 5：friend class 做單元測試 -----
+// [Test] size_ = 3, data_={1,2,3}

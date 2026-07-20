@@ -304,3 +304,20 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 07_insert_iterators.cpp -o 07_insert_iterators
+
+// === 預期輸出 ===
+// back_inserter: 1 2 3
+// front_inserter: 3 2 1
+// inserter (中間): 10 1 2 3 20 30
+// set 自動去重排序: 1 2 3 4 5 6 9
+// intersection: 3 4 5
+// contains dup [1,2,3,1] = true
+// contains dup [1,2,3,4] = false
+// intersection LC349: 4 9
+// LC2215 A\B: 1 3
+// LC2215 B\A: 4 6
+// LC1002 common chars: e l l (期望 e l l)
+// DB buf: user_name user_age user_email
+// Session set: user_age user_email user_name

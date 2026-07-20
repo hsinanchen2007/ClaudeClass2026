@@ -243,7 +243,9 @@ void practical_resize_to_min_required() {
               << " → new=" << new_cap << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra max.cpp -o max
+
+// === 預期輸出 ===
 // max(3, 5) = 5
 // max("a", "b") = b
 // max by length: apple

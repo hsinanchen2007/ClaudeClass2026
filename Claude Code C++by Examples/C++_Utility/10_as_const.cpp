@@ -221,3 +221,25 @@ int main() {
     g++ -std=c++17 -Wall -Wextra 10_as_const.cpp -o 10_as_const && ./10_as_const
 ================================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 10_as_const.cpp -o 10_as_const
+
+// === 預期輸出 ===
+// [demo_basic]
+//   process(non-const)
+//   process(const)
+// [demo_const_iteration]
+//   b=2
+//   a=1
+//   find("nope") -> not found
+//   m.size after lookup = 2
+// [demo_leetcode_two_sum]
+//   index pair = (0, 1)
+// [demo_practical_dump]
+//   app = MyService
+//   port = 8080
+//   host = 127.0.0.1
+// [demo_practical_safe_lookup]
+//   safe_lookup(1, -1) = 20
+//   safe_lookup(5, -1) = -1
+//   data.size() = 3

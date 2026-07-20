@@ -282,10 +282,12 @@ void practical_percentile_calc() {
     std::cout << "P95 latency: " << latency[p95] << " ms\n";
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra nth_element.cpp -o nth_element
+
+// === 預期輸出 ===
 // 4th smallest = 4
-// left part (all <= 4th): ?? ?? ??     (內容皆 <= 4,順序依實作)
-// right part (all >= 4th): ?? ?? ?? ?? ??
+// left part (all <= 4th): 2 1 3
+// right part (all >= 4th): 5 8 9 6 7
 // median = 5
 // 3rd largest = 7
 // LC215: 5
@@ -293,3 +295,5 @@ void practical_percentile_calc() {
 // median = 5
 // LC1985: 3
 // P95 latency: 100 ms
+// ⚠️ 部分項目的順序/數值屬 unspecified 或每次執行不同，實際結果可能與上面不同。
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

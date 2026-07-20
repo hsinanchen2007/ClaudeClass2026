@@ -305,3 +305,21 @@ int main() {
 }
 
 // 編譯: g++ -std=c++17 -Wall -Wextra summary.cpp -o summary && ./summary
+
+// === 預期輸出 ===
+//
+// [demo_iota_accumulate]
+//   sum(1..5)=15
+//   join=1,2,3,4,5
+//
+// [demo_inner_product_partial_sum]
+//   dot=32
+//   partial_sum: 1 3 6
+//
+// [demo_reduce_scan_note]
+//   reduce=10
+//   inclusive_scan: 1 3 6 10
+//   gcd(12, 18) = 6
+//   lcm(4, 6)   = 12
+//
+// [done]

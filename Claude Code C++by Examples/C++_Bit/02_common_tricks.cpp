@@ -251,3 +251,20 @@ static void demo_xor_swap() {
     xorSwap(a, b);
     std::cout << "[xor_swap] after swap: a=" << a << " b=" << b << " (= 11, 7)\n";
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 02_common_tricks.cpp -o 02_common_tricks
+
+// === 預期輸出 ===
+// [T1] n     = 00010110
+// [T1] n-1   = 00010101
+// [T1] n&n-1 = 00010100
+// [T1] popcount(0b10110) = 3 (= 3)
+// [T2] lowbit(0b10110) = 2 (= 2)
+// [T3] single = 5 (= 5)
+// [T4] 0b0111 全 1? yes
+// [T4] 0b1010 全 1? no
+// [T5] n     = 00010100
+// [T5] mask  = 00000111 (最低位 1 以下含)
+// [LC371] 1 + 2 = 3
+// [LC371] -2 + 3 = 1
+// [xor_swap] after swap: a=11 b=7 (= 11, 7)

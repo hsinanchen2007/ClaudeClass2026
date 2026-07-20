@@ -267,3 +267,22 @@ int main() {
  *   static 成員 — 屬於「整個類別」而不是某個物件的東西，
  *   並用 Leetcode 1396. Design Underground System 作為應用情境。
  *=============================================================================*/
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 10_ConstMember.cpp -o 10_ConstMember
+
+// === 預期輸出 ===
+// ----- 範例 1：Calculator -----
+// last = 7
+// Calculator{ last=7, reads=1 }
+// Calculator{ last=7, reads=1 }
+// (經過 readOnlyShow) last=7
+// Calculator{ last=0, reads=0 }
+// constC.getLast() = 0
+// ----- 範例 2：const / 非 const 多載 -----
+// a.at(0) = 10
+// a.at(1) = 222
+// ca.at(0) = 10
+// ----- 範例 3：Leetcode 1672 + const 正確性 -----
+// 最富有: 13
+// ----- 範例 4：日常實用 - ReadOnlyView -----
+// 庫存共 3 項，首項: 螺絲

@@ -409,3 +409,20 @@ int main()
 //      (c) 用 lesson 16 的 SPSC 做 streaming pipeline,讓上
 //          下游同時跑。
 // =============================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra -pthread -ltbb 25_parallel_mergesort.cpp -o 25_parallel_mergesort
+
+// === 預期輸出 ===
+// hardware_concurrency = 16, parallel_depth = 4 (= log2 ceil)
+//
+// [std::sort (seq)        ] 1432 ms   sorted OK
+// [std::sort + par (TBB)  ] 500 ms   sorted OK
+// [our par_msort          ] 560 ms   sorted OK
+//
+// speedup vs std::sort:
+//   parallel STL : 2.864x
+//   our par_msort: 2.55714x
+//
+// [demo] fork-join 平行 sum (與 mergesort 同骨架)
+//   sum=1000000 (預期 1000000), wall=2 ms
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

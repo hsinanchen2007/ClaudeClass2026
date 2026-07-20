@@ -492,3 +492,28 @@ int main() {
   Non-member:      operator==, !=, std::swap, std::erase_if (C++20)
 ============================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra unordered_set.cpp -o unordered_set
+
+// === 預期輸出 (節錄) ===
+// s2 (去重)           : { 6 2 9 5 4 1 3 } (size=7, buckets=13)
+// s6 (100 buckets)    : { } (size=0, buckets=103)
+//
+// [walk] 6 2 9 5 4 1 3
+//
+// [Capacity] size=7, empty=false
+// max_size = 1152921504606846975
+// get_allocator() OK
+//
+// insert 10 ok=true, again ok=false
+// after insert        : { 5 4 3 2 1 10 } (size=6, buckets=13)
+// emplace             : { hello AAAAA } (size=2, buckets=13)
+// emplace_hint("world") → world
+// after erase         : { 4 2 1 } (size=3, buckets=13)
+// after merge         : { 4 3 2 1 } (size=4, buckets=13)
+// mb (留下衝突)       : { 3 2 } (size=2, buckets=13)
+// after swap          : { 8 9 } (size=2, buckets=13)
+// after clear         : { } (size=0, buckets=13)
+//
+// count(3) = 1
+// …（後略，完整輸出共 64 行）

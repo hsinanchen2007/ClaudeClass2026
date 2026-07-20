@@ -142,3 +142,22 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 10_fallthrough.cpp -o 10_fallthrough
+
+// === 預期輸出 ===
+// n=1 => one small
+// n=2 => small
+// n=10 => ten-ish
+// n=20 => ten-ish
+// n=99 => other
+// [Demo2] Info:
+//   WRITE to info log: starting
+// [Demo2] Warn:
+//   WRITE to warn log: low memory
+//   WRITE to info log: low memory
+// [Demo2] Fatal:
+//   FLUSH all log buffers (Fatal)
+//   WRITE to error log: panic
+//   WRITE to warn log: panic
+//   WRITE to info log: panic

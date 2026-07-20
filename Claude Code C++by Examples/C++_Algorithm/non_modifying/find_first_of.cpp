@@ -264,7 +264,9 @@ void practical_first_command_keyword() {
     std::cout << "next clause-start at: " << pos << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra find_first_of.cpp -o find_first_of
+
+// === 預期輸出 ===
 // first vowel 'a' at index 7
 // first delim at index 3 char=','
 // first match (by abs) = -3

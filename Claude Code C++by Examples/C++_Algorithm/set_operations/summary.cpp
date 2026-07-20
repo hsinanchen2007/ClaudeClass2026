@@ -247,3 +247,17 @@ int main() {
 }
 
 // 編譯: g++ -std=c++17 -Wall -Wextra summary.cpp -o summary && ./summary
+
+// === 預期輸出 ===
+//
+// [demo_set_ops]
+//   union: 1 2 2 3 4 4 5
+//   intersection: 2 4
+//   difference (a-b): 1 2 5
+//   symmetric_difference: 1 2 3 4 5
+//   includes(a, {2,4})? 1
+//
+// [demo_merge]
+//   merge: 1 2 3 4 5 6
+//
+// [done]

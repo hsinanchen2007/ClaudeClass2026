@@ -191,3 +191,24 @@ static void demo_align_up() {
               << " (= 1024，本來就對齊)\n";
 }
 #endif
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 03_bit_header_cpp20.cpp -o 03_bit_header_cpp20
+
+// === 預期輸出 ===
+// x = 22 (binary 0001'0110)
+// popcount        = 3 (= 3)
+// countl_zero     = 27 (= 27 over 32-bit)
+// countr_zero     = 1 (= 1 — 最低位 1 在 index 1)
+// bit_width       = 5 (= 5 — 表達 22 要 5 bit)
+// bit_floor       = 16 (= 16)
+// bit_ceil        = 32 (= 32)
+// has_single_bit  = 0 (= 0)
+// has_single_bit(8) = 1 (= 1)
+// rotl(0xF0000001, 4) = 0x1f
+// roundUp(7)   = 8
+// roundUp(8)   = 8
+// roundUp(100) = 128
+// [LC190] reverseBits(43261596) = 964176192 (= 964176192)
+// [align_up] has_single_bit(16) = 1
+// [align_up] align_up(1000, 16) = 1008 (= 1008)
+// [align_up] align_up(1024, 16) = 1024 (= 1024，本來就對齊)

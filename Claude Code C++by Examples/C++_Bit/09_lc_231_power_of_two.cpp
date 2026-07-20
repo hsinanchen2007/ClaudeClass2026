@@ -186,3 +186,26 @@ static void demo_next_pow2_capacity() {
     std::cout << "[nextPow2] 8 -> " << nextPow2(8) << '\n';
     std::cout << "[nextPow2] 1000 -> " << nextPow2(1000) << '\n';
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 09_lc_231_power_of_two.cpp -o 09_lc_231_power_of_two
+
+// === 預期輸出 ===
+// n=1 | v1=1 v2=1 v3=1
+// n=2 | v1=1 v2=1 v3=1
+// n=3 | v1=0 v2=0 v3=0
+// n=4 | v1=1 v2=1 v3=1
+// n=16 | v1=1 v2=1 v3=1
+// n=18 | v1=0 v2=0 v3=0
+// n=0 | v1=0 v2=0 v3=0
+// n=-2 | v1=0 v2=0 v3=0
+// n=1024 | v1=1 v2=1 v3=1
+// [LC342] isPow4(1) = 1
+// [LC342] isPow4(4) = 1
+// [LC342] isPow4(16) = 1
+// [LC342] isPow4(8) = 0
+// [LC342] isPow4(64) = 1
+// [LC342] isPow4(0) = 0
+// [LC342] isPow4(-16) = 0
+// [nextPow2] 7 -> 8
+// [nextPow2] 8 -> 8
+// [nextPow2] 1000 -> 1024

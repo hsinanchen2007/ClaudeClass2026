@@ -275,7 +275,9 @@ void practical_merge_two_event_streams() {
     std::cout << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra merge.cpp -o merge
+
+// === 預期輸出 ===
 // merge: 1 2 3 3 4 5 7 8
 // merge desc: 9 8 7 6 5 1
 // merge with duplicates: 1 2 2 2 2 3 4

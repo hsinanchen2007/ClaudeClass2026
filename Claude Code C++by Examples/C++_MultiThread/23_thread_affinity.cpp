@@ -419,3 +419,27 @@ int main()
 //    重排」。除非你已經量測出 OS 的搬動帶來的 jitter 是個
 //    真實的 latency 問題,否則先別釘 ── 釘錯了反而更慢。
 // =============================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 23_thread_affinity.cpp -o 23_thread_affinity
+
+// === 預期輸出 ===
+// hardware_concurrency = 16
+// main thread sched_getcpu() = 1
+//
+// [UNPINNED] wall = 3730 ms
+//     worker 0  start CPU=6  end CPU=1  migrations=5  elapsed=3284 ms
+//     worker 1  start CPU=9  end CPU=10  migrations=14  elapsed=3730 ms
+//     worker 2  start CPU=5  end CPU=13  migrations=5  elapsed=3284 ms
+//     worker 3  start CPU=14  end CPU=14  migrations=3  elapsed=2748 ms
+//
+// [PINNED  ] wall = 3306 ms
+//     worker 0  start CPU=0  end CPU=0  migrations=0  elapsed=3291 ms
+//     worker 1  start CPU=1  end CPU=1  migrations=0  elapsed=2720 ms
+//     worker 2  start CPU=2  end CPU=2  migrations=0  elapsed=3030 ms
+//     worker 3  start CPU=3  end CPU=3  migrations=0  elapsed=3302 ms
+//
+// ratio (pinned vs unpinned wall) = 1.12825x  (>1 代表釘住有幫助)
+//
+// [demo] 把 thread 釘到固定 core
+//   pinned thread requested CPU 3, actually on CPU 3
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

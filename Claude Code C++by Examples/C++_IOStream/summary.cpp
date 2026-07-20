@@ -267,3 +267,28 @@ stringstream
   - str() 取得/設定底層字串
 ================================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra summary.cpp -o summary
+
+// === 預期輸出 (節錄) ===
+//
+// [demo_cout_format]
+//   default: 3.14159
+//   fixed(2): 3.14
+//   reset to defaultfmt: 3.1
+//   setw/setfill:
+//     [0001]
+//     [0002]
+//     [0003]
+//
+// [demo_cin_token_vs_line]
+//   NOTE: operator>> 讀 token；getline 讀整行（含空白）
+//   NOTE: getline 常和 std::ws 搭配，先吃掉前導換行/空白。
+//
+// [demo_stringstream_parse]
+//   token: id=42
+//   token: name=alice
+//   token: score=98.5
+//   id => 42
+//   name => alice
+// …（後略，完整輸出共 40 行）

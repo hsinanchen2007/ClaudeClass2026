@@ -188,3 +188,17 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 06_ctad.cpp -o 06_ctad
+
+// === 預期輸出 ===
+// [Demo1] pair: 1, hi
+// [Demo1] vec size=3
+// [Demo1] array size=4
+// [Demo1] tuple<0>=1 <2>=x
+// [Demo1] map size=2
+// [Demo2] p1.value=42 p2.value=hello
+// [Demo2] w1=42 w2=3.14
+// [LC1480] prefix: 1 3 6 10
+// [Demo3] endpoint: localhost:8080
+// [Demo3] endpoint: api.example.com:443

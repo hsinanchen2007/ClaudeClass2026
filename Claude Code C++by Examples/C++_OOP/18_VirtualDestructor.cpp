@@ -323,3 +323,31 @@ int main() {
  *   RAII (Resource Acquisition Is Initialization) — 把資源管理交給 C++ 物件生命週期，
  *   是現代 C++ 防洩漏 / 防忘記釋放最重要的觀念。
  *=============================================================================*/
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 18_VirtualDestructor.cpp -o 18_VirtualDestructor
+
+// === 預期輸出 ===
+// ===== 反例：父類別解構子非 virtual =====
+//   (這段是 UB，預設不執行；用 -DDEMONSTRATE_UB 重編可親眼看它被
+//    AddressSanitizer 抓成 new-delete-type-mismatch)
+//   重點：解構子非 virtual 時，用父類別指標 delete 衍生物件 = 未定義行為。
+// ===== 好範例：父類別解構子為 virtual =====
+//   GoodBase() 建構
+//   GoodDerived() 建構，配置陣列
+//   ~GoodDerived() 解構，釋放陣列
+//   ~GoodBase() 解構
+// ===== 直接以子類別型別操作則沒事 =====
+//   BadBase() 建構
+//   BadDerived() 建構，配置陣列
+//   ~BadDerived() 解構，釋放陣列
+//   ~BadBase() 解構
+// ===== Leetcode 1480 變體：多型容器 + virtual dtor =====
+// Running Sum: 1 3 6 10
+// Running Max: 1 2 3 4
+// ===== Leetcode 1672 - 多型容器處理顧客財富 =====
+// 總和 = 18
+// 最大值 = 9
+// ===== 日常實用：Plugin 系統 =====
+// LogPlugin run
+//   ~LogPlugin (清空 buffer_="logged")
+//   ~IPlugin (base)

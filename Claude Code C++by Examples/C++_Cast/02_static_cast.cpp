@@ -238,3 +238,19 @@ static void demo_size_t_signed_compare() {
     std::cout << "[size_t_cmp] (signed) size > -1? " << ok << " (應為 1)\n";
     // ❌ 危險寫法：if (v.size() > target) → target 變超大正數，結果可能反直覺
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 02_static_cast.cpp -o 02_static_cast
+
+// === 預期輸出 ===
+// [Demo1] double 3.9 -> int 3
+// [Demo1] truncate 5e9 -> int 705032704 (超出 int 範圍：C++20 起是定義良好的模數環繞，不是 UB；
+//           但『數值被無聲截斷』依然是 bug 溫床)
+// woof
+// woof
+// [Demo2] (錯誤下轉型 Dog→Cat 是 UB，預設不執行；
+//         用 -DDEMONSTRATE_UB -fsanitize=undefined 可看 UBSan 抓到它)
+// [Demo3] Color::Green raw = 2
+// [Demo3] from 4 -> Blue
+// [Demo4] arr = 0 1 4 9
+// [enum->index] HttpMethod POST
+// [size_t_cmp] (signed) size > -1? 1 (應為 1)

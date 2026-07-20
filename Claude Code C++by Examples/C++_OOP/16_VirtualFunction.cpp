@@ -340,3 +340,22 @@ int main() {
  *   17_AbstractClass.cpp
  *   純虛擬函式與抽象類別 — 為什麼有時候我們會寫「沒有實作的函式」？
  *=============================================================================*/
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 16_VirtualFunction.cpp -o 16_VirtualFunction
+
+// === 預期輸出 ===
+// ===== 範例 1：Animal speak() 多型 =====
+// 汪汪!
+// 喵~
+// (動物的某種聲音)
+// ===== 範例 2：Leetcode 232 兩種實作 =====
+// [TwoStack] 1 1 2 0
+// [Deque   ] 1 1 2 0
+// ===== 範例 3：Leetcode 225 用 queue 做 stack =====
+// top = 3 (預期 3)
+// pop = 3 (預期 3)
+// pop = 2 (預期 2)
+// empty? 0 (預期 0)
+// ===== 範例 4：Shape 多型 =====
+// Rectangle area = 12
+// Circle area = 78.5397

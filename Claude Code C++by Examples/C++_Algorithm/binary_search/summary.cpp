@@ -224,3 +224,17 @@ int main() {
 }
 
 // 編譯: g++ -std=c++17 -Wall -Wextra summary.cpp -o summary && ./summary
+
+// === 預期輸出 ===
+//
+// [demo_binary_search_family]
+//   binary_search(2)=1
+//   binary_search(4)=0
+//   lower_bound(2) index=1
+//   upper_bound(2) index=4
+//   count of 2 = 3
+//   equal_range(2) = [1,4)
+//   last <=4 is 3 at index 4
+//   100 not found (lower_bound = end)
+//
+// [done]

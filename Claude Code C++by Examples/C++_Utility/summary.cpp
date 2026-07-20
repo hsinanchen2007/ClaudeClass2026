@@ -460,3 +460,27 @@ utility（常用 free functions）
 ================================================================================
 */
 
+// 編譯: g++ -std=c++20 -Wall -Wextra summary.cpp -o summary
+
+// === 預期輸出 (節錄) ===
+//
+// [demo_pair]
+//   p1=(1, apple)
+//   p2=(2, banana)
+//   structured binding: id=1, name=apple
+//   (1,"a") < (1,"b") ? 1
+//   (1,"a") < (2,"a") ? 1
+//   swap: x=(2,y)
+//
+// [demo_tuple]
+//   get<0>=7, get<1>=seven, get<2>=7.5
+//   structured binding: 7, seven, 7.5
+//   tie: i2=7, s2=seven
+//   tuple_size=3
+//
+// [demo_optional]
+//   parse_int("42") = 42
+//   parse_int(" 7") = 7
+//   parse_int("abc") = (no value)
+//   parse_int("123xyz") = (no value)
+// …（後略，完整輸出共 57 行）

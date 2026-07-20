@@ -282,12 +282,14 @@ void practical_diff_first_byte() {
         std::cout << "files identical\n";
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra mismatch.cpp -o mismatch
+
+// === 預期輸出 ===
 // mismatch at index 2: 3 vs 9
 // all equal: yes
 // common prefix length = 3 ("pre")
 // case-insensitive equal: yes
 // LC14: "fl"
 // first diff key=db.port dev=5432 prod=6543
-// first equal at idx=1 val=2
+// first equal at idx=2 val=3
 // first diff at idx=3 f1=68 f2=85

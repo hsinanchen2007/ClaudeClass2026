@@ -298,3 +298,24 @@ int main() {
  *   建構子初始化列表 (Member Initializer List) — 「: x(1), y(2)」這種寫法為什麼比
  *   在大括號裡面 x = 1; y = 2; 還要好，並用 Leetcode 535. TinyURL 練習。
  *=============================================================================*/
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 6_ThisPointer.cpp -o 6_ThisPointer
+
+// === 預期輸出 ===
+// ----- 範例 1：用 this-> 解命名衝突 -----
+// Person(Alice, 30) 物件位址 = 0x7fff333a34b0
+// Person(Bob, 25) 物件位址 = 0x7fff333a34e0
+// (注意 alice 跟 bob 的物件位址不一樣)
+// ----- 範例 2：鏈式呼叫 -----
+// Pizza{餅:厚片, 醬:白醬, 起司:切達}
+// ----- 範例 3：Leetcode 1768 -----
+// apbqcr
+// apbqrs
+// apbqcd
+// ----- 範例 4：Leetcode 1108 Defanging IP -----
+// 1[.]1[.]1[.]1
+// 255[.]100[.]50[.]0
+// ----- 範例 5：HttpRequestBuilder -----
+// POST /api/login body={"u":"a"}
+// GET /api/me
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

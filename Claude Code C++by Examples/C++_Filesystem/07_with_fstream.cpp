@@ -203,3 +203,17 @@ int main() {
     demo_practical_read_lines();
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 07_with_fstream.cpp -o 07_with_fstream
+
+// === 預期輸出 ===
+// [Demo1] wrote "tmp_fs_dir/logs/app/2026/05/05.log" (size=32 bytes)
+// [Demo2] atomic-write "tmp_fs_dir/data.json"
+// [Demo3-A] (rdbuf) size=30 preview: { "version": 1, "items": [] }
+// ...
+// [Demo3-B] (read) size=30
+// [Practical] read_lines
+//   讀到 3 行：
+//     [host=127.0.0.1]
+//     [port=8080]
+//     [app=demo]

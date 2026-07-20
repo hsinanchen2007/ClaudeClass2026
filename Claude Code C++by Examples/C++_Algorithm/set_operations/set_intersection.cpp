@@ -278,7 +278,9 @@ void practical_common_courses() {
     std::cout << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra set_intersection.cpp -o set_intersection
+
+// === 預期輸出 ===
 // intersection: 2 4 6
 // with duplicates: 2 2 (min(3,2)=2 個 2)
 // no intersection size = 0

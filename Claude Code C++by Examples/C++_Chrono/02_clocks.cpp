@@ -230,3 +230,15 @@ static void demo_wall_vs_steady_diff() {
               << " ms, wall=" << wallDelta << " ms"
               << " (差距很大表示 wall clock 被調過)\n";
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 02_clocks.cpp -o 02_clocks
+
+// === 預期輸出 ===
+// [Demo1] system_clock::is_steady          = false
+// [Demo1] steady_clock::is_steady          = true
+// [Demo1] high_resolution_clock::is_steady = false
+// [Demo2] now = 2026-07-20 02:41:01
+// [Demo3] sleep_for(120ms) actually took 120 ms
+// [log_ts] 2026-07-20 02:41:02.091 INFO server start
+// [drift] steady=50 ms, wall=50 ms (差距很大表示 wall clock 被調過)
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

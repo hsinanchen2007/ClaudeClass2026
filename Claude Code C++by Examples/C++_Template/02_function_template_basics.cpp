@@ -298,3 +298,20 @@ int main() {
 //  【下一篇】
 //    03_class_template_basics.cpp ── 把同樣的概念延伸到 class。
 // ============================================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 02_function_template_basics.cpp -o 02_function_template_basics
+
+// === 預期輸出 ===
+// abs_t(-7)        = 7
+// abs_t(-3.14)     = 3.14
+// add(1, 2.5)      = 3.5
+// add(1, 2)        = 3
+// add(std::string("foo"), "bar") = foobar
+// to<long>(42)     = 42 (sizeof=8)
+// maximum_wealth   = 6
+// after swap_if_greater: p=4 q=9
+// (name, Alice)
+// (1, 100.5)
+// find_numbers_even_digits = 2 (expect 2)
+// percentage_of(35, 200) = 17.5 %
+// percentage_of(0, 0)    = 0 %

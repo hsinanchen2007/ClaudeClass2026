@@ -199,3 +199,13 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 03_constexpr_relaxed.cpp -o 03_constexpr_relaxed
+
+// === 預期輸出 ===
+// [Demo1] factorial(10)=3628800 factorial(20)=2432902008176640000
+// [Demo2] sumDigits(12345) = 15
+// [Demo3] fibIter(50) = 12586269025  (compile-time)
+// [LC70] climbStairs(10) = 89
+// [LC70] climbStairs(30) = 1346269 (compile-time)
+// [Demo4] gcd(48, 18) = 6

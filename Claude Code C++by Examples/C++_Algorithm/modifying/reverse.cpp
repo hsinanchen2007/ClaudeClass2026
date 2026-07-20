@@ -288,7 +288,9 @@ void practical_undo_stack_replay() {
     std::cout << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra reverse.cpp -o reverse
+
+// === 預期輸出 ===
 // reverse: 5 4 3 2 1
 // partial reverse: 1 5 4 3 2 6
 // src: 1 2 3 4 5

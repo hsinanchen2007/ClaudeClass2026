@@ -242,7 +242,9 @@ void practical_remaining_quota() {
               << ", bw=" << bandwidth_left << ")\n";
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra min.cpp -o min
+
+// === 預期輸出 ===
 // min(3, 5) = 3
 // min("banana", "apple") = apple
 // min |.|: 3
@@ -252,3 +254,4 @@ void practical_remaining_quota() {
 // timeout = min(client=5000, server=3000) = 3000 ms
 // LC746: 15
 // quota left = 18 (api=30, bw=18)
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

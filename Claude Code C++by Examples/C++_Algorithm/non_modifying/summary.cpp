@@ -268,3 +268,21 @@ int main() {
 }
 
 // 編譯: g++ -std=c++17 -Wall -Wextra summary.cpp -o summary && ./summary
+
+// === 預期輸出 ===
+//
+// [demo_predicates]
+//   all_of >0 ? 1
+//   any_of even ? 1
+//   none_of <0 ? 1
+//   empty all_of >0 ? 1  (vacuous true)
+//
+// [demo_find_and_adjacent]
+//   find(3) index=2
+//   adjacent_find first dup=3
+//
+// [demo_equal_mismatch]
+//   equal? 0
+//   mismatch: a=3, b=4
+//
+// [done]

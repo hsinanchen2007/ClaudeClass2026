@@ -334,3 +334,24 @@ int main() {
 //  【下一篇】
 //    17_type_traits.cpp ── 系統介紹 <type_traits>。
 // ============================================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 16_sfinae.cpp -o 16_sfinae
+
+// === 預期輸出 ===
+// double_it(7)        = [integral] 14
+// double_it(3.14)     = [floating] 6.28
+// has_size<vector<int>> = true
+// has_size<int>         = false
+// [container size=3] 1 2 3
+// [scalar] 42
+// [integral merge] 1 2 2 3 5 6
+// [generic merge] ant bee cat dog frog yak
+// safe_divide(7, 2)   = 3
+// safe_divide(7.0,2.0)= 3.5
+// safe_divide(7, 0)   = [safe_divide:int] 0!
+// 0
+// missing_number({3,0,1})         = 2
+// missing_number({9,6,4,2,3,5,7,0,1}) = 8
+// to_str_safe(42)         = 42
+// to_str_safe(3.14)       = 3.140000
+// to_str_safe(string)     = hi

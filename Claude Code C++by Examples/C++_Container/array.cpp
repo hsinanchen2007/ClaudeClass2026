@@ -429,3 +429,28 @@ int main() {
 
 ============================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra array.cpp -o array
+
+// === 預期輸出 (節錄) ===
+// a1                  : [ 1 2 3 4 5 ] (size=5)
+// a2 (部分初始化)    : [ 1 2 0 0 0 ] (size=5)
+// a3 (value-init)     : [ 0 0 0 0 0 ] (size=5)
+// a4 (字串)           : [ hi yo bye ] (size=3)
+// a5 (CTAD)           : [ 10 20 30 ] (size=3)
+//
+// [元素存取]
+// a1[2]      = 3
+// a1.at(0)   = 1
+// a1.front() = 1
+// a1.back()  = 5
+// at(99) 例外: array::at: __n (which is 99) >= _Nm (which is 5)
+// data()[0] = 1
+// std::get<3>(a1) = 4
+//
+// [正向]   1 2 3 4 5
+// [反向]   5 4 3 2 1
+//
+// [Capacity] size=5, max_size=5, empty=false
+// 空 array.empty() = true, size=0
+// …（後略，完整輸出共 44 行）

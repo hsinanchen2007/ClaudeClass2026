@@ -382,3 +382,28 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 05_custom_deleter.cpp -o 05_custom_deleter
+
+// === 預期輸出 (節錄) ===
+// --- 範例 1: unique_ptr 管理 FILE* ---
+//   [FileCloser: fclose]
+//   讀回: hello smart pointer
+//   [FileCloser: fclose]
+// --- 範例 2: 函式指標 deleter ---
+//   函式指標 deleter, sizeof(FilePtr2)=16
+//   sizeof(FilePtr 用 functor)=8  (functor 較小)
+// --- 範例 3: unique_ptr<T[]> 陣列 ---
+//   arr[0]=0
+//   arr[1]=1
+//   arr[2]=4
+//   arr[3]=9
+//   arr[4]=16
+// --- 範例 4: shared_ptr 管理 FILE* (lambda deleter) ---
+//   use_count = 2
+//   [lambda deleter: fclose]
+// --- 範例 5: 物件池 (custom deleter 做歸還) ---
+//   借出 c1=#0, c2=#1
+//   pool idle = 0
+//   [歸還 Connection #1 回 pool]
+// …（後略，完整輸出共 33 行）

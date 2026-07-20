@@ -254,3 +254,17 @@ int main() {
 }
 
 // 編譯: g++ -std=c++17 -Wall -Wextra summary.cpp -o summary && ./summary
+
+// === 預期輸出 ===
+//
+// [demo_sort_and_stable_sort]
+//   sort: 1 2 3 4 5
+//   is_sorted? 1
+//   stable_sort by key => (1,1) (1,3) (2,0) (2,2)
+//
+// [demo_partial_sort_and_nth_element]
+//   partial_sort first3: 1 2 3 9 8 7 6 4 5
+//   nth_element (5th smallest) = 5
+//   is_sorted_until: first break at index 3 value 2
+//
+// [done]

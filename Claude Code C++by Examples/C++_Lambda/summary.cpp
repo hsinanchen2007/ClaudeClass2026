@@ -136,3 +136,24 @@ int main() {
     return 0;
 }
 
+// 編譯: g++ -std=c++20 -Wall -Wextra summary.cpp -o summary
+
+// === 預期輸出 ===
+//
+// [demo_basic_and_capture]
+//   by_value()=30
+//   after by_ref: a=11, b=21
+//
+// [demo_mutable_and_init_capture]
+//   f()=15, f()=25
+//   moved capture size=5
+//
+// [demo_generic_lambda_and_algorithms]
+//   first even=2
+//   sum=15
+//
+// [demo_std_function_and_bind]
+//   std::function inc(7)=8
+//   bind plus10(5)=15
+//
+// [done]

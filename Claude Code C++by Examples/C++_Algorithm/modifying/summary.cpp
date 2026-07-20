@@ -268,3 +268,21 @@ int main() {
 }
 
 // 編譯: g++ -std=c++17 -Wall -Wextra summary.cpp -o summary && ./summary
+
+// === 預期輸出 ===
+//
+// [demo_transform_replace]
+//   squares: 1 4 9 16 25
+//   replace_if(x>10 ->0): 1 4 9 0 0
+//
+// [demo_remove_erase]
+//   before: 1 2 3 2 4 2 5
+//   after remove (size 不變,尾端為垃圾): 1 3 4 5 4 2 5
+//   after erase (真的縮小了): 1 3 4 5
+//
+// [demo_reverse_rotate_unique]
+//   reverse: 5 4 3 2 1
+//   rotate(begin+2): 3 2 1 5 4
+//   unique+erase: 1 2 3
+//
+// [done]

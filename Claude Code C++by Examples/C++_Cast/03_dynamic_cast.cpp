@@ -239,3 +239,14 @@ static void demo_event_handler_filter() {
     std::cout << "[event] processed clicks = " << clickCnt << '\n';
     for (Event* e : queue) delete e;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 03_dynamic_cast.cpp -o 03_dynamic_cast
+
+// === 預期輸出 ===
+// woof (tail) meow (purr) woof (tail)
+// [Demo2] caught bad_cast: std::bad_cast
+// [Demo3] try Dog→Cat = null (correct)
+// [shapes] total area=24.708, circle count=2
+// [event] click at (10,20)
+// [event] click at (5,5)
+// [event] processed clicks = 2

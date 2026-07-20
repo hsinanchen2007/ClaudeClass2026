@@ -333,3 +333,32 @@ int main() {
     g++ -std=c++17 -Wall -Wextra 02_tuple.cpp -o 02_tuple && ./02_tuple
 ================================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 02_tuple.cpp -o 02_tuple
+
+// === 預期輸出 ===
+// [demo_basic]
+//   get<0>=42
+//   get<1>=hello
+//   get<2>=3.14
+//   get<std::string>=hello
+// [demo_structured_binding]
+//   id=1001, name=Alice, score=92.5
+// [demo_tie_compare]
+//   a < b ? true
+// [demo_tuple_helpers]
+//   cat=(1, a, 3.14, X)
+//   size of t3 = 4
+//   via tie+ignore: id=7, score=88.5
+//   a==b: false, a<b: true, a!=b: true
+//   member swap: x=(2,y)
+//   std::swap : x=(1,x)
+//   forward_as_tuple: get<0>=42
+// [demo_leetcode_merge]
+//   merged=apbqcrst, used1=3, used2=5
+// [demo_practical_http]
+//   status=200, body={"ok":true}, err=[]
+//   status=400, body=[], err=url is empty
+// [demo_practical_apply]
+//   std::apply(sum3, (1,2,3)) = 6
+//   fmt: id=7, name=Bob, s=88.5

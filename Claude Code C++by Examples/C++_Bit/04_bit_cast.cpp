@@ -225,3 +225,15 @@ static void demo_float_is_nan() {
               << ", 1.5 -> " << isNanByBits(normal) << '\n';
 }
 #endif
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 04_bit_cast.cpp -o 04_bit_cast
+
+// === 預期輸出 ===
+// [Demo1] float 1.0 → 0x3f800000 (預期 0x3f800000)
+// [Demo2] flip sign of 3.14 → -3.14 (預期 -3.14)
+// [Demo3] memcpy(2.5f) bits = 0x40200000 (vs bit_cast 40200000)
+// [Demo4] -0.0 bits = 0x8000000000000000 (符號位是 1，其它都 0)
+// [LC762] [6,10] = 4 (= 4)
+// [LC762] [10,15] = 5 (= 5)
+// [is_nan_bits] nan -> 1, inf -> 0, 1.5 -> 0
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

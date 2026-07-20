@@ -283,3 +283,25 @@ int main() {
 //  【下一篇】
 //    15_perfect_forwarding.cpp ── 完美轉發：T&&、std::forward、reference collapsing。
 // ============================================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 14_fold_expressions.cpp -o 14_fold_expressions
+
+// === 預期輸出 ===
+// sum(1,2,3,4)         = 10
+// sum(1.5, 2, 3)       = 6.5
+// sum0()               = 0
+// sum0(10, 20)         = 30
+// hi 42 3.14 OK
+// all_positive(1,2,3)   = true
+// all_positive(1,-1,3)  = false
+// v = 1 2 3 4 5
+// sum_args(1..5)         = 15
+// running_sum: 1 3 6 10
+// min_of(7, 3, 9, 4)   = 3
+// max_of(7, 3, 9, 4)   = 9
+// all_of(1,1,1)        = true
+// any_of(0,0,1)        = true
+// none_of(0,0,0)       = true
+// xor_operation(5, 0)  = 8 (expect 8)
+// xor_all(1,2,3,4,5)   = 1
+// [INFO] user alice score 95

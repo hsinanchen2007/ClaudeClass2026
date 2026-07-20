@@ -411,7 +411,9 @@ void practical_csv_export() {
     std::cout << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra 02_output_iterator.cpp -o 02_output_iterator
+
+// === 預期輸出 ===
 // 1, 2, 3, 4, 5,
 // dst.size() = 5 (期望 5)
 // 1 2 3 4 5
@@ -422,3 +424,6 @@ void practical_csv_export() {
 // 2026-05-04 10:00:02 ERROR connect timeout
 // 2026-05-04 10:00:04 ERROR auth failed
 // 組成 email: 2026-05-04 10:00:02 ERROR connect timeout | 2026-05-04 10:00:04 ERROR auth failed |
+// LC905 sort by parity: 2 4 8 3 1 7
+// CSV: 10,20,30,40, (期望 10,20,30,40,)
+// Inline CSV: 10,20,30,40,

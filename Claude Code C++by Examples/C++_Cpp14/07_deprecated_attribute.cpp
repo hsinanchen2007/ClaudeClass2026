@@ -166,3 +166,12 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 07_deprecated_attribute.cpp -o 07_deprecated_attribute
+
+// === 預期輸出 ===
+// oldApi running
+// [Demo] legacyHash("hello") = 99162322
+// OldClient::connect
+// [Demo4] legacy_size=1024 modern_size=2048
+// [Demo5] algo code = 2

@@ -437,3 +437,28 @@ int main() {
                    std::swap, std::erase, std::erase_if (C++20)
 ============================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra deque.cpp -o deque
+
+// === 預期輸出 (節錄) ===
+// d1                  : [ ] (size=0)
+// d2 (size=5)         : [ 0 0 0 0 0 ] (size=5)
+// d3 (5 個 42)        : [ 42 42 42 42 42 ] (size=5)
+// d4                  : [ 1 2 3 4 5 ] (size=5)
+// d5 (range)          : [ 1 2 3 4 5 ] (size=5)
+// d7 (move 來)        : [ 1 2 3 4 5 ] (size=5)
+// assign(3,99)        : [ 99 99 99 ] (size=3)
+// assign({...})       : [ 7 8 9 ] (size=3)
+//
+// [Access]
+// e[1]      = 20
+// e.at(2)   = 30
+// e.front() = 10
+// e.back()  = 40
+// at(99) 例外: deque::_M_range_check: __n (which is 99)>= this->size() (which is 4)
+//
+// [正向] 10 20 30 40
+// [反向] 40 30 20 10
+//
+// [Capacity] size=4, empty=false
+// …（後略，完整輸出共 45 行）

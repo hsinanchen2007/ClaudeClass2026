@@ -324,3 +324,28 @@ int main() {
     g++ -std=c++17 -Wall -Wextra 11_bitset.cpp -o 11_bitset && ./11_bitset
 ================================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 11_bitset.cpp -o 11_bitset
+
+// === 預期輸出 (節錄) ===
+// [demo_basic]
+//   b           = 10101010
+//   b.count()   = 4
+//   b.test(1)   = 1
+//   b.test(0)   = 0
+//   after set/flip: 00101011
+//   b & mask    = 00001011
+//   b | mask    = 00101111
+// [demo_bitset_helpers]
+//   any=1, all=0, none=0
+//   set()   = 11111111
+//   reset() = 00000000
+//   flip()  = 11110011
+//   set(i,val)= 01110011
+//   to_ulong  = 177
+//   to_ullong = 177
+//   to_string = 10110001
+//   b ^ m   = 10111110
+//   ~b      = 01001110
+//   b << 2  = 11000100
+// …（後略，完整輸出共 41 行）

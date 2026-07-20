@@ -1243,3 +1243,28 @@ int main()
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 30_interview_problems.cpp -o 30_interview_problems
+
+// === 預期輸出 (節錄) ===
+//
+// --- Q1. Print in Order (LC 1114) ---
+// first
+// second
+// third
+//
+// --- Q2. FooBar Alternately (LC 1115) ---
+// [cv version]   foobarfoobarfoobarfoobarfoobar
+// [sem version]  foobarfoobarfoobarfoobarfoobar
+//
+// --- Q3. Print Zero Even Odd (LC 1116) ---
+// 01020304050607  (expected 0102030405060708... up to 07)
+//
+// --- Q4. Building H2O (LC 1117) ---
+// HOHHOHHHOHHO  (each consecutive 3 chars must be 2H+1O)
+//
+// --- Q5. Bounded Blocking Queue (LC 1188) ---
+// consumed sum = 36 (expected 36)
+//
+// --- Q6. Fizz Buzz Multithreaded (LC 1195) ---
+// …（後略，完整輸出共 63 行）

@@ -234,3 +234,27 @@ int main() {
 }
 
 // 編譯: g++ -std=c++17 -Wall -Wextra summary.cpp -o summary && ./summary
+
+// === 預期輸出 ===
+//
+// [demo_next_prev_permutation]
+//   all permutations of "123":
+//     123
+//     132
+//     213
+//     231
+//     312
+//     321
+//   prev_permutation steps from "321":
+//     321
+//     312
+//     231
+//
+// [demo_is_permutation]
+//   a vs b: 1
+//   a vs c: 0
+//
+// [demo_lex_compare]
+//   "abc" < "abd" ? 1
+//
+// [done]

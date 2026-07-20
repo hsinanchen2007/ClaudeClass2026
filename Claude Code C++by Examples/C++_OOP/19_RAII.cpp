@@ -320,3 +320,30 @@ int main() {
  *   20_UniquePtr.cpp
  *   std::unique_ptr — 用 RAII 包住 new/delete，幾乎讓你不用再寫 delete。
  *=============================================================================*/
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 19_RAII.cpp -o 19_RAII
+
+// === 預期輸出 ===
+// ===== 範例 1：ScopedTimer =====
+// [計時開始] 計算迴圈
+// [計時結束] 計算迴圈 耗時 1 ms
+// ===== 範例 2：FileHandle =====
+// [FileHandle] 已開啟 raii_demo.txt
+// [FileHandle] 已自動關閉
+// ===== 範例 3：拋例外時解構子仍會跑 =====
+// [計時開始] mayThrow
+// (故意丟出例外)
+// [計時結束] mayThrow 耗時 0 ms
+// main 捕到例外: oops
+// ===== 範例 4：Leetcode 1480 用 ScopedTimer 量解法 =====
+// [計時開始] LC1480 RunningSum
+// [計時結束] LC1480 RunningSum 耗時 1 ms
+// ===== 範例 5：RateLimiterSession (LC 359 變體) =====
+// [RateLimiter] 啟動 authLog
+// [RateLimiter] 結束 authLog 允許=2 拒絕=1
+// ===== 範例 6：ScopedLock 自動上鎖/解鎖 =====
+//   Mutex.lock()
+//   (臨界區操作中, locked=1)
+//   Mutex.unlock()
+//   locked = 0 (預期 0)
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

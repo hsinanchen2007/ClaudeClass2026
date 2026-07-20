@@ -298,7 +298,9 @@ void practical_swap_active_inactive_user() {
               << ", inactive size=" << inactive.size() << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra swap.cpp -o swap
+
+// === 預期輸出 ===
 // a=2, b=1
 // s1=beta, s2=alpha
 // v1: 9 8

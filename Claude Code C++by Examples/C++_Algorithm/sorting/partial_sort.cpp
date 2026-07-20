@@ -277,13 +277,16 @@ void practical_top_log_errors() {
     std::cout << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra partial_sort.cpp -o partial_sort
+
+// === 預期輸出 ===
 // smallest 3 sorted: 1 2 3
-// rest order is unspecified: 7 5 8 9 6 4   (順序依實作)
+// rest order is unspecified: 9 7 8 5 6 4
 // largest 3: 9 8 7
 // full sort: 1 1 3 4 5 9
 // LC215 kth-largest=5 top2: 6 5
 // LC347 topK: 1 2
 // leaderboard top5: P5(1700) P3(1500) P8(1300) P1(1200) P7(1100)
 // top 3 heaps: 12 11 9
-// top errors: DB_TIMEOUT(4) CONN_REFUSED(2) AUTH_FAIL(2)
+// top errors: DB_TIMEOUT(4) AUTH_FAIL(2) CONN_REFUSED(2)
+// ⚠️ 部分項目的順序/數值屬 unspecified 或每次執行不同，實際結果可能與上面不同。

@@ -456,3 +456,28 @@ int main()
 //    如果你真的想要 fire-and-forget,你也同時放棄了取消的
 //    能力;設計時請小心。
 // =============================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 07_jthread.cpp -o 07_jthread
+
+// === 預期輸出 (節錄) ===
+// [main] PART 1: jthread auto-joins
+//   [worker 1] tick 0
+//   [worker 1] tick 1
+//   [worker 1] tick 2
+//   [worker 1] tick 3
+//   [worker 1] stop requested, exiting cleanly
+// [main] worker 1 cleaned up
+//
+// [main] PART 2: explicit request_stop
+//   [worker 2] tick 0
+//   [worker 2] tick 1
+//   [worker 2] tick 2
+//   [worker 2] tick 3
+// [main] asking worker 2 to stop...
+//   [worker 2] stop requested, exiting cleanly
+// [main] worker 2 cleaned up
+//
+// [main] PART 3: one stop_source, three workers
+//   [worker   [worker 10] tick 030
+// ] tick 0
+// …（後略，完整輸出共 51 行）

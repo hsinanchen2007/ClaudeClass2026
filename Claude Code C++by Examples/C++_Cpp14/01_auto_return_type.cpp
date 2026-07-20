@@ -194,3 +194,12 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 01_auto_return_type.cpp -o 01_auto_return_type
+
+// === 預期輸出 ===
+// [Demo1] sum(1,2)=3 multiply(3,4.5)=13.5
+// [Demo2] vec: 0 1 4 9 16
+// [Demo3] absoluteVal(-7) = 7
+// [LC1672] max wealth = 21
+// [Demo4] makeRange(10,15) = 10 11 12 13 14

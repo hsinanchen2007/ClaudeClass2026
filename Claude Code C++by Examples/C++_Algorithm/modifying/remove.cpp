@@ -332,13 +332,14 @@ void practical_drop_blank_lines() {
     std::cout << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra remove.cpp -o remove
+
+// === 預期輸出 ===
 // size before erase = 7, logical size = 4
 // after erase: 1 3 5 7
 // removed evens: 1 3 5
 // remove_copy: 1 3 4
-// without erase, full vec: 1 3 ? ? (logical end at index 2)
-//   (注意 "?" 處的值由實作決定,通常是被 swap 過去的舊值)
+// without erase, full vec: 1 3 3 2 (logical end at index 2)
 // LC27: k=2, nums[0..k)=2 2
 // LC283: 1 3 12 0 0
 // Valid orders: 120 35 50 200

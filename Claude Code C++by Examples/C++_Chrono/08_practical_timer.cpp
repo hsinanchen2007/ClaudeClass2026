@@ -278,3 +278,14 @@ static void demo_deadline_check() {
     std::cout << "[deadline] remaining=" << dc.remaining().count()
               << " ms, expired? " << dc.expired() << '\n';
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 08_practical_timer.cpp -o 08_practical_timer
+
+// === 預期輸出 ===
+// [Stopwatch] heavyCompute took 10 ms
+// [main] sum  = 12499997500000
+// [RateLimiter] in 250ms with 50ms cap: allowed=5 blocked=45
+// [token_bucket] 200ms @ 50/s: allowed=14 denied=25
+// [deadline] remaining=59 ms, expired? 0
+// [deadline] remaining=0 ms, expired? 1
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

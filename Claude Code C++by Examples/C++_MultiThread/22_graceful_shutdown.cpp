@@ -497,3 +497,19 @@ int main()
 //    *signal handler 內 *只能* 呼叫 async-signal-safe 的東西*,
 //    所以實際做 shutdown 的工作要在主流程,不要在 handler。
 // =============================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 22_graceful_shutdown.cpp -o 22_graceful_shutdown
+
+// === 預期輸出 ===
+// [main] submitted 30 tasks
+// [svc] (1) intake closed; in-flight = 4, queued = 24
+// [svc] (2) drain flag set; workers will exit when queue empty
+// [main] late submit accepted? false
+// [svc] (3+4) all workers joined or detached
+// [svc] (5) cleanup done
+// [main] shutdown took 1007 ms
+// [main] finished tasks = 30 / 30
+//
+// [demo] signal-handler pattern (用 atomic<bool> 模擬 SIGTERM)
+//   detected SIGTERM after 10 polls → invoking real shutdown logic here
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

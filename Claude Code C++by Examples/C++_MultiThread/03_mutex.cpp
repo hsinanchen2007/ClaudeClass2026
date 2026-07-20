@@ -402,3 +402,21 @@ int main()
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 03_mutex.cpp -o 03_mutex
+
+// === 預期輸出 ===
+// Expected counter = 2000000
+// Actual   counter = 2000000
+// Lost increments  = 0
+//
+// [demo] thread-safe cache (mutex + unordered_map)
+//   cache size = 3000 (預期 3000)
+//
+// [demo] LC 1279 traffic light
+//     light → road 2 (car 2)
+//     car 2 crosses road 2
+//     car 4 crosses road 2
+//     light → road 1 (car 1)
+//     car 1 crosses road 1
+//     car 3 crosses road 1

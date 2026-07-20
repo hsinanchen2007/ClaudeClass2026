@@ -249,7 +249,9 @@ void practical_chart_axis_auto_range() {
     std::cout << "Y axis: [" << (*lo - margin) << ", " << (*hi + margin) << "]\n";
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra minmax_element.cpp -o minmax_element
+
+// === 預期輸出 ===
 // min=1 at 1, max=9 at 8
 // max_element first 9 at index 5
 // minmax_element max at index 8 (last 9)

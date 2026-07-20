@@ -312,3 +312,19 @@ int main() {
 //  【下一篇】
 //    10_template_template_parameter.cpp ── Template template parameter。
 // ============================================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 09_non_type_template_parameter.cpp -o 09_non_type_template_parameter
+
+// === 預期輸出 ===
+// 2^3  = 8
+// 2^10 = 1024
+// Constant<42>::value      = 42
+// Constant<'a'>::value     = a
+// AlignedBuffer alignment = 16, size = 64
+// transpose:
+// 1 4
+// 2 5
+// 3 6
+// 2 3 4
+// diagonal_sum(3x3) = 25 (expect 25)
+// FixedBitSet bits: 1001000100000001

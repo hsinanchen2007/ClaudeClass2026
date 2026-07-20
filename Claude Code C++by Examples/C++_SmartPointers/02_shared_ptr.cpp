@@ -387,3 +387,32 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 02_shared_ptr.cpp -o 02_shared_ptr
+
+// === 預期輸出 ===
+// --- 範例 1: 基本用法 ---
+// p1.use_count() = 1
+// after copy, use_count = 2
+// *p2 = hello
+// after scope, use_count = 1
+// --- 範例 2: 共享資源 ---
+//   [load image: wallpaper.png]
+// image use_count = 3
+//   [free image: wallpaper.png]
+// --- 範例 3: 簡易快取 ---
+// a == b ? 1
+// use_count = 3
+// --- 範例 4: Custom Deleter (FILE*) ---
+// fh.use_count() = 1
+//   [custom deleter called for FILE*]
+// --- 實用範例: 多 service 共享 Config ---
+//   [load AppConfig api.example.com:443]
+//   ApiService starting on api.example.com:443
+//   LogService for api.example.com
+//   use_count=3
+//   [destroy AppConfig]
+// --- Leetcode 138: Copy List with Random Pointer ---
+// 原串列  : (1, random=3)  (2, random=1)  (3, random=null)
+// 深拷貝  : (1, random=3)  (2, random=1)  (3, random=null)
+// n1.get() == cloned.get() ? 0 (應為 0)

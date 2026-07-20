@@ -187,3 +187,14 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 02_standard_exceptions.cpp -o 02_standard_exceptions
+
+// === 預期輸出 ===
+// [ok]   parseAge("42") = 42
+// [arg]  parseAge: not a number: abc
+// [oor]  parseAge: number out of int range: 9999999999999
+// [oor]  parseAge: unrealistic age: -5
+// [arg]  parseAge: empty string
+// [at] v.at(5) = [at] caught out_of_range: vector::_M_range_check: __n (which is 5) >= this->size() (which is 3)
+// [bad_alloc] caught: std::bad_alloc

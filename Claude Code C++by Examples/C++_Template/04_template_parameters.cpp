@@ -338,3 +338,19 @@ int main() {
 //  【下一篇】
 //    05_template_specialization_full.cpp ── 完全特化。
 // ============================================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 04_template_parameters.cpp -o 04_template_parameters
+
+// === 預期輸出 ===
+// b4: 0 1 4 9
+// sum_n(arr) = 10
+// shuffle_v: 2 3 5 4 1 7
+// shuffle_fixed: 2 3 5 4 1 7
+// m1+m2:
+// 0 1 2
+// 1 3 5
+// flipped:
+// 1 0 0
+// 0 1 0
+// 1 1 1
+// FixedStack size = 3/4, pop = 30

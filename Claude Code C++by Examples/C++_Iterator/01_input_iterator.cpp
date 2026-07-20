@@ -382,7 +382,9 @@ void practical_stream_avg_temperature() {
     std::cout << "感測器平均溫度 = " << avg << " (期望 ~23.18)\n";
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra 01_input_iterator.cpp -o 01_input_iterator
+
+// === 預期輸出 ===
 // sum = 39 (期望 39)
 // words: apple banana cherry
 // LC1480 running sum: 1 3 6 10

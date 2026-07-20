@@ -490,3 +490,28 @@ int main() {
                    std::swap, std::erase, std::erase_if (C++20)
 ============================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra list.cpp -o list
+
+// === 預期輸出 (節錄) ===
+// l1                  : [ ] (size=0)
+// l3 (5 個 42)        : [ 42 42 42 42 42 ] (size=5)
+// l4                  : [ 1 2 3 4 5 ] (size=5)
+// l7 (move)           : [ 1 2 3 4 5 ] (size=5)
+// assign(3,99)        : [ 99 99 99 ] (size=3)
+// assign({...})       : [ 7 8 9 ] (size=3)
+//
+// [Access]
+// front = 10
+// back  = 40
+//
+// [正向] 10 20 30 40
+// [反向] 40 30 20 10
+// std::next(begin,2) = 30
+//
+// [Capacity] size=4, empty=false
+// max_size = 768614336404564650
+// get_allocator() OK
+// after clear         : [ ] (size=0)
+// after insert        : [ 1 2 3 4 4 5 6 7 ] (size=8)
+// …（後略，完整輸出共 54 行）

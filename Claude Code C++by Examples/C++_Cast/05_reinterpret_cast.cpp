@@ -235,3 +235,13 @@ static void demo_pointer_tagging() {
     std::cout << "[tagging] flag=" << flag
               << " *ptr=" << *recovered << " (= 42)\n";
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 05_reinterpret_cast.cpp -o 05_reinterpret_cast
+
+// === 預期輸出 ===
+// [Demo1] bytes of 0x12345678: 0x78 0x56 0x34 0x12 (little-endian → 78 56 34 12)
+// [Demo2] *px_back = 42 (round-trip ok)
+// [Demo3] memcpy bits 0x40490FDB -> float 3.14159 (≈ 3.14159...)
+// [serialize] magic=0xdeadbeef version=1 length=256
+// [tagging] flag=1 *ptr=42 (= 42)
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

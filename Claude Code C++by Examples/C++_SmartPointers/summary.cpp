@@ -43,7 +43,9 @@
 //         加上通常兩個指標的大小（常見實作）。weak_ptr = 不擁有的觀察者，不影響物件
 //         存活，用來打破循環引用與做會自動失效的快取。
 //     追問：為什麼「預設用 unique_ptr」？（大多數場景的所有權是單一且明確的；
-//         unique_ptr 可以零成本轉成 shared_ptr，反之不行）
+//         unique_ptr 可以【單向】轉成 shared_ptr，反之不行——先選嚴格的那個，
+//         之後需要共享再放寬。⚠️ 但這個轉換不是零成本：本機以自訂 operator new
+//         計數實測，轉換當下會配置 1 次記憶體來建 control block。）
 //
 // 🔥 Q2. 智慧指標該怎麼當函式參數傳遞？
 //     答：① 函式只是「使用」物件、不涉及所有權 → 傳 T& 或 const T&（或裸 T*）
@@ -227,3 +229,28 @@ enable_shared_from_this<T>
   - shared_from_this / weak_from_this（C++17 有 weak_from_this，但看需求再用）
 ================================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra summary.cpp -o summary
+
+// === 預期輸出 (節錄) ===
+//
+// [demo_unique_ptr]
+//   Trace(unique) ctor
+//   p owns? 1
+//   p->name=unique
+//   raw==p.get()? 1
+//   after move: p? 0, q? 1
+//   Trace(unique) dtor
+//   after reset(): q? 0
+//   Trace(unique2) ctor
+//   after reset(new): q->name=unique2
+//   after release(): q? 0, leaked=unique2
+//   Trace(unique2) dtor
+//
+// [demo_shared_ptr_and_weak_ptr]
+//   Trace(shared) ctor
+//   use_count=1
+//   after copy: use_count=2
+//   sp2.get()==sp.get()? 1
+//   after scope: use_count=1
+// …（後略，完整輸出共 37 行）

@@ -218,3 +218,25 @@ static void demo_retry_backoff() {
     }
     std::cout << '\n';
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 03_duration.cpp -o 03_duration
+
+// === 預期輸出 ===
+// [Demo1] 1s+500ms = 1500 ms
+// [Demo1] 2min-30s = 90 s
+// [Demo1] 1min/200ms ratio = 300
+// [Demo1] 1s/2 = 0 ms
+// [Demo2] 1500ms → seconds:
+//          duration_cast = 1
+//          floor          = 1
+//          ceil           = 2
+//          round          = 2
+// [Demo2] -1500ms → seconds:
+//          duration_cast = -1
+//          floor          = -2
+//          ceil           = -1
+//          round          = -2
+// [Demo3] 1500ms as double seconds = 1.5
+// [human] 7503s -> 2h 5m 3s
+// [backoff] 100ms 200ms 400ms 800ms 1600ms
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

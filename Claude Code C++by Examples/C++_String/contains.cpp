@@ -304,9 +304,25 @@ int main() {
 // 編譯 (建議): g++ -std=c++23 -Wall -Wextra contains.cpp -o contains
 //        若版本不支援 C++23: g++ -std=c++20 -Wall -Wextra contains.cpp -o contains
 
-// === 預期輸出 (節錄) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra contains.cpp -o contains
+
+// === 預期輸出 ===
+// (此編譯器尚未啟用 C++23,使用 find != npos 替代)
+// has World? true
+//
+// === LeetCode 1684 ===
+// 2
+// 7
+//
 // === LeetCode 1374 變奏 ===
-// 4
+// 3
+//
+// === 日常實務: log alert ===
+//         2026-05-04 INFO  startup ok
+// [ALERT] 2026-05-04 ERROR connection refused
+//         2026-05-04 WARN  slow query
+// [ALERT] 2026-05-04 FATAL OOM killed
+//
 // === 日常實務: urlHasQuery ===
 // true
 // false

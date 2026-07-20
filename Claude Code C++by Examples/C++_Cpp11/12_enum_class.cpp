@@ -232,3 +232,15 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 12_enum_class.cpp -o 12_enum_class
+
+// === 預期輸出 ===
+// [Demo1] Color::Red = 0 (Red)
+// [Demo1] LegacyColor::LRed = 0
+// [Demo2] sizeof(Color) = 1  sizeof(Mode) = 4
+// [Demo3] Red Green Blue
+// [Demo4] wire byte=2 round-trip=Blue
+// [LC657] "UD"   => true
+// [LC657] "LL"   => false
+// [log] shown (Error >= Warn)

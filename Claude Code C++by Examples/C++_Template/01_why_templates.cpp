@@ -276,3 +276,17 @@ int main() {
 //      - 多個 template 參數
 //      - 顯式指定型別 vs 自動推導
 // ============================================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 01_why_templates.cpp -o 01_why_templates
+
+// === 預期輸出 ===
+// max_t(3, 7)                   = 7
+// max_t(2.5, 1.8)               = 2.5
+// max_t<string>("apple","banana") = banana
+// running_sum([1,2,3,4])        = 1 3 6 10
+// clamp_t(150, 0, 100)          = 100
+// clamp_t( -5, 0, 100)          = 0
+// clamp_t( 50, 0, 100)          = 50
+// maximum_wealth                = 6
+// lerp_t(0.0, 10.0, 0.5)        = 5
+// lerp_t(100, 200, 0)           = 100

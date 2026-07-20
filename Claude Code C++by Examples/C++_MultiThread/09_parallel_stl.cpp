@@ -519,3 +519,21 @@ int main()
 //      請改用 lesson 08 的執行緒池或真正的執行器
 //      (oneTBB、Boost.Asio)。
 // =============================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra -pthread -ltbb 09_parallel_stl.cpp -o 09_parallel_stl
+
+// === 預期輸出 ===
+// [sort seq      ] 6681 ms
+// [sort par      ] 1108 ms
+// [sort par_unseq] 1106 ms
+// [accumulate seq] 38 ms  sum=10000814108355
+// [reduce    par ] 9 ms  sum=10000814108355
+// [transform_reduce par] 11 ms  sum_of_squares=6667595483900943037
+// [for_each par  ] evens = 9998227
+// [transform par      ] 108 ms
+// [transform par_unseq] 119 ms
+//
+// [demo] parallel count_if (大於 500000 的元素)
+//   seq: 177 ms, n=10001657
+//   par: 16 ms, n=10001657 (兩者數量應該完全一致)
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

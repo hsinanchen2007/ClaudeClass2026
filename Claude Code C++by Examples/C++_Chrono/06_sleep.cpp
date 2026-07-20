@@ -193,3 +193,23 @@ static void demo_retry_with_backoff() {
         std::this_thread::sleep_for(delay);
     }
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 06_sleep.cpp -o 06_sleep
+
+// === 預期輸出 ===
+// [Demo1] sleep_for(80ms) -> 80 ms actual
+// [Demo2] beat 1 at +50 ms
+// [Demo2] beat 2 at +100 ms
+// [Demo2] beat 3 at +150 ms
+// [Demo2] beat 4 at +200 ms
+// [Demo2] beat 5 at +250 ms
+// [60fps] frame 1 at +16732 us
+// [60fps] frame 2 at +33399 us
+// [60fps] frame 3 at +50070 us
+// [60fps] frame 4 at +66733 us
+// [60fps] frame 5 at +83403 us
+// [backoff] attempt 0 failed, sleep 20 ms
+// [backoff] attempt 1 failed, sleep 40 ms
+// [backoff] attempt 2 failed, sleep 80 ms
+// [backoff] success at attempt 3
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

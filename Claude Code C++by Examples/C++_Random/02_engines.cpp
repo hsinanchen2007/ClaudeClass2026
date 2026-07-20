@@ -209,3 +209,21 @@ int main() {
     demo_lc398_pick_index();
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 02_engines.cpp -o 02_engines
+
+// === 預期輸出 ===
+// [Demo1] same seed produces same sequence:
+//   a= 1608637542 3421126067 4083286876 787846414 3143890026
+//   b= 1608637542 3421126067 4083286876 787846414 3143890026
+// [Demo2] mt19937    min=0 max=4294967295
+// [Demo2] mt19937_64 min=0 max=18446744073709551615
+// [Demo2] sample 32: 1791095845
+// [Demo2] sample 64: 2469588189546311528
+// [Demo3] random_device entropy = 32 (0 表示「實作不能保證熵高」)
+// [Demo3] one sample: 2217150534
+// [Demo3] sum-of-low-byte = 127441324
+// [LC398] reservoir-sampled pick(3):
+//   idx=2 count=10116 (期望 ~10000)
+//   idx=3 count=9993 (期望 ~10000)
+//   idx=4 count=9891 (期望 ~10000)

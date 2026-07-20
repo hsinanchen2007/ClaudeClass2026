@@ -266,7 +266,9 @@ void practical_find_last_log_marker() {
     std::cout << "last ERROR at offset: " << pos << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra find_end.cpp -o find_end
+
+// === 預期輸出 ===
 // last occurrence at index 8
 // find {9,9}: not found
 // case-insensitive last 'world' at index 19

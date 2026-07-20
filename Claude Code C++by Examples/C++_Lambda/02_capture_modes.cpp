@@ -228,3 +228,16 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 02_capture_modes.cpp -o 02_capture_modes
+
+// === 預期輸出 ===
+// [Demo1] x changed to 999, byValue() = 10
+// [Demo2] x changed to 777, byRef() = 777
+// [Demo3] useAll() = 30
+// [Demo4] sum = 15
+// [Demo5] sum(3*n) = 45
+// [LC1431] result = T T T F T
+// [LC1365] ans = 4 0 1 1 3
+// [log] entries >= WARN = 4
+// [log] snapshot threshold=2 still gives = 4

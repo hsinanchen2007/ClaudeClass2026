@@ -213,3 +213,15 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 06_fstream_binary.cpp -o 06_fstream_binary
+
+// === 預期輸出 ===
+// [Demo2] magic = 0x43504d49, count = 5
+// [Demo2] data = 10 20 30 40 50
+// [Demo2] last read bytes = 20
+// [Demo3] data[2] = 30
+// [file-size] tmp_data.bin = 28 bytes
+// [file-size] read 28 bytes
+// [xor-checksum] = 0x8
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

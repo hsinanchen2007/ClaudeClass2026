@@ -226,3 +226,15 @@ static void demo_throughput_per_second() {
     std::cout << "[throughput] " << static_cast<long long>(ops)
               << " ops/sec\n";
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 05_benchmark.cpp -o 05_benchmark
+
+// === 預期輸出 ===
+// [Demo1] sum loop  = 2057 us
+// [Demo2] no reserve  = 17775 us
+// [Demo2] with reserve= 15463 us
+// [Demo3] vector iota median = 6034 us
+// [sort_cmp] std::sort        = 47022 us
+// [sort_cmp] std::stable_sort = 46508 us
+// [throughput] 421229991 ops/sec
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

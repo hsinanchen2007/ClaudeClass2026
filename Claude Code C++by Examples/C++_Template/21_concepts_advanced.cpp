@@ -325,3 +325,19 @@ int main() {
 //  【下一篇】
 //    22_crtp.cpp ── CRTP，靜態多型 / mixin 設計模式。
 // ============================================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 21_concepts_advanced.cpp -o 21_concepts_advanced
+
+// === 預期輸出 ===
+// contains_duplicate({1,2,3,1}) = true
+// contains_duplicate({a,b,c})   = false
+// fill_zero produced size = 5
+// identity_small(7) = 7
+// [integral]
+// [floating]
+// [other]
+// convert<long>(42) = 42
+// HELLO WORLD
+// check_double_exist({10,2,5,3}) = true
+// check_double_exist({3,1,7,11}) = false
+// [1, 2, 3, 4] (size=4)

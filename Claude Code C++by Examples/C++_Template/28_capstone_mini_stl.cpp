@@ -392,3 +392,24 @@ int main() {
 //
 //  Happy Templating!
 // ============================================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 28_capstone_mini_stl.cpp -o 28_capstone_mini_stl
+
+// === 預期輸出 ===
+// Vector size = 5, cap = 8
+// elements: 1 4 9 16 25
+// sorted desc: 25 16 9 4 1
+// SmallVector size=3 inline=true
+// SmallVector size=8 inline=false
+// enq(1) = true
+// enq(2) = true
+// enq(3) = true
+// enq(4) = false (expect 0/false)
+// Rear   = 3 (expect 3)
+// isFull = true
+// deq    = true
+// enq(4) = true
+// Rear   = 4 (expect 4)
+// tokens (5): the|quick|brown|fox|jumps|
+// height_checker({1,1,4,2,1,3}) = 3 (expect 3)
+// sliding max (k=3): 3 3 5 5 6 7

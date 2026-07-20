@@ -260,7 +260,9 @@ void practical_step_backward_player_order() {
     std::cout << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra prev_permutation.cpp -o prev_permutation
+
+// === 預期輸出 (節錄) ===
 // reverse-order permutations of {1,2,3}:
 //   3 2 1
 //   3 1 2
@@ -281,9 +283,4 @@ void practical_step_backward_player_order() {
 //   1 3 2
 //   1 2 3
 // Practical (Undo system, start state="BCA"):
-//   step 1: "BCA" -> "BAC"
-//   step 2: "BAC" -> "ACB"
-//   step 3: "ACB" -> "ABC"
-//   step 4: "ABC" is already the smallest, no undo available
-// last perm of "bdca": dcab more=true
-// after step-back: Alice Carol Bob
+// …（後略，完整輸出共 26 行）

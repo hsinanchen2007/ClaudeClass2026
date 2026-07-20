@@ -376,3 +376,28 @@ int main() {
       • merge 不去重
 ============================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra unordered_multiset.cpp -o unordered_multiset
+
+// === 預期輸出 (節錄) ===
+// m2 (含重複)         : { 6 2 9 5 5 4 1 1 3 3 } (size=10)
+//
+// [walk] 6 2 9 5 5 4 1 1 3 3
+//
+// [Capacity] size=10, max_size=1152921504606846975, empty=false
+// get_allocator() OK
+// insert(end, 99) → *it=99
+// after insert        : { 7 8 8 99 3 3 3 2 2 1 10 10 } (size=12)
+// emplace             : { AAAAA AAAAA } (size=2)
+// emplace_hint("Z") → Z
+//
+// erase(2) → 3 個
+// after erase(2)      : { 4 3 1 } (size=3)
+// erase(begin)        : { 3 1 } (size=2)
+// after merge         : { 4 1 2 2 3 3 } (size=6)
+// b (掏空)            : { } (size=0)
+// after swap          : { 9 9 } (size=2)
+//
+// count(3) = 3
+// contains(2) = true
+// …（後略，完整輸出共 48 行）

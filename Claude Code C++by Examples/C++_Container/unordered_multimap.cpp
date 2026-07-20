@@ -395,3 +395,28 @@ int main() {
       ★ merge 不去重
 ============================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra unordered_multimap.cpp -o unordered_multimap
+
+// === 預期輸出 (節錄) ===
+// m2 (含重複 key)     : { (banana:2) (apple:1) (apple:5) (apple:3) } (size=4)
+//
+// [walk] (banana,2) (apple,1) (apple,5) (apple,3)
+// max_size = 329406144173384850
+// get_allocator() OK
+// after insert        : { (b:3) (a:1) (a:2) } (size=3)
+// emplace             : { (2:two) (1:uno) (1:one) } (size=3)
+// emplace_hint(3, "three") → (3,three)
+//
+// erase("a") → 3 個
+// after erase(a)      : { (b:4) } (size=1)
+// erase(begin)        : { } (size=0)
+// erase 1 of "a"    : { (b:4) (a:3) (a:2) } (size=3)
+// after merge         : { (c:20) (a:10) (a:1) (b:2) } (size=4)
+// mb (掏空)           : { } (size=0)
+//
+// count("a") = 3
+// find: 1
+// contains("c") = 0
+// all "a"s: 1 3 2
+// …（後略，完整輸出共 49 行）

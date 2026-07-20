@@ -220,3 +220,13 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 06_make_unique.cpp -o 06_make_unique
+
+// === 預期輸出 ===
+//   User(Alice, 30) ctor
+// Hi, I'm Alice (30)
+// [Demo2] arr = 0 1 4 9 16
+// woof
+// [LC206] reversed: 3 2 1
+// [stdout] hello make_unique

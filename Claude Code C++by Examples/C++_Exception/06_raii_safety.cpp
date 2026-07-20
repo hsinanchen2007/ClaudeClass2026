@@ -266,3 +266,23 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 06_raii_safety.cpp -o 06_raii_safety
+
+// === 預期輸出 ===
+// [Demo1] before try
+//   [+] outer
+//   [+] inner-1
+//   [+] inner-2
+//   [-] inner-2
+//   [-] inner-1
+//   [-] outer
+// [Demo1] caught: oops in mayThrow
+// [Demo1] after try
+// [Demo2] open faux resource
+// [Demo2] caught: mid-scope error
+// [Demo2] cleanup runs (always)
+// [FILE*] wrote via RAII wrapper
+// [tx] caught: oops
+// [tx] counter rolled back to 100
+// [tx] counter after commit = 125

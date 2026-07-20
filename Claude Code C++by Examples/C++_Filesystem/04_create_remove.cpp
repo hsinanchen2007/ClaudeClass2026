@@ -198,3 +198,23 @@ int main() {
     demo_practical_log_rotator();
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 04_create_remove.cpp -o 04_create_remove
+
+// === 預期輸出 ===
+// [Demo1] created: "tmp_fs_dir/a/b/c"
+// [Demo2] wrote "tmp_fs_dir/data.txt"
+// [Demo2] renamed "data.txt" → "data_v2.txt"
+// [Demo2] copied to "data_copy.txt"
+// [Demo2] removed "data_copy.txt"
+// [Demo3] tree before clean:
+//   "tmp_fs_dir/data_v2.txt"
+//   "tmp_fs_dir/a"
+//   "tmp_fs_dir/a/b"
+//   "tmp_fs_dir/a/b/c"
+// [Demo3] remove_all: removed 5 entries
+// [Practical] log rotator
+//   rotation done. dir contents:
+//     "app.log.1"
+//     "app.log.2"
+//     "app.log.3"

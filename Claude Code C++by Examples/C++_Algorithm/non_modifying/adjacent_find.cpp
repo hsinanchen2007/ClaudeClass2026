@@ -325,7 +325,9 @@ void practical_thermometer_glitch() {
         std::cout << "no glitch\n";
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra adjacent_find.cpp -o adjacent_find
+
+// === 預期輸出 ===
 // first equal pair at index 2, value=3
 // first descent: 5 > 4
 // no equal pair: OK

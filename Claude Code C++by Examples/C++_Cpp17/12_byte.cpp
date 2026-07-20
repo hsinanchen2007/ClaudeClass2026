@@ -175,3 +175,13 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 12_byte.cpp -o 12_byte
+
+// === 預期輸出 ===
+// [Demo1] a|b=0xff a&b=0x0 a^b=0xff ~a=0x55
+// [Demo2] buf: de ad be ef
+// [Demo3] first byte = 0x12
+// [Demo4] xor checksum = 0x40
+// [Demo5] packLE32(0x12345678) = 78 56 34 12
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

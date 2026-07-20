@@ -215,3 +215,14 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 08_nested_exception.cpp -o 08_nested_exception
+
+// === 預期輸出 ===
+// [chain]
+// - readConfig failed
+//   - parseFile: server.cfg
+//     - parseLine: empty
+// [flat] readConfig failed; caused by: parseFile: user.cfg; caused by: parseLine: empty
+// [public] failed to charge user 42
+// [internal] root cause: db: connection refused

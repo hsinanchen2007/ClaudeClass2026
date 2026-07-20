@@ -429,3 +429,22 @@ int main()
 //    sizeof(T)。所以 std::atomic<int> 在結構裡是 4-byte 對齊,
 //    跟 false sharing 完全沒關係。需要的話自己加 alignas。
 // =============================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 13_false_sharing.cpp -o 13_false_sharing
+
+// === 預期輸出 ===
+// sizeof(CountersAdjacent) = 16 bytes
+// sizeof(CountersPadded)   = 128 bytes  (2 x 64 對齊)
+//
+// [adjacent (false sharing)] 1399 ms  (a=50000000, b=50000000)
+// [padded   (no  sharing)  ] 802 ms  (a=50000000, b=50000000)
+//
+// speedup from cache-line padding = 1.74439x
+//
+// [demo] per-thread shard counter (padded)
+//   per-shard total = 4000000 (預期 4000000)
+//
+// [demo] SPSC ring head/tail layout
+//   sizeof(RingNaive)  = 16 (head/tail 同一 line, false sharing)
+//   sizeof(RingPadded) = 128 (head/tail 各佔一 line, 正確設計)
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

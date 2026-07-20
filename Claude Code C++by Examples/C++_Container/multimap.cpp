@@ -414,3 +414,28 @@ int main() {
   operator==, <=> (C++20), std::swap, std::erase_if (C++20)
 ============================================================================
 */
+
+// 編譯: g++ -std=c++20 -Wall -Wextra multimap.cpp -o multimap
+
+// === 預期輸出 (節錄) ===
+// m2 (含重複 key)     : { (apple:1) (apple:3) (apple:5) (banana:2) (cherry:4) } (size=5)
+// m4 (greater)        : { (b:3) (a:1) (a:2) } (size=3)
+//
+// [正向] (apple,1) (apple,3) (apple,5) (banana,2) (cherry,4)
+//
+// [Capacity] size=5, empty=false
+// max_size = 256204778801521550
+// get_allocator() OK
+//
+// insert a:1 it1=1, insert a:2 it2=2
+// after insert        : { (a:1) (a:2) (b:10) (b:20) (c:30) } (size=5)
+// insert hint         : { (a:1) (a:2) (b:10) (b:20) (c:30) (d:40) } (size=6)
+// emplace             : { (1:one) (1:uno) (2:two) } (size=3)
+//
+// erase("a") → 3 個
+// after erase(a)      : { (b:4) (c:5) } (size=2)
+// after erase(begin)  : { (c:5) } (size=1)
+// erase 1 of "a"    : { (a:2) (a:3) (b:4) } (size=3)
+// ma after merge      : { (a:1) (a:10) (b:2) (c:20) } (size=4)
+// mb (掏空)           : { } (size=0)
+// …（後略，完整輸出共 49 行）

@@ -425,3 +425,28 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 03_weak_ptr.cpp -o 03_weak_ptr
+
+// === 預期輸出 (節錄) ===
+// --- 範例 1: 基本用法 ---
+// expired? 0
+// value via lock = 99
+// expired? 1
+// lock returns null? 1
+// --- 範例 2: 樹的 parent (打破循環) ---
+// root  use_count = 1
+// child use_count = 2
+// child 的父節點 val = 1
+//   [destroy node 1]
+//   [destroy node 2]
+// --- 範例 3: 觀察者模式 ---
+//   A got 1
+//   B got 1
+//   A got 2
+// --- 範例 4: 自動失效快取 ---
+// a == b ? 1
+// use_count = 2
+// c = loaded:X
+// --- 實用範例: 雙向鏈結串列 (weak_ptr 作 prev) ---
+// …（後略，完整輸出共 34 行）

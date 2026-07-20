@@ -219,3 +219,14 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 02_decltype_auto.cpp -o 02_decltype_auto
+
+// === 預期輸出 ===
+// [Demo1] after a=99, x=10 (expect 10)
+// [Demo1] after b=99, x=99 (expect 99)
+// [Demo2] after byVal change, alice=30 (expect 30 — change lost)
+// [Demo2] after byRef change, alice=999 (expect 999)
+// [Demo3] safeReturn() = 42
+// [Demo4] store.at(0) = 99
+// [Demo5] cfg[timeout] after lookup-assign = 60

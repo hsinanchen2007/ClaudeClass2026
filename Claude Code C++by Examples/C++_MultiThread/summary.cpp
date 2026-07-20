@@ -227,3 +227,27 @@ int main() {
     return 0;
 }
 
+// 編譯: g++ -std=c++20 -Wall -Wextra summary.cpp -o summary
+
+// === 預期輸出 (節錄) ===
+//
+// [demo_thread_basic]
+//   hello from worker thread
+//
+// [demo_mutex_counter]
+//   counter=20000 (expected 20000)
+//
+// [demo_atomic_counter]
+//   atomic counter=20000
+//
+// [demo_condition_variable]
+//   consume 1
+//   consume 2
+//   consume 3
+//   consume 4
+//   consume 5
+//
+// [demo_future_async]
+//   async result=42
+//
+// …（後略，完整輸出共 27 行）

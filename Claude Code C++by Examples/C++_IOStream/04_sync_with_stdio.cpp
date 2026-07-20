@@ -194,3 +194,13 @@ int main() {
     //
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 04_sync_with_stdio.cpp -o 04_sync_with_stdio
+
+// === 預期輸出 ===
+// [Demo1] write 100000 ints to ostringstream: 8124 us
+// [Demo2] read 100000 ints from istringstream: 9937 us
+// [Demo3] sync_with_stdio(false) + cin.tie(nullptr) — 標準姿勢
+// [endl vs \n] '\n' = 8970 us, endl = 9062 us
+// [batch-out] one big string for 1000 lines: 115 us
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

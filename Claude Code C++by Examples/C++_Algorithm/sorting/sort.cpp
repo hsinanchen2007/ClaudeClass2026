@@ -363,7 +363,9 @@ void practical_sort_by_multiple_criteria() {
     std::cout << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra sort.cpp -o sort
+
+// === 預期輸出 ===
 // asc: 1 2 3 5 8 9
 // desc: 9 8 5 3 2 1
 // by length: a mid longer longest

@@ -170,3 +170,25 @@ int main() {
     return 0;
 }
 
+// 編譯: g++ -std=c++20 -Wall -Wextra summary.cpp -o summary
+
+// === 預期輸出 ===
+// [add] 5
+//
+// [demo_generic_lambda]
+//   twice(3)=6
+//   twice(string)=abab
+//
+// [demo_init_capture]
+//   moved capture size=5
+//
+// [demo_binary_literal]
+//   mask=172
+//
+// [demo_deprecated]
+//   new_api()=2
+//
+// [demo_make_unique]
+//   Widget.x=42
+//
+// [done]

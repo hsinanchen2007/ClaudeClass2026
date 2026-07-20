@@ -175,3 +175,19 @@ int main() {
 
     return 0;
 }
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 03_switch_with_init.cpp -o 03_switch_with_init
+
+// === 預期輸出 ===
+// [Demo1] 200 → OK
+// [Demo1] 404 → NotFound
+// [Demo1] 500 → ServerError
+// [Demo1] 503 → Retry
+// [Demo2] count1=2 count2=1 total=170
+// [Demo3] main.cpp => C++ source
+// [Demo3] header.hpp => C++ header
+// [Demo3] readme.txt => text file
+// [Demo3] image.png => unknown
+// [Demo4] backoff(404)=0ms
+// [Demo4] backoff(503)=1000ms
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。

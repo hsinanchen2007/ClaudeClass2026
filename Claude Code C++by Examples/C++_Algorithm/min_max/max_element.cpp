@@ -256,7 +256,9 @@ void practical_hottest_day_index() {
               << ", temp=" << *it << '\n';
 }
 
-// === 預期輸出 (Expected output) ===
+// 編譯: g++ -std=c++20 -Wall -Wextra max_element.cpp -o max_element
+
+// === 預期輸出 ===
 // max = 9 at index 5
 // max string = orange
 // longest = banana

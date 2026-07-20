@@ -500,3 +500,22 @@ int main()
 //    try_lock_until。優先用 shared_mutex (較小、較快),
 //    只有真的需要 timed 方法時才退回到 shared_timed_mutex。
 // =============================================================
+
+// 編譯: g++ -std=c++20 -Wall -Wextra 10_shared_mutex.cpp -o 10_shared_mutex
+
+// === 預期輸出 ===
+// Workload: 8 readers x 200000 reads, plus an occasional writer.
+//
+// -- run 1 --
+// [std::mutex       ] 985 ms   total_len=18971829
+// [std::shared_mutex] 448 ms   total_len=23959253
+// -- run 2 --
+// [std::mutex       ] 1185 ms   total_len=19031581
+// [std::shared_mutex] 416 ms   total_len=23769980
+// -- run 3 --
+// [std::mutex       ] 1164 ms   total_len=19014779
+// [std::shared_mutex] 376 ms   total_len=22805911
+//
+// [demo] feature flag store
+//   100 ms 內完成讀次數 ≈ 1289694
+// ⚠️ 上面的位址／執行緒 id／耗時每次執行都不同，數值僅供對照，不是固定結果。
