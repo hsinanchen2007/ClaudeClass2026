@@ -339,7 +339,8 @@ int main() {
     //       「被刪除位置之後」的字元 — 這是與「邊走邊 erase」迴圈正確配合的關鍵。
     //
     //  Q2:erase 後 capacity 會縮小嗎?如果想要把 buffer 真的釋放掉怎麼辦?
-    //    A:不會。erase 永遠只縮 size、不縮 capacity (與 vector::erase 一致,
+    //    A:實務上不會。⚠️ 標準其實【沒有規定】erase 要不要縮 capacity,只是所有
+    //       主流實作都選擇只縮 size、不縮 capacity (與 vector::erase 一致,
     //       reuse-not-release 設計)。要釋放需呼叫 shrink_to_fit (non-binding),
     //       或 swap 一個全新的小字串進來強制換掉 buffer。
     //

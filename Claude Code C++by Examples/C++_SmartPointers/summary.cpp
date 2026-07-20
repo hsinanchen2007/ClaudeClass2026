@@ -51,7 +51,13 @@
 //     答：① 函式只是「使用」物件、不涉及所有權 → 傳 T& 或 const T&（或裸 T*）
 //         ② 函式要「接管」所有權 → 傳 unique_ptr<T> by value（呼叫端須 std::move）
 //         ③ 函式要「共享」所有權、會把它存起來 → 傳 shared_ptr<T> by value
-//         ④ 只讀不存 → 傳 const shared_ptr<T>&，避免不必要的原子遞增。
+//         ④ 「可能存、也可能不存」（函式自己決定要不要多留一份 owner）
+//            → 才傳 const shared_ptr<T>&（Core Guidelines R.30、F.7）
+//         ⚠️ 注意「只讀不存」不是 ④ 而是 ①：不涉及所有權就【根本不要收
+//            shared_ptr】，傳 const T& 或 T*。用 const shared_ptr<T>& 來
+//            「避免原子遞增」是常見的錯誤推理 —— 真正的修法是把 shared_ptr
+//            從介面上拿掉，而不是改成傳它的 const 參考（那還是把呼叫端綁死
+//            在「必須持有 shared_ptr」上，stack 物件、成員物件都傳不進來）。
 //         反模式：無腦到處傳 shared_ptr by value。
 //
 // Q3. 為什麼幾乎不該手寫 new / delete？

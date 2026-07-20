@@ -292,7 +292,8 @@ void demoAssignRange() {
     std::cout << "from vector<char>          : " << s << "\n";
 
     auto view = v | std::views::transform([](char c) {
-                            return static_cast<char>(std::toupper(c));
+                            // ⚠️ 先轉 unsigned char 再餵給 toupper（char 可能是負值 → UB）
+                            return static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
                         });
     str_assign_range(s, view);
     std::cout << "from views::transform      : " << s << "\n";

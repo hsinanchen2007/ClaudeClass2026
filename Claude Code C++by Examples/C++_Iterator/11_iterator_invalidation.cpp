@@ -13,7 +13,7 @@
 //  │ vector / string         │ 任何 reallocation (push_back 超過 capacity、 │
 //  │                         │   reserve、resize 變大) → 全部失效            │
 //  │                         │ insert/erase(pos) → pos 起到 end() 之前全失效 │
-//  │                         │ clear → 全失效                                │
+//  │                         │ clear → end() 以外的 iterator 失效            │
 //  │                         │ size 不變且不 reallocation → 不失效            │
 //  ├─────────────────────────┼──────────────────────────────────────────────┤
 //  │ deque                   │ insert/erase 中間 → 通常全部失效             │
@@ -25,7 +25,7 @@
 //  │ map / set / multimap /  │ erase(pos)    → 只「pos」這一個失效，其他都安全│
 //  │ multiset                │ splice (list) → 不失效 (節點被搬走但仍有效)   │
 //  ├─────────────────────────┼──────────────────────────────────────────────┤
-//  │ unordered_*             │ insert / 任何 rehash → iterator 全失效，      │
+//  │ unordered_*             │ insert 觸發 rehash 才全失效，沒觸發則仍有效， │
 //  │                         │   但 reference/pointer 仍有效                │
 //  │                         │ erase → 只「被刪那個」失效                   │
 //  ├─────────────────────────┼──────────────────────────────────────────────┤

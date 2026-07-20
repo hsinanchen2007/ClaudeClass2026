@@ -135,9 +135,14 @@ int main() {
     //       zero）。但底層 CPU 指令（如 lzcnt、bsr）對 0 行為不一致，C++20
     //       已幫你把這個邊界吃掉。
     //
-    //  Q3：bit_ceil(0)、bit_ceil(1)？
-    //    A：bit_ceil(0) 結果是 1；bit_ceil(1) 結果是 1。不會有 UB（只是要
-    //       注意值 1）。
+    //  Q3：bit_ceil(0)、bit_ceil(1)？bit_ceil 有沒有 UB？
+    //    A：bit_ceil(0) 結果是 1；bit_ceil(1) 結果是 1，這兩個邊界都定義良好。
+    //       ⚠️ 但【不能因此說 bit_ceil 沒有 UB】：當「向上取整後的 2 冪超出該
+    //       型別能表示的範圍」時就是 UB，而且【不會】飽和到最大值。
+    //       本機實測 uint8_t x = 200（下一個 2 冪是 256，uint8_t 放不下）：
+    //         執行期 → libstdc++ assertion 失敗、abort（exit=134）
+    //         constexpr context → 直接編譯錯誤（shift 超過型別位寬）
+    //       所以呼叫端必須自己保證 x <= 該型別最大的 2 冪，或改用更寬的型別。
     demo_lc_190_reverse_bits();
     demo_align_up();
 #endif

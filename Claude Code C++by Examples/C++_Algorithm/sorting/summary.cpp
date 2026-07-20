@@ -45,14 +45,18 @@
                        O(N log N) (記憶體足夠)
   partial_sort         O(N log k) (k = middle-first) 不    O(1)
   partial_sort_copy    同上,但只寫到 d_first      不      O(1)
-  nth_element          O(N) 平均;最壞 O(N²) 但    不      O(log N)
-                       多數實作用 introselect
+  nth_element          O(N) 平均(標準唯一保證)    不      O(log N)
+                       最壞:標準無保證。多數實作用
+                       introselect,libstdc++ 深度用盡
+                       時 fallback 到 __heap_select,
+                       最壞 O(N log N) —— 既不是 O(N²)
+                       也不是 O(N)
   is_sorted            O(N)                          —     O(1)
 
   記憶口訣:
     - 要全部排好 → sort (除非要穩定)。
     - 只要前 k 個 → partial_sort 或 partial_sort_copy。
-    - 只要「第 k 個」(中位數、第 K 大) → nth_element,O(N) 最快。
+    - 只要「第 k 個」(中位數、第 K 大) → nth_element,平均 O(N) 最快。
     - 要保留等值順序 → stable_sort。
 
 --------------------------------------------------------------------------------

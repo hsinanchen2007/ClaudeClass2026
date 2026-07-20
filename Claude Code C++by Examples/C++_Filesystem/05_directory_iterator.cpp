@@ -189,8 +189,10 @@ int main() {
     //       FindFirstFileEx），但喪失可攜性。
     //
     //  Q3：directory_iterator 與 entry 是 stable 的嗎？
-    //    A：「迭代過程中目錄被改」是未定義行為。要安全先把 iterator 結果
-    //       collect 進 vector，再做後續操作。
+    //    A：標準規定的是「迭代開始後才新增／刪除的檔案，這次迭代是否會看到」
+    //       屬於 unspecified（未指定），【不是】未定義行為 —— 程式不會因此
+    //       壞掉，但你拿到的清單可能包含、也可能不包含那些變動。要結果穩定，
+    //       先把 iterator 結果 collect 進 vector，再做後續操作。
     //
     demo_practical_list_matching();
     return 0;

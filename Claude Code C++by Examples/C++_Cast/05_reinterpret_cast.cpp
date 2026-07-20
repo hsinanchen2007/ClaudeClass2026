@@ -31,7 +31,9 @@
 //
 //  唯二「真的安全」用 reinterpret_cast 的情境：
 //   1) 透過 char* / unsigned char* / std::byte* 逐 byte 看
-//   2) 指標 ↔ uintptr_t（標準保證可雙向互轉，再轉回原型別也安全）
+//   2) 指標 ↔ uintptr_t（標準保證可雙向互轉，再轉回原型別也安全 —— 前提是
+//      實作有提供 std::uintptr_t，它是 optional typedef，並非每個實作都有；
+//      本課程的目標平台都有）
 //
 //  Alignment 也是地雷：
 //      char buf[16];

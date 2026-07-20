@@ -38,7 +38,10 @@
 // 觀念詞彙:
 //   - memory order   ── 控制 atomic 操作前後的可見性順序
 //   - synchronizes-with  ── release/acquire 配對所建立的順序關係
-//   - relaxed        ── 只保證 atomicity,不保證任何順序
+//   - relaxed        ── 保證 atomicity,以及*同一個原子物件*上的 modification
+//                       order(所有 thread 對同一變數看到的修改順序一致);
+//                       它不保證的是「跨變數」的順序、也不建立 synchronizes-with。
+//                       (常見誤解:「relaxed 不保證任何順序」── 錯,coherence 仍在)
 //   - acquire        ── load 之後的 ops 不可被重排到此 load 前
 //   - release        ── store 之前的 ops 不可被重排到此 store 後
 //   - seq_cst        ── 全 thread 統一全序,預設值,最強最慢
@@ -111,8 +114,12 @@
 //
 // 6. compare_exchange 的雙 order 參數
 //    compare_exchange_weak(expected, desired, succ_order, fail_order)
-//    成功時用 succ_order,失敗時用 fail_order。fail_order 不能比
-//    succ_order 強,且不能是 release / acq_rel (失敗沒 store,沒意義)。
+//    成功時用 succ_order,失敗時用 fail_order。fail_order 不能是
+//    release / acq_rel (失敗沒 store,沒意義)。
+//    ★ 「fail_order 不能比 succ_order 強」這條限制*已經被移除*(C++17 起),
+//       現在寫 succ=relaxed, fail=seq_cst 是合法的。舊書與舊教材常還在講
+//       這條。註:GCC 至今仍會對此發出 -Winvalid-memory-model 警告,那是
+//       編譯器診斷落後標準,不是你的程式碼有錯(clang 不警告)。
 //    常用組合:succ=acq_rel, fail=acquire。
 //
 // 7. consume 為什麼別用
@@ -646,9 +653,21 @@ int main()
 //             /*失敗時 */ std::memory_order_acquire);
 //    很多人忘了「失敗時」這個參數。當交換失敗 (沒有寫
 //    發生) 時,該操作其實只是個 load,所以失敗路徑上
-//    不需要 release —— 但你仍然需要 acquire 來看到最新
-//    的值。要嘛把這個參數寫對,要嘛就用單一參數的版本
-//    (各處全部用 seq_cst —— 安全但較慢)。
+//    不需要 release;但如果你打算「讀到 expected 被更新
+//    後的值,再據以讀取其他資料」,失敗路徑就需要 acquire
+//    來把後續讀取排在這個 load 之後。要嘛把這個參數寫對,
+//    要嘛就用單一參數的版本 (各處全部用 seq_cst —— 安全
+//    但較慢)。
+//    ★ 兩個常見誤解要避開:
+//      (1) 「acquire 保證讀到最新的值」── 沒有任何 memory
+//          order 能保證讀到「牆鐘意義上最新」的值。acquire
+//          做的是*排序*(禁止後續讀寫被重排到它之前),
+//          不是保證新鮮度。想要「一定看到別人剛寫的」靠的
+//          是 release/acquire *配對*建立的 happens-before,
+//          而不是 acquire 自己。
+//      (2) 「失敗時 expected 會被更新成實際值」是 CAS 的
+//          語意,與 memory order *無關* —— 用 relaxed 也一樣
+//          會更新。所以那不是選 acquire 的理由。
 //
 // 8. 拿不定主意時,就用 mutex。std::mutex 速度快、人們
 //    熟悉,而且不可能在順序上寫錯。「無鎖」不是目標;

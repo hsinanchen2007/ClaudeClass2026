@@ -115,7 +115,9 @@
 //    futex。第一個進入的人:CAS state 變 running,執行 lambda,完成後 CAS
 //    為 done,futex_wake 全部等待者。其他人:CAS 失敗 → futex_wait。
 //    Lambda 若 throw 例外 → state 重置回 idle,下個來的人重新嘗試。
-//    *call_once 不能遞迴呼叫同一個 flag* → deadlock。
+//    *call_once 不能遞迴呼叫同一個 flag* → 標準規定這是【未定義行為】(UB),
+//    不是「保證死鎖」。實務上最常見的表現確實是卡死,但那只是某個實作的
+//    現象,不能當成可依賴的行為(換實作可能變成別的結果)。
 //
 // 5. thread_local 的成本
 //    thread_local 變數每 thread 一份,放在 TLS (thread-local storage) 區。

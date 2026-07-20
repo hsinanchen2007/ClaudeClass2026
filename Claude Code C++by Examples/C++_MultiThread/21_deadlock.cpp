@@ -255,14 +255,26 @@ static void transfer_deadly(Account& a, Account& b, long long amount)
 //
 // C++17 引入 std::scoped_lock,可以同時 *原子地* 鎖多個 mutex,
 // 內部用 deadlock-free 演算法 (基本上就是 try-back-off 的工業
-// 版本)。鎖的順序 *無關緊要*,絕對不會死鎖。
+// 版本)。傳給*同一次* scoped_lock 呼叫的那幾把 mutex,彼此的
+// 順序 *無關緊要*,不會互相死鎖。
+// ★ 但這個保證只涵蓋「這一次呼叫裡一起取得的那些 mutex」,不是
+//    「用了 scoped_lock 就絕對不會死鎖」。以下仍會死鎖:
+//      - 已經持有 A,再呼叫 scoped_lock(B, C) 去拿別的鎖(跨呼叫)
+//      - 分成兩句 scoped_lock(m1); scoped_lock(m2); 取得同一組鎖
+//      - 傳入*重複*的同一把 mutex(self-deadlock,見本檔轉帳範例)
+//    跨函式、跨模組分別取得的鎖,仍然需要全域鎖順序約定。
 //
 // 適合場景:鎖的數量是編譯期可知 (固定 2、3 把 mutex),這是
 // 99% 的情況。
 // =============================================================
 static void transfer_scoped(Account& a, Account& b, long long amount)
 {
-    std::scoped_lock lk(a.mtx, b.mtx);    // ★ 一行解決
+    // 🔴 同樣要先擋掉 &a == &b：scoped_lock 只保證「同時取得多把【不同】鎖時
+    //    不會死鎖」，把【同一把】非遞迴 mutex 傳進去兩次仍然是 self-deadlock
+    //    （本機實測：std::scoped_lock lk(m, m) 直接卡死、退出碼 124）。
+    if (&a == &b) return;
+
+    std::scoped_lock lk(a.mtx, b.mtx);    // ★ 一行解決（前提：a、b 是不同物件）
     a.balance -= amount;
     b.balance += amount;
 }
@@ -355,6 +367,13 @@ static void transfer_try_free_fn(Account& a, Account& b, long long amount)
 // =============================================================
 static void transfer_ordered(Account& a, Account& b, long long amount)
 {
+    // 🔴 這一行不可省：&a == &b（自己轉給自己）時，下面的 first 與 second 會是
+    //    同一個物件，等於對【同一把非遞迴 mutex】連鎖兩次 → self-deadlock，
+    //    程式直接卡死（本機實測：退出碼 124 逾時）。而且 ThreadSanitizer 抓不到，
+    //    因為它不是 data race。std::scoped_lock 版本也有完全一樣的問題。
+    //    以位址排序的做法必須自己處理「兩個參數是同一個物件」這個退化情況。
+    if (&a == &b) return;            // 自我轉帳是 no-op
+
     Account* first  = (&a < &b) ? &a : &b;
     Account* second = (&a < &b) ? &b : &a;
     std::lock_guard<std::mutex> l1(first->mtx);
@@ -503,7 +522,10 @@ int main()
     //
     //  Q2：什麼是 lockstep 問題?和 deadlock 怎麼差別?
     //    A：lockstep (livelock) 是兩條 thread 不停活動但互相退讓,系統
-    //       無進展、CPU 100%。deadlock 則是大家全卡死、零 CPU 使用。
+    //       無進展、CPU 100%。deadlock 則是大家全卡死、CPU 接近 0。
+    //       ⚠️ 但零 CPU 只是「高度可疑」(同本檔 Q1)、不是證據:阻塞的 I/O、
+    //       閒置的 thread pool、飢餓也都是零 CPU。要確認得看 stack ——
+    //       gdb -p <pid> 後 thread apply all bt,看是不是真的互相等鎖。
     //       try-lock 演算法若不加隨機 backoff 容易出現 lockstep:兩條
     //       thread 同步退讓 → 同步重試 → 又同步退讓。對策:加入隨機
     //       sleep_for(rand_us) 或限制重試次數後改成 lock() 強拿。

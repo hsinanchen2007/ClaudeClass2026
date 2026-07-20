@@ -163,8 +163,11 @@ int main() {
     //       人」是 deterministic。固定 seed 用於測試重現、debug 復現。
     //
     //  Q3：要洗到「特別均勻」(每種 permutation 等概率) 嗎？
-    //    A：std::shuffle 的標準保證就是「每種 permutation 等概率」 — 內部
-    //       是 Fisher–Yates。能取到的 entropy 上限受 engine 種子 entropy 限制。
+    //    A：std::shuffle 的標準保證是【效果】：每種 permutation 等概率，且恰好
+    //       做 N-1 次 swap。標準【沒有】規定演算法 —— 「內部是 Fisher–Yates」
+    //       只是常見實作，不是契約，所以跨實作的 shuffle 結果不保證可重現
+    //       （要跨平台重現得自己實作洗牌）。
+    //       能取到的 entropy 上限受 engine 種子 entropy 限制。
     //
     demo_practical_sample();
     return 0;

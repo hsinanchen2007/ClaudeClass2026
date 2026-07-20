@@ -58,7 +58,7 @@
 //   __tsan_acquire / __tsan_release  人為標註自製同步給 TSan 看
 // TSan 抓什麼:
 //   - data race (任何兩 thread 對同一 byte 至少一寫且無同步)
-//   - deadlock / lock order inversion
+//   - deadlock / lock order inversion (⚠️ 僅 LLVM TSan,且預設關閉,見下方 5.B)
 //   - 雙重 unlock、unlock 別人的鎖
 //   - condition_variable 用法錯誤
 // TSan 抓不到:
@@ -81,8 +81,11 @@
 //    判斷:
 //      - 兩條不同 thread 沒有 happens-before 關係的存取,且至少一條是寫
 //        → 報 race。
-//    所以 TSan 不是「跑很多次、賭運氣抓到」的工具 ── 只要 race 在這次
-//    執行 *發生過一次*,TSan 一定報。
+//    所以 TSan 不是「跑很多次、賭運氣抓到」的工具 ── race 只要在這次執行
+//    真的發生過,通常當場就會被報出來,不必靠重跑碰運氣。
+//    ⚠️ 但別把它講成「一定報」:TSan 每個 8-byte granule 只保留固定數量的
+//    shadow cell,滿了就隨機淘汰,所以對「同一位置被大量 thread 反覆存取」
+//    的熱點,偵測仍帶機率性。這與下方第 7 點「TSan 並不能保證沒 race」一致。
 //
 // 2. happens-before 怎麼建
 //    TSan 識別所有同步原語:mutex.lock/unlock、atomic 的 release/acquire、
@@ -109,7 +112,10 @@
 // 5. TSan 抓不到的東西
 //    A. 邏輯 race condition (例如 check-then-act 雖各用 atomic,但兩步驟
 //       中間別人插隊改了狀態)。TSan 看的是 happens-before,不是高層邏輯。
-//    B. 死鎖。預設 TSan 不抓,需 -fsanitize=thread + 旗標,或用 Helgrind。
+//    B. 死鎖。預設不抓,而且開關【不是編譯旗標】,是執行期環境變數:
+//       TSAN_OPTIONS=detect_deadlocks=1 ./prog —— 且【只有 LLVM 的 TSan】
+//       支援。GCC 的 TSan 對死鎖是靜默的(本課程 21_deadlock.cpp 的重現已
+//       確認會直接 hang,不會有任何報告)。要查死鎖也可改用 Helgrind。
 //    C. 不通過記憶體共享的競爭 (例如 file system race)。
 //    D. 沒被觸發的程式分支裡的 race。
 //

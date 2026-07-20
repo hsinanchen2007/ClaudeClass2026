@@ -174,7 +174,9 @@ int main() {
     bool p = std::is_permutation(s1.begin(), s1.end(),
                                  s2.begin(), s2.end(),
                                  [](char x, char y){
-                                     return std::tolower(x) == std::tolower(y);
+                                     // ⚠️ <cctype> 參數必須先轉 unsigned char（負值是 UB）
+        return std::tolower(static_cast<unsigned char>(x)) ==
+               std::tolower(static_cast<unsigned char>(y));
                                  });
     std::cout << "case-insensitive perm: " << p << '\n';
 

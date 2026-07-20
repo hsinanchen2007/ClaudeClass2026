@@ -160,7 +160,9 @@ int main() {
     std::string x = "Hello", y = "HELLO";
     auto p3 = std::mismatch(x.begin(), x.end(), y.begin(), y.end(),
                             [](char ca, char cb){
-                                return std::tolower(ca) == std::tolower(cb);
+                                // ⚠️ <cctype> 參數必須先轉 unsigned char（負值是 UB）
+        return std::tolower(static_cast<unsigned char>(ca)) ==
+               std::tolower(static_cast<unsigned char>(cb));
                             });
     std::cout << "case-insensitive equal: "
               << (p3.first == x.end() ? "yes" : "no") << '\n';

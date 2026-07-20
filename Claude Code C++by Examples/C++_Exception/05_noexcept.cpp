@@ -30,8 +30,16 @@
 //  buffer 還在，搬失敗也能還原。move 不能還原（原物件已被掏空），所以
 //  vector 只敢用 noexcept 的 move。
 //
-//  結論：自己寫 class 一定要 把 move ctor / move assignment 標 noexcept，
-//  不然丟進 vector 就「悄悄走 copy 路徑」，效能差數量級。
+//  結論：自己寫 class 時，如果 move ctor / move assignment 【真的不會拋】
+//  （純粹轉移 handle／指標、不配置記憶體），就【明確標上 noexcept】，否則
+//  丟進 vector 擴充時可能悄悄走 copy 路徑，效能差一個數量級。
+//
+//  ⚠️ 但這【不是】「一律標上去」的意思。noexcept 是對 runtime 的硬承諾：
+//  一旦標了卻真的丟出例外，直接 std::terminate，沒有 catch 的機會。把一個
+//  會配置記憶體的 move 硬標 noexcept，等於把「可回復的 bad_alloc」變成
+//  「不可回復的當場死亡」—— 那比多幾次 copy 嚴重得多。
+//  標不了就兩條路：改實作讓它不需要配置（例如改持有指標／pimpl），
+//  或就接受 vector 走 copy。詳見下方 Q3 的原則 (d)。
 //
 //  ┌────────────────────────────────────────────────────────────┐
 //  │ 三、noexcept 的副作用                                     │

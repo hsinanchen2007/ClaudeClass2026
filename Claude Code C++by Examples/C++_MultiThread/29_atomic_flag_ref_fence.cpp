@@ -36,8 +36,14 @@
 // 前置課程: lesson 04 (std::atomic<T>) / lesson 11 (memory_order /
 //           release-acquire / spinlock 簡介)
 // 觀念詞彙:
-//   - lock-free             ── 不會退化成有 mutex 的實作 (atomic_flag 是 spec
-//                              保證,atomic<T> 多數平台是事實但非保證)
+//   - lock-free             ── *進展保證*:任一 thread 被搶佔時整體仍能前進。
+//                              「不會退化成有 mutex 的實作」是它在 atomic 上的
+//                              常見表現,不是定義(atomic_flag 的操作是 spec
+//                              保證 lock-free,atomic<T> 多數平台是事實但非保證)
+//                              ★ 注意「lock-free *操作*」≠「lock-free *演算法*」:
+//                                 本檔下面用 atomic_flag 組出的 SpinLock,每個操作
+//                                 都是 lock-free,但那個 spinlock 本身是 *blocking*
+//                                 演算法(持鎖者被搶佔 → 全體停住)。見 lesson 17。
 //   - test-and-set          ── 「讀舊值並設新值」的不可分割原子操作
 //   - test-and-test-and-set ── 加上前置 test 減少 cache invalidation 的優化
 //   - alignment requirement ── atomic_ref 對被 ref 物件的對齊要求

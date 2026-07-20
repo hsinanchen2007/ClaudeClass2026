@@ -47,7 +47,10 @@
 //      ❌ 中間頻繁 insert/erase → 改用 list
 //
 //  ▌ Iterator 失效規則 ★
-//      • insert / erase 在「兩端」  → references 不失效,但 iterator 全部失效
+//      • insert 在「兩端」          → references 不失效,但 iterator 全部失效
+//      • erase  在「兩端」          → 只有*被刪元素*的 iterator/reference 失效
+//                                     (erase 尾端另會使 past-the-end iterator 失效);
+//                                     其餘 iterator 仍有效 —— 與 insert 不同,別混為一談
 //      • insert / erase 在「中間」  → 全部失效
 //      • push_back / push_front     → iterator 全失效,但 references 不失效
 //      • pop_back  / pop_front      → 只有被刪元素的 iterator/reference 失效

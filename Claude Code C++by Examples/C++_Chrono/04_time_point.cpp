@@ -127,8 +127,10 @@ int main() {
 
     // ─────────────────────────────────────────────────────────
     // Demo 4：用 time_point 表達「截止時間」
-    //   絕對時間比相對時間更安全 — sleep_until 不會因為 spurious wakeup
-    //   而提早結束（sleep_for 在某些 OS 會 early return）。
+    //   絕對時間比相對時間更安全 — 迴圈裡用 sleep_until(deadline)，deadline
+    //   是算好的固定點，不會像「每圈重算一次相對長度」那樣累積漂移。
+    //   ⚠️ 別誤會成「sleep_until 不會早醒、sleep_for 會早醒」：標準對兩者
+    //   都只保證睡【至少】那麼久（見 06_sleep.cpp Q2），差別在會不會漂移。
     // ─────────────────────────────────────────────────────────
     auto deadline = steady_clock::now() + 30s;
     auto remaining = deadline - steady_clock::now();

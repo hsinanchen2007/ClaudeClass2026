@@ -9,7 +9,7 @@
 //  ▌ 概述
 //  std::multiset 與 std::set 幾乎完全相同,差別只有一個:
 //      ★ multiset「允許」重複元素。
-//  仍然有序、底層仍是紅黑樹。
+//  仍然有序、典型實作仍是紅黑樹（標準只要求有序與 O(log n)）。
 //
 //  ▌ 與 std::set 的差異
 //      • insert 永遠成功,回傳 iterator (而非 pair<iterator,bool>)
@@ -53,7 +53,8 @@
 // 🔥 Q1. multiset 和 set 的差別？
 //     答：multiset 允許重複元素，insert 永遠成功並回傳 iterator（非 pair<iterator,bool>）；
 //         count(key) 可能 > 1，equal_range(key) 才真正有意義。
-//         兩者底層同樣是 red-black tree，insert / find / erase(by iterator) 都是 O(log n)，
+//         兩者的典型實作同樣是 red-black tree（標準只規定 O(log n)，未規定結構），
+//         insert / find / erase(by iterator) 都是 O(log n)，
 //         但 count(key) 與 erase(key) 是 O(log n + k)（k 為等值元素個數）。
 //     追問：C++11 對等值元素的順序有保證嗎？（有，維持插入順序）
 //

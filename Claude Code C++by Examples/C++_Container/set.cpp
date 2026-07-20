@@ -68,7 +68,8 @@
 //     追問：map 呢？（value_type 是 std::pair<const Key, T>——key 是 const、value 可改）
 //
 // 🔥 Q2. set 的底層是什麼？為什麼選 red-black tree 而不是 AVL tree？
-//     答：底層是 red-black tree，find / insert / erase 都是 O(log n) worst case，且可有序走訪。
+//     答：標準只要求「有序走訪 + O(log n)」，沒有指定資料結構；主流實作都選 red-black
+//         tree，find / insert / erase 都是 O(log n) worst case，且可有序走訪。
 //         RB tree 平衡條件較寬鬆（最長路徑 ≤ 最短路徑的 2 倍），AVL 要求左右子樹高度差 ≤ 1；
 //         所以 RB tree 在 insert / erase 時 rotation 次數較少，對插入刪除頻繁的通用容器更劃算。
 //

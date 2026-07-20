@@ -18,7 +18,7 @@
 //
 //      std::chrono::system_clock          → 牆上時間 (A)
 //      std::chrono::steady_clock          → 單調流逝時間 (B)
-//      std::chrono::high_resolution_clock → 高解析度時鐘 (大多等同 steady_clock)
+//      std::chrono::high_resolution_clock → 高解析度時鐘 (別名對象【視實作而定】)
 //
 //  ┌────────────────────────────────────────────────────────────┐
 //  │ 二、各 clock 的差異與選擇                                 │
@@ -31,7 +31,8 @@
 //  │                     │          │ 1970-01 │ 跟 time_t / strftime 互轉  │
 //  │ steady_clock        │  是      │ 未指定   │ 量測經過時間、timeout、    │
 //  │                     │          │ 任意起點 │ benchmark                  │
-//  │ high_resolution_clock│ 視實作  │ 視實作   │ 多數實作 == steady_clock   │
+//  │ high_resolution_clock│ 視實作  │ 視實作   │ 別名對象視實作;本機 libstdc++│
+//  │                     │          │          │ 是 system_clock(不單調!)   │
 //  └─────────────────────┴─────────┴─────────┴───────────────────────────┘
 //
 //  經驗法則：
@@ -100,8 +101,13 @@
 //         同一份程式碼在不同平台語意不同，這是最惡劣的可攜性陷阱。
 //     為什麼會錯：名字裡的 "high_resolution" 讓人以為它是「最精準的那個」。實際上
 //         現代平台上 steady_clock 的解析度通常相同。結論：不要用 high_resolution_clock，
-//         量測用 steady_clock、顯示時間用 system_clock。要驗證你的平台可用
-//         static_assert(std::is_same_v<high_resolution_clock, steady_clock>)。
+//         量測用 steady_clock、顯示時間用 system_clock。
+//         ⚠️ 更正：常見說法「high_resolution_clock 多半等同 steady_clock」在本機不成立——
+//         libstdc++（g++ 15.2 / clang++ 21.1）把它別名成 **system_clock**，
+//         `high_resolution_clock::is_steady` 實測為 **false**（本檔 Demo1 也印得出來）。
+//         所以【不要】寫 static_assert(is_same_v<high_resolution_clock, steady_clock>)——
+//         那行在本課程自己的 toolchain 上就是硬編譯錯誤。
+//         要檢查單調性請用：static_assert(std::chrono::steady_clock::is_steady);
 // ═══════════════════════════════════════════════════════════════════════════
 
 #include <chrono>

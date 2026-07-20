@@ -66,11 +66,15 @@
 //     absolute(p) 不需存在、不解析 symlink、也不移除 ..（它只是在前面接上 current_path，
 //     所以 absolute("a/../b") 仍然含有 ..，這點常被誤會）；canonical(p) 需要路徑存在
 //     （不存在會拋例外）、會解析 symlink、會移除 . 與 ..；weakly_canonical(p) 不需存在，
-//     對存在的前綴部分會解析；relative(p, base) 與 lexically_normal() 都是純字面計算，
-//     完全不碰檔案系統。
+//     對存在的前綴部分會解析；relative(p, base) 標準規定等價於
+//     weakly_canonical(p).lexically_relative(weakly_canonical(base))，所以它「會」碰
+//     檔案系統、「會」解析 symlink。真正純字面、完全不碰檔案系統的是 lexically_normal()
+//     與 lexically_relative()。
+//     ★ 常見誤解：以為名字裡沒有 canonical 就是純字面運算。判準要看標準的定義，
+//        relative() 正是建構在 weakly_canonical 之上的，名字騙不了人。
 //     追問：什麼時候該用 weakly_canonical？（要正規化一個「即將建立、目前還不存在」的
-//     路徑）為什麼 relative() 可能給出錯誤結果？（它不解析 symlink，若路徑中有 symlink，
-//     字面上的 .. 與實際位置不一致）
+//     路徑）為什麼 lexically_relative() 可能給出錯誤結果？（它不解析 symlink，若路徑中
+//     有 symlink，字面上的 .. 與實際位置不一致；要正確結果就用會解析的 relative()）
 //
 // 🔥 Q2. operator/ 和 operator+= / concat() 差在哪？
 //     答：operator/=（append）會在需要時插入分隔符：path("a") / "b" 得到 "a/b"；

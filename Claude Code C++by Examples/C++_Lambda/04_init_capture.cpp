@@ -126,7 +126,8 @@ int main() {
     // ─────────────────────────────────────────────────────────
     std::string raw = "hello";
     auto upper = [s = std::string{raw}]() mutable {
-        for (char& c : s) c = static_cast<char>(std::toupper(c));
+        // ⚠️ toupper 的參數要先轉 unsigned char（char 可能是負值 → UB）
+        for (char& c : s) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
         return s;
     };
     std::cout << "[Demo3] " << upper() << '\n';

@@ -174,8 +174,10 @@
 //         進展（系統整體不停滯），但個別 thread 可能因 CAS 一直失敗而餓死。Wait-free
 //         保證「每一個」thread 都能在有限步數內完成，最強但實作複雜、常數成本高。
 //         典型的 CAS 迴圈是 lock-free；fetch_add 這種硬體直接支援的 RMW 才是 wait-free。
-//     追問：lock-free 一定比有鎖快嗎？（不一定；它真正的價值是延遲可預測性，以及
-//           「不怕持鎖者被搶佔或掛掉」）
+//     追問：lock-free 一定比有鎖快嗎？（不一定；它真正的價值是「不怕持鎖者被搶佔
+//           或掛掉」——系統整體不會因為某條 thread 停住而停住。注意它*不*保證
+//           tail latency：lock-free 只保證整體有進展，倒楣的那條 thread 可以無限
+//           重試，所以 p999 反而可能比 mutex 差。要個別 thread 的上界得用 wait-free）
 // ═══════════════════════════════════════════════════════════════════════════
 
 #include <iostream>
@@ -397,8 +399,14 @@ int main()
     //
     //  Q3：為什麼 try_lock 失敗就跳下一個 shard 比 lock() 強?
     //    A：用 lock() 一條 thread 卡住 → 後面排隊的 thread 全部跟著卡;
-    //       try_lock + 跳下一個 = wait-free,某個 shard 暫時被佔住不會
-    //       拖垮整體。代價是失去嚴格 FIFO,但工作之間獨立的場景不在意。
+    //       try_lock + 跳下一個 → 單次 try_pop 的步數有上界(最多繞
+    //       Shards 圈),某個 shard 暫時被佔住不會拖垮整體。代價是失去
+    //       嚴格 FIFO,但工作之間獨立的場景不在意。
+    //       ★ 注意用詞:這*不是* wait-free。try_pop 步數之所以有界,是
+    //          因為它被允許「佇列其實非空也回傳 false」,而外層 consumer
+    //          迴圈會無限重試;而且 push() 用的是阻塞式 lock_guard ——
+    //          整個 ShardedQueue 是 blocking 結構,連 lock-free 都不是。
+    //          正確的 lock-free / wait-free 定義見本檔上方【面試題】Q3。
     //       這也是 work-stealing scheduler 的核心思想 (Cilk, TBB)。
     //
     return 0;
@@ -431,9 +439,12 @@ int main()
 //    用分片;改用單佇列 + 較粗粒度的工作 (lesson 08),或
 //    在每件工作裡記錄序號自己重排。
 //
-// 5. try_lock + 跳過下一個 shard,是 *無等待 (wait-free)*
+// 5. try_lock + 跳過下一個 shard,是「不被單一 shard 拖住」
 //    的關鍵 —— 一個被 producer 卡住的 shard 不會把所有
 //    consumer 都堵住。簡單但很有效。
+//    (別把它叫成 wait-free:push() 是阻塞式 lock_guard,
+//     整個結構是 blocking;try_pop 步數有界是因為它可以
+//     直接回傳 false,由外層迴圈重試。定義見【面試題】Q3。)
 //
 // 6. 把 lesson 08 的池改用這個 ShardedQueue 是個好練習。
 //    submit() 改成 push(...);worker_loop 把 cv_.wait()

@@ -12,12 +12,15 @@
 //      #define NULL 0           // C++ 大多如此
 //      #define NULL ((void*)0)  // C 大多如此
 //
-//  問題：NULL 本質是「整數 0」，不是真正的指標 — 在 overload 解析時會挑
-//  錯函式：
+//  問題：NULL 是「實作定義的空指標常數」，不是真正的指標 — 在 overload 解析
+//  時會出事，而且出什麼事還取決於實作：
 //
 //      void f(int);
 //      void f(void*);
-//      f(NULL);     // ❌ 會呼叫 f(int)！（因為 NULL = 0 = int）
+//      f(NULL);     // ❌ 本機 g++/clang 實測：編譯失敗 ambiguous。
+//                   //    GNU/Clang 的 NULL 展開為 __null，對 int 要整數轉換、
+//                   //    對 void* 要指標轉換，兩者同階 → 無法取捨。
+//                   //    只有把 NULL 定義成字面 0（MSVC 式）才會選到 f(int)。
 //      f(nullptr); // ✅ 一定呼叫 f(void*) 版
 //
 //  C++11 引入 nullptr — 型別是 std::nullptr_t，可以隱式轉成「任何指標型
@@ -73,9 +76,10 @@
 //     答：一個都選不到——編譯錯誤 ambiguous。NULL 是整數 0，對 f(int) 是精準匹配，
 //         對 f(std::nullptr_t) 也是合法的空指標常數轉換，兩者不分高下。本機 g++
 //         已驗證（見 Demo 1 中刻意保留為註解、不呼叫的那一行）。
-//     為什麼會錯：多數人把結論背成「NULL 會選到 f(int)」就停了。那只在「沒有
-//         nullptr_t 重載」時成立；一旦有人補上 nullptr_t 版本，原本能編譯的舊呼叫
-//         點會突然壞掉——這正是新程式碼不該再出現 NULL 的實際理由。
+//     為什麼會錯：多數人把結論背成「NULL 會選到 f(int)」就停了。那只在 NULL 被
+//         定義成字面 0（MSVC 式）時成立；本機 g++/clang 的 NULL 是 __null，光是
+//         f(int) + f(void*) 兩個重載就已經 ambiguous，不必等 nullptr_t 出現。
+//         新程式碼不該再出現 NULL 的實際理由正是：結果取決於實作怎麼定義 NULL。
 // ═══════════════════════════════════════════════════════════════════════════
 
 #include <cstddef>

@@ -31,7 +31,9 @@
 // 前置課程: lesson 02, 03
 // 觀念詞彙:
 //   - atomic        ── 操作不可分割,所有 thread 看到的是「全有或全無」
-//   - lock-free     ── 不需要核心介入、不會被 OS 暫停
+//   - lock-free     ── *進展保證*:任一 thread 被搶佔時,整體仍能繼續前進
+//                      (不是「不會被 OS 暫停」── lock-free 的 thread 當然
+//                       可以被搶佔,「撐得過搶佔」才是重點;詳見下方深入解析)
 //   - memory order  ── 控制操作前後的可見性順序 (進階,lesson 11)
 //   - RMW           ── read-modify-write,如 fetch_add
 // 新介紹 API:
@@ -57,8 +59,20 @@
 // =============================================================
 //
 // 1. 「lock-free」的真正含義
-//    lock-free *不是* 「沒有同步成本」── 它是「不會用到 OS mutex /
-//    futex」。硬體層仍要做事:x86 的 atomic RMW 用 LOCK 前綴,把整條
+//    lock-free 是一個 *進展保證 (progress guarantee)*:不論任何一條
+//    thread 在任何時間點被搶佔甚至掛掉,系統整體都保證還有 thread 能
+//    往前推進。它*不是*「沒有同步成本」, 也*不是*「不會用到 OS mutex /
+//    futex」或「不進 kernel」── 那些是常見的*實作特徵*, 不是定義。
+//    ★ 為什麼這個區別重要:用 atomic_flag 寫的 spinlock 完全不進
+//       kernel、不用 futex、不睡眠, 卻是教科書級的 *blocking* 演算法
+//       ── 持鎖者一被搶佔, 其他 thread 全部停住, 整體零進展。可見
+//       「避開 kernel」不足以推出 lock-free。(lesson 29 有這個 spinlock;
+//        正確的進展性定義見 lesson 17 的 lock-free / wait-free 對照)
+//    另外要分清楚:「lock-free *操作*」(如 atomic_flag 的 test_and_set,
+//    標準保證其為 lock-free) 與「lock-free *演算法*」是兩件事 ── 用
+//    lock-free 的原語組出互斥協定, 結果仍然是 blocking。
+//
+//    硬體層仍要做事:x86 的 atomic RMW 用 LOCK 前綴,把整條
 //    cache line 鎖到自己核上 (MESI Modified 狀態) 直到指令完成,期間
 //    其他核的同 line 操作必須等。ARM 用 LL/SC (load-linked/store-
 //    conditional) ── 樂觀做完事後 store 一次,失敗就重試。
@@ -220,7 +234,13 @@
 //   - 在 ARM 上,則會展開成 load-linked / store-conditional
 //     的迴圈。
 //   - 兩種情況下,都不需要呼叫核心、也沒有任何執行緒被
-//     送去睡覺 —— 這就是「無鎖 (lock-free)」的含義。
+//     送去睡覺。
+//     注意:「不進 kernel、不睡眠」是這裡的*效能*優勢,
+//     不是「無鎖 (lock-free)」的*定義* —— lock-free 指的
+//     是進展保證(任一 thread 被搶佔,整體仍能前進)。
+//     x86 的 lock xadd 之所以是 lock-free, 是因為它單指令
+//     必然完成;而 ARM 的 LL/SC 重試迴圈是 lock-free 但
+//     *不是* wait-free(某條 thread 可能一直重試失敗)。
 //
 // 代價是 *一條* 帶有記憶體屏障的指令,而不是 std::mutex
 // 在競爭嚴重時的數十條指令外加一次可能的上下文切換。

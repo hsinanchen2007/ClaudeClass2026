@@ -164,7 +164,9 @@ int main() {
     std::string s2 = "hElLo";
     bool ci = std::equal(s1.begin(), s1.end(), s2.begin(), s2.end(),
                          [](char x, char y){
-                             return std::tolower(x) == std::tolower(y);
+                             // ⚠️ <cctype> 的參數必須先轉 unsigned char：傳入負值(非 ASCII 的 UTF-8 byte)是 UB
+        return std::tolower(static_cast<unsigned char>(x)) ==
+               std::tolower(static_cast<unsigned char>(y));
                          });
     std::cout << "case-insensitive:      " << ci << '\n';
 

@@ -37,8 +37,13 @@
 //      };
 //      // 不必再到 .cpp 寫 int Foo::s_count = 0;
 //
-//   3) constexpr 變數隱含 inline（C++17 起）
-//      constexpr int N = 100;        // 自動 inline
+//   3) ⚠️ 只有 static 資料成員的 constexpr 才隱含 inline（C++17 起）
+//      struct S { static constexpr int N = 100; };  // 這個才自動 inline
+//      constexpr int N = 100;   // namespace scope：constexpr 蘊含 const
+//                               // → internal linkage → 每個 TU 各一份！
+//      本機雙 TU 比對位址實測：plain constexpr 跨 TU 位址【不同】(0)、
+//      inline constexpr 跨 TU 位址【相同】(1)。要 header 內共用單一實體，
+//      namespace scope 就得自己寫 inline（見下方 Cfg::maxRetries）。
 //
 //  ┌────────────────────────────────────────────────────────────┐
 //  │ 三、本檔示範                                               │
@@ -91,7 +96,9 @@ public:
 
 namespace Cfg {
     inline const std::string version = "1.0.0";   // header 中安全定義
-    inline constexpr int maxRetries = 3;          // constexpr 隱含 inline
+    inline constexpr int maxRetries = 3;          // inline 不可省（namespace
+                                                  // scope 的 constexpr 是
+                                                  // internal linkage）
 }
 
 // 實用範例：檔案 scope 的 inline 常數中心

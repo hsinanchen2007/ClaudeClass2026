@@ -161,7 +161,9 @@ int main() {
     std::string pat   = "world";
     auto wit = std::find_end(text.begin(), text.end(), pat.begin(), pat.end(),
                              [](char a, char b){
-                                 return std::tolower(a) == std::tolower(b);
+                                 // ⚠️ <cctype> 參數必須先轉 unsigned char（負值是 UB）
+        return std::tolower(static_cast<unsigned char>(a)) ==
+               std::tolower(static_cast<unsigned char>(b));
                              });
     std::cout << "case-insensitive last 'world' at index "
               << (wit - text.begin()) << '\n';

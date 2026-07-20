@@ -233,11 +233,15 @@ int main() {
     //       速度都大幅提升。
     //
     //  Q3：在 header 寫 variable template 要不要加 inline？會不會違反 ODR？
-    //    A：C++17 起 constexpr 變數 (含 variable template 的特化) 隱含
-    //       inline，多個 .cpp 各自實例化同一個 `pi<double>` 不會撞符號。
-    //       C++14 必須顯式寫 `template<typename T> inline constexpr T pi
-    //       = ...;` 才安全。建議無腦加 constexpr (能編就加)，C++17 以後
-    //       不必顯式 inline；C++14 跨翻譯單元共用時自己加 inline 保險。
+    //    A：不必加，多個 .cpp 各自實例化同一個 `pi<double>` 不會撞符號 ——
+    //       但理由不是「constexpr 隱含 inline」(那只對 static 資料成員成立)，
+    //       而是 template 自己的 linkage/ODR 規則：同一個特化在各 TU 產生的
+    //       是【同一個實體】，連結器負責合併。本機 C++14 雙 TU 比對位址實測
+    //       相同 (1)，不加 inline 也成立。
+    //       ⚠️ 別在 C++14 寫 `inline constexpr`：inline 變數是 C++17 才有的
+    //       功能，g++/clang 以 -std=c++14 -pedantic-errors 實測直接編譯失敗
+    //       (error: inline variables are only available with -std=c++17)。
+    //       建議無腦加 constexpr (能編就加)，inline 則兩個標準版本都不需要。
     //
     return 0;
 }

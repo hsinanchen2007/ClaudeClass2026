@@ -30,9 +30,15 @@
 // std::nth_element 一般用「introselect」實作 (quickselect 的強化版):
 //
 //   1. 用 quickselect 平均 O(N) 找出 nth 位置應該的元素。
-//   2. 若遞迴深度過深,fallback 到 median-of-medians 保證最壞 O(N)。
+//   2. 若遞迴深度過深,fallback 到另一個演算法避免退化成 O(N²)。
+//      ★ libstdc++ 15 實測(bits/stl_algo.h 的 __introselect):深度用盡時
+//        fallback 到 __heap_select(= make_heap + 逐一 pop_heap),不是常被
+//        誤傳的 median-of-medians;__heap_select 是 O(N log K),所以這條
+//        fallback 路徑的最壞是 O(N log N),不是 O(N)。
 //
-// 對比 std::sort 的 O(N log N) — nth_element 真的就是 O(N),
+// 標準只保證「平均 O(N)」([alg.nth.element] 明訂 linear on average),
+// *沒有*最壞情況保證 —— 想要真正 O(N) 最壞保證得自己寫 median-of-medians。
+// 對比 std::sort 的 O(N log N) — nth_element 平均是 O(N),
 // 對「找第 K 大/小、找中位數」這類問題效能差距很大。
 //
 // ┌────────────────────────────────────────────────────────────┐
@@ -53,7 +59,7 @@
 //   ├────────────────┼─────────┼───────────────────────────────┤
 //   │ sort           │ O(N log N) │ 整段排序                    │
 //   │ partial_sort   │ O(N log K) │ 前 K 個排序,後段亂          │
-//   │ nth_element    │ O(N)    │ 第 K 個位置正確,前後段亂       │
+//   │ nth_element    │ O(N) 平均 │ 第 K 個位置正確,前後段亂     │
 //   └────────────────┴─────────┴───────────────────────────────┘
 //
 // 「我要前 K 個,且要排序」 → partial_sort

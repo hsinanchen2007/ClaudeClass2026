@@ -58,8 +58,10 @@
 // 🔥 Q1. 為什麼 benchmark 一定要用 steady_clock？
 //     答：因為 system_clock 可能在量測期間被調整——NTP 校時、使用者改系統時間、夏令時
 //         切換都會讓 end - start 得到荒謬的值，甚至是負數（若再存進 unsigned 型別就會
-//         溢位成天文數字）。steady_clock 保證單調前進且速率恆定，不受任何外部調整影響，
-//         是量測時間間隔的唯一正確選擇。
+//         溢位成天文數字）。steady_clock 保證【單調前進】、絕不會被往回調，是量測時間
+//         間隔的正確選擇。⚠️ 但別講成「不受任何外部調整影響」：Linux 上它對應
+//         CLOCK_MONOTONIC，仍會受 NTP 的頻率微調（slewing）影響，且「系統 suspend
+//         期間算不算時間」隨平台而異。標準保證的是單調性，不是絕對速率恆定。
 //     追問：那 high_resolution_clock 呢？（它只是別名，可能就是 system_clock，
 //           不應使用）
 //

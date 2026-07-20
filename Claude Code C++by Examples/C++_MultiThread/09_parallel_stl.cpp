@@ -100,8 +100,14 @@
 //    就用完了,加更多核也救不了。typical 上限:4-8× 加速,而非 N×。
 //
 // 5. par_unseq 的兩條鐵律
-//    A. callback 不能呼叫任何 *同步* 操作:no mutex, no atomic, no I/O,
-//       no throw。違反 = UB。
+//    A. callback 不能呼叫「vectorization-unsafe」的標準庫函式 ── 標準的
+//       定義是「被指定為與另一次函式呼叫 synchronizes-with」者(記憶體
+//       配置/釋放函式除外), 典型就是 mutex::lock/unlock、I/O。違反 = UB。
+//       ★ 注意:lock-free 的 std::atomic 操作*不*在這條禁令裡(它不是被
+//          禁的函式), 真正危險的是在 par_unseq 下對 atomic 做「自旋等
+//          待」── par_unseq 只給 weakly parallel forward progress,
+//          自旋等一個同 thread 上還沒跑到的元素會直接卡死。
+//       另 callback 拋出例外不是 UB, 而是呼叫 std::terminate。
 //    B. callback 不能依賴元素被處理的順序。
 //    意思是 par_unseq 適用「element-wise pure function」── 例如把每個
 //    int 平方、把 RGB 轉灰階。一旦 callback 要 mutate 共享狀態 → 退回 par。
@@ -431,12 +437,16 @@ int main()
     // 課堂知識補充
     // ─────────────────────────────────────────────────────────
     //  Q1：std::execution::par 跟 par_unseq 怎麼選?
-    //    A：par 保證「對每個元素的 callback」與其他元素不會同時跑,
-    //       callback 內仍可以加鎖、做 I/O。par_unseq 額外允許「同一
-    //       條 thread 內把多個 callback 交錯/向量化執行」, 所以
-    //       callback 內絕對不能加鎖、不能呼叫 vector.push_back, 否則
-    //       deadlock 或 UB。預設選 par; callback 是純函式 + SIMD 友善
-    //       才升級成 par_unseq。
+    //    A：par 下「對每個元素的 callback」可能在不同 thread 上*同時*
+    //       跑, 所以 callback 必須是 thread-safe;正因為每個 callback
+    //       在自己的 thread 內是完整跑完不被切斷的, 它*可以*加鎖、做
+    //       I/O 來自己做同步。par_unseq 額外允許「同一條 thread 內把多
+    //       個 callback 交錯/向量化執行」, 所以 callback 內絕對不能加
+    //       鎖、不能呼叫 vector.push_back, 否則 deadlock 或 UB。預設選
+    //       par; callback 是純函式 + SIMD 友善才升級成 par_unseq。
+    //       ★ 常見誤解:把「par 可以加鎖」誤讀成「par 不會並行、不用同
+    //          步」。可以加鎖的原因正好相反 —— 是因為它*會*並行, 才需
+    //          要、也才允許你用鎖去保護共享狀態。
     //
     //  Q2：libstdc++ 上沒裝 -ltbb 會怎樣?
     //    A：gcc 11+ 是「硬性連結錯誤」, 會看到一坨 tbb::detail::xxx

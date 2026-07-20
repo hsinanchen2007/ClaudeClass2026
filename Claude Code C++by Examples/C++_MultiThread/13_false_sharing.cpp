@@ -188,7 +188,9 @@
 //
 // ⚠️ 陷阱. struct { std::atomic<long> a; std::atomic<long> b; }; 兩個 thread 各自狂寫
 //     a 和 b，為什麼可能比單執行緒還慢？
-//     答：False sharing。a 與 b 相鄰、共 16 bytes，必定落在同一條 64-byte cache line。
+//     答：False sharing。a 與 b 相鄰、共 16 bytes，在本示範這種 layout 下會落在同一
+//         條 64-byte cache line（⚠️ 這不是保證：alignof(std::atomic<long>) 只有 8，
+//         本機實測把同一組 pair 放到 offset 56，兩個成員就跨到不同 cache line 了）。
 //         兩個 core 各自寫入時 MESI 不斷讓對方失效，每次寫都變成跨核同步（數十到上百
 //         cycle）。邏輯上完全正確、也沒有 data race，但硬體層面它們在爭用同一個資源。
 //     為什麼會錯：大家的心智模型停在「不同變數 = 互不干擾」，只檢查了正確性層面的

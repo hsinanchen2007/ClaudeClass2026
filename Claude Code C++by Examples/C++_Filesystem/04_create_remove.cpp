@@ -15,7 +15,8 @@
 //      fs::create_directories(p)     遞迴建多層 (像 mkdir -p)
 //      fs::remove(p)                 刪一個檔案 / 空目錄
 //      fs::remove_all(p)             遞迴刪除（小心使用！）
-//      fs::rename(from, to)          搬移／改名（同一檔案系統內 atomic）
+//      fs::rename(from, to)          搬移／改名（C++ 標準未保證 atomic；
+//                                    「同檔案系統內原子」是 POSIX 的保證）
 //      fs::copy(from, to)            拷貝（檔案、目錄、含遞迴與 overwrite 的選項）
 //      fs::copy_file(from, to)       只拷貝檔案、可指定覆寫策略
 //

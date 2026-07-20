@@ -35,7 +35,9 @@
 //  ▌ 與其他 container 的比較
 //      span vs vector       : span 不擁有資料,vector 擁有並負責生命週期
 //      span vs array_view   : array_view 是 span 的前身名稱 (各家擴充版本)
-//      span vs C pointer+len: span 多了型別安全 + STL 介面 + 邊界檢查 (at)
+//      span vs C pointer+len: span 多了型別安全 + STL 介面 (size/begin/end/subspan),
+//                             但*沒有*邊界檢查:operator[] 越界是 UB,且 C++20/23
+//                             的 span *沒有* at()(at() 是 C++26 才加入的)
 //      span vs string_view  : string_view 專門針對 char、唯讀;span 通用且可寫
 //
 //  ▌ 適用情境
@@ -439,7 +441,9 @@ int main() {
     //  Q3：何時用 span 取代 const std::vector<T>& 或 (T*, size_t)?
     //    A：寫泛型函式接受「任何連續記憶體序列」(C array、std::array、std::vector
     //       甚至 string_view 風格的子陣列) 時,span 是最佳選擇。比 vector& 更彈性
-    //       (不限定容器型別)、比 (T*, size_t) 更安全 (帶 bounds-checked 介面)。
+    //       (不限定容器型別)、比 (T*, size_t) 更安全 (指標與長度綁在一起,不會傳錯
+    //       或不同步)。注意這是「型別層面」的安全,不是執行期 bounds check ——
+    //       span 的 operator[] 越界仍是 UB。
     //
     return 0;
 }

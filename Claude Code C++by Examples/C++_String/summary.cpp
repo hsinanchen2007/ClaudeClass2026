@@ -123,7 +123,8 @@ static void demo_access_and_safe_at() {
 
     // data()/c_str()：取得底層字元陣列指標
     // - c_str() 保證以 '\0' 結尾（C API 最常用）
-    // - data() C++17 起也保證可用於讀取（且回傳指向連續儲存）
+    // - data() 自 C++98 就能讀取；C++11 起保證 data()[size()]=='\0' 與連續儲存；
+    //   C++17 加的是「非 const（可寫入）」多載（完整演進見 data.cpp）
     std::cout << "  c_str()=\"" << s.c_str() << "\"\n";
 
     try {
@@ -219,7 +220,8 @@ static void demo_cctype_pitfall() {
     std::string s = "A1b2";
     int digits = 0;
     for (unsigned char ch : s) {
-        if (std::isdigit(ch)) ++digits;
+        // ⚠️ <cctype> 參數先轉 unsigned char
+        if (std::isdigit(static_cast<unsigned char>(ch))) ++digits;
     }
     std::cout << "  digits=" << digits << "\n";
 }
