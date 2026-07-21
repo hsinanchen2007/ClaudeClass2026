@@ -36,7 +36,7 @@
 | 目錄 | 課數 | 主題 | 狀態 |
 |------|------|------|------|
 | `Claude AI CUDA課程/` | 185 課 / 13 Parts | GPU 硬體、CUDA 程式模型、記憶體階層、平行模式、函式庫、除錯、效能優化、AI 推論引擎系統 | 進行中（**2/185**，最新進度見 README.md） |
-| `Codex AI CUDA課程/` | 同上 | **同一份大綱的 Codex 授課版**（獨立撰寫，非 Claude 版的翻譯或改寫） | 進行中（0/185） |
+| `Codex AI CUDA課程/` | 同上 | **同一份大綱的 Codex 授課版**（獨立撰寫，非 Claude 版的翻譯或改寫） | 進行中（**2/185**，最新進度見 README.md） |
 
 **⚠️ 雙軌並存**：兩軌用同一份大綱與課名，但**各自獨立產出、互不寫入**——使用者的目的是同一主題看兩種講法，不是比較或挑戰。改動任一軌時只碰自己那一軌。
 
@@ -130,7 +130,7 @@
 | C++11-26 | 15 | 15 | 100% |
 | Python | 32 | 31 | 97% |
 | **總計（C++/Python）** | **128** | **127** | **99%** |
-| CUDA（新，另一套慣例） | 185 課 | — | Claude 2/185（進度見 README.md） |
+| CUDA（新，另一套慣例） | 185 課 | — | Claude 2/185；Codex 2/185（進度見 README.md） |
 
 待處理：無（各課 summary 已補齊；`Claude Code C++by Examples/` 各主題子目錄亦皆已有 summary.cpp）
 
@@ -266,3 +266,58 @@ git commit -- <同樣的路徑>
 `git add -A` 或無範圍的 `git commit` 會把對方**正在暫存中**的工作一起提交。
 2026-07-20 曾差點發生（對方當時有 405 個檔案 staged），只是時間差躲過。
 commit 後務必複核：`git show --name-only --format= HEAD | grep -c '^Codex'` 應為 0。
+
+---
+
+## 📘 Codex C++ by Examples 教材規格與增量基線（2026-07-20）
+
+> **給未來 Codex session：不要重新詢問格式，也不要無條件重掃 405 個檔案。**
+> 完整權威規格是
+> `Codex C++by Examples/CODEX_CPP_TEXTBOOK_TEMPLATE.md`；工作邊界、驗證結果與更細的
+> 重驗條件在同目錄 `AGENTS.md`。Claude 的 `教材增強_作業規格與模板.md` 屬另一軌，
+> Codex 不以它取代自己的模板，也不修改 Claude 教材。
+
+### ✅ Codex 完成基線
+
+- **增量起點 commit：`518dbf9`**（`新增 Codex C++ 教科書教材模板`）。
+- `Codex C++by Examples/` 已與 `Claude Code C++by Examples/` 維持 **405/405** 相對路徑
+  1:1，共 20 個頂層主題、29 個教材／summary 目錄。
+- 每個 Codex `.cpp` 已按離線教科書方向完成：基本概念、API／契約、用法、可執行
+  LeetCode、可執行實務案例、面試問答、檔尾安全編譯命令與實跑輸出。
+- 29 份 `summary.cpp` 是可獨立速讀章；面試增強 commit `ff8349e` 新增 331 題深挖，
+  另有 24 個單課檔新增 72 題。
+- 2026-07-20 完整 correctness audit：GCC debug 405/405、GCC release 405/405、
+  Clang 405/405、ASan+UBSan（Codex ptrace 環境關閉 LSan）405/405；教材映射、README
+  索引、無 ELF、無逐位元組複製皆通過。完整命令與 LSan 邊界見 Codex `AGENTS.md`。
+- `CODEX_CPP_TEXTBOOK_TEMPLATE.md` 內的 `std::find/find_if` 完整示範已用 C++20 嚴格
+  warnings + `-Werror` 實際編譯執行，輸出與文件一致。
+
+### 🔍 下次只做增量
+
+先執行：
+
+```bash
+cd ~/AI/github/ClaudeClass2026
+git diff --name-status 518dbf9..HEAD -- \
+  'Codex C++by Examples' \
+  ':(exclude)Codex C++by Examples/AGENTS.md' \
+  ':(exclude)Codex C++by Examples/CODEX_CPP_TEXTBOOK_TEMPLATE.md'
+```
+
+- **沒有輸出**：教材內容自完整基線後沒變，直接沿用既有驗證，不重掃、不重寫。
+- **只有少數 `.cpp`**：只按 Codex 模板更新這些檔，跑結構 guard、索引檢查及變更檔的
+  debug/release；重要語意再加 Clang/sanitizer。提交前至少跑一次 `tools/check_all.sh --run`。
+- **Claude 軌新增／刪除 `.cpp`**：執行 `tools/audit_textbook.sh`，只補 1:1 映射差異；
+  題目可對照，內容必須由 Codex 獨立撰寫。
+- **只有修改 `tools/`、共用 flags、標準映射、compiler 大版本或大量機械更新**，才重跑
+  405 檔完整 GCC debug/release、Clang、sanitizer，並建立新的完整基線 commit。
+- 每次完成增量後，把新的最後處理 commit 與驗證範圍更新到本節及 Codex `AGENTS.md`；
+  不要只寫日期，必須留下可供 `git diff` 使用的 SHA。
+
+### Codex CUDA 進度基線
+
+- Codex CUDA 已完成課 1.1、1.2（**2/185**），下一課 1.3；詳細進度以 repo 根層
+  `README.md` 與本機 `~/AI/AI_Course/AI_CUDA_Codex/PROGRESS.md` 為準。
+- 本機 CUDA 完整驗證基線與增量命令已記在
+  `~/AI/AI_Course/AI_CUDA_Codex/AGENTS.md`，目前本機記錄 commit 為 `ed38016`。
+- 下次新增課程只驗新課與相關共用工具，不因 C++ 模板更新而重跑既有 CUDA 課。
