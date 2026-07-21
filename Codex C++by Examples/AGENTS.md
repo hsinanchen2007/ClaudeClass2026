@@ -41,3 +41,35 @@
 4. `tools/check_all.sh --release`：以 `-O2 -DNDEBUG` 確認 assert 移除後仍可完整執行。
 5. `CXX=clang++ tools/check_all.sh --run`：Clang 交叉驗證。
 6. 建置輸出只在暫存目錄；交付前確認 repository 無新 executable。
+
+## 最近完整驗證基線（2026-07-20）
+
+本節用來避免後續 session 在內容未變時，從零重跑 405 個範例。教材內容基線是
+GitHub repo commit `e8cdf8a9010d77d782a600112cc08d997fcaf4ad`；新增本節的
+AGENTS-only commit 不算教材變更。
+
+已完成並通過：
+
+- `tools/audit_textbook.sh`：Claude/Codex 各 405 個 `.cpp`、29 個對應目錄，
+  相對路徑 1:1；教材段落、summary 深度、無 ELF、無逐位元組複製均通過。
+- `tools/update_readme_indexes.sh --check`：20 個頂層主題索引無漂移。
+- `tools/check_all.sh --run`：GCC debug 編譯與執行 405/405 通過。
+- `tools/check_all.sh --release`：GCC `-O2 -DNDEBUG` 編譯與執行 405/405 通過。
+- `CXX=clang++ tools/check_all.sh --run`：Clang 編譯與執行 405/405 通過。
+- ASan+UBSan：405/405 通過；Codex 執行環境受 ptrace 影響，LeakSanitizer 會固定報
+  `LeakSanitizer does not work under ptrace`，因此本輪以 `detect_leaks=0` 驗 ASan/UBSan。
+  真正 LSan 仍應在不受 ptrace 的一般終端執行 `tools/check_all.sh --sanitize`。
+- 面試題宣告已回 commit `ff8349e` 重算：29 份 summary 新增 331 題；24 個單課檔案
+  新增 72 題。現況可辨識的 summary 深挖題頭共有 369，README 的「新增 331」是
+  歷史新增量，不是現況總題數。
+
+後續重驗規則：
+
+1. 先執行
+   `git diff --quiet e8cdf8a9010d77d782a600112cc08d997fcaf4ad -- 'Codex C++by Examples' ':(exclude)Codex C++by Examples/AGENTS.md'`。
+   若無差異，可引用本基線，不必重跑全部 405 檔。
+2. 若只有少數 `.cpp` 改動，先跑 `audit_textbook.sh`、索引 `--check`，再用該章應有的
+   C++ 標準對變更檔做 GCC/Clang debug、release 與 sanitizer；提交前仍至少跑一次
+   `tools/check_all.sh --run`。
+3. 若 `tools/`、共用編譯旗標、教材映射規則或大量檔案改動，完整重跑上述 GCC、
+   release、Clang、sanitizer 與結構稽核，並以新 commit 取代本基線。
