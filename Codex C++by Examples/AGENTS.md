@@ -2,6 +2,10 @@
 
 本目錄由 Codex 獨立維護。它與同一個 repository 內的 Claude 教材並存，但不是其副本，也不互相覆寫。
 
+新增或加強教材前，必須先讀 `CODEX_CPP_TEXTBOOK_TEMPLATE.md`。該檔是教科書內容、
+LeetCode／實務案例、面試問答、編譯命令與預期輸出的完整格式契約；本檔負責工作邊界
+與驗證基線。兩者若有衝突，以較嚴格且不破壞 C++ 正確性的要求為準。
+
 ## 邊界
 
 1. 只修改 <code>Codex C++by Examples/</code> 內的教材與工具。
